@@ -1,74 +1,67 @@
 // ============================================================
-// api.js — เชื่อมต่อ Google Apps Script
-// ใช้ JSONP สำหรับอ่าน, no-cors POST สำหรับเขียน
+// api.js — JSONP สำหรับ Apps Script (รูปแบบที่พิสูจน์แล้วว่าใช้งานได้)
 // ============================================================
 
 const API = {
-  // อ่านข้อมูลด้วย JSONP (bypass CORS)
-  callRead(action, params = {}) {
-    return new Promise((resolve, reject) => {
-      const callbackName = 'cb_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
-      const script = document.createElement('script');
+  callRead(action, params) {
+    params = params || {};
+    return new Promise(function(resolve, reject) {
+      var cbName = 'jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+      var script = document.createElement('script');
+      var done = false;
 
-      window[callbackName] = (data) => {
-        delete window[callbackName];
-        document.body.removeChild(script);
+      window[cbName] = function(data) {
+        done = true;
         resolve(data);
+        try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
       };
 
-      script.onerror = () => {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        reject(new Error('Network error'));
+      script.onerror = function() {
+        if (!done) {
+          try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+          if (script.parentNode) script.parentNode.removeChild(script);
+          reject(new Error('Network error'));
+        }
       };
 
-      const url = new URL(CONFIG.APPS_SCRIPT_URL);
-      url.searchParams.set('action', action);
-      url.searchParams.set('callback', callbackName);
-      Object.keys(params).forEach(k => url.searchParams.set(k, params[k]));
+      var url = CONFIG.APPS_SCRIPT_URL + '?callback=' + cbName + '&action=' + encodeURIComponent(action);
+      Object.keys(params).forEach(function(k) {
+        url += '&' + k + '=' + encodeURIComponent(params[k]);
+      });
 
-      script.src = url.toString();
-      document.body.appendChild(script);
+      script.src = url;
+      document.head.appendChild(script);
 
-      // Timeout 15 seconds
-      setTimeout(() => {
-        if (window[callbackName]) {
-          delete window[callbackName];
-          if (script.parentNode) document.body.removeChild(script);
+      setTimeout(function() {
+        if (!done) {
+          try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+          if (script.parentNode) script.parentNode.removeChild(script);
           reject(new Error('Timeout'));
         }
-      }, 15000);
+      }, 20000);
     });
   },
 
-  // เขียนข้อมูลด้วย POST (no-cors)
-  async callWrite(action, data) {
-    try {
-      await fetch(CONFIG.APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action, ...data })
-      });
+  callWrite: function(action, data) {
+    return fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(Object.assign({ action: action }, data))
+    }).then(function() {
       return { ok: true };
-    } catch (err) {
+    }).catch(function(err) {
       console.error('API write error:', err);
       return { ok: false, error: err.message };
-    }
+    });
   },
 
-  // ดึงข้อมูลทั้งโปรเจกต์
-  async fetchAll() {
-    return await this.callRead('getAll');
+  fetchAll: function() { return this.callRead('getAll'); },
+  updateTask: function(taskId, status, doneDate) {
+    return this.callWrite('updateTask', { taskId: taskId, status: status, doneDate: doneDate || '' });
   },
-
-  // อัปเดต task
-  async updateTask(taskId, status, doneDate) {
-    return await this.callWrite('updateTask', { taskId, status, doneDate: doneDate || '' });
-  },
-
-  // อัปเดต payment
-  async updatePayment(paymentId, status, receipt) {
-    return await this.callWrite('updatePayment', { paymentId, status, receipt: receipt || '' });
+  updatePayment: function(paymentId, status, receipt) {
+    return this.callWrite('updatePayment', { paymentId: paymentId, status: status, receipt: receipt || '' });
   }
 };
