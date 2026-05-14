@@ -78,7 +78,7 @@ function updateUserBar() {
 async function loadProjects() {
   try {
     const data = await API.fetchAll();
-    if (!data || !data.ok) {
+    if (!data || !data.ffs) {
       document.getElementById('projGrid').innerHTML = '<div class="loading">❌ โหลดข้อมูลไม่สำเร็จ</div>';
       return;
     }
