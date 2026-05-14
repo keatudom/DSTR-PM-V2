@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSTR Project Management — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body class="login-page">
+
+<div class="login-wrap">
+  <div class="login-brand-row">
+    <div class="login-logo">🏗️</div>
+    <div class="login-brand">DSTR Project Management</div>
+    <div class="login-sub">ระบบติดตามโครงการ บริษัท ดีไซน์ ทีเรีย จำกัด</div>
+  </div>
+
+  <div class="login-card">
+    <h3>เข้าสู่ระบบ</h3>
+    <div class="login-card-sub">เลือกบทบาทและกรอกรหัสผ่าน</div>
+
+    <div class="role-options">
+      <button class="role-opt selected" data-role="admin" onclick="selectRole(this)">
+        <span class="role-icon">👨‍💼</span>
+        <div>
+          <div class="role-title">Admin</div>
+          <div class="role-desc">ทีมงานบริษัท · จัดการได้เต็มที่</div>
+        </div>
+      </button>
+      <button class="role-opt" data-role="client" onclick="selectRole(this)">
+        <span class="role-icon">🏡</span>
+        <div>
+          <div class="role-title">Client (ลูกค้า)</div>
+          <div class="role-desc">เฉพาะโปรเจกต์ตัวเอง · ดูอย่างเดียว</div>
+        </div>
+      </button>
+    </div>
+
+    <div class="login-error" id="loginError"></div>
+
+    <input type="password" class="login-input" id="passwordInput" placeholder="รหัสผ่าน" onkeyup="if(event.key==='Enter')doLogin()">
+    <label class="remember-row">
+      <input type="checkbox" id="rememberMe" checked>
+      <span>จำการเข้าสู่ระบบ 7 วัน</span>
+    </label>
+    <button class="login-btn" onclick="doLogin()">เข้าสู่ระบบ →</button>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+// ถ้า login อยู่แล้ว → ไป projects.html
+if (Auth.isLoggedIn()) {
+  window.location.href = 'projects.html';
+}
+
+let selectedRole = 'admin';
+
+function selectRole(el) {
+  document.querySelectorAll('.role-opt').forEach(r => r.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedRole = el.dataset.role;
+  document.getElementById('passwordInput').focus();
+}
+
+function doLogin() {
+  const password = document.getElementById('passwordInput').value.trim();
+  const errorBox = document.getElementById('loginError');
+
+  if (!password) {
+    errorBox.textContent = 'กรุณากรอกรหัสผ่าน';
+    errorBox.classList.add('show');
+    return;
+  }
+
+  const result = Auth.login(selectedRole, password);
+  if (result.ok) {
+    window.location.href = 'projects.html';
+  } else {
+    errorBox.textContent = '❌ ' + result.error;
+    errorBox.classList.add('show');
+    document.getElementById('passwordInput').value = '';
+  }
+}
+</script>
+
+</body>
+</html>

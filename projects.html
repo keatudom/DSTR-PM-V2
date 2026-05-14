@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSTR — เลือกโปรเจกต์</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<div class="app">
+
+  <div class="user-bar" id="userBar">
+    <div class="user-info">
+      <div class="user-avatar" id="userAvatar">A</div>
+      <div>
+        <div class="user-name" id="userName">ผู้ใช้งาน</div>
+        <span class="user-tag" id="userTag">ADMIN</span>
+      </div>
+    </div>
+    <button class="user-logout" onclick="Auth.logout()">ออกจากระบบ →</button>
+  </div>
+
+  <div class="hero">
+    <div>
+      <h1>DSTR Project Management</h1>
+      <p>ระบบติดตามโครงการ บริษัท ดีไซน์ ทีเรีย จำกัด</p>
+    </div>
+    <div class="hero-logo">DT</div>
+  </div>
+
+  <div class="section-head">
+    <span>กำลังดำเนินการ <span class="section-count">· 1 โปรเจกต์</span></span>
+    <button class="add-btn" id="addBtn" onclick="alert('เร็วๆนี้: เพิ่มโปรเจกต์ใหม่')">+ เปิดโปรเจกต์ใหม่</button>
+  </div>
+
+  <div class="proj-grid" id="projGrid">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>กำลังโหลด...</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/state.js"></script>
+<script>
+// ตรวจสอบสิทธิ์
+if (!Auth.requireAuth()) {
+  // จะถูก redirect ไป index.html
+}
+
+const role = Auth.getRole();
+
+// อัปเดต User Bar
+function updateUserBar() {
+  if (role === 'admin') {
+    document.getElementById('userAvatar').textContent = 'A';
+    document.getElementById('userAvatar').className = 'user-avatar';
+    document.getElementById('userName').textContent = 'Admin (ทีมงาน)';
+    document.getElementById('userTag').textContent = 'ADMIN';
+    document.getElementById('userTag').className = 'user-tag';
+  } else {
+    document.getElementById('userAvatar').textContent = 'C';
+    document.getElementById('userAvatar').className = 'user-avatar client';
+    document.getElementById('userName').textContent = 'Client (ลูกค้า)';
+    document.getElementById('userTag').textContent = 'CLIENT';
+    document.getElementById('userTag').className = 'user-tag client';
+    document.getElementById('addBtn').style.display = 'none';
+  }
+}
+
+// โหลดข้อมูลและแสดงโปรเจกต์
+async function loadProjects() {
+  try {
+    const data = await API.fetchAll();
+    if (!data || !data.ok) {
+      document.getElementById('projGrid').innerHTML = '<div class="loading">❌ โหลดข้อมูลไม่สำเร็จ</div>';
+      return;
+    }
+
+    state.data = data;
+    buildWeights();
+
+    const project = CONFIG.PROJECTS['bow-house'];
+    const actualPct = calcProjectProgress();
+    const planPct = calcPlanProgress(project);
+    const variance = calcVariance(actualPct, planPct);
+    const daysLeft = Math.max(0, daysBetween(new Date(), new Date(project.endDate)));
+
+    let statusClass = 'warn', statusText = '⚠ ใกล้ล่าช้า';
+    if (variance >= -5) { statusClass = 'onplan'; statusText = '● ตามแผน'; }
+    else if (variance < -15) { statusClass = 'warn'; statusText = '⚠ ล่าช้า'; }
+
+    const targetPage = role === 'admin' ? 'dashboard.html' : 'client.html';
+
+    let html = `
+      <div class="proj-card ${variance < -5 ? 'warn' : ''}" onclick="window.location.href='${targetPage}?project=bow-house'">
+        <div class="proj-status-row">
+          <div>
+            <div class="proj-name">${project.name}</div>
+            <div class="proj-client">${project.client} · ${project.quoteNo}</div>
+          </div>
+          <span class="proj-status s-${statusClass}">${statusText}</span>
+        </div>
+        <div class="proj-stats">
+          <div>
+            <div class="proj-stat-l">มูลค่าโครงการ</div>
+            <div class="proj-stat-v">${fmt(project.totalValue)} ฿</div>
+          </div>
+          <div>
+            <div class="proj-stat-l">วันเหลือ</div>
+            <div class="proj-stat-v">${daysLeft} / ${project.totalDays}</div>
+          </div>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">ความคืบหน้า</span>
+          <div class="prog-track"><div class="prog-fill" style="width:${actualPct}%;background:${actualPct >= planPct - 5 ? '#10B981' : '#F59E0B'}"></div></div>
+          <span class="prog-pct" style="color:${actualPct >= planPct - 5 ? '#0d6e4f' : '#BA7517'}">${actualPct}%</span>
+        </div>
+        <div class="proj-tags">
+          <span class="proj-tag">${state.data.ffs.length} FF</span>
+          <span class="proj-tag">4 Zone</span>
+        </div>
+      </div>
+    `;
+
+    if (role === 'admin') {
+      html += `
+        <div class="proj-card empty" onclick="alert('เร็วๆนี้: เพิ่มโปรเจกต์ใหม่')">
+          <div class="proj-empty-icon">+</div>
+          <div class="proj-empty-text">เปิดโปรเจกต์ใหม่</div>
+          <div class="proj-empty-sub">เพิ่มเข้ามาเมื่อมีลูกค้าใหม่</div>
+        </div>
+      `;
+    }
+
+    document.getElementById('projGrid').innerHTML = html;
+  } catch (err) {
+    console.error(err);
+    document.getElementById('projGrid').innerHTML = '<div class="loading">❌ เกิดข้อผิดพลาด: ' + err.message + '</div>';
+  }
+}
+
+updateUserBar();
+loadProjects();
+</script>
+
+</body>
+</html>
