@@ -77,6 +77,25 @@ const API = {
     });
   },
 
+  /**
+   * POST + อ่าน response ได้ (สำหรับ scan_bill, parse_material_log ที่ payload ใหญ่เกิน JSONP)
+   * Apps Script จะส่ง CORS header เมื่อ Content-Type = text/plain
+   * Note: ต้องใช้ async/await หรือ .then() เพราะคืน Promise
+   */
+  callPost: function(action, data) {
+    return fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ action: action }, data))
+    }).then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).catch(function(err) {
+      console.error('API post error:', err);
+      return { ok: false, error: err.message };
+    });
+  },
+
   // ============================================================
   // 🔄 LEGACY — ของเดิม ไม่แตะ
   // ============================================================
