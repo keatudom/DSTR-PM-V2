@@ -682,22 +682,25 @@ async function confirmLog() {
   Modal.toast('กำลังบันทึก...');
 
   try {
-    const res = await API.callPost('add_activity_log', {
+    // Use callWrite (no-cors POST) for reliability — same as materials save
+    const payload = {
       text: text,
       source: 'admin',
-      auto_tag: false,
-      tags_ff: tags_ff,
-      tags_ctr: tags_ctr,
-      tags_issue: tags_issue,
+      auto_tag: 'false',
+      tags_ff: tags_ff.join(','),
+      tags_ctr: tags_ctr.join(','),
+      tags_issue: tags_issue.join(','),
       tags_phase: tags_phase,
       date: drState.date
-    });
+    };
+    const res = await API.callWrite('add_activity_log', payload);
     if (!res.ok) throw new Error(res.error || 'Save failed');
 
     Modal.toast('✓ บันทึกแล้ว');
     document.getElementById('logInput').value = '';
     drState.pendingLog = null;
-    await refresh();
+    // Wait a moment for backend to commit, then refresh
+    setTimeout(() => refresh(), 1200);
   } catch (err) {
     Modal.toast('❌ ' + err.message);
   }
