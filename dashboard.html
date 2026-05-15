@@ -8,6 +8,89 @@
 <link rel="stylesheet" href="css/main.css">
 <style>
 /* Dashboard-specific styles */
+.app { padding-bottom: 80px; } /* space for bottom nav */
+
+/* ============================================================
+   QUICK LINKS HUB (เข้าหน้าใหม่ๆ)
+   ============================================================ */
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.hub-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #E5E7EB;
+  cursor: pointer;
+  transition: all .15s;
+  position: relative;
+  overflow: hidden;
+}
+.hub-card:hover {
+  border-color: #1F3864;
+  box-shadow: 0 4px 12px rgba(31,56,100,0.08);
+  transform: translateY(-1px);
+}
+.hub-card-icon {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+.hub-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 2px;
+}
+.hub-card-sub {
+  font-size: 10px;
+  color: #6B7280;
+}
+.hub-card-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #E24B4A;
+  color: #fff;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 99px;
+  font-weight: 600;
+  min-width: 16px;
+  text-align: center;
+}
+.hub-card-arrow {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  color: #9CA3AF;
+  font-size: 14px;
+}
+
+/* ============================================================
+   AI ALERTS BANNER (สามารถซ่อนได้)
+   ============================================================ */
+.dash-ai-bnr {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FED7AA 100%);
+  border-left: 3px solid #BA7517;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.dash-ai-bnr-i { font-size: 18px; flex-shrink: 0; }
+.dash-ai-bnr-tx { font-size: 11px; color: #854F0B; flex: 1; line-height: 1.5; }
+.dash-ai-bnr-tx strong { color: #633806; font-weight: 600; }
+.dash-ai-bnr-arr { color: #92400E; font-size: 14px; }
+
+/* ============================================================
+   EXISTING DASHBOARD STYLES (keep all)
+   ============================================================ */
 .tl-wrap{overflow-x:auto;padding-bottom:4px;margin-top:8px}
 .tl{display:grid;grid-template-columns:170px repeat(20,minmax(32px,1fr)) 110px;gap:1px;min-width:920px}
 .tl-h{font-size:9px;color:#6B7280;text-align:center;padding:4px 0;font-weight:600;background:#F9FAFB;border-radius:3px;position:relative}
@@ -48,8 +131,8 @@
 .ff-c-pct{font-size:11px;font-weight:600;color:#1F2937;min-width:38px;text-align:right}
 .ff-c-chev{color:#9CA3AF;font-size:14px;transition:transform .15s}
 .ff-card.expanded .ff-c-chev{transform:rotate(180deg);color:#3B82F6}
-.ff-c-body{margin-top:12px;padding-top:12px;border-top:1px dashed #E5E7EB;display:none}
 .ff-card.expanded .ff-c-body{display:block}
+.ff-c-body{margin-top:12px;padding-top:12px;border-top:1px dashed #E5E7EB;display:none}
 
 /* Task list */
 .task-phase{margin-bottom:10px}
@@ -112,6 +195,92 @@
 .risk-desc{font-size:12px;font-weight:500;color:#1F2937;margin:4px 0}
 .risk-meta{display:flex;gap:6px;font-size:9px;flex-wrap:wrap;margin-top:5px}
 .risk-tag{padding:2px 7px;border-radius:99px;background:#fff;color:#4B5563;font-weight:500}
+
+/* ============================================================
+   FAB (Floating Action Button)
+   ============================================================ */
+.fab {
+  position: fixed;
+  right: 18px;
+  bottom: 80px;
+  width: 54px;
+  height: 54px;
+  background: #1F3864;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 300;
+  box-shadow: 0 6px 16px rgba(31,56,100,0.35);
+  cursor: pointer;
+  z-index: 50;
+  transition: transform .15s;
+}
+.fab:hover { transform: scale(1.05); }
+.fab.on { transform: rotate(45deg); }
+
+.fab-menu {
+  position: fixed;
+  right: 18px;
+  bottom: 144px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 49;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: all .2s;
+}
+.fab-menu.on { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.fab-mi {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  padding: 8px 14px;
+  border-radius: 99px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  font-size: 12px;
+  font-weight: 500;
+  color: #1F2937;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.fab-mi-i { font-size: 14px; }
+
+/* ============================================================
+   BOTTOM NAV
+   ============================================================ */
+.bnav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #E5E7EB;
+  padding: 6px 4px 8px;
+  display: flex;
+  justify-content: space-around;
+  z-index: 48;
+}
+.bnav-i {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  color: #9CA3AF;
+  cursor: pointer;
+  min-width: 54px;
+  text-decoration: none;
+}
+.bnav-i.on { color: #1F3864; }
+.bnav-ic { font-size: 18px; }
+.bnav-lb { font-size: 9px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -135,6 +304,38 @@
           <div class="dash-pills" id="projPills"></div>
         </div>
         <button class="back-btn" onclick="window.location.href='projects.html'">← กลับ</button>
+      </div>
+    </div>
+
+    <!-- AI Alerts Banner -->
+    <div id="aiBnr" style="display:none"></div>
+
+    <!-- 🆕 QUICK HUB: เข้าหน้าใหม่ๆ -->
+    <div class="hub-grid">
+      <div class="hub-card" onclick="window.location.href='materials.html?project=bow-house'">
+        <div class="hub-card-icon">📦</div>
+        <div class="hub-card-title">Materials</div>
+        <div class="hub-card-sub" id="hubMatSub">27 รายการ</div>
+        <div class="hub-card-arrow">→</div>
+        <div class="hub-card-badge" id="hubMatBadge" style="display:none"></div>
+      </div>
+      <div class="hub-card" onclick="alert('เร็วๆ นี้: Daily Report')">
+        <div class="hub-card-icon">📝</div>
+        <div class="hub-card-title">Daily Report</div>
+        <div class="hub-card-sub">บันทึกหน้างาน</div>
+        <div class="hub-card-arrow">→</div>
+      </div>
+      <div class="hub-card" onclick="alert('เร็วๆ นี้: Contractors & Suppliers')">
+        <div class="hub-card-icon">👷</div>
+        <div class="hub-card-title">Team</div>
+        <div class="hub-card-sub" id="hubTeamSub">3 คน</div>
+        <div class="hub-card-arrow">→</div>
+      </div>
+      <div class="hub-card" onclick="alert('เร็วๆ นี้: BOQ')">
+        <div class="hub-card-icon">📋</div>
+        <div class="hub-card-title">BOQ</div>
+        <div class="hub-card-sub">Bill of Quantity</div>
+        <div class="hub-card-arrow">→</div>
       </div>
     </div>
 
@@ -201,6 +402,34 @@
   </div>
 </div>
 
+<!-- 🆕 FAB -->
+<div id="fab" class="fab" onclick="toggleFab()" style="display:none">+</div>
+<div id="fabMenu" class="fab-menu">
+  <a class="fab-mi" href="materials.html?project=bow-house"><span class="fab-mi-i">⚡</span>Quick Log วัสดุ</a>
+  <a class="fab-mi" href="materials.html?project=bow-house&tab=rcv"><span class="fab-mi-i">📥</span>รับวัสดุ</a>
+  <a class="fab-mi" href="materials.html?project=bow-house&tab=wdr"><span class="fab-mi-i">📤</span>เบิกวัสดุ</a>
+  <div class="fab-mi" onclick="alert('เร็วๆ นี้: Daily Report')"><span class="fab-mi-i">📝</span>Daily Report</div>
+</div>
+
+<!-- 🆕 Bottom Nav -->
+<div class="bnav">
+  <a class="bnav-i on" href="#">
+    <div class="bnav-ic">🏠</div><div class="bnav-lb">Home</div>
+  </a>
+  <a class="bnav-i" href="materials.html?project=bow-house">
+    <div class="bnav-ic">📦</div><div class="bnav-lb">Materials</div>
+  </a>
+  <a class="bnav-i" href="#" onclick="alert('เร็วๆ นี้: Daily Report');return false">
+    <div class="bnav-ic">📝</div><div class="bnav-lb">Daily</div>
+  </a>
+  <a class="bnav-i" href="#" onclick="alert('เร็วๆ นี้: Team');return false">
+    <div class="bnav-ic">👷</div><div class="bnav-lb">Team</div>
+  </a>
+  <a class="bnav-i" href="projects.html">
+    <div class="bnav-ic">⋯</div><div class="bnav-lb">More</div>
+  </a>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/api.js"></script>
@@ -214,6 +443,11 @@ if (!Auth.requireAuth('admin')) {
 
 const project = CONFIG.PROJECTS['bow-house'];
 
+// 🆕 Extended state
+state.materials = [];
+state.contractors = [];
+state.alerts = [];
+
 // ============================================================
 // MAIN LOAD
 // ============================================================
@@ -224,10 +458,23 @@ async function loadData() {
       throw new Error('No data');
     }
     state.data = data;
+    state.materials = data.materials || [];
+    state.contractors = data.contractors || [];
+
     buildWeights();
+
+    // โหลด AI alerts (parallel)
+    API.callRead('get_ai_alerts').then(res => {
+      if (res.ok && res.data) {
+        state.alerts = res.data;
+        renderAiAlertsBanner();
+      }
+    }).catch(()=>{});
+
     renderAll();
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
+    document.getElementById('fab').style.display = 'flex';
   } catch (err) {
     document.getElementById('loadingScreen').innerHTML = '❌ โหลดข้อมูลไม่สำเร็จ: ' + err.message;
   }
@@ -241,10 +488,61 @@ function renderAll() {
   renderNgwdGrid();
   renderTimeline();
   renderRisks();
+  renderHubCards();
 }
 
 // ============================================================
-// HEADER
+// 🆕 AI ALERTS BANNER
+// ============================================================
+function renderAiAlertsBanner() {
+  const bnr = document.getElementById('aiBnr');
+  const critical = state.alerts.filter(a =>
+    a.severity === 'high' || a.severity === 'medium');
+  if (critical.length === 0) {
+    bnr.style.display = 'none';
+    return;
+  }
+  const top3 = critical.slice(0, 3);
+  const msgs = top3.map(a => a.mat_name).join(', ');
+  bnr.className = 'dash-ai-bnr';
+  bnr.innerHTML = `
+    <div class="dash-ai-bnr-i">⚠️</div>
+    <div class="dash-ai-bnr-tx">
+      <strong>${critical.length} วัสดุต้องการความสนใจ</strong><br>${msgs}${critical.length > 3 ? ` +${critical.length - 3}` : ''}
+    </div>
+    <div class="dash-ai-bnr-arr">→</div>
+  `;
+  bnr.style.display = 'flex';
+  bnr.onclick = () => window.location.href = 'materials.html?project=bow-house';
+}
+
+// ============================================================
+// 🆕 HUB CARDS
+// ============================================================
+function renderHubCards() {
+  document.getElementById('hubMatSub').textContent = `${state.materials.length} รายการ`;
+  document.getElementById('hubTeamSub').textContent = `${state.contractors.length} คน`;
+  const critical = state.alerts.filter(a =>
+    a.severity === 'high' || a.severity === 'medium').length;
+  const badge = document.getElementById('hubMatBadge');
+  if (critical > 0) {
+    badge.style.display = 'block';
+    badge.textContent = critical;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ============================================================
+// 🆕 FAB
+// ============================================================
+function toggleFab() {
+  document.getElementById('fab').classList.toggle('on');
+  document.getElementById('fabMenu').classList.toggle('on');
+}
+
+// ============================================================
+// HEADER (เดิม)
 // ============================================================
 function renderHeader() {
   const actualPct = calcProjectProgress();
@@ -262,7 +560,7 @@ function renderHeader() {
 }
 
 // ============================================================
-// KPIs
+// KPIs (เดิม)
 // ============================================================
 function renderKPIs() {
   const actualPct = calcProjectProgress();
@@ -298,7 +596,7 @@ function renderKPIs() {
 }
 
 // ============================================================
-// GAUGE (DONUT)
+// GAUGE (DONUT) — เดิม
 // ============================================================
 function renderGauge() {
   const actualPct = calcProjectProgress();
@@ -308,7 +606,6 @@ function renderGauge() {
   const endDate = new Date(project.endDate);
   const delayDays = forecastDate ? Math.max(0, daysBetween(endDate, forecastDate)) : 0;
 
-  // คำนวณ stroke-dasharray สำหรับ donut (รัศมี 42, circumference = 264)
   const totalLen = 264;
   const actualLen = (actualPct / 100) * totalLen;
   const planOffset = -(planPct / 100) * totalLen;
@@ -350,13 +647,11 @@ function renderGauge() {
 }
 
 // ============================================================
-// WEIGHT LIST
+// WEIGHT LIST (เดิม)
 // ============================================================
 function renderWeightList() {
-  // กรองตาม Zone
   let filtered = state.zone === 'all' ? state.data.ffs.slice() : state.data.ffs.filter(ff => ff.zone === state.zone);
 
-  // เรียงตาม sort mode
   const sortMode = state.sortMode || 'weight';
   if (sortMode === 'weight') {
     filtered.sort((a,b) => {
@@ -453,14 +748,13 @@ function toggleFFExpand(ffCode) {
 }
 
 // ============================================================
-// TASK TOGGLE (with confirm + restore date)
+// TASK TOGGLE (เดิม)
 // ============================================================
 async function toggleTask(taskId) {
   const task = state.data.tasks.find(t => t.id === taskId);
   if (!task) return;
   const isDone = task.status === 'Done';
 
-  // Case 1: ยกเลิก task → confirm
   if (isDone) {
     const html = `
       <div class="modal-icon warn">⚠️</div>
@@ -480,7 +774,6 @@ async function toggleTask(taskId) {
     return;
   }
 
-  // Case 2: เคย uncheck 5 นาทีก่อน → ถามใช้วันเดิม
   const recent = state.recentUncheck[taskId];
   const fiveMinAgo = Date.now() - 5*60*1000;
   if (recent && recent.time > fiveMinAgo && recent.doneDate) {
@@ -544,7 +837,7 @@ async function confirmUncheck(taskId) {
 }
 
 // ============================================================
-// PAYMENT GRID
+// PAYMENT GRID (เดิม)
 // ============================================================
 function renderNgwdGrid() {
   const milestones = [
@@ -730,7 +1023,7 @@ async function resetPayment(payId) {
 }
 
 // ============================================================
-// TIMELINE
+// TIMELINE (เดิม)
 // ============================================================
 function renderTimeline() {
   const container = document.getElementById('timeline');
@@ -824,7 +1117,7 @@ function renderTimeline() {
 }
 
 // ============================================================
-// RISKS
+// RISKS (เดิม)
 // ============================================================
 function renderRisks() {
   if (!state.data.risks || state.data.risks.length === 0) {

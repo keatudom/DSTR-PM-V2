@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Materials · Bow House</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<style>
+/* ============================================================
+   Materials page — mobile-first
+   ============================================================ */
+.mat-app { padding-bottom: 80px; }
+
+/* Header */
+.mat-hdr { background: linear-gradient(135deg,#1F3864 0%,#0C447C 100%); color:#fff; padding:14px 16px 16px; border-radius:0 0 16px 16px; margin:-16px -16px 12px; }
+.mat-hdr-r { display:flex; justify-content:space-between; align-items:center; }
+.mat-hdr-h2 { font-size:17px; font-weight:600; margin:0; color:#fff; }
+.mat-hdr-sub { font-size:11px; opacity:0.85; margin-top:2px; }
+.mat-hdr-back { background:rgba(255,255,255,0.15); color:#fff; border:none; padding:6px 12px; border-radius:99px; font-size:11px; font-family:inherit; font-weight:500; }
+.mat-hdr-back:hover { background:rgba(255,255,255,0.25); }
+
+/* Tabs */
+.mat-tabs { display:flex; gap:6px; margin:0 -4px 12px; padding:0 4px 4px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.mat-tabs::-webkit-scrollbar { display:none; }
+.mat-tab { padding:8px 14px; border-radius:99px; background:#fff; color:#4B5563; font-size:11px; font-weight:500; border:1px solid #E5E7EB; white-space:nowrap; cursor:pointer; font-family:inherit; flex-shrink:0; }
+.mat-tab:hover { border-color:#1F3864; }
+.mat-tab.on { background:#1F3864; color:#fff; border-color:#1F3864; }
+
+/* AI Alert Banner */
+.mat-ai-bnr { background:#FEF3C7; border-left:3px solid #BA7517; padding:10px 12px; border-radius:8px; margin-bottom:12px; display:flex; gap:10px; align-items:flex-start; cursor:pointer; }
+.mat-ai-bnr-i { font-size:18px; flex-shrink:0; }
+.mat-ai-bnr-tx { font-size:11px; color:#854F0B; flex:1; line-height:1.5; }
+.mat-ai-bnr-tx strong { color:#633806; font-weight:600; }
+.mat-ai-bnr-x { font-size:14px; color:#92400E; padding:0 4px; }
+
+/* Tab Content */
+.mat-tab-pane { display:none; }
+.mat-tab-pane.on { display:block; }
+
+/* ============================================================
+   Quick Log Tab
+   ============================================================ */
+.ql-wrap { padding: 0 2px; }
+.ql-label { font-size:11px; color:#6B7280; margin-bottom:6px; font-weight:500; }
+.ql-ta { width:100%; min-height:120px; border:1px solid #E5E7EB; border-radius:10px; padding:12px; font-size:13px; font-family:inherit; background:#fff; color:#1F2937; resize:vertical; box-sizing:border-box; line-height:1.6; }
+.ql-ta:focus { outline:none; border-color:#1F3864; box-shadow:0 0 0 3px rgba(31,56,100,0.1); }
+.ql-hint { font-size:10px; color:#9CA3AF; margin-top:4px; }
+.ql-btn-ai { width:100%; margin-top:10px; padding:12px; background:#1F3864; color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:500; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; }
+.ql-btn-ai:hover { background:#0C447C; }
+.ql-btn-ai:disabled { background:#9CA3AF; cursor:not-allowed; }
+
+.ql-eg { background:#F9FAFB; border-radius:8px; padding:10px 12px; margin-top:14px; }
+.ql-eg-t { font-size:10px; color:#6B7280; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px; }
+.ql-eg-i { font-size:11px; color:#374151; padding:4px 0; line-height:1.6; cursor:pointer; }
+.ql-eg-i:hover { color:#1F3864; font-weight:500; }
+
+/* AI Confirmation Section */
+.ai-cf { margin-top:18px; }
+.ai-cf-head { font-size:12px; color:#1F2937; font-weight:600; margin:0 4px 10px; display:flex; justify-content:space-between; align-items:center; }
+.ai-cf-pill { font-size:10px; padding:3px 8px; border-radius:99px; background:#D1FAE5; color:#065F46; font-weight:500; }
+.ai-cf-pill.warn { background:#FEF3C7; color:#92400E; }
+
+.ai-card { background:#fff; border-radius:10px; padding:12px 14px; margin-bottom:8px; border-left:3px solid #1D9E75; box-shadow:0 1px 2px rgba(0,0,0,0.04); }
+.ai-card.warn { border-left-color:#BA7517; background:#FFFBEB; }
+.ai-card.err { border-left-color:#E24B4A; background:#FEF2F2; }
+.ai-card-r { display:flex; gap:8px; align-items:flex-start; margin-bottom:6px; }
+.ai-card-tag { font-size:10px; padding:3px 9px; border-radius:99px; font-weight:600; flex-shrink:0; }
+.ai-card-tag.rcv { background:#D1FAE5; color:#065F46; }
+.ai-card-tag.wdr { background:#E6F1FB; color:#0C447C; }
+.ai-card-tag.cnt { background:#F3F4F6; color:#4B5563; }
+.ai-card-tag.warn { background:#FEF3C7; color:#92400E; }
+.ai-card-nm { font-size:12px; color:#1F2937; font-weight:500; flex:1; }
+.ai-card-rmv { background:none; border:none; color:#9CA3AF; font-size:14px; cursor:pointer; padding:0 4px; }
+.ai-card-meta { font-size:11px; color:#6B7280; line-height:1.6; padding-left:0; }
+.ai-card-meta strong { color:#1F2937; font-weight:500; }
+.ai-card-ask { font-size:11px; color:#BA7517; margin-top:8px; font-weight:500; padding-top:6px; border-top:1px dashed #FDE68A; }
+.ai-card-opts { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+.ai-card-opt { font-size:10px; padding:5px 10px; background:#fff; border:1px solid #BA7517; color:#92400E; border-radius:99px; font-weight:500; cursor:pointer; font-family:inherit; }
+.ai-card-opt:hover { background:#FEF3C7; }
+.ai-card-opt.on { background:#BA7517; color:#fff; }
+
+.ai-cf-actions { display:flex; gap:8px; margin-top:14px; }
+.ai-cf-bnc { flex:1; padding:11px; background:#fff; color:#6B7280; border:1px solid #E5E7EB; border-radius:10px; font-size:12px; font-weight:500; font-family:inherit; cursor:pointer; }
+.ai-cf-bnp { flex:2; padding:11px; background:#1D9E75; color:#fff; border:none; border-radius:10px; font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; }
+.ai-cf-bnp:hover { background:#0d6e4f; }
+.ai-cf-bnp:disabled { background:#9CA3AF; }
+
+/* ============================================================
+   Stock Tab
+   ============================================================ */
+.stk-filter { display:flex; gap:6px; margin-bottom:12px; overflow-x:auto; padding-bottom:4px; }
+.stk-filter::-webkit-scrollbar { display:none; }
+.stk-f-btn { padding:6px 12px; background:#fff; color:#4B5563; border:1px solid #E5E7EB; border-radius:99px; font-size:10px; font-weight:500; white-space:nowrap; cursor:pointer; font-family:inherit; flex-shrink:0; }
+.stk-f-btn.on { background:#0C447C; color:#fff; border-color:#0C447C; }
+
+.stk-card { background:#fff; border-radius:10px; padding:10px 12px; margin-bottom:6px; display:flex; align-items:center; gap:10px; border:1px solid #F3F4F6; }
+.stk-card.low { border-color:#FEF3C7; background:#FFFBEB; }
+.stk-card.zero { border-color:#FECACA; background:#FEF2F2; }
+.stk-card-icon { font-size:18px; }
+.stk-card-bd { flex:1; min-width:0; }
+.stk-card-nm { font-size:12px; color:#1F2937; font-weight:500; }
+.stk-card-meta { font-size:10px; color:#9CA3AF; margin-top:1px; }
+.stk-card-stk { font-size:14px; font-weight:600; color:#1F3864; text-align:right; min-width:60px; }
+.stk-card.low .stk-card-stk { color:#BA7517; }
+.stk-card.zero .stk-card-stk { color:#E24B4A; }
+.stk-card-unit { font-size:9px; color:#9CA3AF; font-weight:400; }
+
+/* STATUS mode badges */
+.stk-status-3 { color:#1D9E75; font-size:14px; font-weight:600; }
+.stk-status-2 { color:#0C447C; font-size:14px; font-weight:600; }
+.stk-status-1 { color:#BA7517; font-size:14px; font-weight:600; }
+.stk-status-0 { color:#E24B4A; font-size:14px; font-weight:600; }
+
+/* ============================================================
+   Manual Form Tabs (รับ / เบิก / นับ)
+   ============================================================ */
+.mf-form { padding: 2px 2px; }
+.mf-grp { margin-bottom:14px; }
+.mf-lb { font-size:11px; color:#4B5563; font-weight:500; margin-bottom:5px; display:block; }
+.mf-in { width:100%; padding:10px 12px; border:1px solid #E5E7EB; border-radius:8px; font-size:13px; font-family:inherit; background:#fff; box-sizing:border-box; color:#1F2937; }
+.mf-in:focus { outline:none; border-color:#1F3864; box-shadow:0 0 0 3px rgba(31,56,100,0.1); }
+.mf-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.mf-submit { width:100%; padding:12px; background:#1D9E75; color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer; margin-top:6px; }
+.mf-submit:hover { background:#0d6e4f; }
+.mf-submit:disabled { background:#9CA3AF; }
+
+/* ============================================================
+   FAB
+   ============================================================ */
+.fab { position:fixed; right:18px; bottom:78px; width:54px; height:54px; background:#1F3864; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:28px; font-weight:300; box-shadow:0 6px 16px rgba(31,56,100,0.35); cursor:pointer; z-index:50; transition:transform .15s; }
+.fab:hover { transform:scale(1.05); }
+.fab.on { transform:rotate(45deg); }
+
+.fab-menu { position:fixed; right:18px; bottom:140px; display:flex; flex-direction:column; gap:8px; z-index:49; opacity:0; pointer-events:none; transform:translateY(8px); transition:all .2s; }
+.fab-menu.on { opacity:1; pointer-events:auto; transform:translateY(0); }
+.fab-mi { display:flex; align-items:center; gap:8px; background:#fff; padding:8px 14px; border-radius:99px; box-shadow:0 4px 12px rgba(0,0,0,0.12); font-size:12px; font-weight:500; color:#1F2937; cursor:pointer; }
+.fab-mi-i { font-size:14px; }
+
+/* ============================================================
+   Bottom Nav
+   ============================================================ */
+.bnav { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #E5E7EB; padding:6px 4px 8px; display:flex; justify-content:space-around; z-index:48; }
+.bnav-i { display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 12px; color:#9CA3AF; cursor:pointer; min-width:54px; text-decoration:none; }
+.bnav-i.on { color:#1F3864; }
+.bnav-ic { font-size:18px; }
+.bnav-lb { font-size:9px; font-weight:500; }
+
+/* ============================================================
+   Empty/Loading state
+   ============================================================ */
+.empty { text-align:center; padding:30px 16px; color:#9CA3AF; font-size:11px; }
+.empty-i { font-size:32px; margin-bottom:8px; opacity:0.4; }
+
+/* Tablet+ */
+@media(min-width:768px) {
+  .mat-app { max-width:480px; margin:0 auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="app mat-app">
+
+  <!-- Loading -->
+  <div id="loadingScreen" class="loading">
+    <div class="spinner"></div>
+    <div>กำลังโหลด Materials...</div>
+  </div>
+
+  <!-- Main -->
+  <div id="mainContent" style="display:none">
+
+    <!-- Header -->
+    <div class="mat-hdr">
+      <div class="mat-hdr-r">
+        <div>
+          <h2 class="mat-hdr-h2">📦 Materials</h2>
+          <div class="mat-hdr-sub" id="hdrSub">Bow House · loading...</div>
+        </div>
+        <button class="mat-hdr-back" onclick="window.location.href='dashboard.html?project=bow-house'">← กลับ</button>
+      </div>
+    </div>
+
+    <!-- AI Alert Banner -->
+    <div id="aiBnr" style="display:none"></div>
+
+    <!-- Tabs -->
+    <div class="mat-tabs">
+      <button class="mat-tab on" onclick="switchTab('ql', this)">⚡ Quick Log</button>
+      <button class="mat-tab" onclick="switchTab('stock', this)">📊 Stock</button>
+      <button class="mat-tab" onclick="switchTab('rcv', this)">📥 รับ</button>
+      <button class="mat-tab" onclick="switchTab('wdr', this)">📤 เบิก</button>
+      <button class="mat-tab" onclick="switchTab('cnt', this)">📝 นับ</button>
+    </div>
+
+    <!-- TAB: Quick Log -->
+    <div id="tab-ql" class="mat-tab-pane on">
+      <div class="ql-wrap">
+        <div class="ql-label">💬 พิมพ์รายการวัสดุที่จะบันทึก</div>
+        <textarea id="qlInput" class="ql-ta" placeholder="เช่น: สากลเบิก HMR 18 มิล 5 แผ่น F-03&#10;รับสกรู 2 นิ้ว 3 กล่อง&#10;นับไม้ 9 มิล เหลือ 5 แผ่น"></textarea>
+        <div class="ql-hint">💡 พิมพ์หลายรายการในข้อความเดียวก็ได้ AI จะแยกให้</div>
+        <button id="qlSubmit" class="ql-btn-ai" onclick="parseQuickLog()">
+          🤖 ให้ AI ช่วยจัดให้
+        </button>
+
+        <div class="ql-eg">
+          <div class="ql-eg-t">📌 ตัวอย่างที่ AI เข้าใจ</div>
+          <div class="ql-eg-i" onclick="useExample(this)">สากลเบิก HMR 18 มิล 5 แผ่น F-03</div>
+          <div class="ql-eg-i" onclick="useExample(this)">รับสกรู 2 นิ้ว 3 กล่อง</div>
+          <div class="ql-eg-i" onclick="useExample(this)">นับกาว DUNLOP เหลือใช้ได้</div>
+        </div>
+
+        <!-- AI Confirmation Section (rendered dynamically) -->
+        <div id="aiConfirmSection"></div>
+      </div>
+    </div>
+
+    <!-- TAB: Stock -->
+    <div id="tab-stock" class="mat-tab-pane">
+      <div class="stk-filter" id="stkFilter">
+        <button class="stk-f-btn on" onclick="setStockFilter('all',this)">ทั้งหมด</button>
+        <button class="stk-f-btn" onclick="setStockFilter('low',this)">⚠ เหลือน้อย</button>
+        <button class="stk-f-btn" onclick="setStockFilter('ไม้แผ่น',this)">ไม้แผ่น</button>
+        <button class="stk-f-btn" onclick="setStockFilter('ไฟฟ้า',this)">ไฟฟ้า</button>
+        <button class="stk-f-btn" onclick="setStockFilter('ฮาร์ดแวร์',this)">ฮาร์ดแวร์</button>
+        <button class="stk-f-btn" onclick="setStockFilter('กาว',this)">กาว</button>
+        <button class="stk-f-btn" onclick="setStockFilter('วัสดุสิ้นเปลือง',this)">สิ้นเปลือง</button>
+      </div>
+      <div id="stockList"></div>
+    </div>
+
+    <!-- TAB: รับ (Receive) -->
+    <div id="tab-rcv" class="mat-tab-pane">
+      <div class="mf-form">
+        <div class="mf-grp">
+          <label class="mf-lb">วัสดุ</label>
+          <select id="rcvMat" class="mf-in"></select>
+        </div>
+        <div class="mf-row">
+          <div class="mf-grp">
+            <label class="mf-lb">จำนวน</label>
+            <input id="rcvQty" type="number" min="1" class="mf-in" placeholder="0">
+          </div>
+          <div class="mf-grp">
+            <label class="mf-lb">ราคา/หน่วย</label>
+            <input id="rcvPrice" type="number" min="0" class="mf-in" placeholder="0 (ถ้าทราบ)">
+          </div>
+        </div>
+        <div class="mf-grp">
+          <label class="mf-lb">เลขที่ใบเสร็จ/ใบส่งของ</label>
+          <input id="rcvReceipt" type="text" class="mf-in" placeholder="เช่น IV6905126">
+        </div>
+        <div class="mf-grp">
+          <label class="mf-lb">หมายเหตุ</label>
+          <input id="rcvNotes" type="text" class="mf-in" placeholder="(ไม่บังคับ)">
+        </div>
+        <button class="mf-submit" onclick="submitReceive()">📥 บันทึกการรับ</button>
+      </div>
+    </div>
+
+    <!-- TAB: เบิก (Withdraw) -->
+    <div id="tab-wdr" class="mat-tab-pane">
+      <div class="mf-form">
+        <div class="mf-grp">
+          <label class="mf-lb">วัสดุ</label>
+          <select id="wdrMat" class="mf-in"></select>
+        </div>
+        <div class="mf-row">
+          <div class="mf-grp">
+            <label class="mf-lb">ผู้เบิก (ช่าง)</label>
+            <select id="wdrCtr" class="mf-in"></select>
+          </div>
+          <div class="mf-grp">
+            <label class="mf-lb">จำนวน</label>
+            <input id="wdrQty" type="number" min="1" class="mf-in" placeholder="0">
+          </div>
+        </div>
+        <div class="mf-grp">
+          <label class="mf-lb">FF Code (งานที่ใช้)</label>
+          <select id="wdrFF" class="mf-in"></select>
+        </div>
+        <div class="mf-grp">
+          <label class="mf-lb">หมายเหตุ</label>
+          <input id="wdrNotes" type="text" class="mf-in" placeholder="(ไม่บังคับ)">
+        </div>
+        <button class="mf-submit" onclick="submitWithdraw()">📤 บันทึกการเบิก</button>
+      </div>
+    </div>
+
+    <!-- TAB: นับ (Count) -->
+    <div id="tab-cnt" class="mat-tab-pane">
+      <div class="mf-form">
+        <div class="mf-grp">
+          <label class="mf-lb">วัสดุ</label>
+          <select id="cntMat" class="mf-in" onchange="onCountMatChange()"></select>
+        </div>
+        <div id="cntCountInput" class="mf-grp">
+          <label class="mf-lb">จำนวนที่นับได้</label>
+          <input id="cntQty" type="number" min="0" class="mf-in" placeholder="0">
+        </div>
+        <div id="cntStatusInput" class="mf-grp" style="display:none">
+          <label class="mf-lb">สถานะปัจจุบัน</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <button class="mf-in" style="background:#D1FAE5;color:#065F46;font-weight:600;cursor:pointer;border-color:#34D399" onclick="setCntStatus(3)">🟢 เต็ม</button>
+            <button class="mf-in" style="background:#E6F1FB;color:#0C447C;font-weight:600;cursor:pointer;border-color:#60A5FA" onclick="setCntStatus(2)">🔵 ใช้ได้</button>
+            <button class="mf-in" style="background:#FEF3C7;color:#92400E;font-weight:600;cursor:pointer;border-color:#FBBF24" onclick="setCntStatus(1)">🟡 ใกล้หมด</button>
+            <button class="mf-in" style="background:#FEE2E2;color:#991B1B;font-weight:600;cursor:pointer;border-color:#F87171" onclick="setCntStatus(0)">🔴 หมด</button>
+          </div>
+          <div id="cntStatusSel" style="margin-top:8px;font-size:11px;color:#6B7280">ยังไม่เลือก</div>
+        </div>
+        <div class="mf-grp">
+          <label class="mf-lb">หมายเหตุ</label>
+          <input id="cntNotes" type="text" class="mf-in" placeholder="(ไม่บังคับ)">
+        </div>
+        <button class="mf-submit" onclick="submitCount()">📝 บันทึกการนับ</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FAB -->
+<div id="fab" class="fab" onclick="toggleFab()">+</div>
+<div id="fabMenu" class="fab-menu">
+  <div class="fab-mi" onclick="quickAction('ql')"><span class="fab-mi-i">⚡</span>Quick Log</div>
+  <div class="fab-mi" onclick="quickAction('rcv')"><span class="fab-mi-i">📥</span>รับวัสดุ</div>
+  <div class="fab-mi" onclick="quickAction('wdr')"><span class="fab-mi-i">📤</span>เบิกวัสดุ</div>
+  <div class="fab-mi" onclick="quickAction('cnt')"><span class="fab-mi-i">📝</span>นับสต๊อก</div>
+</div>
+
+<!-- Bottom Nav -->
+<div class="bnav">
+  <a class="bnav-i" href="dashboard.html?project=bow-house">
+    <div class="bnav-ic">🏠</div><div class="bnav-lb">Home</div>
+  </a>
+  <a class="bnav-i on" href="#">
+    <div class="bnav-ic">📦</div><div class="bnav-lb">Materials</div>
+  </a>
+  <a class="bnav-i" href="#" onclick="alert('เร็วๆ นี้: Daily Report');return false">
+    <div class="bnav-ic">📝</div><div class="bnav-lb">Daily</div>
+  </a>
+  <a class="bnav-i" href="#" onclick="alert('เร็วๆ นี้: Team');return false">
+    <div class="bnav-ic">👷</div><div class="bnav-lb">Team</div>
+  </a>
+  <a class="bnav-i" href="projects.html">
+    <div class="bnav-ic">⋯</div><div class="bnav-lb">More</div>
+  </a>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/modal.js"></script>
+<script>
+// ตรวจสอบสิทธิ์
+if (!Auth.requireAuth('admin')) {
+  // จะถูก redirect
+}
+
+// State
+const matState = {
+  materials: [],
+  contractors: [],
+  ffs: [],
+  alerts: [],
+  stockFilter: 'all',
+  parsedItems: [],
+  cntSelectedStatus: null,
+};
+
+// ============================================================
+// LOAD
+// ============================================================
+async function loadAll() {
+  try {
+    // โหลดข้อมูลพื้นฐาน 4 อย่างพร้อมกัน
+    const [matsRes, ctrsRes, ffsRes, alertsRes] = await Promise.all([
+      API.callRead('get_materials'),
+      API.callRead('get_contractors'),
+      API.callRead('get_ff_list'),
+      API.callRead('get_ai_alerts'),
+    ]);
+
+    matState.materials = (matsRes.ok && matsRes.data) ? matsRes.data : [];
+    matState.contractors = (ctrsRes.ok && ctrsRes.data) ? ctrsRes.data : [];
+    matState.ffs = (ffsRes.ok && ffsRes.data) ? ffsRes.data : [];
+    matState.alerts = (alertsRes.ok && alertsRes.data) ? alertsRes.data : [];
+
+    document.getElementById('hdrSub').textContent =
+      `Bow House · ${matState.materials.length} รายการ`;
+
+    renderAlerts();
+    renderStock();
+    populateSelects();
+
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loadingScreen').innerHTML =
+      '<div>❌ โหลดข้อมูลไม่สำเร็จ<br><small>' + err.message + '</small></div>';
+  }
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(name, btn) {
+  document.querySelectorAll('.mat-tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.mat-tab-pane').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('tab-' + name).classList.add('on');
+}
+
+// ============================================================
+// FAB
+// ============================================================
+function toggleFab() {
+  document.getElementById('fab').classList.toggle('on');
+  document.getElementById('fabMenu').classList.toggle('on');
+}
+
+function quickAction(tab) {
+  toggleFab();
+  const btnMap = { ql:0, stock:1, rcv:2, wdr:3, cnt:4 };
+  const idx = btnMap[tab];
+  const btn = document.querySelectorAll('.mat-tab')[idx];
+  if (btn) switchTab(tab, btn);
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+}
+
+// ============================================================
+// AI ALERTS BANNER
+// ============================================================
+function renderAlerts() {
+  const bnr = document.getElementById('aiBnr');
+  const critical = matState.alerts.filter(a =>
+    a.severity === 'high' || a.severity === 'medium');
+  if (critical.length === 0) {
+    bnr.style.display = 'none';
+    return;
+  }
+  const top3 = critical.slice(0, 3);
+  const msgs = top3.map(a => a.mat_name).join(', ');
+  const more = critical.length > 3 ? ` +${critical.length - 3}` : '';
+  bnr.className = 'mat-ai-bnr';
+  bnr.innerHTML = `
+    <div class="mat-ai-bnr-i">⚠️</div>
+    <div class="mat-ai-bnr-tx">
+      <strong>${critical.length} รายการต้องการความสนใจ${more}</strong><br>${msgs}
+    </div>
+  `;
+  bnr.style.display = 'flex';
+  bnr.onclick = showAlertsModal;
+}
+
+function showAlertsModal() {
+  const html = `
+    <div class="modal-title">🚨 AI Alerts</div>
+    <div class="modal-desc">${matState.alerts.length} รายการที่ต้องสนใจ</div>
+    <div style="max-height:55vh;overflow-y:auto;margin-top:8px">
+      ${matState.alerts.map(a => `
+        <div style="border-left:3px solid ${a.severity==='high'?'#E24B4A':'#BA7517'};
+                    padding:8px 12px;margin-bottom:6px;background:#F9FAFB;border-radius:6px">
+          <div style="font-size:12px;font-weight:600;color:#1F2937">${a.mat_name}</div>
+          <div style="font-size:11px;color:#6B7280;margin-top:2px">${a.message}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>
+    </div>
+  `;
+  Modal.show(html);
+}
+
+// ============================================================
+// STOCK TAB
+// ============================================================
+function setStockFilter(f, btn) {
+  matState.stockFilter = f;
+  document.querySelectorAll('.stk-f-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderStock();
+}
+
+function renderStock() {
+  let items = matState.materials.slice();
+  const f = matState.stockFilter;
+  if (f === 'low') {
+    items = items.filter(m => {
+      if (m.tracking_mode === 'STATUS') return Number(m.current_stock) <= 1;
+      const s = Number(m.current_stock || 0);
+      const min = Number(m.min_stock_alert || 0);
+      return s === 0 || (min > 0 && s <= min);
+    });
+  } else if (f !== 'all') {
+    items = items.filter(m => m.category === f);
+  }
+
+  if (items.length === 0) {
+    document.getElementById('stockList').innerHTML =
+      '<div class="empty"><div class="empty-i">📦</div>ไม่มีรายการ</div>';
+    return;
+  }
+
+  let html = '';
+  items.forEach(m => {
+    const stock = Number(m.current_stock || 0);
+    const min = Number(m.min_stock_alert || 0);
+    const isStatus = m.tracking_mode === 'STATUS';
+
+    let cardClass = '', stockHtml = '';
+    if (isStatus) {
+      const lbl = ['🔴 หมด','🟡 ใกล้หมด','🔵 ใช้ได้','🟢 เต็ม'][stock] || '?';
+      stockHtml = `<div class="stk-status-${stock}">${lbl}</div><div class="stk-card-unit">${m.unit}</div>`;
+      if (stock === 0) cardClass = 'zero';
+      else if (stock === 1) cardClass = 'low';
+    } else {
+      if (stock === 0) cardClass = 'zero';
+      else if (min > 0 && stock <= min) cardClass = 'low';
+      stockHtml = `<div class="stk-card-stk">${stock}<span class="stk-card-unit"> ${m.unit}</span></div>`;
+    }
+
+    const icon = getCategoryIcon(m.category);
+    html += `
+      <div class="stk-card ${cardClass}" onclick="showMatDetail('${m.id}')">
+        <div class="stk-card-icon">${icon}</div>
+        <div class="stk-card-bd">
+          <div class="stk-card-nm">${m.name}</div>
+          <div class="stk-card-meta">${m.category} · ${m.id}</div>
+        </div>
+        ${stockHtml}
+      </div>
+    `;
+  });
+  document.getElementById('stockList').innerHTML = html;
+}
+
+function getCategoryIcon(cat) {
+  const map = {
+    'ไม้แผ่น': '🪵', 'ไฟฟ้า': '⚡', 'ฮาร์ดแวร์': '🔩',
+    'กาว': '🧴', 'วัสดุสิ้นเปลือง': '📋'
+  };
+  return map[cat] || '📦';
+}
+
+function showMatDetail(matId) {
+  const m = matState.materials.find(x => x.id === matId);
+  if (!m) return;
+  const isStatus = m.tracking_mode === 'STATUS';
+  const stock = Number(m.current_stock || 0);
+  let stockDisplay;
+  if (isStatus) {
+    const lbl = ['🔴 หมด','🟡 ใกล้หมด','🔵 ใช้ได้','🟢 เต็ม'][stock];
+    stockDisplay = lbl;
+  } else {
+    stockDisplay = stock + ' ' + m.unit;
+  }
+  const html = `
+    <div class="modal-title">${m.name}</div>
+    <div class="modal-desc">${m.id} · ${m.category}</div>
+    <div class="modal-info">
+      <div class="modal-info-row"><span class="modal-info-key">หน่วย:</span><span class="modal-info-val">${m.unit}</span></div>
+      <div class="modal-info-row"><span class="modal-info-key">สต๊อก:</span><span class="modal-info-val">${stockDisplay}</span></div>
+      <div class="modal-info-row"><span class="modal-info-key">โหมด:</span><span class="modal-info-val">${m.tracking_mode}</span></div>
+      ${m.min_stock_alert ? `<div class="modal-info-row"><span class="modal-info-key">เตือนที่:</span><span class="modal-info-val">${m.min_stock_alert} ${m.unit}</span></div>` : ''}
+      ${m.notes ? `<div class="modal-info-row"><span class="modal-info-key">หมายเหตุ:</span><span class="modal-info-val">${m.notes}</span></div>` : ''}
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>
+    </div>
+  `;
+  Modal.show(html);
+}
+
+// ============================================================
+// POPULATE SELECTS
+// ============================================================
+function populateSelects() {
+  const matOpts = matState.materials.map(m =>
+    `<option value="${m.id}">${m.id} - ${m.name}</option>`).join('');
+  ['rcvMat','wdrMat','cntMat'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<option value="">— เลือกวัสดุ —</option>' + matOpts;
+  });
+
+  const ctrOpts = matState.contractors
+    .filter(c => c.role === 'CONTRACTOR' || c.role === 'FOREMAN')
+    .map(c => `<option value="${c.id}">${c.name} (${c.role})</option>`).join('');
+  const wdrCtr = document.getElementById('wdrCtr');
+  if (wdrCtr) wdrCtr.innerHTML = '<option value="">— เลือก —</option>' + ctrOpts;
+
+  const ffOpts = matState.ffs.map(f =>
+    `<option value="${f.code}">${f.code} - ${f.name}</option>`).join('');
+  const wdrFF = document.getElementById('wdrFF');
+  if (wdrFF) wdrFF.innerHTML = '<option value="">— เลือก FF —</option>' + ffOpts;
+}
+
+// ============================================================
+// QUICK LOG (AI)
+// ============================================================
+function useExample(el) {
+  const text = el.textContent.trim();
+  const ta = document.getElementById('qlInput');
+  ta.value = ta.value ? ta.value + '\n' + text : text;
+  ta.focus();
+}
+
+async function parseQuickLog() {
+  const text = document.getElementById('qlInput').value.trim();
+  if (!text) {
+    Modal.toast('กรุณาพิมพ์ข้อความก่อน');
+    return;
+  }
+
+  const btn = document.getElementById('qlSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> กำลังวิเคราะห์...';
+
+  try {
+    const res = await API.callRead('parse_material_log', { text });
+    if (!res.ok) throw new Error(res.error || 'ผิดพลาด');
+
+    matState.parsedItems = (res.data.items || []).map(item => ({
+      ...item,
+      _selected: true,
+      _resolvedField: null,
+    }));
+
+    renderAiConfirmation(res.data);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🤖 ให้ AI ช่วยจัดให้';
+  }
+}
+
+function renderAiConfirmation(data) {
+  const sec = document.getElementById('aiConfirmSection');
+  const items = data.items || [];
+  const clarif = data.needs_clarification || [];
+
+  if (items.length === 0 && clarif.length === 0) {
+    sec.innerHTML = `
+      <div class="ai-cf">
+        <div class="ai-card err">
+          <div class="ai-card-r">
+            <span class="ai-card-tag warn">❓ AI ไม่เข้าใจ</span>
+          </div>
+          <div class="ai-card-meta">ลองเขียนใหม่ หรือใช้ form ด้านบนแทน</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = `
+    <div class="ai-cf">
+      <div class="ai-cf-head">
+        <span>🤖 AI พบ ${items.length} รายการ</span>
+        <span class="ai-cf-pill ${clarif.length>0?'warn':''}">${clarif.length>0?'มีบางส่วนต้องระบุ':'ตรวจสอบก่อนยืนยัน'}</span>
+      </div>
+  `;
+
+  items.forEach((item, i) => {
+    const typeMap = {
+      'รับ':   { cls:'rcv', icon:'📥' },
+      'เบิก':  { cls:'wdr', icon:'📤' },
+      'นับ':   { cls:'cnt', icon:'📝' }
+    };
+    const t = typeMap[item.type] || { cls:'cnt', icon:'❓' };
+    const hasMissing = (item.missing || []).length > 0;
+    const cardCls = hasMissing ? 'warn' : '';
+
+    html += `
+      <div class="ai-card ${cardCls}" data-idx="${i}">
+        <div class="ai-card-r">
+          <span class="ai-card-tag ${t.cls}">${t.icon} ${item.type}</span>
+          <span class="ai-card-nm">${item.material_name || '?'}</span>
+          <button class="ai-card-rmv" onclick="removeAiItem(${i})">✕</button>
+        </div>
+        <div class="ai-card-meta">
+          จำนวน <strong>${item.quantity} ${item.unit || ''}</strong>
+          ${item.contractor_name ? ` · ผู้เบิก <strong>${item.contractor_name}</strong>` : ''}
+          ${item.ff_code ? ` · FF <strong>${item.ff_code}</strong>` : ''}
+        </div>
+        ${hasMissing ? `<div class="ai-card-ask">⚠️ ยังขาด: ${item.missing.join(', ')}</div>` : ''}
+      </div>
+    `;
+  });
+
+  clarif.forEach((c, i) => {
+    const opts = (c.options || []).map(o =>
+      `<button class="ai-card-opt" onclick="resolveClarif(${i},'${o.id}','${o.name.replace(/'/g,"\\'")}')">${o.name}</button>`
+    ).join('');
+    html += `
+      <div class="ai-card warn" data-clarif="${i}">
+        <div class="ai-card-r">
+          <span class="ai-card-tag warn">❓ ต้องระบุ</span>
+          <span class="ai-card-nm">${c.raw_text}</span>
+        </div>
+        <div class="ai-card-meta"><strong>${c.issue}</strong></div>
+        ${opts ? `<div class="ai-card-opts">${opts}</div>` : ''}
+      </div>
+    `;
+  });
+
+  html += `
+      <div class="ai-cf-actions">
+        <button class="ai-cf-bnc" onclick="cancelAi()">ยกเลิก</button>
+        <button class="ai-cf-bnp" onclick="confirmAi()">✓ ยืนยัน ${items.length} รายการ</button>
+      </div>
+    </div>
+  `;
+  sec.innerHTML = html;
+}
+
+function removeAiItem(idx) {
+  matState.parsedItems.splice(idx, 1);
+  const text = document.getElementById('qlInput').value;
+  parseQuickLog.lastInput = text;
+  if (matState.parsedItems.length === 0) {
+    cancelAi();
+  } else {
+    // re-render
+    renderAiConfirmation({
+      items: matState.parsedItems,
+      needs_clarification: []
+    });
+  }
+}
+
+function resolveClarif(idx, matId, matName) {
+  // เพิ่ม item ใหม่จาก clarification (ผู้ใช้เลือกขนาด)
+  Modal.toast('✓ เลือก ' + matName + ' แล้ว');
+  // TODO: prompt for missing info, add to items
+}
+
+function cancelAi() {
+  matState.parsedItems = [];
+  document.getElementById('aiConfirmSection').innerHTML = '';
+  document.getElementById('qlInput').value = '';
+}
+
+async function confirmAi() {
+  if (matState.parsedItems.length === 0) return;
+
+  Modal.toast('กำลังบันทึก...');
+
+  const res = await API.callWrite('confirm_material_log', {
+    items: JSON.stringify(matState.parsedItems)
+  });
+
+  // no-cors → ต้อง re-fetch
+  setTimeout(async () => {
+    Modal.toast('✓ บันทึกแล้ว ' + matState.parsedItems.length + ' รายการ');
+    cancelAi();
+    await loadAll();
+  }, 1500);
+}
+
+// ============================================================
+// MANUAL FORMS
+// ============================================================
+async function submitReceive() {
+  const data = {
+    material_id: document.getElementById('rcvMat').value,
+    quantity: document.getElementById('rcvQty').value,
+    unit_price: document.getElementById('rcvPrice').value || 0,
+    receipt_no: document.getElementById('rcvReceipt').value,
+    notes: document.getElementById('rcvNotes').value,
+  };
+  if (!data.material_id || !data.quantity) {
+    Modal.toast('กรุณาเลือกวัสดุและจำนวน');
+    return;
+  }
+  Modal.toast('กำลังบันทึก...');
+  await API.callWrite('receive_material', data);
+  setTimeout(async () => {
+    Modal.toast('✓ บันทึกการรับแล้ว');
+    document.getElementById('rcvQty').value = '';
+    document.getElementById('rcvPrice').value = '';
+    document.getElementById('rcvReceipt').value = '';
+    document.getElementById('rcvNotes').value = '';
+    await loadAll();
+  }, 1500);
+}
+
+async function submitWithdraw() {
+  const data = {
+    material_id: document.getElementById('wdrMat').value,
+    quantity: document.getElementById('wdrQty').value,
+    contractor_id: document.getElementById('wdrCtr').value,
+    ff_code: document.getElementById('wdrFF').value,
+    notes: document.getElementById('wdrNotes').value,
+  };
+  if (!data.material_id || !data.quantity || !data.contractor_id) {
+    Modal.toast('กรุณาเลือกวัสดุ ผู้เบิก และจำนวน');
+    return;
+  }
+  Modal.toast('กำลังบันทึก...');
+  await API.callWrite('withdraw_material', data);
+  setTimeout(async () => {
+    Modal.toast('✓ บันทึกการเบิกแล้ว');
+    document.getElementById('wdrQty').value = '';
+    document.getElementById('wdrNotes').value = '';
+    await loadAll();
+  }, 1500);
+}
+
+function onCountMatChange() {
+  const matId = document.getElementById('cntMat').value;
+  const m = matState.materials.find(x => x.id === matId);
+  if (!m) return;
+  const isStatus = m.tracking_mode === 'STATUS';
+  document.getElementById('cntCountInput').style.display = isStatus ? 'none' : 'block';
+  document.getElementById('cntStatusInput').style.display = isStatus ? 'block' : 'none';
+  matState.cntSelectedStatus = null;
+  document.getElementById('cntStatusSel').textContent = 'ยังไม่เลือก';
+}
+
+function setCntStatus(v) {
+  matState.cntSelectedStatus = v;
+  const lbls = ['🔴 หมด','🟡 ใกล้หมด','🔵 ใช้ได้','🟢 เต็ม'];
+  document.getElementById('cntStatusSel').innerHTML = '✓ เลือก: <strong>' + lbls[v] + '</strong>';
+}
+
+async function submitCount() {
+  const matId = document.getElementById('cntMat').value;
+  if (!matId) { Modal.toast('กรุณาเลือกวัสดุ'); return; }
+  const m = matState.materials.find(x => x.id === matId);
+  const isStatus = m.tracking_mode === 'STATUS';
+
+  let newStock;
+  if (isStatus) {
+    if (matState.cntSelectedStatus === null) {
+      Modal.toast('กรุณาเลือกสถานะ');
+      return;
+    }
+    newStock = matState.cntSelectedStatus;
+  } else {
+    newStock = document.getElementById('cntQty').value;
+    if (newStock === '') { Modal.toast('กรุณาใส่จำนวน'); return; }
+  }
+
+  Modal.toast('กำลังบันทึก...');
+  await API.callWrite('count_material', {
+    material_id: matId,
+    new_stock: newStock,
+    notes: document.getElementById('cntNotes').value,
+    trigger_source: 'manual',
+  });
+  setTimeout(async () => {
+    Modal.toast('✓ บันทึกการนับแล้ว');
+    document.getElementById('cntQty').value = '';
+    document.getElementById('cntNotes').value = '';
+    matState.cntSelectedStatus = null;
+    document.getElementById('cntStatusSel').textContent = 'ยังไม่เลือก';
+    await loadAll();
+  }, 1500);
+}
+
+// START
+loadAll();
+</script>
+
+</body>
+</html>
