@@ -150,11 +150,24 @@
       <div class="gauge-row" id="gaugeRow"></div>
     </div>
 
-    <!-- Weight Progress List -->
+    <!-- Weight Progress List (รวมกับ Checklist) -->
     <div class="card">
       <div class="card-title">
-        <span>📈 ความคืบหน้ารายชิ้น · เรียงตามมูลค่า</span>
-        <span style="font-size:9px;color:#9CA3AF">กดเพื่อดู task</span>
+        <span>📈 ความคืบหน้ารายชิ้น</span>
+        <span style="font-size:9px;color:#9CA3AF">กดเพื่อดู task · ติ๊กเสร็จได้</span>
+      </div>
+      <div class="zone-tabs" id="zoneTabs">
+        <button class="zt on" onclick="setZone('all',this)">ทุก Zone</button>
+        <button class="zt" onclick="setZone('Zone 1',this)">Zone 1</button>
+        <button class="zt" onclick="setZone('Zone 2',this)">Zone 2</button>
+        <button class="zt" onclick="setZone('Zone 3',this)">Zone 3</button>
+        <button class="zt" onclick="setZone('Zone 4',this)">Zone 4</button>
+      </div>
+      <div class="sort-row" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:10px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">เรียงตาม:</span>
+        <button class="zt on" onclick="setSort('weight',this)">มูลค่า ↓</button>
+        <button class="zt" onclick="setSort('code',this)">FF Code</button>
+        <button class="zt" onclick="setSort('progress',this)">% คืบหน้า</button>
       </div>
       <div id="weightList"></div>
     </div>
@@ -177,19 +190,6 @@
         <span><span class="legend-d" style="background:#0d6e4f"></span>เสร็จแล้ว</span>
         <span><span class="legend-d" style="background:#E24B4A"></span>ล่าช้า</span>
       </div>
-    </div>
-
-    <!-- Checklist -->
-    <div class="card">
-      <div class="card-title">✓ Checklist รายชิ้น</div>
-      <div class="zone-tabs" id="zoneTabs">
-        <button class="zt on" onclick="setZone('all',this)">ทุก Zone</button>
-        <button class="zt" onclick="setZone('Zone 1',this)">Zone 1</button>
-        <button class="zt" onclick="setZone('Zone 2',this)">Zone 2</button>
-        <button class="zt" onclick="setZone('Zone 3',this)">Zone 3</button>
-        <button class="zt" onclick="setZone('Zone 4',this)">Zone 4</button>
-      </div>
-      <div id="ffList"></div>
     </div>
 
     <!-- Risk -->
@@ -240,7 +240,6 @@ function renderAll() {
   renderWeightList();
   renderNgwdGrid();
   renderTimeline();
-  renderFFList();
   renderRisks();
 }
 
@@ -354,15 +353,25 @@ function renderGauge() {
 // WEIGHT LIST
 // ============================================================
 function renderWeightList() {
-  // เรียงตาม FF Weight มากไปน้อย
-  const sorted = state.data.ffs.slice().sort((a,b) => {
-    const wa = state.weights[a.code]?.ffWeight || 0;
-    const wb = state.weights[b.code]?.ffWeight || 0;
-    return wb - wa;
-  });
+  // กรองตาม Zone
+  let filtered = state.zone === 'all' ? state.data.ffs.slice() : state.data.ffs.filter(ff => ff.zone === state.zone);
+
+  // เรียงตาม sort mode
+  const sortMode = state.sortMode || 'weight';
+  if (sortMode === 'weight') {
+    filtered.sort((a,b) => {
+      const wa = state.weights[a.code]?.ffWeight || 0;
+      const wb = state.weights[b.code]?.ffWeight || 0;
+      return wb - wa;
+    });
+  } else if (sortMode === 'code') {
+    filtered.sort((a,b) => parseInt(a.code.replace("F-","")) - parseInt(b.code.replace("F-","")));
+  } else if (sortMode === 'progress') {
+    filtered.sort((a,b) => calcFFProgressWeighted(b.code).pct - calcFFProgressWeighted(a.code).pct);
+  }
 
   let html = '';
-  sorted.forEach(ff => {
+  filtered.forEach(ff => {
     const w = state.weights[ff.code];
     const prog = calcFFProgressWeighted(ff.code);
     const wPct = ((w?.ffWeight || 0) * 100).toFixed(2);
@@ -383,7 +392,26 @@ function renderWeightList() {
       html += renderFFSubtasks(ff.code);
     }
   });
+
+  if (filtered.length === 0) {
+    html = '<div style="text-align:center;padding:20px;color:#9CA3AF;font-size:12px">ไม่มีรายการใน Zone นี้</div>';
+  }
+
   document.getElementById('weightList').innerHTML = html;
+}
+
+function setZone(zone, btn) {
+  state.zone = zone;
+  document.querySelectorAll('.zone-tabs .zt').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderWeightList();
+}
+
+function setSort(mode, btn) {
+  state.sortMode = mode;
+  document.querySelectorAll('.sort-row .zt').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderWeightList();
 }
 
 function renderFFSubtasks(ffCode) {
@@ -793,47 +821,6 @@ function renderTimeline() {
     <div style="margin-left:auto;color:#E24B4A">📍 สัปดาห์ที่ ${currentWeek}/20</div>
   </div>`;
   container.innerHTML = summary + html;
-}
-
-// ============================================================
-// CHECKLIST
-// ============================================================
-function setZone(zone, btn) {
-  state.zone = zone;
-  document.querySelectorAll('.zt').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  renderFFList();
-}
-
-function renderFFList() {
-  const filtered = state.zone === 'all' ? state.data.ffs : state.data.ffs.filter(ff => ff.zone === state.zone);
-  const sorted = filtered.slice().sort((a,b) => parseInt(a.code.replace("F-","")) - parseInt(b.code.replace("F-","")));
-
-  let html = '';
-  sorted.forEach(ff => {
-    const prog = calcFFProgressWeighted(ff.code);
-    const isExpanded = state.openFFs.has('cl_' + ff.code);
-    html += `<div class="ff-card${isExpanded?' expanded':''}">
-      <div class="ff-c-h" onclick="toggleChecklistFF('${ff.code}')">
-        <span class="ff-c-code">${ff.code}</span>
-        <span class="ff-c-name">${ff.name}</span>
-        <div class="ff-c-prog">
-          <div class="ff-c-bar"><div class="ff-c-bar-fill" style="width:${prog.pct}%"></div></div>
-          <span class="ff-c-pct">${prog.done}/${prog.total}</span>
-        </div>
-        <span class="ff-c-chev">▾</span>
-      </div>
-      <div class="ff-c-body">${renderFFSubtasks(ff.code)}</div>
-    </div>`;
-  });
-  document.getElementById('ffList').innerHTML = html;
-}
-
-function toggleChecklistFF(ffCode) {
-  const key = 'cl_' + ffCode;
-  if (state.openFFs.has(key)) state.openFFs.delete(key);
-  else state.openFFs.add(key);
-  renderFFList();
 }
 
 // ============================================================
