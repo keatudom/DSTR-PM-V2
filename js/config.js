@@ -4,6 +4,7 @@
 // ============================================================
 
 const CONFIG = {
+  // Apps Script v4 - Backward compat + AI parser
   APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwTqbjq54JzVD81OklbVJ1oSRaROJqc0oJSjg1ovTp3ZWBAfvtwam7_Ksjqps0HjhG1/exec',
 
   // Google Sheets ID
