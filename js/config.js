@@ -4,7 +4,7 @@
 // ============================================================
 
 const CONFIG = {
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyHDZZrw6Z9RvO5QwYpKT9__VZJ9PaPefhwTbHAuXpRhFMyCHN19OlukCTyrdQCWlw/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwTqbjq54JzVD81OklbVJ1oSRaROJqc0oJSjg1ovTp3ZWBAfvtwam7_Ksjqps0HjhG1/exec',
 
   // Google Sheets ID
   SHEETS_ID: '10P_wZ9GfcWGukAotewBEzpgr-NtvpJ28MALYB83HVHc',
