@@ -3,13 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Daily Report · Bow House</title>
+<title>Daily · Bow House</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/main.css">
 <style>
-/* ============================================================
-   Daily Report — Mobile-first
-   ============================================================ */
 .dr-app { padding-bottom: 80px; }
 
 /* Header */
@@ -18,98 +15,89 @@
 .dr-hdr-h { font-size:17px; font-weight:600; margin:0; color:#fff; }
 .dr-hdr-d { font-size:11px; opacity:0.85; margin-top:2px; }
 .dr-hdr-sub { font-size:10px; opacity:0.7; margin-top:1px; }
-.dr-hdr-back { background:rgba(255,255,255,0.15); color:#fff; border:none; padding:6px 12px; border-radius:99px; font-size:11px; font-weight:500; font-family:inherit; }
+.dr-hdr-back { background:rgba(255,255,255,0.15); color:#fff; border:none; padding:6px 12px; border-radius:99px; font-size:11px; font-weight:500; font-family:inherit; cursor:pointer; }
 
-/* Mode tabs */
-.dr-mode { display:flex; gap:6px; margin-bottom:12px; }
-.dr-mode-b { flex:1; padding:9px 12px; background:#fff; border:1px solid #E5E7EB; border-radius:10px; font-size:11px; text-align:center; font-weight:500; color:#4B5563; cursor:pointer; font-family:inherit; }
-.dr-mode-b.on { background:#1F3864; color:#fff; border-color:#1F3864; }
-
-/* Pane */
-.dr-pane { display:none; }
-.dr-pane.on { display:block; }
-
-/* Date picker bar */
-.dr-date-bar { background:#fff; border-radius:10px; padding:10px 12px; margin-bottom:10px; display:flex; gap:8px; align-items:center; border:1px solid #E5E7EB; }
-.dr-date-bar-lb { font-size:11px; color:#6B7280; font-weight:500; }
+/* Date bar */
+.dr-date-bar { background:#fff; border-radius:10px; padding:9px 12px; margin-bottom:10px; display:flex; gap:8px; align-items:center; border:1px solid #E5E7EB; }
 .dr-date-bar input { flex:1; padding:6px 10px; border:1px solid #E5E7EB; border-radius:8px; font-size:12px; font-family:inherit; }
+.dr-date-nav { width:32px; height:32px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; cursor:pointer; font-size:14px; }
+.dr-date-nav:hover { background:#1F3864; color:#fff; border-color:#1F3864; }
+.dr-date-nav:disabled { opacity:0.4; cursor:not-allowed; }
 
-/* Section cards */
-.dr-card { background:#fff; border-radius:10px; padding:12px 14px; margin-bottom:8px; border:1px solid #F3F4F6; }
-.dr-card-t { font-size:11px; font-weight:600; color:#4B5563; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em; display:flex; gap:6px; align-items:center; justify-content:space-between; }
-.dr-card-t-r { font-size:9px; color:#1D9E75; font-weight:500; text-transform:none; letter-spacing:0; }
+/* Today stats */
+.dr-stats { background:linear-gradient(135deg,#EFF6FF,#DBEAFE); border-radius:12px; padding:10px 14px; margin-bottom:10px; }
+.dr-stats-h { font-size:11px; font-weight:600; color:#1E40AF; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
+.dr-stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.dr-stat-c { text-align:center; }
+.dr-stat-v { font-size:18px; font-weight:700; color:#1F3864; line-height:1; }
+.dr-stat-l { font-size:9px; color:#4B5563; margin-top:2px; }
 
 /* AI Summary section */
 .dr-ai { background:linear-gradient(135deg,#EDE9FE,#DDD6FE); border-left:3px solid #7C3AED; padding:12px 14px; border-radius:10px; margin-bottom:10px; }
 .dr-ai-t { font-size:11px; font-weight:600; color:#5B21B6; margin-bottom:6px; display:flex; align-items:center; gap:6px; justify-content:space-between; }
-.dr-ai-tx { font-size:11.5px; color:#4C1D95; line-height:1.6; }
-.dr-ai-btn { background:rgba(124,58,237,0.15); color:#5B21B6; border:none; padding:4px 10px; border-radius:99px; font-size:10px; font-weight:500; cursor:pointer; font-family:inherit; }
+.dr-ai-tx { font-size:11.5px; color:#4C1D95; line-height:1.7; white-space:pre-wrap; }
+.dr-ai-btn { background:rgba(124,58,237,0.15); color:#5B21B6; border:none; padding:5px 10px; border-radius:99px; font-size:10px; font-weight:500; cursor:pointer; font-family:inherit; }
 .dr-ai-btn:hover { background:rgba(124,58,237,0.25); }
-.dr-ai-loading { text-align:center; padding:12px; color:#7C3AED; font-size:11px; }
+.dr-ai-loading { text-align:center; padding:14px; color:#7C3AED; font-size:11px; }
+.dr-ai-empty { color:#7C3AED; opacity:0.7; font-style:italic; font-size:11px; }
 
-/* Tasks list */
-.dr-task { display:flex; align-items:center; gap:8px; padding:5px 0; font-size:12px; color:#1F2937; }
-.dr-task-ck { width:16px; height:16px; background:#1D9E75; border-radius:4px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:9px; flex-shrink:0; }
-.dr-task-ff { font-size:10px; padding:1px 6px; background:#E6F1FB; color:#0C447C; border-radius:99px; font-weight:600; flex-shrink:0; }
-.dr-task-nm { flex:1; }
-.dr-empty-i { text-align:center; padding:14px; color:#9CA3AF; font-size:11px; }
+/* Quick input */
+.dr-input-card { background:#fff; border-radius:12px; padding:10px; margin-bottom:10px; border:1px solid #E5E7EB; box-shadow:0 2px 8px rgba(31,56,100,0.04); }
+.dr-input-ta { width:100%; min-height:52px; max-height:120px; border:1px solid #E5E7EB; border-radius:8px; padding:9px 11px; font-size:12.5px; font-family:inherit; box-sizing:border-box; resize:vertical; color:#1F2937; line-height:1.5; }
+.dr-input-ta:focus { outline:none; border-color:#1F3864; box-shadow:0 0 0 3px rgba(31,56,100,0.1); }
+.dr-input-tools { display:flex; gap:5px; margin-top:6px; flex-wrap:wrap; align-items:center; }
+.dr-tool { background:#F9FAFB; border:1px solid #E5E7EB; padding:5px 9px; border-radius:99px; font-size:10px; cursor:pointer; font-family:inherit; color:#4B5563; font-weight:500; }
+.dr-tool:hover { background:#1F3864; color:#fff; border-color:#1F3864; }
+.dr-input-submit { width:100%; padding:10px; background:#1F3864; color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; margin-top:8px; font-family:inherit; }
+.dr-input-submit:hover { background:#0C447C; }
+.dr-input-submit:disabled { background:#9CA3AF; cursor:not-allowed; }
+.dr-input-hint { font-size:9px; color:#9CA3AF; margin-top:3px; }
 
-/* Stats grid */
-.dr-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
-.dr-stat { background:#F9FAFB; padding:10px 12px; border-radius:10px; }
-.dr-stat-l { font-size:10px; color:#9CA3AF; margin-bottom:2px; }
-.dr-stat-v { font-size:15px; font-weight:600; color:#1F2937; }
-.dr-stat-sub { font-size:9px; color:#6B7280; margin-top:1px; }
+/* Timeline */
+.dr-tl-h { font-size:11px; font-weight:600; color:#4B5563; margin:14px 4px 6px; display:flex; justify-content:space-between; text-transform:uppercase; letter-spacing:0.04em; }
+.dr-tl-filters { display:flex; gap:5px; margin-bottom:8px; flex-wrap:wrap; }
+.dr-tl-f { padding:4px 10px; background:#fff; border:1px solid #E5E7EB; border-radius:99px; font-size:10px; font-weight:500; cursor:pointer; color:#4B5563; font-family:inherit; }
+.dr-tl-f.on { background:#1F3864; color:#fff; border-color:#1F3864; }
 
-/* Workers list */
-.dr-workers { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
-.dr-worker { background:#F3F4F6; padding:4px 9px; border-radius:99px; font-size:10px; color:#374151; font-weight:500; }
+.dr-period { font-size:10px; color:#9CA3AF; font-weight:600; padding:6px 4px; text-transform:uppercase; letter-spacing:0.05em; display:flex; align-items:center; gap:6px; margin-top:6px; }
+.dr-period::after { content:''; flex:1; height:1px; background:#E5E7EB; }
 
-/* Reporter info card */
-.dr-rep { display:flex; align-items:center; gap:10px; }
-.dr-rep-avatar { width:36px; height:36px; border-radius:50%; background:#1F3864; color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; flex-shrink:0; }
-.dr-rep-bd { flex:1; }
-.dr-rep-nm { font-size:13px; font-weight:600; color:#1F2937; }
-.dr-rep-rl { font-size:10px; color:#6B7280; }
+.dr-log { background:#fff; border-radius:10px; padding:10px 12px; margin-bottom:5px; display:flex; gap:10px; border:1px solid #F3F4F6; }
+.dr-log.auto { background:#F0FDF4; border-left:2px solid #1D9E75; border-color:#D1FAE5; }
+.dr-log-time { font-size:10.5px; color:#1F3864; font-weight:600; min-width:38px; padding-top:1px; }
+.dr-log.auto .dr-log-time { color:#065F46; }
+.dr-log-bd { flex:1; min-width:0; }
+.dr-log-txt { font-size:12px; color:#1F2937; line-height:1.5; word-wrap:break-word; }
+.dr-log-tags { display:flex; gap:4px; margin-top:4px; flex-wrap:wrap; }
+.dr-log-tag { font-size:9px; padding:1.5px 7px; border-radius:99px; font-weight:500; }
+.dr-tag-ff { background:#E6F1FB; color:#0C447C; }
+.dr-tag-ctr { background:#FEF3C7; color:#92400E; }
+.dr-tag-issue { background:#FEE2E2; color:#991B1B; }
+.dr-tag-auto { background:#D1FAE5; color:#065F46; }
+.dr-tag-phase { background:#E5E7EB; color:#4B5563; }
+.dr-log-x { color:#D1D5DB; font-size:13px; padding:0 4px; cursor:pointer; }
+.dr-log-x:hover { color:#E24B4A; }
 
-/* Form inputs */
-.dr-in { width:100%; padding:9px 12px; border:1px solid #E5E7EB; border-radius:8px; font-size:12px; font-family:inherit; box-sizing:border-box; color:#1F2937; background:#fff; }
-.dr-in:focus { outline:none; border-color:#1F3864; box-shadow:0 0 0 3px rgba(31,56,100,0.1); }
-.dr-ta { width:100%; min-height:80px; padding:10px 12px; border:1px solid #E5E7EB; border-radius:8px; font-size:12px; font-family:inherit; box-sizing:border-box; color:#1F2937; resize:vertical; line-height:1.6; }
-.dr-ta:focus { outline:none; border-color:#1F3864; box-shadow:0 0 0 3px rgba(31,56,100,0.1); }
-.dr-lb { font-size:11px; color:#6B7280; font-weight:500; margin-bottom:4px; display:block; }
+.dr-empty { text-align:center; padding:30px 16px; color:#9CA3AF; font-size:11px; }
+.dr-empty-i { font-size:32px; margin-bottom:8px; opacity:0.4; }
 
-/* Weather quick picks */
-.dr-weather-picks { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
-.dr-weather-p { padding:4px 10px; background:#fff; border:1px solid #E5E7EB; border-radius:99px; font-size:10px; cursor:pointer; font-family:inherit; }
-.dr-weather-p:hover { border-color:#1F3864; }
+/* AI Confirm modal content */
+.aic-card { background:#fff; border:1px solid #E5E7EB; border-radius:10px; padding:11px 13px; margin-bottom:8px; }
+.aic-section { margin-bottom:8px; }
+.aic-h { font-size:10px; font-weight:600; color:#6B7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
+.aic-tags { display:flex; gap:4px; flex-wrap:wrap; }
+.aic-tag { font-size:10px; padding:3px 9px; border-radius:99px; font-weight:500; }
+.aic-conf { font-size:10px; padding:3px 8px; border-radius:99px; display:inline-block; font-weight:500; }
+.aic-conf.h { background:#D1FAE5; color:#065F46; }
+.aic-conf.m { background:#FEF3C7; color:#92400E; }
+.aic-conf.l { background:#FEE2E2; color:#991B1B; }
+.aic-amb { background:#FFFBEB; border-left:3px solid #BA7517; padding:8px 10px; border-radius:6px; margin-top:6px; }
+.aic-amb-q { font-size:11px; font-weight:600; color:#92400E; margin-bottom:5px; }
+.aic-amb-opts { display:flex; flex-wrap:wrap; gap:4px; }
+.aic-amb-opt { font-size:10px; padding:4px 10px; background:#fff; border:1px solid #BA7517; color:#92400E; border-radius:99px; font-weight:500; cursor:pointer; font-family:inherit; }
+.aic-amb-opt:hover, .aic-amb-opt.on { background:#BA7517; color:#fff; }
 
-/* Photo upload */
-.dr-photos { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; }
-.dr-photo { aspect-ratio:1; background:#F3F4F6; border-radius:8px; overflow:hidden; position:relative; }
-.dr-photo img { width:100%; height:100%; object-fit:cover; }
-.dr-photo-x { position:absolute; top:3px; right:3px; width:20px; height:20px; background:rgba(0,0,0,0.7); color:#fff; border-radius:50%; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-.dr-photo.add { border:1.5px dashed #D1D5DB; display:flex; align-items:center; justify-content:center; color:#9CA3AF; font-size:22px; cursor:pointer; }
-.dr-photo.add:hover { border-color:#1F3864; color:#1F3864; }
-
-/* Submit */
-.dr-submit { width:100%; padding:14px; background:#1D9E75; color:#fff; border:none; border-radius:12px; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; margin-top:12px; }
-.dr-submit:hover { background:#0d6e4f; }
-.dr-submit:disabled { background:#9CA3AF; cursor:not-allowed; }
-
-/* History list */
-.dr-h-card { background:#fff; border-radius:10px; padding:12px 14px; margin-bottom:8px; border:1px solid #E5E7EB; cursor:pointer; transition:all .15s; }
-.dr-h-card:hover { border-color:#1F3864; transform:translateY(-1px); }
-.dr-h-card-r { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:5px; }
-.dr-h-card-d { font-size:13px; font-weight:600; color:#1F2937; }
-.dr-h-card-day { font-size:10px; color:#9CA3AF; margin-top:1px; }
-.dr-h-card-pill { font-size:9px; padding:2px 7px; border-radius:99px; background:#D1FAE5; color:#065F46; font-weight:500; }
-.dr-h-card-pill.draft { background:#F3F4F6; color:#6B7280; }
-.dr-h-card-meta { font-size:10px; color:#6B7280; margin-top:4px; }
-.dr-h-card-sum { font-size:11px; color:#4B5563; margin-top:6px; line-height:1.5; }
-
-/* Bottom Nav (reused) */
-.fab { position:fixed; right:18px; bottom:80px; width:54px; height:54px; background:#1F3864; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:28px; font-weight:300; box-shadow:0 6px 16px rgba(31,56,100,0.35); cursor:pointer; z-index:50; }
+/* Bottom Nav */
 .bnav { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #E5E7EB; padding:6px 4px 8px; display:flex; justify-content:space-around; z-index:48; }
 .bnav-i { display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 12px; color:#9CA3AF; cursor:pointer; min-width:54px; text-decoration:none; }
 .bnav-i.on { color:#1F3864; }
@@ -125,128 +113,75 @@
 
   <div id="loadingScreen" class="loading">
     <div class="spinner"></div>
-    <div>กำลังโหลด...</div>
+    <div>กำลังโหลด Daily Feed...</div>
   </div>
 
   <div id="mainContent" style="display:none">
 
-    <!-- Header -->
     <div class="dr-hdr">
       <div class="dr-hdr-r">
         <div>
-          <h2 class="dr-hdr-h">📝 Daily Report</h2>
-          <div class="dr-hdr-d" id="hdrToday">วันนี้</div>
-          <div class="dr-hdr-sub">Bow House · บริษัท ดีไซน์ ทีเรีย</div>
+          <h2 class="dr-hdr-h">📜 Activity Feed</h2>
+          <div class="dr-hdr-d" id="hdrDate">วันที่</div>
+          <div class="dr-hdr-sub" id="hdrSub">Bow House · บันทึกประจำวัน</div>
         </div>
         <button class="dr-hdr-back" onclick="window.location.href='dashboard.html?project=bow-house'">← กลับ</button>
       </div>
     </div>
 
-    <!-- Mode tabs -->
-    <div class="dr-mode">
-      <button class="dr-mode-b on" onclick="switchMode('today',this)">✏️ บันทึก</button>
-      <button class="dr-mode-b" onclick="switchMode('history',this)">📜 ดูย้อนหลัง</button>
+    <div class="dr-date-bar">
+      <button class="dr-date-nav" onclick="dateNav(-1)">◀</button>
+      <input id="reportDate" type="date">
+      <button class="dr-date-nav" onclick="dateNav(1)" id="dateNext">▶</button>
+      <button class="dr-date-nav" onclick="dateToday()" title="วันนี้">📅</button>
     </div>
 
-    <!-- PANE: TODAY -->
-    <div id="pane-today" class="dr-pane on">
-
-      <!-- Date selector + Reporter -->
-      <div class="dr-card">
-        <div class="dr-rep">
-          <div class="dr-rep-avatar" id="repAvatar">F</div>
-          <div class="dr-rep-bd">
-            <div class="dr-rep-nm" id="repName">ผู้ใช้งาน</div>
-            <div class="dr-rep-rl" id="repRole">FOREMAN</div>
-          </div>
-          <input id="reportDate" type="date" class="dr-in" style="max-width:140px">
-        </div>
+    <div class="dr-stats">
+      <div class="dr-stats-h">
+        <span>📊 ภาพรวม</span>
+        <span style="font-weight:400;font-size:10px" id="logCountTxt">0 events</span>
       </div>
-
-      <!-- AI Summary -->
-      <div class="dr-ai">
-        <div class="dr-ai-t">
-          <span>🤖 AI สรุปจากกิจกรรมวันนี้</span>
-          <button class="dr-ai-btn" id="aiRefresh" onclick="genAiSummary()">🔄 สร้างใหม่</button>
-        </div>
-        <div id="aiSummaryBox" class="dr-ai-tx">กดปุ่ม "สร้างใหม่" เพื่อให้ AI สรุปกิจกรรมวันนี้</div>
-      </div>
-
-      <!-- Tasks done auto-detect -->
-      <div class="dr-card">
-        <div class="dr-card-t">
-          <span>📋 งานที่เสร็จวันนี้</span>
-          <span class="dr-card-t-r" id="tasksCountTxt">auto-detect</span>
-        </div>
-        <div id="tasksDoneList">
-          <div class="dr-empty-i">ยังไม่มีงานที่ tick เสร็จในวันนี้</div>
-        </div>
-      </div>
-
-      <!-- Workers + Weather -->
-      <div class="dr-row">
-        <div class="dr-stat">
-          <div class="dr-stat-l">👷 ช่างวันนี้</div>
-          <div class="dr-stat-v" id="workersCount">0 คน</div>
-          <div class="dr-stat-sub" id="workersSub">ตามที่เบิก</div>
-        </div>
-        <div class="dr-stat">
-          <div class="dr-stat-l">🌤 สภาพอากาศ</div>
-          <input id="weatherIn" type="text" class="dr-in" placeholder="เช่น 30°C ฝนตก" style="font-size:12px;padding:5px 8px;background:transparent;border:none">
-        </div>
-      </div>
-
-      <div class="dr-card">
-        <div class="dr-card-t"><span>👷 รายชื่อช่างวันนี้</span></div>
-        <div class="dr-workers" id="workersList">
-          <span style="font-size:10px;color:#9CA3AF">ยังไม่มีข้อมูล (auto-detect จากการเบิก)</span>
-        </div>
-      </div>
-
-      <!-- Issues -->
-      <div class="dr-card">
-        <div class="dr-card-t"><span>⚠️ ปัญหา / อุปสรรค</span></div>
-        <textarea id="issuesIn" class="dr-ta" placeholder="พิมพ์ปัญหาที่พบวันนี้ (ถ้ามี)..."></textarea>
-      </div>
-
-      <!-- Weather quick picks -->
-      <div class="dr-card">
-        <div class="dr-card-t"><span>🌤 อากาศ (กดเลือกเร็ว)</span></div>
-        <div class="dr-weather-picks">
-          <button class="dr-weather-p" onclick="setWeather('☀️ แดดดี')">☀️ แดดดี</button>
-          <button class="dr-weather-p" onclick="setWeather('☁️ มืดครึ้ม')">☁️ มืดครึ้ม</button>
-          <button class="dr-weather-p" onclick="setWeather('🌧️ ฝนตก')">🌧️ ฝนตก</button>
-          <button class="dr-weather-p" onclick="setWeather('⛈️ ฝนหนัก พักงาน')">⛈️ ฝนหนัก พักงาน</button>
-          <button class="dr-weather-p" onclick="setWeather('🔥 ร้อนมาก')">🔥 ร้อนมาก</button>
-        </div>
-      </div>
-
-      <!-- Photos -->
-      <div class="dr-card">
-        <div class="dr-card-t">
-          <span>📷 รูปหน้างาน</span>
-          <span class="dr-card-t-r" id="photosCountTxt"></span>
-        </div>
-        <div class="dr-photos" id="photosGrid">
-          <div class="dr-photo add" onclick="document.getElementById('photoInput').click()">+</div>
-        </div>
-        <input id="photoInput" type="file" accept="image/*" capture="environment" multiple style="display:none" onchange="onPhotosSelected(event)">
-      </div>
-
-      <button class="dr-submit" id="submitBtn" onclick="submitReport()">✓ บันทึกรายงานวันนี้</button>
-    </div>
-
-    <!-- PANE: HISTORY -->
-    <div id="pane-history" class="dr-pane">
-      <div id="historyList">
-        <div class="dr-empty-i">กำลังโหลด...</div>
+      <div class="dr-stats-grid">
+        <div class="dr-stat-c"><div class="dr-stat-v" id="statTasks">0</div><div class="dr-stat-l">✓ tasks</div></div>
+        <div class="dr-stat-c"><div class="dr-stat-v" id="statRcv">0</div><div class="dr-stat-l">📥 รับ</div></div>
+        <div class="dr-stat-c"><div class="dr-stat-v" id="statWdr">0</div><div class="dr-stat-l">📤 เบิก</div></div>
+        <div class="dr-stat-c"><div class="dr-stat-v" id="statCtr">0</div><div class="dr-stat-l">👷 ช่าง</div></div>
       </div>
     </div>
+
+    <div class="dr-ai">
+      <div class="dr-ai-t">
+        <span>🤖 สรุปประจำวัน (Daily Report)</span>
+        <button class="dr-ai-btn" onclick="genSummary()">🔄 สร้างสรุป</button>
+      </div>
+      <div id="aiSummaryBox" class="dr-ai-tx dr-ai-empty">กดปุ่ม "สร้างสรุป" ตอนเย็น → AI จะสรุปทั้งวันให้</div>
+    </div>
+
+    <div class="dr-input-card">
+      <textarea id="logInput" class="dr-input-ta" placeholder="พิมพ์สิ่งที่เกิดขึ้น... AI จะแยก ff, ช่าง, ปัญหาให้&#10;เช่น: สากลเริ่มกรุไม้ F-03 มีเกียรติช่วย"></textarea>
+      <div class="dr-input-hint">💡 AI จะแยก tags อัตโนมัติ + ขอความยืนยันถ้าไม่ชัด</div>
+      <div class="dr-input-tools">
+        <button class="dr-tool" onclick="quickInsert('🌧️ ฝนตก ')">🌧️ ฝน</button>
+        <button class="dr-tool" onclick="quickInsert('⏸️ พักงาน ')">⏸️ พัก</button>
+        <button class="dr-tool" onclick="quickInsert('⚠️ ปัญหา: ')">⚠️ ปัญหา</button>
+        <button class="dr-tool" onclick="quickInsert('🌅 เริ่มงาน ')">🌅 เริ่ม</button>
+        <button class="dr-tool" onclick="quickInsert('🌆 ปิดงาน ')">🌆 ปิด</button>
+      </div>
+      <button id="logSubmitBtn" class="dr-input-submit" onclick="submitLog()">+ เพิ่มบันทึก (AI จะ tag ให้)</button>
+    </div>
+
+    <div class="dr-tl-h"><span>📜 Timeline</span></div>
+    <div class="dr-tl-filters">
+      <button class="dr-tl-f on" onclick="setFilter('all',this)">ทั้งหมด</button>
+      <button class="dr-tl-f" onclick="setFilter('manual',this)">📝 มือ</button>
+      <button class="dr-tl-f" onclick="setFilter('auto',this)">🤖 อัตโนมัติ</button>
+      <button class="dr-tl-f" onclick="setFilter('issue',this)">⚠️ ปัญหา</button>
+    </div>
+    <div id="timeline"></div>
 
   </div>
 </div>
 
-<!-- Bottom Nav -->
 <div class="bnav">
   <a class="bnav-i" href="dashboard.html?project=bow-house"><div class="bnav-ic">🏠</div><div class="bnav-lb">Home</div></a>
   <a class="bnav-i" href="materials.html?project=bow-house"><div class="bnav-ic">📦</div><div class="bnav-lb">Materials</div></a>
@@ -260,54 +195,33 @@
 <script src="js/api.js"></script>
 <script src="js/modal.js"></script>
 <script>
-if (!Auth.requireAuth('admin')) {
-  // redirect
-}
+if (!Auth.requireAuth('admin')) {}
 
 const drState = {
-  selectedDate: new Date().toISOString().slice(0,10),
-  detected: null,
-  reporterName: 'ผู้ใช้งาน',
-  reporterRole: 'ADMIN',
-  photos: [],
+  date: new Date().toISOString().slice(0, 10),
+  logs: [],
+  stats: null,
+  filter: 'all',
   contractors: [],
-  history: [],
+  ffs: [],
+  pendingLog: null,
 };
 
-// ============================================================
-// INIT
-// ============================================================
 async function loadAll() {
   try {
-    // Show today date in header
-    document.getElementById('hdrToday').textContent =
-      'วันที่ ' + formatThaiDate(new Date());
-
-    // Set date input
-    document.getElementById('reportDate').value = drState.selectedDate;
+    document.getElementById('reportDate').value = drState.date;
     document.getElementById('reportDate').onchange = (e) => {
-      drState.selectedDate = e.target.value;
-      autoDetect();
+      drState.date = e.target.value;
+      refresh();
     };
-
-    // Set reporter (from session/role)
-    const role = Auth.getRole();
-    drState.reporterRole = role === 'admin' ? 'ADMIN' : 'CLIENT';
-    drState.reporterName = role === 'admin' ? 'Admin (ทีมงาน)' : 'Client';
-    document.getElementById('repName').textContent = drState.reporterName;
-    document.getElementById('repRole').textContent = drState.reporterRole;
-    document.getElementById('repAvatar').textContent = drState.reporterName[0];
-
-    // Load contractors
-    const ctrs = await API.callRead('get_contractors');
+    updateHeaderDate();
+    const [ctrs, ffs] = await Promise.all([
+      API.callRead('get_contractors'),
+      API.callRead('get_ff_list')
+    ]);
     if (ctrs.ok) drState.contractors = ctrs.data || [];
-
-    // Auto-detect today's activity
-    await autoDetect();
-
-    // Load history (parallel)
-    loadHistory();
-
+    if (ffs.ok) drState.ffs = ffs.data || [];
+    await refresh();
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
   } catch (err) {
@@ -316,314 +230,367 @@ async function loadAll() {
   }
 }
 
-// ============================================================
-// MODE SWITCH
-// ============================================================
-function switchMode(mode, btn) {
-  document.querySelectorAll('.dr-mode-b').forEach(b => b.classList.remove('on'));
-  document.querySelectorAll('.dr-pane').forEach(p => p.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('pane-' + mode).classList.add('on');
-  if (mode === 'history') loadHistory();
+async function refresh() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('dateNext').disabled = drState.date >= today;
+  updateHeaderDate();
+  document.getElementById('aiSummaryBox').innerHTML =
+    '<span class="dr-ai-empty">กดปุ่ม "สร้างสรุป" ตอนเย็น → AI จะสรุปทั้งวันให้</span>';
+  await Promise.all([loadStats(), loadFeed()]);
 }
 
-// ============================================================
-// AUTO-DETECT
-// ============================================================
-async function autoDetect() {
-  document.getElementById('tasksDoneList').innerHTML = '<div class="dr-empty-i">⏳ กำลังตรวจสอบ...</div>';
-  document.getElementById('workersList').innerHTML = '<span style="font-size:10px;color:#9CA3AF">⏳ กำลังตรวจสอบ...</span>';
+function updateHeaderDate() {
+  const d = new Date(drState.date);
+  document.getElementById('hdrDate').textContent =
+    'วันที่ ' + formatThaiDate(d) + ' · ' + thaiDayName(drState.date);
+}
 
+function dateNav(delta) {
+  const d = new Date(drState.date);
+  d.setDate(d.getDate() + delta);
+  const today = new Date().toISOString().slice(0, 10);
+  const newDate = d.toISOString().slice(0, 10);
+  if (delta > 0 && newDate > today) return;
+  drState.date = newDate;
+  document.getElementById('reportDate').value = drState.date;
+  refresh();
+}
+
+function dateToday() {
+  drState.date = new Date().toISOString().slice(0, 10);
+  document.getElementById('reportDate').value = drState.date;
+  refresh();
+}
+
+async function loadStats() {
   try {
-    const res = await API.callRead('auto_detect_daily', { date: drState.selectedDate });
-    if (!res.ok || !res.data) throw new Error(res.error || 'detect failed');
+    const res = await API.callRead('get_today_stats', { date: drState.date });
+    if (!res.ok) return;
+    drState.stats = res.data;
+    renderStats(res.data);
+  } catch (e) {}
+}
 
-    drState.detected = res.data;
-    renderTasksDone(res.data.tasks_done || []);
-    renderWorkers(res.data.workers_detected || []);
+function renderStats(s) {
+  document.getElementById('statTasks').textContent = s.tasks_done || 0;
+  document.getElementById('statRcv').textContent = s.received || 0;
+  document.getElementById('statWdr').textContent = s.withdrawn || 0;
+  document.getElementById('statCtr').textContent = s.contractors_involved || 0;
+  document.getElementById('logCountTxt').textContent =
+    (s.logs_total || 0) + ' events (' + (s.logs_manual || 0) + ' มือ · ' + (s.logs_auto || 0) + ' auto)';
+}
 
-    document.getElementById('tasksCountTxt').textContent = `auto-detect ${res.data.tasks_count || 0} tasks`;
-    document.getElementById('workersCount').textContent = (res.data.workers_count || 0) + ' คน';
-    document.getElementById('workersSub').textContent =
-      (res.data.transactions_count || 0) + ' การเบิก';
+async function loadFeed() {
+  try {
+    const res = await API.callRead('get_activity_feed', { date: drState.date });
+    if (!res.ok) throw new Error('Load failed');
+    drState.logs = res.data || [];
+    renderFeed();
   } catch (err) {
-    document.getElementById('tasksDoneList').innerHTML =
-      '<div class="dr-empty-i">❌ ' + err.message + '</div>';
+    document.getElementById('timeline').innerHTML =
+      '<div class="dr-empty">❌ ' + err.message + '</div>';
   }
 }
 
-function renderTasksDone(tasks) {
-  if (tasks.length === 0) {
-    document.getElementById('tasksDoneList').innerHTML =
-      '<div class="dr-empty-i">ยังไม่มีงานที่ tick เสร็จในวันนี้</div>';
+function renderFeed() {
+  let logs = drState.logs.slice();
+  const f = drState.filter;
+  if (f === 'manual') logs = logs.filter(l => l.type === 'manual');
+  else if (f === 'auto') logs = logs.filter(l => l.type === 'auto');
+  else if (f === 'issue') logs = logs.filter(l => (l.tags_issue || []).length > 0);
+
+  if (logs.length === 0) {
+    document.getElementById('timeline').innerHTML =
+      '<div class="dr-empty"><div class="dr-empty-i">📭</div>ยังไม่มีบันทึก<br>เริ่มจากพิมพ์ด้านบนเลย!</div>';
     return;
   }
+
+  const periods = { morning: [], afternoon: [], evening: [] };
+  logs.forEach(l => {
+    const h = parseInt(String(l.timestamp || '').slice(11, 13)) || 0;
+    if (h < 12) periods.morning.push(l);
+    else if (h < 17) periods.afternoon.push(l);
+    else periods.evening.push(l);
+  });
+
+  const periodLabels = {
+    evening: '🌆 เย็น (17:00 -)',
+    afternoon: '🌞 บ่าย (12:00 - 17:00)',
+    morning: '🌅 เช้า (- 12:00)'
+  };
+
   let html = '';
-  tasks.forEach(t => {
-    html += `
-      <div class="dr-task">
-        <div class="dr-task-ck">✓</div>
-        <span class="dr-task-ff">${t.ff_code}</span>
-        <span class="dr-task-nm">${t.name}</span>
+  ['evening', 'afternoon', 'morning'].forEach(per => {
+    const items = periods[per];
+    if (items.length === 0) return;
+    html += `<div class="dr-period">${periodLabels[per]} <span style="margin-left:auto;color:#9CA3AF;font-weight:400;text-transform:none;letter-spacing:0">${items.length} events</span></div>`;
+    items.forEach(l => { html += renderLog(l); });
+  });
+
+  document.getElementById('timeline').innerHTML = html;
+}
+
+function renderLog(l) {
+  const time = String(l.timestamp || '').slice(11, 16);
+  const isAuto = l.type === 'auto';
+  const tagsHtml = [];
+  (l.tags_ff || []).forEach(t => tagsHtml.push(`<span class="dr-log-tag dr-tag-ff">${t}</span>`));
+  (l.tags_ctr || []).forEach(t => {
+    const c = drState.contractors.find(x => x.id === t);
+    tagsHtml.push(`<span class="dr-log-tag dr-tag-ctr">👤 ${c ? c.name : t}</span>`);
+  });
+  (l.tags_issue || []).forEach(t => tagsHtml.push(`<span class="dr-log-tag dr-tag-issue">⚠️ ${t}</span>`));
+  if (l.tags_phase) tagsHtml.push(`<span class="dr-log-tag dr-tag-phase">${l.tags_phase}</span>`);
+  if (isAuto) tagsHtml.push('<span class="dr-log-tag dr-tag-auto">🤖 auto</span>');
+
+  const xBtn = isAuto ? '' : `<div class="dr-log-x" onclick="deleteLog('${l.log_id}')">✕</div>`;
+
+  return `
+    <div class="dr-log ${isAuto?'auto':''}">
+      <div class="dr-log-time">${time}</div>
+      <div class="dr-log-bd">
+        <div class="dr-log-txt">${escapeHtml(l.text)}</div>
+        ${tagsHtml.length ? '<div class="dr-log-tags">' + tagsHtml.join('') + '</div>' : ''}
       </div>
-    `;
-  });
-  document.getElementById('tasksDoneList').innerHTML = html;
+      ${xBtn}
+    </div>
+  `;
 }
 
-function renderWorkers(workers) {
-  const el = document.getElementById('workersList');
-  if (workers.length === 0) {
-    el.innerHTML = '<span style="font-size:10px;color:#9CA3AF">ยังไม่มีข้อมูล (auto-detect จากการเบิก)</span>';
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
+  );
+}
+
+function setFilter(f, btn) {
+  drState.filter = f;
+  document.querySelectorAll('.dr-tl-f').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderFeed();
+}
+
+function quickInsert(text) {
+  const ta = document.getElementById('logInput');
+  if (ta.value.trim()) {
+    ta.value = ta.value.trim() + ' ' + text;
+  } else {
+    ta.value = text;
+  }
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = ta.value.length;
+}
+
+async function submitLog() {
+  const text = document.getElementById('logInput').value.trim();
+  if (!text) {
+    Modal.toast('กรุณาพิมพ์ข้อความก่อน');
     return;
   }
-  let html = '';
-  workers.forEach(w => {
-    html += `<span class="dr-worker">${w.name} · ${w.role}</span>`;
-  });
-  el.innerHTML = html;
-}
 
-// ============================================================
-// AI SUMMARY
-// ============================================================
-async function genAiSummary() {
-  const box = document.getElementById('aiSummaryBox');
-  box.innerHTML = '<div class="dr-ai-loading">🤖 AI กำลังประมวลผล...</div>';
+  const btn = document.getElementById('logSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span> AI กำลังวิเคราะห์...';
 
   try {
-    const res = await API.callRead('generate_daily_summary', { date: drState.selectedDate });
+    const parseRes = await API.callPost('parse_activity_text', { text: text });
+    if (!parseRes.ok) {
+      showAiConfirmModal(text, null);
+    } else {
+      showAiConfirmModal(text, parseRes.data);
+    }
+  } catch (err) {
+    showAiConfirmModal(text, null);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '+ เพิ่มบันทึก (AI จะ tag ให้)';
+  }
+}
+
+function showAiConfirmModal(text, ai) {
+  drState.pendingLog = { text, ai, resolvedTags: {} };
+
+  let confLevel = '', confText = '';
+  if (ai && ai.confidence !== undefined) {
+    const c = Number(ai.confidence);
+    if (c >= 0.85) { confLevel = 'h'; confText = `แม่นยำ ${Math.round(c*100)}%`; }
+    else if (c >= 0.7) { confLevel = 'm'; confText = `ปานกลาง ${Math.round(c*100)}%`; }
+    else { confLevel = 'l'; confText = `ไม่แน่ใจ ${Math.round(c*100)}%`; }
+  }
+
+  let tagsHtml = '';
+  if (ai) {
+    if (ai.summary) {
+      tagsHtml += `<div class="aic-section"><div class="aic-h">🧠 AI เข้าใจว่า</div><div style="font-size:11.5px;color:#374151;line-height:1.5;font-style:italic">"${escapeHtml(ai.summary)}"</div></div>`;
+    }
+    const ffTags = ai.tags_ff || [];
+    if (ffTags.length) {
+      tagsHtml += '<div class="aic-section"><div class="aic-h">🏠 FF Items</div><div class="aic-tags">';
+      ffTags.forEach(f => {
+        const ff = drState.ffs.find(x => x.code === f);
+        tagsHtml += `<span class="aic-tag dr-tag-ff">${f}${ff?': '+escapeHtml(ff.name).slice(0,25):''}</span>`;
+      });
+      tagsHtml += '</div></div>';
+    }
+    const ctrTags = ai.tags_ctr || [];
+    if (ctrTags.length) {
+      tagsHtml += '<div class="aic-section"><div class="aic-h">👤 ช่าง</div><div class="aic-tags">';
+      ctrTags.forEach(c => {
+        const ctr = drState.contractors.find(x => x.id === c);
+        tagsHtml += `<span class="aic-tag dr-tag-ctr">${ctr?escapeHtml(ctr.name):c}</span>`;
+      });
+      tagsHtml += '</div></div>';
+    }
+    const issueTags = ai.tags_issue || [];
+    if (issueTags.length) {
+      tagsHtml += '<div class="aic-section"><div class="aic-h">⚠️ ปัญหา/สถานการณ์</div><div class="aic-tags">';
+      issueTags.forEach(i => {
+        tagsHtml += `<span class="aic-tag dr-tag-issue">${escapeHtml(i)}</span>`;
+      });
+      tagsHtml += '</div></div>';
+    }
+
+    const amb = ai.ambiguous || [];
+    if (amb.length) {
+      tagsHtml += '<div class="aic-h" style="margin-top:10px;color:#92400E">❓ ต้องระบุเพิ่ม</div>';
+      amb.forEach((a, idx) => {
+        tagsHtml += `<div class="aic-amb">
+          <div class="aic-amb-q">"${escapeHtml(a.term)}" — ${escapeHtml(a.reason || 'มีหลายความหมาย')}</div>
+          <div class="aic-amb-opts" data-amb="${idx}">`;
+        (a.options || []).forEach(opt => {
+          const ff = drState.ffs.find(x => x.code === opt);
+          tagsHtml += `<button class="aic-amb-opt" onclick="resolveAmbiguous(${idx},'${opt}',this)">${opt}${ff?' '+escapeHtml(ff.name).slice(0,20):''}</button>`;
+        });
+        tagsHtml += `<button class="aic-amb-opt" onclick="resolveAmbiguous(${idx},'__skip__',this)" style="border-color:#9CA3AF;color:#6B7280">ข้าม</button>`;
+        tagsHtml += '</div></div>';
+      });
+    }
+  } else {
+    tagsHtml = '<div class="aic-section" style="color:#6B7280;font-size:11px">⚠️ AI ไม่สามารถวิเคราะห์ได้ — บันทึกแบบไม่มี tag</div>';
+  }
+
+  const html = `
+    <div class="modal-title">🤖 ยืนยันก่อนบันทึก</div>
+    <div class="modal-desc">${confText ? `<span class="aic-conf ${confLevel}">${confText}</span> ` : ''}AI วิเคราะห์ tags ให้แล้ว — กดยืนยันถ้าถูก</div>
+    <div class="aic-card">
+      <div class="aic-section">
+        <div class="aic-h">📝 ข้อความ</div>
+        <div style="font-size:12px;color:#1F2937;line-height:1.5">${escapeHtml(text)}</div>
+      </div>
+      ${tagsHtml}
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="cancelLog()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="confirmLog()">✓ ยืนยันบันทึก</button>
+    </div>
+  `;
+  Modal.show(html, 'pay-modal');
+}
+
+function resolveAmbiguous(idx, choice, btn) {
+  if (!drState.pendingLog) return;
+  btn.parentElement.querySelectorAll('.aic-amb-opt').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  drState.pendingLog.resolvedTags['amb_' + idx] = choice;
+}
+
+function cancelLog() {
+  drState.pendingLog = null;
+  Modal.close();
+}
+
+async function confirmLog() {
+  if (!drState.pendingLog) return;
+  const { text, ai, resolvedTags } = drState.pendingLog;
+
+  let tags_ff = (ai && ai.tags_ff) ? ai.tags_ff.slice() : [];
+  let tags_ctr = (ai && ai.tags_ctr) ? ai.tags_ctr.slice() : [];
+  let tags_issue = (ai && ai.tags_issue) ? ai.tags_issue.slice() : [];
+  let tags_phase = (ai && ai.tags_phase) ? ai.tags_phase : '';
+
+  if (ai && ai.ambiguous) {
+    ai.ambiguous.forEach((a, idx) => {
+      const choice = resolvedTags['amb_' + idx];
+      if (choice && choice !== '__skip__') {
+        if (choice.match(/^F-/)) tags_ff.push(choice);
+        else if (choice.match(/^C\d/)) tags_ctr.push(choice);
+      }
+    });
+  }
+
+  tags_ff = [...new Set(tags_ff)];
+  tags_ctr = [...new Set(tags_ctr)];
+  tags_issue = [...new Set(tags_issue)];
+
+  Modal.close();
+  Modal.toast('กำลังบันทึก...');
+
+  try {
+    const res = await API.callPost('add_activity_log', {
+      text: text,
+      source: 'admin',
+      auto_tag: false,
+      tags_ff: tags_ff,
+      tags_ctr: tags_ctr,
+      tags_issue: tags_issue,
+      tags_phase: tags_phase,
+      date: drState.date
+    });
+    if (!res.ok) throw new Error(res.error || 'Save failed');
+
+    Modal.toast('✓ บันทึกแล้ว');
+    document.getElementById('logInput').value = '';
+    drState.pendingLog = null;
+    await refresh();
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+async function genSummary() {
+  const box = document.getElementById('aiSummaryBox');
+  box.innerHTML = '<div class="dr-ai-loading">🤖 AI กำลังสรุป...</div>';
+  try {
+    const res = await API.callPost('generate_daily_summary_v2', { date: drState.date });
     if (!res.ok || !res.data) throw new Error(res.error || 'AI failed');
-    box.textContent = res.data.summary;
+    box.textContent = res.data.summary || '(ไม่มีข้อมูลให้สรุป)';
   } catch (err) {
     box.innerHTML = '<span style="color:#991B1B">❌ ' + err.message + '</span>';
   }
 }
 
-// ============================================================
-// WEATHER QUICK PICK
-// ============================================================
-function setWeather(text) {
-  document.getElementById('weatherIn').value = text;
-}
-
-// ============================================================
-// PHOTOS
-// ============================================================
-function compressImage(file, maxDim = 1280, quality = 0.8) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let w = img.width, h = img.height;
-        if (w > h && w > maxDim) { h = h * (maxDim / w); w = maxDim; }
-        else if (h > maxDim) { w = w * (maxDim / h); h = maxDim; }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function onPhotosSelected(e) {
-  const files = Array.from(e.target.files || []);
-  if (!files.length) return;
-  Modal.toast('📷 กำลังประมวลผล ' + files.length + ' รูป...');
-  for (const f of files) {
-    try {
-      const b64 = await compressImage(f);
-      drState.photos.push(b64);
-    } catch (err) {}
-  }
-  renderPhotos();
-  e.target.value = '';
-  Modal.toast('✓ เพิ่ม ' + files.length + ' รูป');
-}
-
-function renderPhotos() {
-  const grid = document.getElementById('photosGrid');
-  let html = '';
-  drState.photos.forEach((b64, i) => {
-    html += `
-      <div class="dr-photo">
-        <img src="${b64}">
-        <div class="dr-photo-x" onclick="removePhoto(${i})">✕</div>
-      </div>
-    `;
-  });
-  html += '<div class="dr-photo add" onclick="document.getElementById(\'photoInput\').click()">+</div>';
-  grid.innerHTML = html;
-  document.getElementById('photosCountTxt').textContent =
-    drState.photos.length > 0 ? `${drState.photos.length} รูป` : '';
-}
-
-function removePhoto(idx) {
-  drState.photos.splice(idx, 1);
-  renderPhotos();
-}
-
-// ============================================================
-// SUBMIT
-// ============================================================
-async function submitReport() {
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.textContent = 'กำลังบันทึก...';
-
+async function deleteLog(logId) {
+  if (!confirm('ลบบันทึกนี้?')) return;
   try {
-    // 1. Compose data
-    const tasksDoneText = (drState.detected?.tasks_done || [])
-      .map(t => `${t.ff_code}: ${t.name}`).join('; ');
-    const workersText = (drState.detected?.workers_detected || [])
-      .map(w => w.name).join(', ');
-    const summaryBox = document.getElementById('aiSummaryBox').textContent.trim();
-
-    // 2. Save report (callPost - need response)
-    const res = await API.callPost('create_daily', {
-      project_id: 'bow-house',
-      date: drState.selectedDate,
-      reporter_name: drState.reporterName,
-      reporter_role: drState.reporterRole,
-      weather: document.getElementById('weatherIn').value,
-      tasks_done: tasksDoneText,
-      workers_count: drState.detected?.workers_count || 0,
-      workers_list: workersText,
-      issues: document.getElementById('issuesIn').value,
-      summary_text: summaryBox === 'กดปุ่ม "สร้างใหม่" เพื่อให้ AI สรุปกิจกรรมวันนี้' ? '' : summaryBox,
-    });
-
-    if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
-    const reportId = res.data?.id || 'DR-???';
-
-    // 3. Upload photos (parallel-ish)
-    if (drState.photos.length > 0) {
-      Modal.toast('📷 กำลังอัปโหลด ' + drState.photos.length + ' รูป...');
-      for (const b64 of drState.photos) {
-        try {
-          await API.callPost('upload_photo', {
-            image_base64: b64,
-            linked_to: 'daily',
-            link_id: reportId,
-            caption: 'Daily report ' + drState.selectedDate,
-            uploaded_by: drState.reporterName
-          });
-        } catch (e) {}
-      }
-    }
-
-    Modal.toast('✓ บันทึกรายงานสำเร็จ');
-    setTimeout(() => {
-      drState.photos = [];
-      renderPhotos();
-      loadHistory();
-    }, 1000);
+    const res = await API.callPost('delete_activity_log', { log_id: logId });
+    if (!res.ok) throw new Error(res.error || 'Delete failed');
+    Modal.toast('✓ ลบแล้ว');
+    await refresh();
   } catch (err) {
     Modal.toast('❌ ' + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '✓ บันทึกรายงานวันนี้';
   }
 }
 
-// ============================================================
-// HISTORY
-// ============================================================
-async function loadHistory() {
-  try {
-    const res = await API.callRead('get_daily_reports');
-    if (!res.ok) throw new Error('Load failed');
-    drState.history = (res.data || []).sort((a, b) =>
-      (b.date || '').localeCompare(a.date || ''));
-    renderHistory();
-  } catch (err) {
-    document.getElementById('historyList').innerHTML =
-      '<div class="dr-empty-i">❌ ' + err.message + '</div>';
-  }
-}
-
-function renderHistory() {
-  const reports = drState.history;
-  if (reports.length === 0) {
-    document.getElementById('historyList').innerHTML =
-      '<div class="dr-empty-i">📭 ยังไม่มีรายงาน</div>';
-    return;
-  }
-  let html = '';
-  reports.forEach(r => {
-    const dayName = thaiDayName(r.date);
-    const hasSum = r.summary_text && r.summary_text.length > 5;
-    html += `
-      <div class="dr-h-card" onclick="viewReport('${r.id}')">
-        <div class="dr-h-card-r">
-          <div>
-            <div class="dr-h-card-d">${formatThaiDateShort(r.date)}</div>
-            <div class="dr-h-card-day">${dayName} · ${r.reporter_name || '-'}</div>
-          </div>
-          <span class="dr-h-card-pill ${hasSum?'':'draft'}">${hasSum?'✓ พร้อม':'ร่าง'}</span>
-        </div>
-        <div class="dr-h-card-meta">
-          👷 ${r.workers_count || 0} คน · 🌤 ${r.weather || '-'}
-        </div>
-        ${hasSum ? `<div class="dr-h-card-sum">${r.summary_text}</div>` : ''}
-      </div>
-    `;
-  });
-  document.getElementById('historyList').innerHTML = html;
-}
-
-function viewReport(id) {
-  const r = drState.history.find(x => x.id === id);
-  if (!r) return;
-  const html = `
-    <div class="modal-title">📝 ${formatThaiDateShort(r.date)}</div>
-    <div class="modal-desc">${r.reporter_name} · ${r.reporter_role}</div>
-    <div class="modal-info">
-      <div class="modal-info-row"><span class="modal-info-key">อากาศ:</span><span class="modal-info-val">${r.weather || '-'}</span></div>
-      <div class="modal-info-row"><span class="modal-info-key">ช่าง:</span><span class="modal-info-val">${r.workers_count || 0} คน</span></div>
-      ${r.workers_list ? `<div class="modal-info-row"><span class="modal-info-key">รายชื่อ:</span><span class="modal-info-val">${r.workers_list}</span></div>` : ''}
-    </div>
-    ${r.tasks_done ? `<div style="margin-top:10px"><strong style="font-size:11px;color:#4B5563">📋 งานที่ทำ:</strong><div style="font-size:11px;color:#374151;margin-top:4px;line-height:1.5">${r.tasks_done.replace(/;/g,'<br>')}</div></div>` : ''}
-    ${r.issues ? `<div style="margin-top:10px"><strong style="font-size:11px;color:#4B5563">⚠️ ปัญหา:</strong><div style="font-size:11px;color:#374151;margin-top:4px;line-height:1.5">${r.issues}</div></div>` : ''}
-    ${r.summary_text ? `<div style="margin-top:10px;background:#EDE9FE;padding:8px 10px;border-radius:6px;border-left:3px solid #7C3AED"><strong style="font-size:10px;color:#5B21B6">🤖 AI Summary:</strong><div style="font-size:11px;color:#4C1D95;margin-top:4px;line-height:1.5">${r.summary_text}</div></div>` : ''}
-    <div class="modal-btns">
-      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>
-    </div>
-  `;
-  Modal.show(html);
-}
-
-// ============================================================
-// UTILS
-// ============================================================
 function formatThaiDate(d) {
   const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
-}
-
-function formatThaiDateShort(dStr) {
-  if (!dStr) return '-';
-  const d = new Date(dStr);
-  if (isNaN(d)) return dStr;
-  return formatThaiDate(d);
 }
 
 function thaiDayName(dStr) {
   if (!dStr) return '';
   const d = new Date(dStr);
   if (isNaN(d)) return '';
-  const days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
-  return 'วัน' + days[d.getDay()];
+  const days = ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์'];
+  return days[d.getDay()];
 }
 
-// START
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    const ta = document.getElementById('logInput');
+    if (document.activeElement === ta) submitLog();
+  }
+});
+
 loadAll();
 </script>
 
