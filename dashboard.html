@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kun Beau House · Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<style>
+/* Dashboard-specific styles */
+.tl-wrap{overflow-x:auto;padding-bottom:4px;margin-top:8px}
+.tl{display:grid;grid-template-columns:170px repeat(20,minmax(32px,1fr)) 110px;gap:1px;min-width:920px}
+.tl-h{font-size:9px;color:#6B7280;text-align:center;padding:4px 0;font-weight:600;background:#F9FAFB;border-radius:3px}
+.tl-h-m{font-size:10px;font-weight:600;color:#374151}
+.tl-name{font-size:11px;color:#1F2937;padding:4px 8px;display:flex;align-items:center;background:#F9FAFB;border-radius:3px;font-weight:500;gap:6px}
+.tl-name-code{font-size:10px;font-weight:600;padding:1px 5px;border-radius:99px;background:#E6F1FB;color:#0C447C;flex-shrink:0}
+.tl-name-z{font-size:9px;color:#9CA3AF;flex-shrink:0}
+.tl-cell{height:22px;border-radius:3px;background:transparent;position:relative;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:600;cursor:help}
+.tl-p1{background:#1F3864}.tl-p2{background:#378ADD}.tl-p3{background:#1D9E75}.tl-p4{background:#BA7517}
+.tl-done{background:#0d6e4f !important;background-image:linear-gradient(45deg,rgba(255,255,255,0.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,0.15) 50%,rgba(255,255,255,0.15) 75%,transparent 75%) !important;background-size:8px 8px !important}
+.tl-late{background:#E24B4A !important;background-image:linear-gradient(45deg,rgba(255,255,255,0.2) 25%,transparent 25%,transparent 50%,rgba(255,255,255,0.2) 50%,rgba(255,255,255,0.2) 75%,transparent 75%) !important;background-size:8px 8px !important}
+.tl-today-line::before{content:'';position:absolute;top:-2px;bottom:-2px;left:50%;width:2px;background:#E24B4A;z-index:3}
+.tl-status{font-size:10px;padding:4px 8px;display:flex;align-items:center;justify-content:center;background:#F9FAFB;border-radius:3px;font-weight:600;gap:4px}
+.tl-status-ok{color:#0d6e4f}
+.tl-status-warn{color:#BA7517}
+.tl-status-bad{color:#E24B4A}
+.tl-status-soon{color:#0C447C}
+.tl-summary{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;padding:8px 12px;background:#F9FAFB;border-radius:8px;font-size:11px;color:#4B5563}
+.tl-summary-num{font-weight:600;color:#1F2937}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;font-size:11px;color:#6B7280}
+.legend-d{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:5px;vertical-align:middle}
+
+/* Zone tabs */
+.zone-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.zt{padding:5px 14px;border-radius:99px;border:1px solid #E5E7EB;background:#fff;color:#4B5563;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit}
+.zt:hover{border-color:#1F3864}
+.zt.on{background:#1F3864;color:#fff;border-color:#1F3864}
+
+/* FF cards in checklist */
+.ff-card{border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:10px;background:#fff;transition:all .15s}
+.ff-card-h{display:flex;align-items:center;gap:10px;cursor:pointer}
+.ff-c-code{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:#E6F1FB;color:#0C447C;min-width:48px;text-align:center}
+.ff-c-name{flex:1;font-size:13px;font-weight:600;color:#1F2937}
+.ff-c-prog{display:flex;align-items:center;gap:8px;font-size:11px;color:#6B7280}
+.ff-c-bar{width:80px;height:5px;background:#F3F4F6;border-radius:99px;overflow:hidden}
+.ff-c-bar-fill{height:100%;background:#1D9E75;border-radius:99px}
+.ff-c-pct{font-size:11px;font-weight:600;color:#1F2937;min-width:38px;text-align:right}
+.ff-c-chev{color:#9CA3AF;font-size:14px;transition:transform .15s}
+.ff-card.expanded .ff-c-chev{transform:rotate(180deg);color:#3B82F6}
+.ff-c-body{margin-top:12px;padding-top:12px;border-top:1px dashed #E5E7EB;display:none}
+.ff-card.expanded .ff-c-body{display:block}
+
+/* Task list */
+.task-phase{margin-bottom:10px}
+.task-phase-h{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;display:flex;align-items:center;gap:6px;color:#4B5563}
+.t-row{display:flex;align-items:center;gap:9px;padding:7px 10px;background:#FAFBFC;border-radius:7px;border:1px solid #F3F4F6;margin-bottom:4px;cursor:pointer;font-size:11px}
+.t-row:hover{border-color:#1F3864;background:#fff}
+.t-row.done{background:#F0FDF4;border-color:#BBF7D0}
+.t-row.done .t-name{text-decoration:line-through;color:#9CA3AF}
+.t-check{width:17px;height:17px;border-radius:5px;border:1.5px solid #D1D5DB;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:10px;font-weight:700}
+.t-check.on{background:#1D9E75;border-color:#1D9E75}
+.t-name{flex:1;color:#1F2937;font-weight:500}
+.t-date{font-size:10px;color:#9CA3AF}
+
+/* Payment cards */
+.ngwd-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ngwd-c{padding:12px;border-radius:10px;border:1px solid #E5E7EB;background:#FAFBFC;cursor:pointer;position:relative;transition:all .15s}
+.ngwd-c:hover{border-color:#1F3864;box-shadow:0 2px 8px rgba(31,56,100,0.08);transform:translateY(-1px)}
+.ngwd-c.has-ready{border-color:#1D9E75;background:#F0FDF4}
+.ngwd-c.has-ready::after{content:'•';color:#1D9E75;font-size:20px;position:absolute;top:6px;right:10px;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.ngwd-t{font-size:11px;font-weight:600;color:#6B7280}
+.ngwd-a{font-size:16px;font-weight:700;margin:4px 0;color:#1F3864}
+.ngwd-p{font-size:10px;color:#9CA3AF}
+.ngwd-s{font-size:9px;padding:3px 8px;border-radius:99px;display:inline-block;margin-top:6px;font-weight:600}
+.s-pending{background:#F3F4F6;color:#6B7280}
+.s-active{background:#FEF3C7;color:#92400E}
+.s-paid{background:#D1FAE5;color:#065F46}
+.ngwd-tap-hint{font-size:9px;color:#9CA3AF;margin-top:6px}
+
+/* Payment modal */
+.pay-modal{max-width:520px}
+.pay-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;max-height:55vh;overflow-y:auto}
+.pay-item{border:1px solid #E5E7EB;border-radius:10px;padding:10px 12px;background:#FAFBFC}
+.pay-item-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.pay-item-title{font-size:12px;font-weight:600;color:#1F2937;flex:1}
+.pay-item-pill{font-size:10px;padding:3px 8px;border-radius:99px;font-weight:500;flex-shrink:0}
+.pp-pending{background:#F3F4F6;color:#6B7280}
+.pp-ready{background:#D1FAE5;color:#065F46}
+.pp-invoiced{background:#FEF3C7;color:#92400E}
+.pp-paid{background:#DBEAFE;color:#0C447C}
+.pay-item-detail{font-size:11px;color:#6B7280;margin-bottom:8px}
+.pay-progress{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px;color:#6B7280}
+.pay-progress-bar{flex:1;height:5px;background:#F3F4F6;border-radius:99px;overflow:hidden}
+.pay-progress-fill{height:100%;border-radius:99px}
+.pay-item-actions{display:flex;gap:6px;margin-top:8px}
+.pay-action-btn{flex:1;padding:6px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;border:none;font-family:inherit}
+.pa-invoice{background:#F59E0B;color:#fff}
+.pa-paid{background:#1D9E75;color:#fff}
+.pa-reset{background:#F3F4F6;color:#6B7280}
+.pay-info-line{font-size:11px;color:#4B5563;margin-top:4px}
+.pay-info-line strong{color:#1F2937}
+
+/* Risk */
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.risk-c{padding:12px;border-radius:10px;background:#FAFBFC;border-left:3px solid #9CA3AF}
+.risk-c.s-h{border-left-color:#DC2626;background:#FEF2F2}
+.risk-c.s-m{border-left-color:#F59E0B;background:#FFFBEB}
+.risk-c.s-l{border-left-color:#10B981;background:#F0FDF4}
+.risk-cat{font-size:9px;font-weight:600;text-transform:uppercase;color:#6B7280;letter-spacing:0.03em}
+.risk-desc{font-size:12px;font-weight:500;color:#1F2937;margin:4px 0}
+.risk-meta{display:flex;gap:6px;font-size:9px;flex-wrap:wrap;margin-top:5px}
+.risk-tag{padding:2px 7px;border-radius:99px;background:#fff;color:#4B5563;font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Loading screen -->
+  <div id="loadingScreen" class="loading">
+    <div class="spinner"></div>
+    <div>กำลังโหลดข้อมูล Kun Beau House...</div>
+  </div>
+
+  <!-- Main content -->
+  <div id="mainContent" style="display:none">
+
+    <div class="dash-hdr">
+      <div class="dash-hdr-top">
+        <div>
+          <h2 id="projName">Kun Beau House · Dashboard</h2>
+          <div class="dash-hdr-sub" id="projSub">คุณอสณบรีย อิสสระเสรี · QT-690400007</div>
+          <div class="dash-pills" id="projPills"></div>
+        </div>
+        <button class="back-btn" onclick="window.location.href='projects.html'">← กลับ</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <!-- Donut + Forecast -->
+    <div class="card gauge-card">
+      <div class="card-title">
+        <span>📊 ภาพรวมความคืบหน้า · พยากรณ์วันเสร็จ</span>
+        <span style="font-size:9px;background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:4px">Weight-based</span>
+      </div>
+      <div class="gauge-row" id="gaugeRow"></div>
+    </div>
+
+    <!-- Weight Progress List -->
+    <div class="card">
+      <div class="card-title">
+        <span>📈 ความคืบหน้ารายชิ้น · เรียงตามมูลค่า</span>
+        <span style="font-size:9px;color:#9CA3AF">กดเพื่อดู task</span>
+      </div>
+      <div id="weightList"></div>
+    </div>
+
+    <!-- Payment grid -->
+    <div class="card">
+      <div class="card-title">💰 สรุปงวดงานและการเบิก</div>
+      <div class="ngwd-grid" id="ngwdGrid"></div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="card">
+      <div class="card-title">📅 Timeline (เม.ย. – ส.ค. 2569)</div>
+      <div class="tl-wrap" id="timeline"></div>
+      <div class="legend">
+        <span><span class="legend-d" style="background:#1F3864"></span>งวด 1</span>
+        <span><span class="legend-d" style="background:#378ADD"></span>งวด 2</span>
+        <span><span class="legend-d" style="background:#1D9E75"></span>งวด 3</span>
+        <span><span class="legend-d" style="background:#BA7517"></span>งวด 4</span>
+        <span><span class="legend-d" style="background:#0d6e4f"></span>เสร็จแล้ว</span>
+        <span><span class="legend-d" style="background:#E24B4A"></span>ล่าช้า</span>
+      </div>
+    </div>
+
+    <!-- Checklist -->
+    <div class="card">
+      <div class="card-title">✓ Checklist รายชิ้น</div>
+      <div class="zone-tabs" id="zoneTabs">
+        <button class="zt on" onclick="setZone('all',this)">ทุก Zone</button>
+        <button class="zt" onclick="setZone('Zone 1',this)">Zone 1</button>
+        <button class="zt" onclick="setZone('Zone 2',this)">Zone 2</button>
+        <button class="zt" onclick="setZone('Zone 3',this)">Zone 3</button>
+        <button class="zt" onclick="setZone('Zone 4',this)">Zone 4</button>
+      </div>
+      <div id="ffList"></div>
+    </div>
+
+    <!-- Risk -->
+    <div class="card">
+      <div class="card-title">⚠ Risk Management</div>
+      <div class="risk-grid" id="riskList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/state.js"></script>
+<script src="js/modal.js"></script>
+<script>
+// ตรวจสอบสิทธิ์ Admin
+if (!Auth.requireAuth('admin')) {
+  // จะถูก redirect
+}
+
+const project = CONFIG.PROJECTS['bow-house'];
+
+// ============================================================
+// MAIN LOAD
+// ============================================================
+async function loadData() {
+  try {
+    const data = await API.fetchAll();
+    if (!data || !data.ffs) {
+      throw new Error('No data');
+    }
+    state.data = data;
+    buildWeights();
+    renderAll();
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+  } catch (err) {
+    document.getElementById('loadingScreen').innerHTML = '❌ โหลดข้อมูลไม่สำเร็จ: ' + err.message;
+  }
+}
+
+function renderAll() {
+  renderHeader();
+  renderKPIs();
+  renderGauge();
+  renderWeightList();
+  renderNgwdGrid();
+  renderTimeline();
+  renderFFList();
+  renderRisks();
+}
+
+// ============================================================
+// HEADER
+// ============================================================
+function renderHeader() {
+  const actualPct = calcProjectProgress();
+  const planPct = calcPlanProgress(project);
+  const variance = calcVariance(actualPct, planPct);
+  let statusText = '● ตามแผน';
+  if (variance < -15) statusText = '▲ ล่าช้ามาก';
+  else if (variance < -5) statusText = '⚠ ใกล้ล่าช้า';
+
+  document.getElementById('projPills').innerHTML = `
+    <span class="dash-pill">${statusText}</span>
+    <span class="dash-pill">${state.data.ffs.length} FF · 4 Zones</span>
+    <span class="dash-pill">${state.data.tasks.length} tasks</span>
+  `;
+}
+
+// ============================================================
+// KPIs
+// ============================================================
+function renderKPIs() {
+  const actualPct = calcProjectProgress();
+  const planPct = calcPlanProgress(project);
+  const variance = calcVariance(actualPct, planPct);
+  const paidAmount = state.data.payments.filter(p => p.status === 'Paid').reduce((s,p) => s+p.amount, 0);
+  const daysLeft = Math.max(0, daysBetween(new Date(), new Date(project.endDate)));
+
+  const actualClass = variance >= -5 ? 'ok' : (variance >= -15 ? 'warn' : 'bad');
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi ${actualClass}">
+      <div class="kpi-l">ความคืบหน้า (Actual)</div>
+      <div class="kpi-v">${actualPct}%</div>
+      <div class="kpi-s">⚖ Weight-based</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-l">ตามแผน (Plan)</div>
+      <div class="kpi-v">${planPct}%</div>
+      <div class="kpi-s">📅 ที่ควรเสร็จ ณ วันนี้</div>
+    </div>
+    <div class="kpi ${variance < 0 ? 'bad' : 'ok'}">
+      <div class="kpi-l">Variance</div>
+      <div class="kpi-v">${variance > 0 ? '+' : ''}${variance}%</div>
+      <div class="kpi-s">${variance < 0 ? '📉 ล่าช้ากว่าแผน' : '📈 เร็วกว่าแผน'}</div>
+    </div>
+    <div class="kpi ok">
+      <div class="kpi-l">เบิกแล้ว</div>
+      <div class="kpi-v">${fmt(paidAmount)}</div>
+      <div class="kpi-s">💰 ${Math.round(paidAmount/project.totalValue*100)}% ของโครงการ</div>
+    </div>
+  `;
+}
+
+// ============================================================
+// GAUGE (DONUT)
+// ============================================================
+function renderGauge() {
+  const actualPct = calcProjectProgress();
+  const planPct = calcPlanProgress(project);
+  const variance = calcVariance(actualPct, planPct);
+  const forecastDate = calcForecast(project, actualPct);
+  const endDate = new Date(project.endDate);
+  const delayDays = forecastDate ? Math.max(0, daysBetween(endDate, forecastDate)) : 0;
+
+  // คำนวณ stroke-dasharray สำหรับ donut (รัศมี 42, circumference = 264)
+  const totalLen = 264;
+  const actualLen = (actualPct / 100) * totalLen;
+  const planOffset = -(planPct / 100) * totalLen;
+
+  const actualColor = variance >= -5 ? '#10B981' : (variance >= -15 ? '#F59E0B' : '#DC2626');
+
+  document.getElementById('gaugeRow').innerHTML = `
+    <div class="gauge-wrap">
+      <svg class="gauge-svg" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#F3F4F6" stroke-width="10"/>
+        <circle cx="50" cy="50" r="42" fill="none" stroke="${actualColor}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${actualLen} ${totalLen}" pathLength="264"/>
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#1F3864" stroke-width="2" stroke-dasharray="2 4" pathLength="264" stroke-dashoffset="${planOffset}" opacity="0.5"/>
+      </svg>
+      <div class="gauge-center">
+        <div class="gauge-num">${actualPct}%</div>
+        <div class="gauge-sublabel">Actual</div>
+        <div class="gauge-plan-marker">เทียบกับแผน ${planPct}%</div>
+      </div>
+    </div>
+    <div class="gauge-extras">
+      <div class="gauge-stat">
+        <span class="gauge-stat-l">📅 Plan ณ วันนี้</span>
+        <span class="gauge-stat-v">${planPct}%</span>
+      </div>
+      <div class="gauge-stat">
+        <span class="gauge-stat-l">📉 Variance</span>
+        <span class="gauge-stat-v ${variance < 0 ? 'neg' : 'pos'}">${variance > 0 ? '+' : ''}${variance}%</span>
+      </div>
+      <div class="gauge-stat">
+        <span class="gauge-stat-l">🎯 Forecast เสร็จ</span>
+        <span class="gauge-stat-v">${forecastDate ? formatDateThai(forecastDate) : 'รอข้อมูล'}</span>
+      </div>
+      <div class="gauge-stat">
+        <span class="gauge-stat-l">⏰ ล่าช้าจากกำหนด</span>
+        <span class="gauge-stat-v ${delayDays > 0 ? 'neg' : 'pos'}">${delayDays > 0 ? '~' + delayDays + ' วัน' : 'ตรงเวลา'}</span>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// WEIGHT LIST
+// ============================================================
+function renderWeightList() {
+  // เรียงตาม FF Weight มากไปน้อย
+  const sorted = state.data.ffs.slice().sort((a,b) => {
+    const wa = state.weights[a.code]?.ffWeight || 0;
+    const wb = state.weights[b.code]?.ffWeight || 0;
+    return wb - wa;
+  });
+
+  let html = '';
+  sorted.forEach(ff => {
+    const w = state.weights[ff.code];
+    const prog = calcFFProgressWeighted(ff.code);
+    const wPct = ((w?.ffWeight || 0) * 100).toFixed(2);
+    const color = prog.pct === 100 ? '#10B981' : (prog.pct > 0 ? '#3B82F6' : '#F3F4F6');
+    const pctClass = prog.pct === 0 ? 'zero' : '';
+    const isExpanded = state.openFFs.has(ff.code);
+
+    html += `<div class="wp-row${isExpanded ? ' expanded' : ''}" onclick="toggleFFExpand('${ff.code}')">
+      <span class="wp-code">${ff.code}</span>
+      <span class="wp-name">${ff.name}</span>
+      <span class="wp-weight">${wPct}%</span>
+      <div class="wp-prog"><div class="wp-prog-fill" style="width:${prog.pct}%;background:${color}"></div></div>
+      <span class="wp-pct ${pctClass}">${prog.pct}%</span>
+      <span class="wp-chev">▾</span>
+    </div>`;
+
+    if (isExpanded) {
+      html += renderFFSubtasks(ff.code);
+    }
+  });
+  document.getElementById('weightList').innerHTML = html;
+}
+
+function renderFFSubtasks(ffCode) {
+  const phases = ['p1','p2','p3','p4'];
+  const phaseNames = { p1: 'งวด 1 · Pre-Production', p2: 'งวด 2 · วัสดุ+โครง', p3: 'งวด 3 · ติดตั้ง', p4: 'งวด 4 · ส่งมอบ' };
+  let html = '<div class="subtasks">';
+  phases.forEach(p => {
+    const tasks = state.data.tasks.filter(t => t.ffCode === ffCode && t.phase === p);
+    if (tasks.length === 0) return;
+    const done = tasks.filter(t => t.status === 'Done').length;
+    html += `<div class="subtask-phase">
+      <div class="subtask-phase-h">
+        <span class="phase-dot ${p}"></span>
+        <span class="phase-label ${p}">${phaseNames[p]}</span>
+        <span class="phase-count">${done}/${tasks.length}</span>
+      </div>`;
+    tasks.forEach(t => {
+      const isDone = t.status === 'Done';
+      html += `<div class="subtask-item ${isDone?'done':''}" onclick="event.stopPropagation();toggleTask('${t.id}')">
+        <div class="subtask-check ${isDone?'on':''}">${isDone?'✓':''}</div>
+        <span class="subtask-name">${t.name}</span>
+        ${t.doneDate ? `<span class="subtask-date">${t.doneDate}</span>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function toggleFFExpand(ffCode) {
+  if (state.openFFs.has(ffCode)) {
+    state.openFFs.delete(ffCode);
+  } else {
+    state.openFFs.clear();
+    state.openFFs.add(ffCode);
+  }
+  renderWeightList();
+}
+
+// ============================================================
+// TASK TOGGLE (with confirm + restore date)
+// ============================================================
+async function toggleTask(taskId) {
+  const task = state.data.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const isDone = task.status === 'Done';
+
+  // Case 1: ยกเลิก task → confirm
+  if (isDone) {
+    const html = `
+      <div class="modal-icon warn">⚠️</div>
+      <div class="modal-title">ยืนยันยกเลิกการเสร็จ?</div>
+      <div class="modal-desc">งานนี้ถูกทำเครื่องหมาย "เสร็จ" แล้ว</div>
+      <div class="modal-info">
+        <div class="modal-info-row"><span class="modal-info-key">FF:</span><span class="modal-info-val">${task.ffCode}</span></div>
+        <div class="modal-info-row"><span class="modal-info-key">งาน:</span><span class="modal-info-val">${task.name}</span></div>
+        ${task.doneDate ? `<div class="modal-info-row"><span class="modal-info-key">เสร็จเมื่อ:</span><span class="modal-info-val">${task.doneDate}</span></div>` : ''}
+      </div>
+      <div class="modal-btns">
+        <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ไม่ใช่</button>
+        <button class="modal-btn modal-btn-warn" onclick="confirmUncheck('${taskId}')">ยืนยันยกเลิก</button>
+      </div>
+    `;
+    Modal.show(html);
+    return;
+  }
+
+  // Case 2: เคย uncheck 5 นาทีก่อน → ถามใช้วันเดิม
+  const recent = state.recentUncheck[taskId];
+  const fiveMinAgo = Date.now() - 5*60*1000;
+  if (recent && recent.time > fiveMinAgo && recent.doneDate) {
+    const html = `
+      <div class="modal-icon info">📅</div>
+      <div class="modal-title">งานนี้เคยถูกทำเครื่องหมายเสร็จมาก่อน</div>
+      <div class="modal-desc">ต้องการใช้วันที่เดิม หรือบันทึกเป็นวันนี้?</div>
+      <div class="modal-info">
+        <div class="modal-info-row"><span class="modal-info-key">งาน:</span><span class="modal-info-val">${task.name}</span></div>
+        <div class="modal-info-row"><span class="modal-info-key">วันที่เดิม:</span><span class="modal-info-val">${recent.doneDate}</span></div>
+        <div class="modal-info-row"><span class="modal-info-key">วันนี้:</span><span class="modal-info-val">${todayStr()}</span></div>
+      </div>
+      <div class="modal-btns">
+        <button class="modal-btn modal-btn-cancel" onclick="markDone('${taskId}','${recent.doneDate}')">ใช้วันเดิม</button>
+        <button class="modal-btn modal-btn-primary" onclick="markDone('${taskId}','')">ใช้วันนี้</button>
+      </div>
+    `;
+    Modal.show(html);
+    return;
+  }
+
+  await markDone(taskId, '');
+}
+
+async function markDone(taskId, doneDate) {
+  Modal.close();
+  const task = state.data.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.status = 'Done';
+  task.doneDate = doneDate || todayStr();
+  delete state.recentUncheck[taskId];
+  renderAll();
+  Modal.toast('กำลังบันทึก...');
+  const result = await API.updateTask(taskId, 'Done', doneDate || '');
+  if (result.ok) {
+    Modal.toast('✓ บันทึกแล้ว');
+  } else {
+    Modal.toast('❌ บันทึกไม่สำเร็จ');
+    task.status = 'Not Started';
+    renderAll();
+  }
+}
+
+async function confirmUncheck(taskId) {
+  Modal.close();
+  const task = state.data.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  state.recentUncheck[taskId] = { time: Date.now(), doneDate: task.doneDate || '' };
+  task.status = 'Not Started';
+  task.doneDate = '';
+  renderAll();
+  Modal.toast('กำลังยกเลิก...');
+  const result = await API.updateTask(taskId, 'Not Started');
+  if (result.ok) {
+    Modal.toast('✓ ยกเลิกแล้ว');
+  } else {
+    Modal.toast('❌ ยกเลิกไม่สำเร็จ');
+    task.status = 'Done';
+    renderAll();
+  }
+}
+
+// ============================================================
+// PAYMENT GRID
+// ============================================================
+function renderNgwdGrid() {
+  const milestones = [
+    {key:'งวด 1', label:'งวด 1', sub:'มัดจำสั่งผลิต', pct:'50%', color:'#1F3864'},
+    {key:'งวด 2', label:'งวด 2', sub:'วัสดุเข้า+โครง', pct:'22.5%', color:'#378ADD'},
+    {key:'งวด 3', label:'งวด 3', sub:'ติดตั้งเฟอร์นิเจอร์', pct:'22.5%', color:'#1D9E75'},
+    {key:'งวด 4', label:'งวด 4', sub:'ส่งมอบงาน', pct:'5%', color:'#BA7517'}
+  ];
+
+  let html = '';
+  milestones.forEach(m => {
+    const items = state.data.payments.filter(p => p.milestone === m.key);
+    const total = items.reduce((s,i) => s+i.amount, 0);
+    const allPaid = items.length > 0 && items.every(i => i.status === 'Paid');
+    const readyCount = items.filter(i => i.status !== 'Paid' && i.status !== 'Invoiced' && isPaymentReady(i, m.key)).length;
+    const anyInvoiced = items.some(i => i.status === 'Invoiced');
+
+    let statusClass = 's-pending', statusText = 'รอดำเนินการ';
+    if (allPaid) { statusClass = 's-paid'; statusText = 'ชำระแล้ว ✓'; }
+    else if (anyInvoiced) { statusClass = 's-active'; statusText = 'รอชำระ'; }
+    else if (readyCount > 0) { statusClass = 's-active'; statusText = `พร้อมเบิก ${readyCount} รายการ`; }
+
+    const hasReady = readyCount > 0 && !allPaid;
+    html += `<div class="ngwd-c${hasReady?' has-ready':''}" onclick="showPaymentModal('${m.key}')">
+      <div class="ngwd-t">${m.label}</div>
+      <div class="ngwd-a" style="color:${m.color}">${fmt(total)} ฿</div>
+      <div class="ngwd-p">${m.pct} · ${m.sub}</div>
+      <span class="ngwd-s ${statusClass}">${statusText}</span>
+      <div class="ngwd-tap-hint">👆 กดเพื่อจัดการ</div>
+    </div>`;
+  });
+  document.getElementById('ngwdGrid').innerHTML = html;
+}
+
+function isPaymentReady(payment, milestoneKey) {
+  if (payment.status === 'Paid' || payment.status === 'Invoiced') return false;
+  if (milestoneKey === 'งวด 1') return false;
+
+  const ffMatch = (payment.sub || '').match(/F-\d+/g) || [];
+  if (ffMatch.length === 0) {
+    if (milestoneKey === 'งวด 4') {
+      const allTasks = state.data.tasks;
+      return allTasks.length > 0 && allTasks.every(t => t.status === 'Done');
+    }
+    return false;
+  }
+  let upToPhase = 'p2';
+  if (milestoneKey === 'งวด 3') upToPhase = 'p3';
+  else if (milestoneKey === 'งวด 4') upToPhase = 'p4';
+  const phaseOrder = ['p1','p2','p3','p4'];
+  const upToIdx = phaseOrder.indexOf(upToPhase);
+  const requiredPhases = phaseOrder.slice(0, upToIdx + 1);
+
+  for (const ffCode of ffMatch) {
+    const ffTasks = state.data.tasks.filter(t => t.ffCode === ffCode && requiredPhases.includes(t.phase));
+    if (ffTasks.length === 0) return false;
+    if (!ffTasks.every(t => t.status === 'Done')) return false;
+  }
+  return true;
+}
+
+function getPaymentProgress(payment, milestoneKey) {
+  if (milestoneKey === 'งวด 1') {
+    return { done: payment.status === 'Paid' ? 1 : 0, total: 1, pct: payment.status === 'Paid' ? 100 : 0 };
+  }
+  const ffMatch = (payment.sub || '').match(/F-\d+/g) || [];
+  let upToPhase = 'p2';
+  if (milestoneKey === 'งวด 3') upToPhase = 'p3';
+  else if (milestoneKey === 'งวด 4') upToPhase = 'p4';
+  const phaseOrder = ['p1','p2','p3','p4'];
+  const upToIdx = phaseOrder.indexOf(upToPhase);
+  const requiredPhases = phaseOrder.slice(0, upToIdx + 1);
+
+  let relevantTasks;
+  if (ffMatch.length === 0) {
+    relevantTasks = state.data.tasks.filter(t => requiredPhases.includes(t.phase));
+  } else {
+    relevantTasks = state.data.tasks.filter(t => ffMatch.includes(t.ffCode) && requiredPhases.includes(t.phase));
+  }
+  const done = relevantTasks.filter(t => t.status === 'Done').length;
+  return { done, total: relevantTasks.length, pct: relevantTasks.length > 0 ? Math.round(done/relevantTasks.length*100) : 0 };
+}
+
+function showPaymentModal(milestoneKey) {
+  const items = state.data.payments.filter(p => p.milestone === milestoneKey);
+  const total = items.reduce((s,i) => s+i.amount, 0);
+  const paid = items.filter(i => i.status === 'Paid').reduce((s,i) => s+i.amount, 0);
+
+  let listHtml = '';
+  items.forEach(p => {
+    const prog = getPaymentProgress(p, milestoneKey);
+    const ready = isPaymentReady(p, milestoneKey);
+    let pillClass = 'pp-pending', pillText = 'ยังไม่พร้อม';
+    if (p.status === 'Paid') { pillClass = 'pp-paid'; pillText = '✓ ชำระแล้ว'; }
+    else if (p.status === 'Invoiced') { pillClass = 'pp-invoiced'; pillText = '📄 ออกใบแจ้งหนี้แล้ว'; }
+    else if (ready) { pillClass = 'pp-ready'; pillText = '✅ พร้อมเบิก'; }
+
+    let progColor = '#D1D5DB';
+    if (prog.pct === 100) progColor = '#1D9E75';
+    else if (prog.pct >= 50) progColor = '#F59E0B';
+    else if (prog.pct > 0) progColor = '#3B82F6';
+
+    let actionsHtml = '';
+    if (milestoneKey === 'งวด 1') {
+      if (p.status !== 'Paid') {
+        actionsHtml = `<div class="pay-item-actions"><button class="pay-action-btn pa-paid" onclick="markPaymentPaid('${p.id}')">ทำเครื่องหมายชำระแล้ว</button></div>`;
+      } else {
+        actionsHtml = `<div class="pay-item-actions"><button class="pay-action-btn pa-reset" onclick="resetPayment('${p.id}')">ย้อนกลับ</button></div>`;
+      }
+    } else {
+      if (p.status === 'Pending' && ready) {
+        actionsHtml = `<div class="pay-item-actions"><button class="pay-action-btn pa-invoice" onclick="markPaymentInvoiced('${p.id}')">📄 ออกใบแจ้งหนี้</button></div>`;
+      } else if (p.status === 'Invoiced') {
+        actionsHtml = `<div class="pay-item-actions"><button class="pay-action-btn pa-reset" onclick="resetPayment('${p.id}')">ย้อนกลับ</button><button class="pay-action-btn pa-paid" onclick="markPaymentPaid('${p.id}')">✓ ชำระแล้ว</button></div>`;
+      } else if (p.status === 'Paid') {
+        actionsHtml = `<div class="pay-item-actions"><button class="pay-action-btn pa-reset" onclick="resetPayment('${p.id}')">ย้อนกลับ</button></div>`;
+      }
+    }
+
+    let infoHtml = '';
+    if (p.receipt) infoHtml += `<div class="pay-info-line">📋 เลขใบ: <strong>${p.receipt}</strong></div>`;
+    if (p.paidDate) infoHtml += `<div class="pay-info-line">💰 ชำระเมื่อ: <strong>${p.paidDate}</strong></div>`;
+
+    listHtml += `<div class="pay-item">
+      <div class="pay-item-head">
+        <div class="pay-item-title">${p.sub}</div>
+        <span class="pay-item-pill ${pillClass}">${pillText}</span>
+      </div>
+      <div class="pay-item-detail">${p.pct}% · <strong style="color:#1F3864">${fmt(p.amount)} ฿</strong></div>
+      ${milestoneKey !== 'งวด 1' ? `<div class="pay-progress"><span>${prog.done}/${prog.total} task</span><div class="pay-progress-bar"><div class="pay-progress-fill" style="width:${prog.pct}%;background:${progColor}"></div></div><span>${prog.pct}%</span></div>` : ''}
+      ${infoHtml}
+      ${actionsHtml}
+    </div>`;
+  });
+
+  const html = `
+    <div class="modal-title" style="margin-bottom:8px">${milestoneKey} · จัดการการเบิก</div>
+    <div class="modal-desc">รวม ${fmt(total)} ฿ · ชำระแล้ว ${fmt(paid)} ฿</div>
+    <div class="pay-list">${listHtml}</div>
+    <div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button></div>
+  `;
+  Modal.show(html, 'pay-modal');
+}
+
+async function markPaymentInvoiced(payId) {
+  const invoice = prompt('กรอกเลขใบแจ้งหนี้ (ถ้าไม่มีปล่อยว่าง):', '');
+  if (invoice === null) return;
+  const pay = state.data.payments.find(p => p.id === payId);
+  if (!pay) return;
+  pay.status = 'Invoiced';
+  pay.receipt = invoice || '';
+  Modal.close();
+  Modal.toast('กำลังบันทึก...');
+  const result = await API.updatePayment(payId, 'Invoiced', invoice || '');
+  if (result.ok) { Modal.toast('✓ บันทึกแล้ว'); renderNgwdGrid(); }
+  else { Modal.toast('❌ บันทึกไม่สำเร็จ'); }
+}
+
+async function markPaymentPaid(payId) {
+  const pay = state.data.payments.find(p => p.id === payId);
+  if (!pay) return;
+  if (!confirm(`ยืนยันการชำระเงิน ${fmt(pay.amount)} บาท สำหรับ ${pay.sub}?`)) return;
+  pay.status = 'Paid';
+  pay.paidDate = todayStr();
+  Modal.close();
+  Modal.toast('กำลังบันทึก...');
+  const result = await API.updatePayment(payId, 'Paid');
+  if (result.ok) { Modal.toast('✓ บันทึกแล้ว'); renderNgwdGrid(); renderKPIs(); }
+  else { Modal.toast('❌ บันทึกไม่สำเร็จ'); }
+}
+
+async function resetPayment(payId) {
+  const pay = state.data.payments.find(p => p.id === payId);
+  if (!pay) return;
+  if (!confirm('ยกเลิกสถานะและกลับเป็น "Pending"?')) return;
+  pay.status = 'Pending';
+  pay.paidDate = '';
+  Modal.close();
+  Modal.toast('กำลังบันทึก...');
+  const result = await API.updatePayment(payId, 'Pending');
+  if (result.ok) { Modal.toast('✓ ย้อนกลับแล้ว'); renderNgwdGrid(); renderKPIs(); }
+  else { Modal.toast('❌ บันทึกไม่สำเร็จ'); }
+}
+
+// ============================================================
+// TIMELINE
+// ============================================================
+function renderTimeline() {
+  const container = document.getElementById('timeline');
+  const months = ['เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.'];
+  const plan = CONFIG.GANTT_PLAN;
+  const phaseNames = {1:'งวด 1', 2:'งวด 2 (วัสดุ+โครง)', 3:'งวด 3 (ติดตั้ง)', 4:'งวด 4 (ส่งมอบ)'};
+
+  const today = new Date();
+  const daysSinceStart = daysBetween(new Date(project.startDate), today);
+  const currentWeek = Math.max(1, Math.min(20, Math.floor(daysSinceStart/7) + 1));
+
+  let stOnTrack=0, stLate=0, stDone=0, stUpcoming=0;
+  const sortedFFs = state.data.ffs.slice().sort((a,b) => parseInt(a.code.replace("F-","")) - parseInt(b.code.replace("F-","")));
+
+  let html = '<div class="tl">';
+  html += '<div></div>';
+  months.forEach(m => { html += `<div class="tl-h tl-h-m" style="grid-column:span 4">${m}</div>`; });
+  html += '<div class="tl-h tl-h-m">สถานะ</div>';
+
+  html += '<div></div>';
+  for (let i = 0; i < 5; i++) {
+    for (let w = 1; w <= 4; w++) {
+      const isCur = (i*4 + w) === currentWeek;
+      html += `<div class="tl-h${isCur?' tl-today-line':''}" style="${isCur?'color:#E24B4A;font-weight:700':''}">W${w}</div>`;
+    }
+  }
+  html += '<div class="tl-h">progress</div>';
+
+  sortedFFs.forEach(ff => {
+    const ffPlan = plan[ff.code] || [];
+    const phaseStatus = {1:0, 2:0, 3:0, 4:0};
+    const phaseTotal = {1:0, 2:0, 3:0, 4:0};
+    state.data.tasks.filter(t => t.ffCode === ff.code).forEach(t => {
+      const p = parseInt(t.phase.replace('p',''));
+      if (phaseTotal[p] !== undefined) {
+        phaseTotal[p]++;
+        if (t.status === 'Done') phaseStatus[p]++;
+      }
+    });
+
+    const cellMap = {};
+    ffPlan.forEach(([phase, start, end]) => {
+      const phaseDone = phaseTotal[phase] > 0 ? (phaseStatus[phase] / phaseTotal[phase]) : 0;
+      for (let w = start; w <= end; w++) cellMap[w] = {phase, phaseDone, start, end};
+    });
+
+    let plannedPhaseNow = null;
+    for (let w = 1; w <= currentWeek; w++) {
+      if (cellMap[w]) plannedPhaseNow = cellMap[w].phase;
+    }
+
+    const prog = calcFFProgressWeighted(ff.code);
+    let statusText = '', statusClass = '';
+    if (prog.pct === 100) { statusText = '✓ เสร็จสมบูรณ์'; statusClass = 'tl-status-ok'; stDone++; }
+    else if (plannedPhaseNow) {
+      let shouldBeDone = 0;
+      for (let p = 1; p < plannedPhaseNow; p++) shouldBeDone += phaseTotal[p] || 0;
+      const totalTasks = Object.values(phaseTotal).reduce((s,n) => s+n, 0);
+      const expectedPct = totalTasks > 0 ? (shouldBeDone / totalTasks * 100) : 0;
+      if (prog.pct >= expectedPct - 5) { statusText = `● ตามแผน · งวด ${plannedPhaseNow}`; statusClass = 'tl-status-ok'; stOnTrack++; }
+      else if (prog.pct >= expectedPct - 20) { statusText = `⚠ ใกล้ล่าช้า`; statusClass = 'tl-status-warn'; stLate++; }
+      else { statusText = `▲ ล่าช้า`; statusClass = 'tl-status-bad'; stLate++; }
+    } else {
+      statusText = '○ ยังไม่เริ่ม'; statusClass = 'tl-status-soon'; stUpcoming++;
+    }
+
+    html += `<div class="tl-name"><span class="tl-name-code">${ff.code}</span><span class="tl-name-z">${ff.zone.replace('Zone ','Z')}</span></div>`;
+    for (let w = 1; w <= 20; w++) {
+      const info = cellMap[w];
+      if (!info) { html += `<div class="tl-cell${w===currentWeek?' tl-today-line':''}"></div>`; continue; }
+      let cls = `tl-p${info.phase}`;
+      if (info.phaseDone >= 1) cls = 'tl-done';
+      else if (currentWeek > info.end && info.phaseDone < 1) cls = 'tl-late';
+      const isFirstOfRange = w === info.start && (info.end - info.start) >= 1;
+      const cellContent = isFirstOfRange ? `<span style="position:absolute;left:4px;color:#fff;font-size:9px">${Math.round(info.phaseDone*100)}%</span>` : '';
+      html += `<div class="tl-cell ${cls}${w===currentWeek?' tl-today-line':''}">${cellContent}</div>`;
+    }
+    html += `<div class="tl-status ${statusClass}">${statusText}</div>`;
+  });
+  html += '</div>';
+
+  const summary = `<div class="tl-summary">
+    <div>📊 รวม: <span class="tl-summary-num">${sortedFFs.length}</span></div>
+    <div style="color:#0d6e4f">✓ เสร็จ: <span class="tl-summary-num">${stDone}</span></div>
+    <div style="color:#0d6e4f">● ตามแผน: <span class="tl-summary-num">${stOnTrack}</span></div>
+    <div style="color:#E24B4A">⚠ ล่าช้า: <span class="tl-summary-num">${stLate}</span></div>
+    <div style="color:#0C447C">○ ยังไม่เริ่ม: <span class="tl-summary-num">${stUpcoming}</span></div>
+    <div style="margin-left:auto;color:#E24B4A">📍 สัปดาห์ที่ ${currentWeek}/20</div>
+  </div>`;
+  container.innerHTML = summary + html;
+}
+
+// ============================================================
+// CHECKLIST
+// ============================================================
+function setZone(zone, btn) {
+  state.zone = zone;
+  document.querySelectorAll('.zt').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderFFList();
+}
+
+function renderFFList() {
+  const filtered = state.zone === 'all' ? state.data.ffs : state.data.ffs.filter(ff => ff.zone === state.zone);
+  const sorted = filtered.slice().sort((a,b) => parseInt(a.code.replace("F-","")) - parseInt(b.code.replace("F-","")));
+
+  let html = '';
+  sorted.forEach(ff => {
+    const prog = calcFFProgressWeighted(ff.code);
+    const isExpanded = state.openFFs.has('cl_' + ff.code);
+    html += `<div class="ff-card${isExpanded?' expanded':''}">
+      <div class="ff-c-h" onclick="toggleChecklistFF('${ff.code}')">
+        <span class="ff-c-code">${ff.code}</span>
+        <span class="ff-c-name">${ff.name}</span>
+        <div class="ff-c-prog">
+          <div class="ff-c-bar"><div class="ff-c-bar-fill" style="width:${prog.pct}%"></div></div>
+          <span class="ff-c-pct">${prog.done}/${prog.total}</span>
+        </div>
+        <span class="ff-c-chev">▾</span>
+      </div>
+      <div class="ff-c-body">${renderFFSubtasks(ff.code)}</div>
+    </div>`;
+  });
+  document.getElementById('ffList').innerHTML = html;
+}
+
+function toggleChecklistFF(ffCode) {
+  const key = 'cl_' + ffCode;
+  if (state.openFFs.has(key)) state.openFFs.delete(key);
+  else state.openFFs.add(key);
+  renderFFList();
+}
+
+// ============================================================
+// RISKS
+// ============================================================
+function renderRisks() {
+  if (!state.data.risks || state.data.risks.length === 0) {
+    document.getElementById('riskList').innerHTML = '<div style="font-size:11px;color:#9CA3AF;padding:10px">ไม่มีข้อมูลความเสี่ยง</div>';
+    return;
+  }
+  let html = '';
+  state.data.risks.forEach(r => {
+    const sev = (r.sev || '').toLowerCase();
+    let cls = '';
+    if (sev.includes('high') || sev.includes('สูง')) cls = 's-h';
+    else if (sev.includes('medium') || sev.includes('กลาง')) cls = 's-m';
+    else cls = 's-l';
+    html += `<div class="risk-c ${cls}">
+      <div class="risk-cat">${r.cat || 'ทั่วไป'}</div>
+      <div class="risk-desc">${r.desc || ''}</div>
+      <div class="risk-meta">
+        ${r.sev ? `<span class="risk-tag">⚠ ${r.sev}</span>` : ''}
+        ${r.owner ? `<span class="risk-tag">👤 ${r.owner}</span>` : ''}
+        ${r.status ? `<span class="risk-tag">${r.status}</span>` : ''}
+      </div>
+    </div>`;
+  });
+  document.getElementById('riskList').innerHTML = html;
+}
+
+// START
+loadData();
+</script>
+
+</body>
+</html>
