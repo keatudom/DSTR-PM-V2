@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/main.css">
 <style>
-.dr-app { padding-bottom: 80px; }
+.dr-app { padding-bottom: 130px; /* extra room for sticky summary bar + bottom nav */ }
 
 /* Header */
 .dr-hdr { background: linear-gradient(135deg,#1F3864 0%,#0C447C 100%); color:#fff; padding:14px 16px; border-radius:0 0 16px 16px; margin:-16px -16px 12px; }
@@ -24,34 +24,49 @@
 .dr-date-nav:hover { background:#1F3864; color:#fff; border-color:#1F3864; }
 .dr-date-nav:disabled { opacity:0.4; cursor:not-allowed; }
 
-/* Today stats */
-.dr-stats { background:linear-gradient(135deg,#EFF6FF,#DBEAFE); border-radius:12px; padding:10px 14px; margin-bottom:10px; }
+/* Stats */
+.dr-stats { background:linear-gradient(135deg,#EFF6FF,#DBEAFE); border-radius:12px; padding:10px 14px; margin-bottom:12px; }
 .dr-stats-h { font-size:11px; font-weight:600; color:#1E40AF; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
 .dr-stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
 .dr-stat-c { text-align:center; }
 .dr-stat-v { font-size:18px; font-weight:700; color:#1F3864; line-height:1; }
 .dr-stat-l { font-size:9px; color:#4B5563; margin-top:2px; }
 
-/* AI Summary section */
-.dr-ai { background:linear-gradient(135deg,#EDE9FE,#DDD6FE); border-left:3px solid #7C3AED; padding:12px 14px; border-radius:10px; margin-bottom:10px; }
-.dr-ai-t { font-size:11px; font-weight:600; color:#5B21B6; margin-bottom:6px; display:flex; align-items:center; gap:6px; justify-content:space-between; }
-.dr-ai-tx { font-size:11.5px; color:#4C1D95; line-height:1.7; white-space:pre-wrap; }
-.dr-ai-btn { background:rgba(124,58,237,0.15); color:#5B21B6; border:none; padding:5px 10px; border-radius:99px; font-size:10px; font-weight:500; cursor:pointer; font-family:inherit; }
-.dr-ai-btn:hover { background:rgba(124,58,237,0.25); }
-.dr-ai-loading { text-align:center; padding:14px; color:#7C3AED; font-size:11px; }
-.dr-ai-empty { color:#7C3AED; opacity:0.7; font-style:italic; font-size:11px; }
+/* =========================
+   COMPOSER — new design
+   ========================= */
+.dr-comp { background:#fff; border-radius:14px; overflow:hidden; border:1px solid #E5E7EB; box-shadow:0 2px 8px rgba(31,56,100,0.04); margin-bottom:12px; }
 
-/* Quick input */
-.dr-input-card { background:#fff; border-radius:12px; padding:10px; margin-bottom:10px; border:1px solid #E5E7EB; box-shadow:0 2px 8px rgba(31,56,100,0.04); }
-.dr-input-ta { width:100%; min-height:52px; max-height:120px; border:1px solid #E5E7EB; border-radius:8px; padding:9px 11px; font-size:12.5px; font-family:inherit; box-sizing:border-box; resize:vertical; color:#1F2937; line-height:1.5; }
-.dr-input-ta:focus { outline:none; border-color:#1F3864; box-shadow:0 0 0 3px rgba(31,56,100,0.1); }
-.dr-input-tools { display:flex; gap:5px; margin-top:6px; flex-wrap:wrap; align-items:center; }
-.dr-tool { background:#F9FAFB; border:1px solid #E5E7EB; padding:5px 9px; border-radius:99px; font-size:10px; cursor:pointer; font-family:inherit; color:#4B5563; font-weight:500; }
-.dr-tool:hover { background:#1F3864; color:#fff; border-color:#1F3864; }
-.dr-input-submit { width:100%; padding:10px; background:#1F3864; color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; margin-top:8px; font-family:inherit; }
-.dr-input-submit:hover { background:#0C447C; }
-.dr-input-submit:disabled { background:#9CA3AF; cursor:not-allowed; }
-.dr-input-hint { font-size:9px; color:#9CA3AF; margin-top:3px; }
+/* AI strip */
+.dr-comp-strip { background:linear-gradient(90deg,#EDE9FE,#DDD6FE,#EDE9FE); padding:7px 13px; font-size:10px; color:#5B21B6; font-weight:600; display:flex; align-items:center; gap:6px; border-bottom:1px solid #DDD6FE; }
+.dr-comp-pulse { width:6px; height:6px; background:#7C3AED; border-radius:50%; animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:0.5}50%{opacity:1} }
+
+/* Body */
+.dr-comp-body { padding:13px 14px; }
+.dr-comp-ta { width:100%; min-height:56px; max-height:140px; border:none; padding:0; font-size:13.5px; font-family:inherit; resize:none; color:#1F2937; line-height:1.55; background:transparent; }
+.dr-comp-ta:focus { outline:none; }
+.dr-comp-ta::placeholder { color:#9CA3AF; }
+
+/* Tags row */
+.dr-comp-tags { padding:0 14px 8px; display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
+.dr-comp-tag-lb { font-size:9px; color:#B5B5BD; font-weight:500; margin-right:2px; }
+.dr-comp-tag { font-size:9.5px; padding:2px 7px; background:transparent; border:1px solid #E5E7EB; border-radius:99px; color:#6B7280; cursor:pointer; font-family:inherit; transition:all .12s; }
+.dr-comp-tag:hover { background:#F3F4F6; color:#1F3864; border-color:#1F3864; }
+.dr-comp-extra { display:none; gap:4px; }
+.dr-comp-extra.on { display:inline-flex; }
+
+/* Footer */
+.dr-comp-foot { padding:9px 12px 11px; background:#FAFAFB; border-top:1px solid #F3F4F6; display:flex; align-items:center; gap:6px; }
+.dr-comp-tool { width:34px; height:34px; border-radius:50%; background:#fff; border:1px solid #E5E7EB; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; transition:all .12s; }
+.dr-comp-tool:hover { background:#1F3864; color:#fff; border-color:#1F3864; }
+.dr-comp-tool.mic { background:linear-gradient(135deg,#7C3AED,#A855F7); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(124,58,237,0.25); }
+.dr-comp-tool.mic:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(124,58,237,0.35); }
+.dr-comp-tool.mic.recording { animation:rec 0.8s infinite; }
+@keyframes rec { 0%,100%{box-shadow:0 0 0 0 rgba(124,58,237,0.4)}50%{box-shadow:0 0 0 8px rgba(124,58,237,0)} }
+.dr-comp-send { margin-left:auto; background:#1F3864; color:#fff; border:none; padding:7px 16px; border-radius:99px; font-size:11.5px; font-weight:600; font-family:inherit; cursor:pointer; display:flex; align-items:center; gap:5px; }
+.dr-comp-send:hover { background:#0C447C; }
+.dr-comp-send:disabled { background:#9CA3AF; cursor:not-allowed; }
 
 /* Timeline */
 .dr-tl-h { font-size:11px; font-weight:600; color:#4B5563; margin:14px 4px 6px; display:flex; justify-content:space-between; text-transform:uppercase; letter-spacing:0.04em; }
@@ -81,7 +96,31 @@
 .dr-empty { text-align:center; padding:30px 16px; color:#9CA3AF; font-size:11px; }
 .dr-empty-i { font-size:32px; margin-bottom:8px; opacity:0.4; }
 
-/* AI Confirm modal content */
+/* =========================
+   STICKY SUMMARY BAR (Option B)
+   ========================= */
+.dr-sticky-wrap { position:fixed; bottom:54px; left:0; right:0; padding:8px 12px 6px; z-index:47; pointer-events:none; }
+@media(min-width:768px) { .dr-sticky-wrap { max-width:480px; left:50%; transform:translateX(-50%); } }
+.dr-sticky { pointer-events:auto; background:linear-gradient(135deg,#7C3AED,#A855F7); border-radius:12px; padding:10px 14px; color:#fff; cursor:pointer; display:flex; align-items:center; gap:10px; box-shadow:0 6px 16px rgba(124,58,237,0.4); }
+.dr-sticky:hover { box-shadow:0 8px 22px rgba(124,58,237,0.5); transform:translateY(-1px); }
+.dr-sticky.expanded { background:#fff; color:#1F2937; border:1px solid #DDD6FE; }
+.dr-sticky-i { font-size:20px; flex-shrink:0; }
+.dr-sticky-bd { flex:1; min-width:0; }
+.dr-sticky-t { font-size:12.5px; font-weight:600; }
+.dr-sticky-s { font-size:9.5px; opacity:0.85; margin-top:1px; }
+.dr-sticky.expanded .dr-sticky-s { color:#6B7280; opacity:1; }
+.dr-sticky-arr { font-size:18px; opacity:0.7; }
+
+/* Summary expanded panel */
+.dr-summ-panel { background:#fff; border:1px solid #DDD6FE; border-radius:12px; margin-top:8px; padding:14px; pointer-events:auto; box-shadow:0 6px 16px rgba(124,58,237,0.15); display:none; }
+.dr-summ-panel.on { display:block; }
+.dr-summ-tx { font-size:12px; color:#1F2937; line-height:1.7; white-space:pre-wrap; }
+.dr-summ-loading { text-align:center; padding:14px; color:#7C3AED; font-size:11px; }
+.dr-summ-acts { display:flex; gap:6px; margin-top:10px; padding-top:10px; border-top:1px solid #F3F4F6; }
+.dr-summ-act { flex:1; padding:7px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; font-size:11px; font-weight:500; color:#4B5563; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:4px; }
+.dr-summ-act:hover { background:#1F3864; color:#fff; border-color:#1F3864; }
+
+/* AI Confirm modal */
 .aic-card { background:#fff; border:1px solid #E5E7EB; border-radius:10px; padding:11px 13px; margin-bottom:8px; }
 .aic-section { margin-bottom:8px; }
 .aic-h { font-size:10px; font-weight:600; color:#6B7280; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
@@ -118,10 +157,11 @@
 
   <div id="mainContent" style="display:none">
 
+    <!-- Header -->
     <div class="dr-hdr">
       <div class="dr-hdr-r">
         <div>
-          <h2 class="dr-hdr-h">📜 Activity Feed</h2>
+          <h2 class="dr-hdr-h">📜 Daily Activity</h2>
           <div class="dr-hdr-d" id="hdrDate">วันที่</div>
           <div class="dr-hdr-sub" id="hdrSub">Bow House · บันทึกประจำวัน</div>
         </div>
@@ -129,6 +169,7 @@
       </div>
     </div>
 
+    <!-- Date bar -->
     <div class="dr-date-bar">
       <button class="dr-date-nav" onclick="dateNav(-1)">◀</button>
       <input id="reportDate" type="date">
@@ -136,6 +177,7 @@
       <button class="dr-date-nav" onclick="dateToday()" title="วันนี้">📅</button>
     </div>
 
+    <!-- Stats -->
     <div class="dr-stats">
       <div class="dr-stats-h">
         <span>📊 ภาพรวม</span>
@@ -149,27 +191,35 @@
       </div>
     </div>
 
-    <div class="dr-ai">
-      <div class="dr-ai-t">
-        <span>🤖 สรุปประจำวัน (Daily Report)</span>
-        <button class="dr-ai-btn" onclick="genSummary()">🔄 สร้างสรุป</button>
+    <!-- COMPOSER -->
+    <div class="dr-comp">
+      <div class="dr-comp-strip">
+        <div class="dr-comp-pulse"></div>
+        <span>🤖 AI วิเคราะห์ + tag อัตโนมัติ — พิมพ์ พูด หรือถ่ายรูป</span>
       </div>
-      <div id="aiSummaryBox" class="dr-ai-tx dr-ai-empty">กดปุ่ม "สร้างสรุป" ตอนเย็น → AI จะสรุปทั้งวันให้</div>
+      <div class="dr-comp-body">
+        <textarea id="logInput" class="dr-comp-ta" placeholder="เกิดอะไรขึ้น? AI จะเข้าใจให้เอง"></textarea>
+      </div>
+      <div class="dr-comp-tags">
+        <span class="dr-comp-tag-lb">ทางลัด</span>
+        <button class="dr-comp-tag" onclick="quickInsert('🌧️ ฝนตก ')">🌧️ ฝน</button>
+        <button class="dr-comp-tag" onclick="quickInsert('⚠️ ปัญหา: ')">⚠️ ปัญหา</button>
+        <button class="dr-comp-tag" id="tagsMore" onclick="toggleTagsMore()">⋯</button>
+        <span class="dr-comp-extra" id="tagsExtra">
+          <button class="dr-comp-tag" onclick="quickInsert('⏸️ พักงาน ')">⏸️ พัก</button>
+          <button class="dr-comp-tag" onclick="quickInsert('🌅 เริ่มงาน ')">🌅 เริ่ม</button>
+          <button class="dr-comp-tag" onclick="quickInsert('🌆 ปิดงาน ')">🌆 ปิด</button>
+        </span>
+      </div>
+      <div class="dr-comp-foot">
+        <button class="dr-comp-tool" title="ถ่ายรูป" onclick="onPhotoClick()">📷</button>
+        <button class="dr-comp-tool mic" id="micBtn" title="พูด" onclick="onMicClick()">🎤</button>
+        <button class="dr-comp-send" id="logSubmitBtn" onclick="submitLog()">บันทึก →</button>
+      </div>
+      <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="onPhotoSelected(event)">
     </div>
 
-    <div class="dr-input-card">
-      <textarea id="logInput" class="dr-input-ta" placeholder="พิมพ์สิ่งที่เกิดขึ้น... AI จะแยก ff, ช่าง, ปัญหาให้&#10;เช่น: สากลเริ่มกรุไม้ F-03 มีเกียรติช่วย"></textarea>
-      <div class="dr-input-hint">💡 AI จะแยก tags อัตโนมัติ + ขอความยืนยันถ้าไม่ชัด</div>
-      <div class="dr-input-tools">
-        <button class="dr-tool" onclick="quickInsert('🌧️ ฝนตก ')">🌧️ ฝน</button>
-        <button class="dr-tool" onclick="quickInsert('⏸️ พักงาน ')">⏸️ พัก</button>
-        <button class="dr-tool" onclick="quickInsert('⚠️ ปัญหา: ')">⚠️ ปัญหา</button>
-        <button class="dr-tool" onclick="quickInsert('🌅 เริ่มงาน ')">🌅 เริ่ม</button>
-        <button class="dr-tool" onclick="quickInsert('🌆 ปิดงาน ')">🌆 ปิด</button>
-      </div>
-      <button id="logSubmitBtn" class="dr-input-submit" onclick="submitLog()">+ เพิ่มบันทึก (AI จะ tag ให้)</button>
-    </div>
-
+    <!-- Timeline -->
     <div class="dr-tl-h"><span>📜 Timeline</span></div>
     <div class="dr-tl-filters">
       <button class="dr-tl-f on" onclick="setFilter('all',this)">ทั้งหมด</button>
@@ -182,6 +232,26 @@
   </div>
 </div>
 
+<!-- STICKY SUMMARY BAR -->
+<div class="dr-sticky-wrap" id="stickyWrap" style="display:none">
+  <div class="dr-sticky" id="stickyBar" onclick="toggleSummary()">
+    <div class="dr-sticky-i">🤖</div>
+    <div class="dr-sticky-bd">
+      <div class="dr-sticky-t">สรุปรายงานวันนี้</div>
+      <div class="dr-sticky-s" id="stickySub">5 events · กดเพื่อให้ AI สรุป</div>
+    </div>
+    <div class="dr-sticky-arr" id="stickyArr">↑</div>
+  </div>
+  <div class="dr-summ-panel" id="summPanel">
+    <div id="summBox"></div>
+    <div class="dr-summ-acts" id="summActs" style="display:none">
+      <button class="dr-summ-act" onclick="copySummary()">📋 Copy</button>
+      <button class="dr-summ-act" onclick="genSummary(true)">🔄 ใหม่</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
 <div class="bnav">
   <a class="bnav-i" href="dashboard.html?project=bow-house"><div class="bnav-ic">🏠</div><div class="bnav-lb">Home</div></a>
   <a class="bnav-i" href="materials.html?project=bow-house"><div class="bnav-ic">📦</div><div class="bnav-lb">Materials</div></a>
@@ -205,6 +275,10 @@ const drState = {
   contractors: [],
   ffs: [],
   pendingLog: null,
+  summExpanded: false,
+  summText: '',
+  recognition: null,
+  recording: false,
 };
 
 async function loadAll() {
@@ -224,6 +298,7 @@ async function loadAll() {
     await refresh();
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
+    document.getElementById('stickyWrap').style.display = 'block';
   } catch (err) {
     document.getElementById('loadingScreen').innerHTML =
       '❌ โหลดไม่สำเร็จ: ' + err.message;
@@ -234,8 +309,11 @@ async function refresh() {
   const today = new Date().toISOString().slice(0, 10);
   document.getElementById('dateNext').disabled = drState.date >= today;
   updateHeaderDate();
-  document.getElementById('aiSummaryBox').innerHTML =
-    '<span class="dr-ai-empty">กดปุ่ม "สร้างสรุป" ตอนเย็น → AI จะสรุปทั้งวันให้</span>';
+  drState.summText = '';
+  drState.summExpanded = false;
+  document.getElementById('summPanel').classList.remove('on');
+  document.getElementById('stickyBar').classList.remove('expanded');
+  document.getElementById('stickyArr').textContent = '↑';
   await Promise.all([loadStats(), loadFeed()]);
 }
 
@@ -277,7 +355,9 @@ function renderStats(s) {
   document.getElementById('statWdr').textContent = s.withdrawn || 0;
   document.getElementById('statCtr').textContent = s.contractors_involved || 0;
   document.getElementById('logCountTxt').textContent =
-    (s.logs_total || 0) + ' events (' + (s.logs_manual || 0) + ' มือ · ' + (s.logs_auto || 0) + ' auto)';
+    (s.logs_total || 0) + ' events';
+  document.getElementById('stickySub').textContent =
+    (s.logs_total || 0) + ' events · กดเพื่อให้ AI สรุป';
 }
 
 async function loadFeed() {
@@ -370,6 +450,11 @@ function setFilter(f, btn) {
   renderFeed();
 }
 
+function toggleTagsMore() {
+  document.getElementById('tagsExtra').classList.toggle('on');
+  document.getElementById('tagsMore').style.display = 'none';
+}
+
 function quickInsert(text) {
   const ta = document.getElementById('logInput');
   if (ta.value.trim()) {
@@ -381,6 +466,79 @@ function quickInsert(text) {
   ta.selectionStart = ta.selectionEnd = ta.value.length;
 }
 
+// =========================
+// VOICE INPUT
+// =========================
+function onMicClick() {
+  // Check Web Speech API support
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    Modal.toast('❌ เบราว์เซอร์ไม่รองรับ Voice (ลองใช้ Chrome)');
+    return;
+  }
+
+  if (drState.recording) {
+    if (drState.recognition) drState.recognition.stop();
+    return;
+  }
+
+  const recognition = new SR();
+  recognition.lang = 'th-TH';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  const btn = document.getElementById('micBtn');
+  btn.classList.add('recording');
+  btn.innerHTML = '⏹';
+  drState.recording = true;
+  drState.recognition = recognition;
+
+  recognition.onresult = (e) => {
+    const text = e.results[0][0].transcript;
+    const ta = document.getElementById('logInput');
+    if (ta.value.trim()) ta.value = ta.value.trim() + ' ' + text;
+    else ta.value = text;
+    Modal.toast('✓ บันทึกเสียงแล้ว');
+  };
+
+  recognition.onerror = (e) => {
+    Modal.toast('❌ Voice error: ' + e.error);
+  };
+
+  recognition.onend = () => {
+    btn.classList.remove('recording');
+    btn.innerHTML = '🎤';
+    drState.recording = false;
+  };
+
+  try {
+    recognition.start();
+    Modal.toast('🎤 พูดได้เลย...');
+  } catch (e) {
+    btn.classList.remove('recording');
+    btn.innerHTML = '🎤';
+    drState.recording = false;
+    Modal.toast('❌ ' + e.message);
+  }
+}
+
+// =========================
+// PHOTO INPUT (capture context — saves as note, basic for now)
+// =========================
+function onPhotoClick() {
+  document.getElementById('photoInput').click();
+}
+
+function onPhotoSelected(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  Modal.toast('📷 อัปโหลดรูปจะมาใน Phase 3 (Smart Inputs)');
+  e.target.value = '';
+}
+
+// =========================
+// SUBMIT LOG WITH AI CONFIRM
+// =========================
 async function submitLog() {
   const text = document.getElementById('logInput').value.trim();
   if (!text) {
@@ -390,7 +548,7 @@ async function submitLog() {
 
   const btn = document.getElementById('logSubmitBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span> AI กำลังวิเคราะห์...';
+  btn.innerHTML = '<span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:middle"></span> AI...';
 
   try {
     const parseRes = await API.callPost('parse_activity_text', { text: text });
@@ -403,7 +561,7 @@ async function submitLog() {
     showAiConfirmModal(text, null);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '+ เพิ่มบันทึก (AI จะ tag ให้)';
+    btn.innerHTML = 'บันทึก →';
   }
 }
 
@@ -547,18 +705,54 @@ async function confirmLog() {
   }
 }
 
-async function genSummary() {
-  const box = document.getElementById('aiSummaryBox');
-  box.innerHTML = '<div class="dr-ai-loading">🤖 AI กำลังสรุป...</div>';
-  try {
-    const res = await API.callPost('generate_daily_summary_v2', { date: drState.date });
-    if (!res.ok || !res.data) throw new Error(res.error || 'AI failed');
-    box.textContent = res.data.summary || '(ไม่มีข้อมูลให้สรุป)';
-  } catch (err) {
-    box.innerHTML = '<span style="color:#991B1B">❌ ' + err.message + '</span>';
+// =========================
+// STICKY SUMMARY
+// =========================
+async function toggleSummary() {
+  if (drState.summExpanded) {
+    document.getElementById('summPanel').classList.remove('on');
+    document.getElementById('stickyBar').classList.remove('expanded');
+    document.getElementById('stickyArr').textContent = '↑';
+    drState.summExpanded = false;
+    return;
+  }
+  drState.summExpanded = true;
+  document.getElementById('summPanel').classList.add('on');
+  document.getElementById('stickyBar').classList.add('expanded');
+  document.getElementById('stickyArr').textContent = '↓';
+
+  if (!drState.summText) {
+    await genSummary(false);
   }
 }
 
+async function genSummary(force) {
+  const box = document.getElementById('summBox');
+  const acts = document.getElementById('summActs');
+  box.innerHTML = '<div class="dr-summ-loading">🤖 AI กำลังสรุป...</div>';
+  acts.style.display = 'none';
+
+  try {
+    const res = await API.callPost('generate_daily_summary_v2', { date: drState.date });
+    if (!res.ok || !res.data) throw new Error(res.error || 'AI failed');
+    drState.summText = res.data.summary || '(ไม่มีข้อมูลให้สรุป)';
+    box.innerHTML = '<div class="dr-summ-tx">' + escapeHtml(drState.summText) + '</div>';
+    acts.style.display = 'flex';
+  } catch (err) {
+    box.innerHTML = '<div style="color:#991B1B;font-size:11px;text-align:center;padding:10px">❌ ' + err.message + '</div>';
+  }
+}
+
+function copySummary() {
+  if (!drState.summText) return;
+  navigator.clipboard.writeText(drState.summText).then(() => {
+    Modal.toast('✓ Copy แล้ว');
+  });
+}
+
+// =========================
+// DELETE LOG
+// =========================
 async function deleteLog(logId) {
   if (!confirm('ลบบันทึกนี้?')) return;
   try {
@@ -571,6 +765,9 @@ async function deleteLog(logId) {
   }
 }
 
+// =========================
+// UTILS
+// =========================
 function formatThaiDate(d) {
   const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
