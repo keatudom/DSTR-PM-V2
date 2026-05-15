@@ -289,13 +289,47 @@ async function loadAll() {
       refresh();
     };
     updateHeaderDate();
-    const [ctrs, ffs] = await Promise.all([
-      API.callRead('get_contractors'),
-      API.callRead('get_ff_list')
-    ]);
-    if (ctrs.ok) drState.contractors = ctrs.data || [];
-    if (ffs.ok) drState.ffs = ffs.data || [];
-    await refresh();
+
+    // Use cached contractors + ffs if available
+    const cachedCtrs = localStorage.getItem('dstr_contractors');
+    const cachedFFs = localStorage.getItem('dstr_ffs');
+    const cacheTime = parseInt(localStorage.getItem('dstr_cache_time') || '0');
+    const cacheValid = (Date.now() - cacheTime) < 3600000; // 1 hour
+
+    if (cachedCtrs && cachedFFs && cacheValid) {
+      drState.contractors = JSON.parse(cachedCtrs);
+      drState.ffs = JSON.parse(cachedFFs);
+    }
+
+    // Single bundled request — much faster
+    const skipRefs = cacheValid && cachedCtrs && cachedFFs;
+    const res = await API.callRead('get_daily_bundle', {
+      date: drState.date,
+      skip_refs: skipRefs ? 'true' : 'false'
+    });
+
+    if (!res.ok) throw new Error(res.error || 'Bundle load failed');
+    const b = res.data || {};
+
+    if (b.contractors) {
+      drState.contractors = b.contractors;
+      localStorage.setItem('dstr_contractors', JSON.stringify(b.contractors));
+    }
+    if (b.ffs) {
+      drState.ffs = b.ffs;
+      localStorage.setItem('dstr_ffs', JSON.stringify(b.ffs));
+      localStorage.setItem('dstr_cache_time', String(Date.now()));
+    }
+
+    drState.stats = b.stats;
+    drState.logs = b.feed || [];
+
+    if (b.stats) renderStats(b.stats);
+    renderFeed();
+
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('dateNext').disabled = drState.date >= today;
+
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
     document.getElementById('stickyWrap').style.display = 'block';
@@ -313,7 +347,22 @@ async function refresh() {
   drState.summExpanded = false;
   document.getElementById('summPanel').classList.remove('on');
   document.getElementById('stickyBar').classList.remove('expanded');
-  await Promise.all([loadStats(), loadFeed()]);
+
+  // Use bundle for refresh too (skip refs since we have them cached)
+  try {
+    const res = await API.callRead('get_daily_bundle', {
+      date: drState.date,
+      skip_refs: 'true'
+    });
+    if (res.ok && res.data) {
+      drState.stats = res.data.stats;
+      drState.logs = res.data.feed || [];
+      if (res.data.stats) renderStats(res.data.stats);
+      renderFeed();
+    }
+  } catch (e) {
+    console.error('Refresh failed:', e);
+  }
 }
 
 function updateHeaderDate() {
