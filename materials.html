@@ -156,6 +156,210 @@
 @media(min-width:768px) {
   .mat-app { max-width:480px; margin:0 auto; }
 }
+
+/* ============================================================
+   📷 PHOTO ATTACHMENTS
+   ============================================================ */
+
+/* Scan Bill Button (สีโดดเด่นเรียกความสนใจ) */
+.bill-scan-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #BA7517 0%, #D97706 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 12px rgba(186,117,23,0.25);
+}
+.bill-scan-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.bill-scan-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(186,117,23,0.35); }
+
+.bill-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 14px;
+  color: #9CA3AF;
+  font-size: 10px;
+  font-weight: 500;
+}
+.bill-divider::before, .bill-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #E5E7EB;
+}
+
+/* Photo Picker Button */
+.photo-btn {
+  width: 100%;
+  padding: 10px 12px;
+  background: #fff;
+  color: #4B5563;
+  border: 1.5px dashed #D1D5DB;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.photo-btn:hover { border-color: #1F3864; color: #1F3864; }
+.photo-btn.has-photo { border-style: solid; background: #F0FDF4; border-color: #1D9E75; color: #065F46; }
+
+/* Photo Preview Thumbs */
+.photo-previews {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.photo-thumb {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #E5E7EB;
+  background: #F3F4F6;
+}
+.photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photo-thumb-x {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Bill Scan Modal */
+.bs-preview-img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  background: #F3F4F6;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.bs-info-box {
+  background: #F9FAFB;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 11px;
+}
+.bs-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  color: #4B5563;
+}
+.bs-info-row strong { color: #1F2937; font-weight: 600; }
+.bs-item {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border-left: 3px solid #1D9E75;
+}
+.bs-item.warn { border-left-color: #BA7517; background: #FFFBEB; }
+.bs-item.err { border-left-color: #E24B4A; background: #FEF2F2; }
+.bs-item-r {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+.bs-item-conf {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 99px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.bs-conf-h { background: #D1FAE5; color: #065F46; }
+.bs-conf-m { background: #FEF3C7; color: #92400E; }
+.bs-conf-l { background: #FEE2E2; color: #991B1B; }
+.bs-item-raw {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1F2937;
+  flex: 1;
+}
+.bs-item-matched {
+  font-size: 11px;
+  color: #6B7280;
+  margin-bottom: 6px;
+}
+.bs-item-matched strong { color: #1F3864; }
+.bs-item-edit {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 6px;
+  margin-top: 6px;
+}
+.bs-item-edit select, .bs-item-edit input {
+  padding: 6px 8px;
+  font-size: 11px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+/* Material Detail Photo Gallery */
+.mat-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+.mat-gallery-item {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #F3F4F6;
+  cursor: pointer;
+  position: relative;
+}
+.mat-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mat-gallery-item.add {
+  border: 1.5px dashed #D1D5DB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9CA3AF;
+  font-size: 22px;
+}
+.mat-gallery-item.add:hover { border-color: #1F3864; color: #1F3864; }
 </style>
 </head>
 <body>
@@ -233,6 +437,13 @@
     <!-- TAB: รับ (Receive) -->
     <div id="tab-rcv" class="mat-tab-pane">
       <div class="mf-form">
+        <!-- 🆕 AI Bill Scanner -->
+        <button class="bill-scan-btn" onclick="document.getElementById('billInput').click()">
+          🤖📷 สแกนบิลด้วย AI
+        </button>
+        <input id="billInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="onBillSelected(event)">
+        <div class="bill-divider">หรือกรอกเอง</div>
+
         <div class="mf-grp">
           <label class="mf-lb">วัสดุ</label>
           <select id="rcvMat" class="mf-in"></select>
@@ -312,6 +523,14 @@
         <div class="mf-grp">
           <label class="mf-lb">หมายเหตุ</label>
           <input id="cntNotes" type="text" class="mf-in" placeholder="(ไม่บังคับ)">
+        </div>
+        <div class="mf-grp">
+          <label class="mf-lb">📷 แนบรูป (ไม่บังคับ)</label>
+          <button id="cntPhotoBtn" type="button" class="photo-btn" onclick="document.getElementById('cntPhotoInput').click()">
+            <span>📷</span> ถ่ายรูป/เลือกรูป
+          </button>
+          <input id="cntPhotoInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="onCountPhotoSelected(event)" multiple>
+          <div id="cntPhotoPrev" class="photo-previews"></div>
         </div>
         <button class="mf-submit" onclick="submitCount()">📝 บันทึกการนับ</button>
       </div>
@@ -547,7 +766,7 @@ function getCategoryIcon(cat) {
   return map[cat] || '📦';
 }
 
-function showMatDetail(matId) {
+async function showMatDetail(matId) {
   const m = matState.materials.find(x => x.id === matId);
   if (!m) return;
   const isStatus = m.tracking_mode === 'STATUS';
@@ -559,21 +778,352 @@ function showMatDetail(matId) {
   } else {
     stockDisplay = stock + ' ' + m.unit;
   }
+
+  // Initial render (with loading gallery)
+  const renderModal = (photos) => {
+    let galleryHtml = '<div class="mat-gallery">';
+    photos.forEach(p => {
+      galleryHtml += `
+        <div class="mat-gallery-item" onclick="viewPhoto('${p.drive_url}','${p.photo_id}','${matId}')">
+          <img src="${p.thumbnail}" alt="${p.caption||''}" loading="lazy" onerror="this.src='${p.drive_url}'">
+        </div>
+      `;
+    });
+    galleryHtml += `
+      <div class="mat-gallery-item add" onclick="document.getElementById('matPhotoInput_${matId}').click()">+</div>
+    </div>
+    <input id="matPhotoInput_${matId}" type="file" accept="image/*" capture="environment" style="display:none" onchange="onMatPhotoSelected(event,'${matId}')">
+    `;
+
+    const html = `
+      <div class="modal-title">${m.name}</div>
+      <div class="modal-desc">${m.id} · ${m.category}</div>
+      <div class="modal-info">
+        <div class="modal-info-row"><span class="modal-info-key">หน่วย:</span><span class="modal-info-val">${m.unit}</span></div>
+        <div class="modal-info-row"><span class="modal-info-key">สต๊อก:</span><span class="modal-info-val">${stockDisplay}</span></div>
+        <div class="modal-info-row"><span class="modal-info-key">โหมด:</span><span class="modal-info-val">${m.tracking_mode}</span></div>
+        ${m.min_stock_alert ? `<div class="modal-info-row"><span class="modal-info-key">เตือนที่:</span><span class="modal-info-val">${m.min_stock_alert} ${m.unit}</span></div>` : ''}
+        ${m.notes ? `<div class="modal-info-row"><span class="modal-info-key">หมายเหตุ:</span><span class="modal-info-val">${m.notes}</span></div>` : ''}
+      </div>
+      <div style="margin-top:14px">
+        <div style="font-size:11px;font-weight:600;color:#4B5563;margin-bottom:6px">
+          📷 รูปอ้างอิง ${photos.length > 0 ? `(${photos.length})` : ''}
+        </div>
+        ${galleryHtml}
+      </div>
+      <div class="modal-btns">
+        <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>
+      </div>
+    `;
+    Modal.show(html);
+  };
+
+  // Show modal immediately with loading
+  renderModal([]);
+
+  // Fetch photos and re-render
+  try {
+    const res = await API.callRead('get_material_photos', { mat_id: matId });
+    if (res.ok && res.data) {
+      renderModal(res.data);
+    }
+  } catch (err) {}
+}
+
+// ============================================================
+// 📷 PHOTO HELPERS
+// ============================================================
+
+// Compress image to max 1280px, JPEG 80%, return base64
+function compressImage(file, maxDim = 1280, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > h && w > maxDim) { h = h * (maxDim / w); w = maxDim; }
+        else if (h > maxDim) { w = w * (maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function onMatPhotoSelected(e, matId) {
+  const file = e.target.files[0];
+  if (!file) return;
+  Modal.toast('📷 กำลังอัปโหลดรูป...');
+  try {
+    const base64 = await compressImage(file);
+    await API.callPost('upload_photo', {
+      image_base64: base64,
+      linked_to: 'material',
+      link_id: matId,
+      caption: '',
+      uploaded_by: 'admin'
+    });
+    Modal.toast('✓ อัปโหลดแล้ว');
+    setTimeout(() => {
+      Modal.close();
+      showMatDetail(matId);
+    }, 1000);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+  e.target.value = '';
+}
+
+function viewPhoto(url, photoId, matId) {
   const html = `
-    <div class="modal-title">${m.name}</div>
-    <div class="modal-desc">${m.id} · ${m.category}</div>
-    <div class="modal-info">
-      <div class="modal-info-row"><span class="modal-info-key">หน่วย:</span><span class="modal-info-val">${m.unit}</span></div>
-      <div class="modal-info-row"><span class="modal-info-key">สต๊อก:</span><span class="modal-info-val">${stockDisplay}</span></div>
-      <div class="modal-info-row"><span class="modal-info-key">โหมด:</span><span class="modal-info-val">${m.tracking_mode}</span></div>
-      ${m.min_stock_alert ? `<div class="modal-info-row"><span class="modal-info-key">เตือนที่:</span><span class="modal-info-val">${m.min_stock_alert} ${m.unit}</span></div>` : ''}
-      ${m.notes ? `<div class="modal-info-row"><span class="modal-info-key">หมายเหตุ:</span><span class="modal-info-val">${m.notes}</span></div>` : ''}
+    <div style="text-align:center">
+      <img src="${url}" style="max-width:100%;max-height:60vh;border-radius:8px;object-fit:contain;background:#000">
     </div>
     <div class="modal-btns">
-      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>
+      <button class="modal-btn modal-btn-warn" onclick="deleteThisPhoto('${photoId}','${matId}')">🗑 ลบ</button>
+      <button class="modal-btn modal-btn-primary" onclick="Modal.close();showMatDetail('${matId}')">ปิด</button>
     </div>
   `;
   Modal.show(html);
+}
+
+async function deleteThisPhoto(photoId, matId) {
+  if (!confirm('ยืนยันลบรูปนี้?')) return;
+  Modal.toast('กำลังลบ...');
+  try {
+    await API.callPost('delete_photo', { photo_id: photoId });
+    Modal.toast('✓ ลบแล้ว');
+    setTimeout(() => {
+      Modal.close();
+      showMatDetail(matId);
+    }, 1000);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+// Count tab photo
+matState.countPhotos = [];
+
+async function onCountPhotoSelected(e) {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+  Modal.toast('กำลังประมวลผลรูป...');
+  for (const f of files) {
+    try {
+      const base64 = await compressImage(f);
+      matState.countPhotos.push(base64);
+    } catch (err) {}
+  }
+  renderCountPhotoPreviews();
+  e.target.value = '';
+  Modal.toast('✓ เพิ่มรูปแล้ว');
+}
+
+function renderCountPhotoPreviews() {
+  const prev = document.getElementById('cntPhotoPrev');
+  if (!prev) return;
+  let html = '';
+  matState.countPhotos.forEach((b64, i) => {
+    html += `
+      <div class="photo-thumb">
+        <img src="${b64}">
+        <div class="photo-thumb-x" onclick="removeCountPhoto(${i})">✕</div>
+      </div>
+    `;
+  });
+  prev.innerHTML = html;
+  const btn = document.getElementById('cntPhotoBtn');
+  if (btn) {
+    if (matState.countPhotos.length > 0) {
+      btn.classList.add('has-photo');
+      btn.innerHTML = `<span>✓</span> ${matState.countPhotos.length} รูป · เพิ่มเพิ่ม`;
+    } else {
+      btn.classList.remove('has-photo');
+      btn.innerHTML = '<span>📷</span> ถ่ายรูป/เลือกรูป';
+    }
+  }
+}
+
+function removeCountPhoto(idx) {
+  matState.countPhotos.splice(idx, 1);
+  renderCountPhotoPreviews();
+}
+
+// ============================================================
+// 🤖 BILL SCANNER
+// ============================================================
+
+matState.scannedBill = null;
+
+async function onBillSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+
+  // Show modal with loading + preview
+  const previewUrl = URL.createObjectURL(file);
+  const loadingHtml = `
+    <div class="modal-title">🤖 AI กำลังอ่านบิล</div>
+    <div class="modal-desc">กรุณารอสักครู่...</div>
+    <img src="${previewUrl}" class="bs-preview-img">
+    <div style="text-align:center;padding:20px">
+      <div class="spinner"></div>
+      <div style="font-size:12px;color:#6B7280;margin-top:8px">กำลังวิเคราะห์ด้วย Gemini Vision...</div>
+    </div>
+  `;
+  Modal.show(loadingHtml);
+
+  try {
+    const base64 = await compressImage(file, 1600, 0.85);
+    const res = await API.callPost('scan_bill', {
+      image_base64: base64,
+      uploaded_by: 'admin'
+    });
+
+    if (!res.ok) throw new Error(res.error || 'AI failed');
+    matState.scannedBill = res.data;
+    renderBillScanResult(res.data, previewUrl);
+  } catch (err) {
+    Modal.show(`
+      <div class="modal-icon warn">⚠️</div>
+      <div class="modal-title">อ่านบิลไม่สำเร็จ</div>
+      <div class="modal-desc">${err.message}<br>กรุณาลองอีกครั้ง หรือกรอกข้อมูลเอง</div>
+      <div class="modal-btns">
+        <button class="modal-btn modal-btn-primary" onclick="Modal.close()">ปิด</button>
+      </div>
+    `);
+  }
+}
+
+function renderBillScanResult(data, previewUrl) {
+  const items = data.items || [];
+  if (items.length === 0) {
+    Modal.show(`
+      <div class="modal-icon warn">⚠️</div>
+      <div class="modal-title">AI ไม่พบรายการในบิล</div>
+      <div class="modal-desc">ลองถ่ายใหม่ให้ชัดขึ้น หรือกรอกข้อมูลเอง</div>
+      <div class="modal-btns"><button class="modal-btn modal-btn-primary" onclick="Modal.close()">ปิด</button></div>
+    `);
+    return;
+  }
+
+  // Materials select options
+  const matOpts = matState.materials.map(m =>
+    `<option value="${m.id}">${m.id} - ${m.name}</option>`).join('');
+
+  let itemsHtml = '';
+  items.forEach((item, i) => {
+    const conf = Number(item.match_confidence || 0);
+    let confClass = 'bs-conf-l';
+    if (conf >= 0.85) confClass = 'bs-conf-h';
+    else if (conf >= 0.7) confClass = 'bs-conf-m';
+    const confPct = Math.round(conf * 100);
+    const itemClass = !item.matched_material_id ? 'err' : (item.needs_review ? 'warn' : '');
+
+    itemsHtml += `
+      <div class="bs-item ${itemClass}" data-idx="${i}">
+        <div class="bs-item-r">
+          <span class="bs-item-conf ${confClass}">${confPct}%</span>
+          <span class="bs-item-raw">📄 ${item.raw_name}</span>
+        </div>
+        ${item.matched_material_id ? `<div class="bs-item-matched">→ <strong>${item.matched_material_name}</strong></div>` : '<div class="bs-item-matched" style="color:#E24B4A">❌ ไม่พบใน Master List</div>'}
+        <div class="bs-item-edit">
+          <select data-field="material_id" onchange="updateBillItem(${i},'material_id',this.value)">
+            <option value="">— เลือก —</option>
+            ${matOpts}
+          </select>
+          <input type="number" min="0" step="0.01" placeholder="จำนวน" value="${item.quantity || ''}" data-field="quantity" onchange="updateBillItem(${i},'quantity',this.value)">
+          <input type="number" min="0" placeholder="ราคา/หน่วย" value="${item.unit_price || ''}" data-field="unit_price" onchange="updateBillItem(${i},'unit_price',this.value)">
+        </div>
+      </div>
+    `;
+  });
+
+  // pre-select matched values via JS after render
+  const html = `
+    <div class="modal-title">🤖 AI พบ ${items.length} รายการ</div>
+    <div class="modal-desc">ตรวจสอบและแก้ไขก่อนยืนยัน</div>
+    <img src="${previewUrl || data.bill_thumbnail}" class="bs-preview-img">
+    <div class="bs-info-box">
+      <div class="bs-info-row"><span>เลขที่บิล:</span><strong>${data.invoice_no || '-'}</strong></div>
+      <div class="bs-info-row"><span>วันที่:</span><strong>${data.date || '-'}</strong></div>
+      <div class="bs-info-row"><span>ร้านค้า:</span><strong>${data.supplier || '-'}</strong></div>
+      <div class="bs-info-row"><span>ยอดรวม:</span><strong>${(data.total||0).toLocaleString()} ฿</strong></div>
+    </div>
+    <div style="max-height:35vh;overflow-y:auto">${itemsHtml}</div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="cancelBillScan()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="confirmBillScan()">✓ ยืนยัน ${items.length} รายการ</button>
+    </div>
+  `;
+  Modal.show(html, 'pay-modal');
+
+  // Pre-select matched dropdowns
+  setTimeout(() => {
+    items.forEach((item, i) => {
+      const card = document.querySelector(`.bs-item[data-idx="${i}"]`);
+      if (!card) return;
+      const sel = card.querySelector('select');
+      if (sel && item.matched_material_id) sel.value = item.matched_material_id;
+    });
+  }, 50);
+}
+
+function updateBillItem(idx, field, value) {
+  if (!matState.scannedBill) return;
+  if (!matState.scannedBill.items[idx]) return;
+  matState.scannedBill.items[idx][field] = (field === 'quantity' || field === 'unit_price') ? Number(value) : value;
+  if (field === 'material_id') {
+    matState.scannedBill.items[idx].matched_material_id = value;
+  }
+}
+
+function cancelBillScan() {
+  matState.scannedBill = null;
+  Modal.close();
+}
+
+async function confirmBillScan() {
+  if (!matState.scannedBill) return;
+  const items = matState.scannedBill.items
+    .filter(i => i.matched_material_id && i.quantity > 0)
+    .map(i => ({
+      material_id: i.matched_material_id,
+      quantity: i.quantity,
+      unit_price: i.unit_price || 0,
+      notes: 'สแกนบิล: ' + (i.raw_name || '')
+    }));
+
+  if (items.length === 0) {
+    Modal.toast('❌ ไม่มีรายการที่พร้อมบันทึก (ต้องเลือกวัสดุ + ใส่จำนวน)');
+    return;
+  }
+
+  Modal.toast('กำลังบันทึก ' + items.length + ' รายการ...');
+  const res = await API.callPost('confirm_bill_items', {
+    bill_photo_id: matState.scannedBill.bill_photo_id,
+    invoice_no: matState.scannedBill.invoice_no,
+    items: JSON.stringify(items)
+  });
+  if (res.ok) {
+    Modal.toast('✓ บันทึกสำเร็จ ' + items.length + ' รายการ');
+  } else {
+    Modal.toast('⚠️ ' + (res.error || 'ดูใน Sheets'));
+  }
+  setTimeout(async () => {
+    Modal.close();
+    matState.scannedBill = null;
+    await loadAll();
+  }, 1500);
 }
 
 // ============================================================
@@ -854,14 +1404,36 @@ async function submitCount() {
     notes: document.getElementById('cntNotes').value,
     trigger_source: 'manual',
   });
+
+  // Upload photos if any (after count saved)
+  const photos = matState.countPhotos || [];
+  if (photos.length > 0) {
+    setTimeout(async () => {
+      Modal.toast('📷 กำลังอัปโหลด ' + photos.length + ' รูป...');
+      for (const b64 of photos) {
+        try {
+          await API.callWrite('upload_photo', {
+            image_base64: b64,
+            linked_to: 'count',
+            link_id: matId + '_' + Date.now(),
+            caption: 'นับสต๊อก',
+            uploaded_by: 'admin'
+          });
+        } catch (e) {}
+      }
+    }, 1800);
+  }
+
   setTimeout(async () => {
     Modal.toast('✓ บันทึกการนับแล้ว');
     document.getElementById('cntQty').value = '';
     document.getElementById('cntNotes').value = '';
     matState.cntSelectedStatus = null;
+    matState.countPhotos = [];
+    renderCountPhotoPreviews();
     document.getElementById('cntStatusSel').textContent = 'ยังไม่เลือก';
     await loadAll();
-  }, 1500);
+  }, photos.length > 0 ? 3500 : 1500);
 }
 
 // START
