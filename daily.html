@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/main.css">
 <style>
-.dr-app { padding-bottom: 130px; /* extra room for sticky summary bar + bottom nav */ }
+.dr-app { padding-bottom: 80px; /* room for bottom nav + pill */ }
 
 /* Header */
 .dr-hdr { background: linear-gradient(135deg,#1F3864 0%,#0C447C 100%); color:#fff; padding:14px 16px; border-radius:0 0 16px 16px; margin:-16px -16px 12px; }
@@ -97,23 +97,26 @@
 .dr-empty-i { font-size:32px; margin-bottom:8px; opacity:0.4; }
 
 /* =========================
-   STICKY SUMMARY BAR (Option B)
+   STICKY SUMMARY PILL (FAB-style)
    ========================= */
-.dr-sticky-wrap { position:fixed; bottom:54px; left:0; right:0; padding:8px 12px 6px; z-index:47; pointer-events:none; }
-@media(min-width:768px) { .dr-sticky-wrap { max-width:480px; left:50%; transform:translateX(-50%); } }
-.dr-sticky { pointer-events:auto; background:linear-gradient(135deg,#7C3AED,#A855F7); border-radius:12px; padding:10px 14px; color:#fff; cursor:pointer; display:flex; align-items:center; gap:10px; box-shadow:0 6px 16px rgba(124,58,237,0.4); }
-.dr-sticky:hover { box-shadow:0 8px 22px rgba(124,58,237,0.5); transform:translateY(-1px); }
-.dr-sticky.expanded { background:#fff; color:#1F2937; border:1px solid #DDD6FE; }
-.dr-sticky-i { font-size:20px; flex-shrink:0; }
-.dr-sticky-bd { flex:1; min-width:0; }
-.dr-sticky-t { font-size:12.5px; font-weight:600; }
-.dr-sticky-s { font-size:9.5px; opacity:0.85; margin-top:1px; }
-.dr-sticky.expanded .dr-sticky-s { color:#6B7280; opacity:1; }
-.dr-sticky-arr { font-size:18px; opacity:0.7; }
+.dr-sticky-wrap { position:fixed; bottom:68px; right:14px; z-index:47; display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+@media(min-width:768px) {
+  .dr-sticky-wrap { right:50%; transform:translateX(232px); }
+}
+
+/* Pill button — compact, rounded */
+.dr-pill { background:linear-gradient(135deg,#7C3AED,#A855F7); border-radius:99px; padding:10px 14px 10px 12px; color:#fff; cursor:pointer; display:flex; align-items:center; gap:7px; box-shadow:0 6px 18px rgba(124,58,237,0.45); transition:all .15s; }
+.dr-pill:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(124,58,237,0.55); }
+.dr-pill.expanded { background:#fff; color:#5B21B6; border:1px solid #DDD6FE; }
+.dr-pill-i { font-size:18px; flex-shrink:0; line-height:1; }
+.dr-pill-t { font-size:11.5px; font-weight:600; white-space:nowrap; }
+.dr-pill-c { font-size:9.5px; background:rgba(255,255,255,0.25); padding:1.5px 7px; border-radius:99px; font-weight:600; min-width:18px; text-align:center; }
+.dr-pill.expanded .dr-pill-c { background:#EDE9FE; color:#5B21B6; }
 
 /* Summary expanded panel */
-.dr-summ-panel { background:#fff; border:1px solid #DDD6FE; border-radius:12px; margin-top:8px; padding:14px; pointer-events:auto; box-shadow:0 6px 16px rgba(124,58,237,0.15); display:none; }
-.dr-summ-panel.on { display:block; }
+.dr-summ-panel { background:#fff; border:1px solid #DDD6FE; border-radius:14px; padding:14px; box-shadow:0 8px 24px rgba(124,58,237,0.2); display:none; max-width:340px; width:calc(100vw - 28px); }
+.dr-summ-panel.on { display:block; animation:slideUp .25s ease-out; }
+@keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 .dr-summ-tx { font-size:12px; color:#1F2937; line-height:1.7; white-space:pre-wrap; }
 .dr-summ-loading { text-align:center; padding:14px; color:#7C3AED; font-size:11px; }
 .dr-summ-acts { display:flex; gap:6px; margin-top:10px; padding-top:10px; border-top:1px solid #F3F4F6; }
@@ -232,22 +235,19 @@
   </div>
 </div>
 
-<!-- STICKY SUMMARY BAR -->
+<!-- STICKY SUMMARY PILL -->
 <div class="dr-sticky-wrap" id="stickyWrap" style="display:none">
-  <div class="dr-sticky" id="stickyBar" onclick="toggleSummary()">
-    <div class="dr-sticky-i">🤖</div>
-    <div class="dr-sticky-bd">
-      <div class="dr-sticky-t">สรุปรายงานวันนี้</div>
-      <div class="dr-sticky-s" id="stickySub">5 events · กดเพื่อให้ AI สรุป</div>
-    </div>
-    <div class="dr-sticky-arr" id="stickyArr">↑</div>
-  </div>
   <div class="dr-summ-panel" id="summPanel">
     <div id="summBox"></div>
     <div class="dr-summ-acts" id="summActs" style="display:none">
       <button class="dr-summ-act" onclick="copySummary()">📋 Copy</button>
       <button class="dr-summ-act" onclick="genSummary(true)">🔄 ใหม่</button>
     </div>
+  </div>
+  <div class="dr-pill" id="stickyBar" onclick="toggleSummary()">
+    <div class="dr-pill-i">🤖</div>
+    <div class="dr-pill-t">สรุปวันนี้</div>
+    <div class="dr-pill-c" id="stickyCount">0</div>
   </div>
 </div>
 
@@ -313,7 +313,6 @@ async function refresh() {
   drState.summExpanded = false;
   document.getElementById('summPanel').classList.remove('on');
   document.getElementById('stickyBar').classList.remove('expanded');
-  document.getElementById('stickyArr').textContent = '↑';
   await Promise.all([loadStats(), loadFeed()]);
 }
 
@@ -356,8 +355,7 @@ function renderStats(s) {
   document.getElementById('statCtr').textContent = s.contractors_involved || 0;
   document.getElementById('logCountTxt').textContent =
     (s.logs_total || 0) + ' events';
-  document.getElementById('stickySub').textContent =
-    (s.logs_total || 0) + ' events · กดเพื่อให้ AI สรุป';
+  document.getElementById('stickyCount').textContent = s.logs_total || 0;
 }
 
 async function loadFeed() {
@@ -712,14 +710,12 @@ async function toggleSummary() {
   if (drState.summExpanded) {
     document.getElementById('summPanel').classList.remove('on');
     document.getElementById('stickyBar').classList.remove('expanded');
-    document.getElementById('stickyArr').textContent = '↑';
     drState.summExpanded = false;
     return;
   }
   drState.summExpanded = true;
   document.getElementById('summPanel').classList.add('on');
   document.getElementById('stickyBar').classList.add('expanded');
-  document.getElementById('stickyArr').textContent = '↓';
 
   if (!drState.summText) {
     await genSummary(false);
