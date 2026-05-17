@@ -10,11 +10,8 @@ const CONFIG = {
   // Google Sheets ID
   SHEETS_ID: '10P_wZ9GfcWGukAotewBEzpgr-NtvpJ28MALYB83HVHc',
 
-  // รหัสผ่านของแต่ละบทบาท
-  PASSWORDS: {
-    admin: 'DSTR-ADMIN-2026',
-    client: 'BOW-CLIENT-2026'
-  },
+  // รหัสผ่าน — ย้ายไปตรวจที่ Apps Script แล้ว (ปลอดภัยขึ้น)
+  // ไม่เก็บรหัสจริงในไฟล์นี้อีกต่อไป
 
   // ข้อมูลโปรเจกต์
   PROJECTS: {

@@ -1,23 +1,36 @@
 // ============================================================
-// auth.js — ระบบเข้าสู่ระบบ
-// ใช้ localStorage เก็บ session 7 วัน
+// auth.js — ระบบเข้าสู่ระบบ (v2 — ปลอดภัยขึ้น)
+// รหัสผ่านตรวจสอบที่ Apps Script (server) ไม่เก็บใน config.js
 // ============================================================
 
 const Auth = {
-  // ตรวจสอบรหัสผ่าน
-  login(role, password) {
-    const correctPwd = CONFIG.PASSWORDS[role];
-    if (!correctPwd) return { ok: false, error: 'บทบาทไม่ถูกต้อง' };
-    if (password !== correctPwd) return { ok: false, error: 'รหัสผ่านไม่ถูกต้อง' };
+  // ─────────────────────────────────────────────
+  // เข้าสู่ระบบ — ส่งรหัสไปตรวจที่ Apps Script
+  // ใช้แบบ async: const res = await Auth.login(password)
+  // ไม่ต้องระบุ role — server จะบอกเองว่าเป็น admin/client
+  // ─────────────────────────────────────────────
+  async login(password) {
+    if (!password || !password.trim()) {
+      return { ok: false, error: 'กรุณาใส่รหัสผ่าน' };
+    }
+    try {
+      const res = await API.callRead('login', { password: password.trim() });
 
-    // บันทึก session
-    const session = {
-      role: role,
-      loginAt: Date.now(),
-      expiresAt: Date.now() + CONFIG.SESSION_DURATION
-    };
-    localStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
-    return { ok: true, role: role };
+      // Apps Script คืน { role, authenticated } หรือ { ok:false, error }
+      const data = res.data || res;
+      if (data && data.authenticated && data.role) {
+        const session = {
+          role: data.role,
+          loginAt: Date.now(),
+          expiresAt: Date.now() + CONFIG.SESSION_DURATION
+        };
+        localStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
+        return { ok: true, role: data.role };
+      }
+      return { ok: false, error: 'รหัสผ่านไม่ถูกต้อง' };
+    } catch (err) {
+      return { ok: false, error: 'เชื่อมต่อไม่สำเร็จ — ลองใหม่อีกครั้ง' };
+    }
   },
 
   // ออกจากระบบ
