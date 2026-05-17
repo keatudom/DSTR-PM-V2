@@ -29,9 +29,7 @@ DSTR-PM-V2/
     └── Code.gs         ← Backend
 ```
 
-## รหัสผ่าน (เปลี่ยนใน `js/config.js`)
-- **Admin:** `DSTR-ADMIN-2026`
-- **Client:** `BOW-CLIENT-2026`
+
 
 ## Tech Stack
 - Frontend: HTML + CSS + Vanilla JS
