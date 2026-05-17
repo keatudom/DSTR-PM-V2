@@ -102,8 +102,10 @@
 .dr-tag-issue { background:#FEE2E2; color:#991B1B; }
 .dr-tag-auto { background:#D1FAE5; color:#065F46; }
 .dr-tag-phase { background:#E5E7EB; color:#4B5563; }
-.dr-log-x { color:#D1D5DB; font-size:13px; padding:0 4px; cursor:pointer; }
-.dr-log-x:hover { color:#E24B4A; }
+.dr-log-acts { display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+.dr-log-act { width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer; border-radius:6px; color:#9CA3AF; transition:all .12s; }
+.dr-log-act:hover { background:#F3F4F6; color:#1F3864; }
+.dr-log-act-del:hover { background:#FEE2E2; color:#E24B4A; }
 
 .dr-empty { text-align:center; padding:30px 16px; color:#9CA3AF; font-size:11px; }
 .dr-empty-i { font-size:32px; margin-bottom:8px; opacity:0.4; }
@@ -527,7 +529,28 @@ function renderLog(l) {
   if (l.tags_phase) tagsHtml.push(`<span class="dr-log-tag dr-tag-phase">${l.tags_phase}</span>`);
   if (isAuto) tagsHtml.push('<span class="dr-log-tag dr-tag-auto">🤖 auto</span>');
 
-  const xBtn = isAuto ? '' : `<div class="dr-log-x" onclick="deleteLog('${l.log_id}')">✕</div>`;
+  // Determine action buttons
+  const meta = l.meta || {};
+  const isTaskDone = meta.event === 'task_done' && meta.task_id;
+
+  let actionsHtml = '';
+  if (isTaskDone) {
+    // Task-done log: offer "untick" (revert task) + delete
+    actionsHtml = `
+      <div class="dr-log-acts">
+        <div class="dr-log-act" title="ยกเลิกการติ๊ก task"
+             onclick="untickTask('${l.log_id}','${meta.task_id}')">↩️</div>
+        <div class="dr-log-act dr-log-act-del" title="ลบ log นี้"
+             onclick="deleteLog('${l.log_id}')">✕</div>
+      </div>`;
+  } else {
+    // Any other log (manual or auto): just delete
+    actionsHtml = `
+      <div class="dr-log-acts">
+        <div class="dr-log-act dr-log-act-del" title="ลบ log นี้"
+             onclick="deleteLog('${l.log_id}')">✕</div>
+      </div>`;
+  }
 
   return `
     <div class="dr-log ${isAuto?'auto':''}">
@@ -536,7 +559,7 @@ function renderLog(l) {
         <div class="dr-log-txt">${escapeHtml(l.text)}</div>
         ${tagsHtml.length ? '<div class="dr-log-tags">' + tagsHtml.join('') + '</div>' : ''}
       </div>
-      ${xBtn}
+      ${actionsHtml}
     </div>
   `;
 }
@@ -1356,15 +1379,31 @@ function openSummaryFromReport() {
 }
 
 // =========================
-// DELETE LOG
+// DELETE LOG / UNTICK TASK
 // =========================
 async function deleteLog(logId) {
   if (!confirm('ลบบันทึกนี้?')) return;
   try {
-    const res = await API.callPost('delete_activity_log', { log_id: logId });
+    const res = await API.callWrite('delete_activity_log', { log_id: logId });
     if (!res.ok) throw new Error(res.error || 'Delete failed');
     Modal.toast('✓ ลบแล้ว');
-    await refresh();
+    setTimeout(() => refresh(), 800);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+async function untickTask(logId, taskId) {
+  if (!confirm('ยกเลิกการติ๊ก task นี้?\n\nTask จะกลับเป็น "ยังไม่เสร็จ" และ log นี้จะถูกลบ')) return;
+  Modal.toast('กำลังยกเลิก...');
+  try {
+    const res = await API.callWrite('untick_task_from_log', {
+      log_id: logId,
+      task_id: taskId
+    });
+    if (!res.ok) throw new Error(res.error || 'Untick failed');
+    Modal.toast('✓ ยกเลิกการติ๊กแล้ว — task กลับเป็นไม่เสร็จ');
+    setTimeout(() => refresh(), 1200);
   } catch (err) {
     Modal.toast('❌ ' + err.message);
   }
