@@ -153,6 +153,23 @@
 .tk-opt-why { font-size:10px; color:#9CA3AF; }
 .tk-note { font-size:10.5px; color:#6B7280; background:#F9FAFB; padding:7px 10px; border-radius:8px; margin-bottom:4px; }
 
+/* Material Transaction Modal */
+.mt-list { display:flex; flex-direction:column; gap:7px; margin:10px 0; }
+.mt-item { border:1px solid #E5E7EB; border-radius:10px; padding:10px 12px; }
+.mt-item-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+.mt-type { font-size:11px; font-weight:700; color:#1F3864; }
+.mt-item-name { font-size:12.5px; font-weight:600; color:#1F2937; }
+.mt-item-detail { font-size:11px; color:#4B5563; margin-top:3px; }
+.mt-miss { font-size:10px; color:#92400E; background:#FFFBEB; padding:3px 7px; border-radius:6px; margin-top:5px; }
+
+/* Stock Warning Modal */
+.sw-list { display:flex; flex-direction:column; gap:6px; margin:10px 0; }
+.sw-item { border-radius:9px; padding:9px 11px; border:1px solid; }
+.sw-err { background:#FEF2F2; border-color:#FECACA; }
+.sw-warn { background:#FFFBEB; border-color:#FDE68A; }
+.sw-item-h { font-size:12px; font-weight:600; color:#1F2937; }
+.sw-item-m { font-size:11px; color:#4B5563; margin-top:2px; }
+
 /* AI Confirm modal */
 .aic-card { background:#fff; border:1px solid #E5E7EB; border-radius:10px; padding:11px 13px; margin-bottom:8px; }
 .aic-section { margin-bottom:8px; }
@@ -316,6 +333,7 @@ const drState = {
   summEditing: false,
   taskCandidates: null,
   selectedTaskId: null,
+  matItems: null,
   recognition: null,
   recording: false,
 };
@@ -767,6 +785,20 @@ async function confirmLog() {
   tags_issue = [...new Set(tags_issue)];
 
   Modal.close();
+
+  // 🎯 Plan B: If this is a material transaction, skip manual log —
+  // the transaction's auto-log will represent it instead (no duplicate)
+  const matKeywords = ['เบิก', 'รับของ', 'รับเข้า', 'นับสต๊อก', 'นับ'];
+  const isMaterialIntent = matKeywords.some(k => text.indexOf(k) >= 0);
+
+  if (isMaterialIntent) {
+    document.getElementById('logInput').value = '';
+    drState.pendingLog = null;
+    await checkMaterialSuggestion(text);
+    return;
+  }
+
+  // Normal manual log flow
   Modal.toast('กำลังบันทึก...');
 
   try {
@@ -795,6 +827,19 @@ async function confirmLog() {
     checkTaskSuggestion(text, tags_ff);
   } catch (err) {
     Modal.toast('❌ ' + err.message);
+  }
+}
+
+// =========================
+// 🎯 PHASE 1A+1B: AI SUGGESTIONS DISPATCHER (legacy — kept for safety)
+// =========================
+async function checkAiSuggestions(text, tags_ff) {
+  const matKeywords = ['เบิก', 'รับของ', 'รับเข้า', 'นับสต๊อก', 'นับ'];
+  const hasMatIntent = matKeywords.some(k => text.indexOf(k) >= 0);
+  if (hasMatIntent) {
+    await checkMaterialSuggestion(text);
+  } else {
+    await checkTaskSuggestion(text, tags_ff);
   }
 }
 
@@ -887,6 +932,221 @@ async function confirmTaskTick() {
     Modal.toast('✓ ติ๊ก "' + (task ? task.task_name : 'task') + '" เสร็จแล้ว');
     drState.taskCandidates = null;
     drState.selectedTaskId = null;
+    setTimeout(() => refresh(), 1200);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+// =========================
+// 🎯 PHASE 1B: AUTO-TRANSACTION (MATERIAL)
+// =========================
+async function checkMaterialSuggestion(text) {
+  drState.matRawText = text;
+  try {
+    Modal.toast('🤖 AI ตรวจรายการวัสดุ...');
+    const res = await API.callPost('parse_material_log', { text: text });
+
+    if (!res.ok || !res.data) {
+      // AI failed — fallback: save as plain manual log
+      await saveFallbackLog(text);
+      return;
+    }
+    const data = res.data;
+    const items = data.items || [];
+    const needsClari = data.needs_clarification || [];
+
+    // Nothing detected — fallback to manual log so text isn't lost
+    if (items.length === 0 && needsClari.length === 0) {
+      await saveFallbackLog(text);
+      return;
+    }
+
+    showMaterialModal(items, needsClari);
+  } catch (e) {
+    // AI error — still save the text as manual log
+    await saveFallbackLog(text);
+  }
+}
+
+/**
+ * Fallback: save text as plain manual log (used when material parse finds nothing)
+ */
+async function saveFallbackLog(text) {
+  try {
+    const res = await API.callWrite('add_activity_log', {
+      text: text,
+      source: 'admin',
+      auto_tag: 'true',
+      date: drState.date
+    });
+    if (res.ok) {
+      Modal.toast('✓ บันทึกแล้ว');
+      setTimeout(() => refresh(), 1200);
+    }
+  } catch (e) {}
+}
+
+function showMaterialModal(items, needsClari) {
+  drState.matItems = items;
+  drState.matRawText = drState.matRawText || '';
+
+  const typeIcon = { 'รับ': '📥', 'เบิก': '📤', 'นับ': '🔢' };
+  const typeColor = { 'รับ': 'tk-opt-pct', 'เบิก': 'tk-opt-ff', 'นับ': 'tk-opt-why' };
+
+  let itemsHtml = '';
+  items.forEach((it, idx) => {
+    const icon = typeIcon[it.type] || '📦';
+    const conf = it.confidence === 'high' ? 'สูง' : it.confidence === 'medium' ? 'กลาง' : 'ต่ำ';
+    const confCls = it.confidence === 'high' ? 'h' : it.confidence === 'medium' ? 'm' : 'l';
+    const missing = (it.missing || []).length > 0
+      ? '<div class="mt-miss">⚠️ ขาด: ' + it.missing.join(', ') + '</div>'
+      : '';
+    itemsHtml += `
+      <div class="mt-item">
+        <div class="mt-item-head">
+          <span class="mt-type">${icon} ${it.type}</span>
+          <span class="aic-conf ${confCls}">${conf}</span>
+        </div>
+        <div class="mt-item-name">${escapeHtml(it.material_name || it.material_id || '')}</div>
+        <div class="mt-item-detail">
+          จำนวน <b>${it.quantity || '?'}</b> ${escapeHtml(it.unit || '')}
+          ${it.contractor_name ? ' · 👤 ' + escapeHtml(it.contractor_name) : ''}
+          ${it.ff_code ? ' · ' + it.ff_code : ''}
+        </div>
+        ${missing}
+      </div>
+    `;
+  });
+
+  let clariHtml = '';
+  if (needsClari.length > 0) {
+    clariHtml += '<div class="tk-note" style="background:#FFFBEB;color:#92400E">❓ บางรายการไม่ชัด — ' +
+      needsClari.length + ' รายการต้องระบุเพิ่มที่หน้า Materials</div>';
+  }
+
+  const canConfirm = items.length > 0;
+  const html = `
+    <div class="modal-title">📦 AI พบรายการวัสดุ</div>
+    <div class="modal-desc">AI แปลงบันทึกเป็นรายการ ${items.length} รายการ — ตรวจสอบก่อนยืนยัน</div>
+    <div class="mt-list">${itemsHtml}</div>
+    ${clariHtml}
+    <div class="tk-note">💡 ยืนยันแล้วระบบจะอัพเดทสต๊อก + บันทึกลง Timeline</div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="skipMaterialModal()">ข้าม (บันทึกเป็นโน้ต)</button>
+      ${canConfirm
+        ? '<button class="modal-btn modal-btn-primary" onclick="confirmMaterialItems()">✓ ยืนยันรายการ</button>'
+        : ''}
+    </div>
+  `;
+  Modal.show(html, 'pay-modal');
+}
+
+function skipMaterialModal() {
+  Modal.close();
+  // User skipped material confirm — save text as plain note so it isn't lost
+  if (drState.matRawText) {
+    saveFallbackLog(drState.matRawText);
+  }
+  drState.matItems = null;
+  drState.matRawText = '';
+}
+
+async function confirmMaterialItems() {
+  const items = drState.matItems || [];
+  if (items.length === 0) { Modal.close(); return; }
+
+  Modal.close();
+  Modal.toast('🔍 ตรวจสอบสต๊อก...');
+
+  // 🔍 Phase 1C: Pre-check stock before confirming
+  try {
+    const chk = await API.callRead('check_stock_for_items', {
+      items: JSON.stringify(items)
+    });
+    if (chk.ok && chk.data && chk.data.has_warnings) {
+      showStockWarningModal(chk.data.warnings, items);
+      return;
+    }
+  } catch (e) {
+    // If check fails, proceed anyway (don't block on check failure)
+  }
+
+  await doConfirmMaterial(items);
+}
+
+function showStockWarningModal(warnings, items) {
+  const errors = warnings.filter(w => w.level === 'error');
+  const warns = warnings.filter(w => w.level === 'warning');
+
+  let html = '<div class="modal-title">⚠️ ตรวจพบข้อควรระวัง</div>';
+  html += '<div class="modal-desc">AI เช็คสต๊อกแล้วพบประเด็นที่ต้องดู</div>';
+
+  html += '<div class="sw-list">';
+  errors.forEach(w => {
+    html += `<div class="sw-item sw-err">
+      <div class="sw-item-h">🔴 ${escapeHtml(w.material_name)}</div>
+      <div class="sw-item-m">${escapeHtml(w.message)}</div>
+    </div>`;
+  });
+  warns.forEach(w => {
+    html += `<div class="sw-item sw-warn">
+      <div class="sw-item-h">🟡 ${escapeHtml(w.material_name)}</div>
+      <div class="sw-item-m">${escapeHtml(w.message)}</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  if (errors.length > 0) {
+    html += '<div class="tk-note" style="background:#FEE2E2;color:#991B1B">' +
+      '⚠️ มีรายการเบิกเกินสต๊อก — ยืนยันแบบ "บังคับ" จะทำให้สต๊อกติดลบ</div>';
+    html += `<div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="cancelMaterialConfirm()">ยกเลิก</button>
+      <button class="modal-btn" style="background:#E24B4A;color:#fff" onclick="forceMaterial()">บังคับเบิก</button>
+    </div>`;
+  } else {
+    html += '<div class="tk-note">รายการเหล่านี้ทำได้ แค่ทำให้สต๊อกเหลือน้อย</div>';
+    html += `<div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="cancelMaterialConfirm()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="proceedMaterial()">เข้าใจแล้ว ดำเนินการ</button>
+    </div>`;
+  }
+  Modal.show(html, 'pay-modal');
+}
+
+function cancelMaterialConfirm() {
+  Modal.close();
+  // Save original text as a note so it's not lost
+  if (drState.matRawText) saveFallbackLog(drState.matRawText);
+  drState.matItems = null;
+  drState.matRawText = '';
+}
+
+async function proceedMaterial() {
+  Modal.close();
+  await doConfirmMaterial(drState.matItems || []);
+}
+
+async function forceMaterial() {
+  Modal.close();
+  // Add force flag to all items
+  const items = (drState.matItems || []).map(it => Object.assign({}, it, { force: true }));
+  await doConfirmMaterial(items);
+}
+
+async function doConfirmMaterial(items) {
+  if (items.length === 0) { return; }
+  Modal.toast('กำลังบันทึกรายการวัสดุ...');
+
+  try {
+    const res = await API.callWrite('confirm_material_log', {
+      items: JSON.stringify(items)
+    });
+    if (!res.ok) throw new Error(res.error || 'Confirm failed');
+
+    Modal.toast('✓ บันทึก ' + items.length + ' รายการวัสดุแล้ว');
+    drState.matItems = null;
+    drState.matRawText = '';
     setTimeout(() => refresh(), 1200);
   } catch (err) {
     Modal.toast('❌ ' + err.message);
