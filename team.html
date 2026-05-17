@@ -107,6 +107,15 @@
 .tm-row2 > * { flex:1; }
 .tm-note { font-size:10.5px; color:#6B7280; background:#F9FAFB; padding:7px 10px; border-radius:8px; margin-bottom:8px; }
 .tm-priv { font-size:10px; color:#854F0B; background:#FAEEDA; padding:6px 10px; border-radius:8px; margin-bottom:10px; }
+
+/* Contract file list */
+.tm-file-list { display:flex; flex-direction:column; gap:4px; }
+.tm-file-row { display:flex; align-items:center; gap:8px; padding:8px 10px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; }
+.tm-file-ic { font-size:15px; flex-shrink:0; }
+.tm-file-name { flex:1; min-width:0; font-size:12px; color:#1F3864; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tm-file-name:hover { text-decoration:underline; }
+.tm-file-del { font-size:12px; color:#D1D5DB; cursor:pointer; padding:0 4px; flex-shrink:0; }
+.tm-file-del:hover { color:#E24B4A; }
 </style>
 </head>
 <body>
@@ -162,6 +171,7 @@ const tmState = {
   contracts: [],
   milestones: [],
   staff: [],
+  contractFiles: [],
   isAdmin: true,
   collapsed: {}
 };
@@ -183,6 +193,7 @@ async function loadAll() {
     tmState.contracts = res.data.contracts || [];
     tmState.milestones = res.data.milestones || [];
     tmState.staff = res.data.staff || [];
+    tmState.contractFiles = res.data.contract_files || [];
 
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
@@ -334,9 +345,27 @@ function renderContractBody(team, contract, allContracts) {
     varHtml += '</div>';
   }
 
-  const fileBtn = contract.file_link
-    ? `<button class="tm-btn" onclick="openLink('${escapeHtml(contract.file_link)}')">📄 ดูสัญญา</button>`
-    : `<button class="tm-btn" onclick="openUploadContract('${contract.contract_id}')">📎 แนบสัญญา</button>`;
+  // ไฟล์สัญญาทั้งหมดของสัญญานี้
+  const files = tmState.contractFiles.filter(f => f.contract_id === contract.contract_id);
+
+  let filesHtml = '';
+  if (files.length > 0) {
+    let listHtml = '';
+    files.forEach(f => {
+      const icon = f.file_type === 'pdf' ? '📄' : '🖼️';
+      listHtml += `
+        <div class="tm-file-row">
+          <span class="tm-file-ic">${icon}</span>
+          <span class="tm-file-name" onclick="openLink('${escapeHtml(f.url)}')">${escapeHtml(f.name)}</span>
+          <span class="tm-file-del" onclick="deleteContractFile('${f.file_id}')">✕</span>
+        </div>
+      `;
+    });
+    filesHtml = `
+      <div class="tm-ms-title">📎 ไฟล์สัญญา (${files.length})</div>
+      <div class="tm-file-list">${listHtml}</div>
+    `;
+  }
 
   return `
     <div class="tm-contract">
@@ -353,13 +382,11 @@ function renderContractBody(team, contract, allContracts) {
     <div class="tm-ms-title">งวดการจ่าย · แตะเพื่อบันทึกจ่ายเงิน</div>
     <div class="tm-ms-list">${msHtml || '<div class="tm-note">ยังไม่มีงวด</div>'}</div>
     ${varHtml}
+    ${filesHtml}
     <div class="tm-acts">
-      ${fileBtn}
+      <button class="tm-btn" onclick="openUploadContract('${contract.contract_id}')">📎 ${files.length > 0 ? 'เพิ่มไฟล์' : 'แนบสัญญา'}</button>
       <button class="tm-btn" onclick="openAddVariation('${team.team_id}','${contract.contract_id}')">+ งานเพิ่ม</button>
     </div>
-    ${contract.file_link
-      ? `<div style="text-align:center;margin-top:6px"><span style="font-size:10.5px;color:#9CA3AF;cursor:pointer" onclick="openUploadContract('${contract.contract_id}')">🔄 เปลี่ยนไฟล์สัญญา</span></div>`
-      : ''}
   `;
 }
 
@@ -539,10 +566,14 @@ function openUploadContract(contractId) {
       <input type="file" class="tm-input" id="cfFile" accept="image/*,application/pdf"
              style="padding:6px" onchange="previewContractFile()">
     </div>
+    <div class="tm-field">
+      <label class="tm-field-label">ชื่อ/คำอธิบายไฟล์</label>
+      <input type="text" class="tm-input" id="cfName" placeholder="เช่น หน้า 1 ขอบเขตงาน">
+    </div>
     <div id="cfPreview" style="display:none;text-align:center;margin-bottom:10px">
       <div id="cfPreviewInner"></div>
     </div>
-    <div class="tm-note">💡 ไฟล์จะถูกเก็บใน Google Drive · เปิดดูได้ในแอป</div>
+    <div class="tm-note">💡 แนบได้หลายไฟล์ · เก็บใน Google Drive · เปิดดูได้ในแอป</div>
     <div class="modal-btns">
       <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
       <button class="modal-btn modal-btn-primary" id="cfUploadBtn" onclick="doUploadContract('${contractId}')">อัปโหลด</button>
@@ -566,6 +597,12 @@ function previewContractFile() {
   }
 
   box.style.display = 'block';
+  // Auto-fill name field with filename (without extension) if empty
+  const nameInput = document.getElementById('cfName');
+  if (nameInput && !nameInput.value.trim()) {
+    nameInput.value = file.name.replace(/\.[^.]+$/, '');
+  }
+
   if (file.type.indexOf('pdf') >= 0) {
     inner.innerHTML = '<div style="font-size:12px;color:#6B7280">📄 ' +
       escapeHtml(file.name) + ' (' + Math.round(file.size/1024) + ' KB)</div>';
@@ -584,6 +621,9 @@ async function doUploadContract(contractId) {
   const file = input.files && input.files[0];
   if (!file) { Modal.toast('กรุณาเลือกไฟล์'); return; }
 
+  const fileName = document.getElementById('cfName').value.trim()
+    || file.name.replace(/\.[^.]+$/, '');
+
   const btn = document.getElementById('cfUploadBtn');
   btn.disabled = true;
   btn.textContent = 'กำลังอัปโหลด...';
@@ -600,7 +640,7 @@ async function doUploadContract(contractId) {
     const res = await API.callPost('upload_contract_file', {
       contract_id: contractId,
       file_base64: base64,
-      file_name: file.name.replace(/\.[^.]+$/, '')
+      file_name: fileName
     });
 
     if (!res.ok) throw new Error(res.error || 'อัปโหลดไม่สำเร็จ');
@@ -612,6 +652,19 @@ async function doUploadContract(contractId) {
     Modal.toast('❌ ' + err.message);
     btn.disabled = false;
     btn.textContent = 'อัปโหลด';
+  }
+}
+
+async function deleteContractFile(fileId) {
+  if (!confirm('ลบไฟล์สัญญานี้?')) return;
+  Modal.toast('กำลังลบ...');
+  try {
+    const res = await API.callWrite('delete_contract_file', { file_id: fileId });
+    if (!res.ok) throw new Error(res.error || 'ลบไม่สำเร็จ');
+    Modal.toast('✓ ลบไฟล์แล้ว');
+    setTimeout(() => loadAll(), 1200);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
   }
 }
 
