@@ -172,6 +172,24 @@
 .sw-item-h { font-size:12px; font-weight:600; color:#1F2937; }
 .sw-item-m { font-size:11px; color:#4B5563; margin-top:2px; }
 
+/* Unknown Contractors/Materials Modal */
+.uk-item { border:1px solid #E5E7EB; border-radius:10px; padding:10px 11px; margin-bottom:7px; }
+.uk-item-name { font-size:12.5px; font-weight:600; color:#1F2937; }
+.uk-hint { font-size:9.5px; color:#92400E; background:#FFFBEB; padding:2px 7px; border-radius:99px; display:inline-block; margin-top:3px; }
+.uk-item-row { display:flex; gap:6px; margin-top:7px; }
+.uk-input { flex:1; padding:6px 9px; border:1px solid #E5E7EB; border-radius:7px; font-size:11.5px; font-family:inherit; }
+.uk-input:focus { outline:none; border-color:#1F3864; }
+.uk-select { padding:6px 8px; border:1px solid #E5E7EB; border-radius:7px; font-size:11px; font-family:inherit; background:#fff; }
+.uk-item-acts { display:flex; gap:6px; margin-top:8px; }
+.uk-btn { flex:1; padding:7px; border-radius:7px; font-size:11px; font-weight:600; font-family:inherit; cursor:pointer; border:1px solid; }
+.uk-btn-add { background:#1D9E75; color:#fff; border-color:#1D9E75; }
+.uk-btn-add:hover { background:#15805E; }
+.uk-btn-skip { background:#fff; color:#6B7280; border-color:#E5E7EB; flex:0 0 70px; }
+.uk-btn-skip:hover { background:#F3F4F6; }
+.uk-mat-note { font-size:10px; color:#6B7280; background:#F9FAFB; padding:6px 9px; border-radius:7px; margin-top:6px; }
+.uk-done { font-size:11.5px; color:#065F46; font-weight:600; padding:4px 0; }
+.uk-skipped { font-size:11px; color:#9CA3AF; padding:4px 0; }
+
 /* AI Confirm modal */
 .aic-card { background:#fff; border:1px solid #E5E7EB; border-radius:10px; padding:11px 13px; margin-bottom:8px; }
 .aic-section { margin-bottom:8px; }
@@ -336,6 +354,8 @@ const drState = {
   taskCandidates: null,
   selectedTaskId: null,
   matItems: null,
+  unknownCtrs: null,
+  unknownMats: null,
   recognition: null,
   recording: false,
 };
@@ -846,8 +866,12 @@ async function confirmLog() {
     // Wait a moment for backend to commit, then refresh
     setTimeout(() => refresh(), 1200);
 
-    // 🎯 Phase 1A: Check if AI suggests ticking a task
-    checkTaskSuggestion(text, tags_ff);
+    // 🆕 Check unknown contractors/materials, then task suggestion
+    const foundUnknown = await checkUnknowns(text);
+    if (!foundUnknown) {
+      // 🎯 Phase 1A: Check if AI suggests ticking a task
+      checkTaskSuggestion(text, tags_ff);
+    }
   } catch (err) {
     Modal.toast('❌ ' + err.message);
   }
@@ -864,6 +888,137 @@ async function checkAiSuggestions(text, tags_ff) {
   } else {
     await checkTaskSuggestion(text, tags_ff);
   }
+}
+
+// =========================
+// 🆕 DETECT UNKNOWN CONTRACTORS / MATERIALS
+// =========================
+async function checkUnknowns(text) {
+  try {
+    const res = await API.callPost('detect_unknowns', { text: text });
+    if (!res.ok || !res.data) return false;
+
+    const ctrs = res.data.unknown_contractors || [];
+    const mats = res.data.unknown_materials || [];
+
+    if (ctrs.length === 0 && mats.length === 0) return false;
+
+    showUnknownsModal(ctrs, mats);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function showUnknownsModal(contractors, materials) {
+  drState.unknownCtrs = contractors;
+  drState.unknownMats = materials;
+
+  let html = '<div class="modal-title">🆕 พบรายการใหม่</div>';
+  html += '<div class="modal-desc">AI พบช่าง/วัสดุที่ยังไม่มีในระบบ</div>';
+
+  // Contractors section
+  if (contractors.length > 0) {
+    html += '<div class="aic-h" style="margin-top:6px">👷 ช่างที่ไม่รู้จัก</div>';
+    contractors.forEach((c, idx) => {
+      const roleHint = c.is_likely_role
+        ? '<span class="uk-hint">⚠️ อาจเป็นตำแหน่ง ไม่ใช่ชื่อคน</span>'
+        : '';
+      html += `
+        <div class="uk-item" id="ukCtr${idx}">
+          <div class="uk-item-name">${escapeHtml(c.mentioned)}</div>
+          ${roleHint}
+          <div class="uk-item-row">
+            <input type="text" class="uk-input" id="ukCtrName${idx}"
+                   value="${escapeHtml(c.mentioned)}" placeholder="ชื่อช่าง">
+            <select class="uk-select" id="ukCtrType${idx}">
+              <option ${c.suggested_type==='ช่างไม้'?'selected':''}>ช่างไม้</option>
+              <option ${c.suggested_type==='ช่างสี'?'selected':''}>ช่างสี</option>
+              <option ${c.suggested_type==='ช่างไฟ'?'selected':''}>ช่างไฟ</option>
+              <option ${c.suggested_type==='ช่างทั่วไป'?'selected':''}>ช่างทั่วไป</option>
+            </select>
+          </div>
+          <div class="uk-item-acts">
+            <button class="uk-btn uk-btn-add" onclick="addContractor(${idx})">+ เพิ่มช่างนี้</button>
+            <button class="uk-btn uk-btn-skip" onclick="skipUnknownCtr(${idx})">ข้าม</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  // Materials section
+  if (materials.length > 0) {
+    html += '<div class="aic-h" style="margin-top:10px">📦 วัสดุที่ไม่รู้จัก</div>';
+    materials.forEach((m, idx) => {
+      html += `
+        <div class="uk-item">
+          <div class="uk-item-name">${escapeHtml(m.mentioned)}</div>
+          <div class="uk-mat-note">
+            💡 วัสดุต้องกรอกข้อมูลละเอียด (หน่วย/ราคา/สต๊อก)
+            — เพิ่มที่หน้า Materials
+          </div>
+          <div class="uk-item-acts">
+            <button class="uk-btn uk-btn-add" onclick="gotoAddMaterial('${escapeHtml(m.mentioned)}')">
+              + สร้างที่หน้า Materials
+            </button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  html += `
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-primary" onclick="finishUnknowns()">เสร็จแล้ว</button>
+    </div>
+  `;
+  Modal.show(html, 'pay-modal');
+}
+
+async function addContractor(idx) {
+  const name = document.getElementById('ukCtrName' + idx).value.trim();
+  const type = document.getElementById('ukCtrType' + idx).value;
+  if (!name) { Modal.toast('กรุณาใส่ชื่อช่าง'); return; }
+
+  try {
+    const res = await API.callWrite('create_contractor', {
+      name: name,
+      type: type,
+      role: 'CONTRACTOR'
+    });
+    if (!res.ok) throw new Error(res.error || 'Add failed');
+
+    Modal.toast('✓ เพิ่มช่าง "' + name + '" แล้ว');
+    // Mark this item as done
+    const el = document.getElementById('ukCtr' + idx);
+    if (el) el.innerHTML = '<div class="uk-done">✓ เพิ่ม "' + escapeHtml(name) + '" แล้ว</div>';
+
+    // Clear contractor cache so new contractor appears
+    localStorage.removeItem('dstr_contractors');
+    localStorage.removeItem('dstr_cache_time');
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+function skipUnknownCtr(idx) {
+  const el = document.getElementById('ukCtr' + idx);
+  if (el) el.innerHTML = '<div class="uk-skipped">— ข้ามแล้ว</div>';
+}
+
+function gotoAddMaterial(name) {
+  // Open Materials page — user adds the material there
+  const url = 'materials.html?project=bow-house';
+  window.open(url, '_blank');
+  Modal.toast('เปิดหน้า Materials — เพิ่ม "' + name + '" ที่นั่น');
+}
+
+function finishUnknowns() {
+  Modal.close();
+  drState.unknownCtrs = null;
+  drState.unknownMats = null;
+  refresh();
 }
 
 // =========================
