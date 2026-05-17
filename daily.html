@@ -119,9 +119,14 @@
 @keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 .dr-summ-tx { font-size:12px; color:#1F2937; line-height:1.7; white-space:pre-wrap; }
 .dr-summ-loading { text-align:center; padding:14px; color:#7C3AED; font-size:11px; }
-.dr-summ-acts { display:flex; gap:6px; margin-top:10px; padding-top:10px; border-top:1px solid #F3F4F6; }
-.dr-summ-act { flex:1; padding:7px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; font-size:11px; font-weight:500; color:#4B5563; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:4px; }
+.dr-summ-acts { display:flex; gap:5px; margin-top:10px; padding-top:10px; border-top:1px solid #F3F4F6; flex-wrap:wrap; }
+.dr-summ-act { flex:1; min-width:60px; padding:7px 4px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; font-size:11px; font-weight:500; color:#4B5563; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:4px; }
 .dr-summ-act:hover { background:#1F3864; color:#fff; border-color:#1F3864; }
+.dr-summ-act-save { background:#1D9E75; color:#fff; border-color:#1D9E75; }
+.dr-summ-act-save:hover { background:#15805E; border-color:#15805E; }
+.dr-summ-saved { margin-top:8px; padding:7px 10px; background:#F0FDF4; border:1px solid #D1FAE5; border-radius:8px; font-size:10px; color:#065F46; display:flex; align-items:center; gap:5px; }
+.dr-summ-edit { width:100%; min-height:120px; border:1px solid #DDD6FE; border-radius:8px; padding:10px; font-size:12px; font-family:inherit; line-height:1.7; color:#1F2937; resize:vertical; }
+.dr-summ-edit:focus { outline:none; border-color:#7C3AED; }
 
 /* AI Confirm modal */
 .aic-card { background:#fff; border:1px solid #E5E7EB; border-radius:10px; padding:11px 13px; margin-bottom:8px; }
@@ -240,9 +245,12 @@
   <div class="dr-summ-panel" id="summPanel">
     <div id="summBox"></div>
     <div class="dr-summ-acts" id="summActs" style="display:none">
+      <button class="dr-summ-act" onclick="toggleEditSummary()" id="editBtn">✏️ แก้</button>
       <button class="dr-summ-act" onclick="copySummary()">📋 Copy</button>
       <button class="dr-summ-act" onclick="genSummary(true)">🔄 ใหม่</button>
+      <button class="dr-summ-act dr-summ-act-save" onclick="saveSummary()" id="saveBtn">💾 บันทึก</button>
     </div>
+    <div class="dr-summ-saved" id="summSaved" style="display:none"></div>
   </div>
   <div class="dr-pill" id="stickyBar" onclick="toggleSummary()">
     <div class="dr-pill-i">🤖</div>
@@ -277,6 +285,7 @@ const drState = {
   pendingLog: null,
   summExpanded: false,
   summText: '',
+  summEditing: false,
   recognition: null,
   recording: false,
 };
@@ -777,8 +786,11 @@ async function toggleSummary() {
 async function genSummary(force) {
   const box = document.getElementById('summBox');
   const acts = document.getElementById('summActs');
+  const saved = document.getElementById('summSaved');
   box.innerHTML = '<div class="dr-summ-loading">🤖 AI กำลังสรุป...</div>';
   acts.style.display = 'none';
+  saved.style.display = 'none';
+  drState.summEditing = false;
 
   try {
     const res = await API.callPost('generate_daily_summary_v2', { date: drState.date });
@@ -786,8 +798,80 @@ async function genSummary(force) {
     drState.summText = res.data.summary || '(ไม่มีข้อมูลให้สรุป)';
     box.innerHTML = '<div class="dr-summ-tx">' + escapeHtml(drState.summText) + '</div>';
     acts.style.display = 'flex';
+
+    // Check if a summary was already saved for this date
+    checkSavedSummary();
   } catch (err) {
     box.innerHTML = '<div style="color:#991B1B;font-size:11px;text-align:center;padding:10px">❌ ' + err.message + '</div>';
+  }
+}
+
+async function checkSavedSummary() {
+  try {
+    const res = await API.callRead('get_saved_summary', { date: drState.date });
+    if (res.ok && res.data && res.data.exists) {
+      const saved = document.getElementById('summSaved');
+      const t = String(res.data.saved_at || '').slice(11, 16);
+      saved.innerHTML = '✓ บันทึกแล้วใน Daily Report' + (t ? ' · ' + t : '');
+      saved.style.display = 'flex';
+    }
+  } catch (e) {}
+}
+
+function toggleEditSummary() {
+  const box = document.getElementById('summBox');
+  if (drState.summEditing) {
+    const ta = document.getElementById('summEditArea');
+    if (ta) {
+      drState.summText = ta.value;
+      box.innerHTML = '<div class="dr-summ-tx">' + escapeHtml(drState.summText) + '</div>';
+    }
+    drState.summEditing = false;
+    document.getElementById('editBtn').innerHTML = '✏️ แก้';
+  } else {
+    box.innerHTML = '<textarea class="dr-summ-edit" id="summEditArea">' +
+      escapeHtml(drState.summText) + '</textarea>';
+    drState.summEditing = true;
+    document.getElementById('editBtn').innerHTML = '✓ เสร็จ';
+  }
+}
+
+async function saveSummary() {
+  if (drState.summEditing) {
+    const ta = document.getElementById('summEditArea');
+    if (ta) drState.summText = ta.value;
+    drState.summEditing = false;
+    document.getElementById('editBtn').innerHTML = '✏️ แก้';
+    document.getElementById('summBox').innerHTML =
+      '<div class="dr-summ-tx">' + escapeHtml(drState.summText) + '</div>';
+  }
+
+  if (!drState.summText || !drState.summText.trim()) {
+    Modal.toast('ไม่มีสรุปให้บันทึก');
+    return;
+  }
+
+  const btn = document.getElementById('saveBtn');
+  btn.innerHTML = '⏳';
+  btn.disabled = true;
+
+  try {
+    const res = await API.callWrite('save_ai_summary', {
+      date: drState.date,
+      summary: drState.summText,
+      author: 'Admin'
+    });
+    if (!res.ok) throw new Error(res.error || 'Save failed');
+
+    Modal.toast('✓ บันทึกเข้า Daily Report แล้ว');
+    const saved = document.getElementById('summSaved');
+    saved.innerHTML = '✓ บันทึกแล้วใน Daily Report · เมื่อสักครู่';
+    saved.style.display = 'flex';
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  } finally {
+    btn.innerHTML = '💾 บันทึก';
+    btn.disabled = false;
   }
 }
 
