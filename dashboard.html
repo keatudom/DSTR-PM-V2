@@ -48,6 +48,68 @@
   font-size: 10px;
   color: #6B7280;
 }
+
+/* AI Daily Report Card */
+.dr-report-card {
+  cursor: pointer;
+  border-left: 3px solid #7C3AED;
+  transition: all .15s;
+}
+.dr-report-card:hover {
+  box-shadow: 0 4px 12px rgba(124,58,237,0.12);
+  transform: translateY(-1px);
+}
+.dr-rc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.dr-rc-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #5B21B6;
+}
+.dr-rc-date {
+  font-size: 10px;
+  color: #6B7280;
+  background: #F3F4F6;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.dr-rc-body {
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: #374151;
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.dr-rc-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #F3F4F6;
+}
+.dr-rc-meta {
+  font-size: 9.5px;
+  color: #9CA3AF;
+}
+.dr-rc-link {
+  font-size: 10px;
+  font-weight: 600;
+  color: #7C3AED;
+}
+.dr-rc-empty {
+  font-size: 11px;
+  color: #9CA3AF;
+  text-align: center;
+  padding: 8px 0;
+}
 .hub-card-badge {
   position: absolute;
   top: 8px;
@@ -342,6 +404,19 @@
     <!-- KPIs -->
     <div class="kpi-grid" id="kpiGrid"></div>
 
+    <!-- 🆕 AI DAILY REPORT CARD -->
+    <div class="card dr-report-card" id="drReportCard" style="display:none" onclick="window.location.href='daily.html?project=bow-house'">
+      <div class="dr-rc-head">
+        <div class="dr-rc-title">🤖 รายงานล่าสุด</div>
+        <div class="dr-rc-date" id="drRcDate">—</div>
+      </div>
+      <div class="dr-rc-body" id="drRcBody">กำลังโหลด...</div>
+      <div class="dr-rc-foot">
+        <span class="dr-rc-meta" id="drRcMeta"></span>
+        <span class="dr-rc-link">ดูทั้งหมด →</span>
+      </div>
+    </div>
+
     <!-- Donut + Forecast -->
     <div class="card gauge-card">
       <div class="card-title">
@@ -471,6 +546,9 @@ async function loadData() {
       }
     }).catch(()=>{});
 
+    // โหลด AI Daily Report ล่าสุด (parallel)
+    loadLatestReport();
+
     renderAll();
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
@@ -478,6 +556,58 @@ async function loadData() {
   } catch (err) {
     document.getElementById('loadingScreen').innerHTML = '❌ โหลดข้อมูลไม่สำเร็จ: ' + err.message;
   }
+}
+
+// ============================================================
+// AI DAILY REPORT CARD
+// ============================================================
+async function loadLatestReport() {
+  const card = document.getElementById('drReportCard');
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Try today first, then yesterday
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const ydayStr = yesterday.toISOString().slice(0, 10);
+
+  try {
+    let res = await API.callRead('get_saved_summary', { date: today });
+    let reportDate = today;
+
+    if (!res.ok || !res.data || !res.data.exists) {
+      // Fallback to yesterday
+      res = await API.callRead('get_saved_summary', { date: ydayStr });
+      reportDate = ydayStr;
+    }
+
+    if (res.ok && res.data && res.data.exists) {
+      const d = res.data;
+      const isToday = reportDate === today;
+      document.getElementById('drRcDate').textContent =
+        (isToday ? 'วันนี้ · ' : 'เมื่อวาน · ') + thaiDateShort(reportDate);
+      document.getElementById('drRcBody').textContent = d.summary;
+      const savedTime = String(d.saved_at || '').slice(0, 16).replace('T', ' ');
+      document.getElementById('drRcMeta').textContent =
+        'โดย ' + (d.author || 'Admin') + (savedTime ? ' · ' + savedTime : '');
+      card.style.display = 'block';
+    } else {
+      // No report — show card with prompt
+      document.getElementById('drRcDate').textContent = 'ยังไม่มี';
+      document.getElementById('drRcBody').innerHTML =
+        '<div class="dr-rc-empty">ยังไม่มีรายงานสรุป · แตะเพื่อสร้างใน Daily</div>';
+      document.getElementById('drRcMeta').textContent = '';
+      card.style.display = 'block';
+    }
+  } catch (err) {
+    card.style.display = 'none';
+  }
+}
+
+function thaiDateShort(dStr) {
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const d = new Date(dStr);
+  if (isNaN(d)) return dStr;
+  return d.getDate() + ' ' + months[d.getMonth()] + ' ' + (d.getFullYear() + 543);
 }
 
 function renderAll() {
