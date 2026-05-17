@@ -70,6 +70,13 @@
 
 /* Footer */
 .dr-comp-foot { padding:9px 12px 11px; background:#FAFAFB; border-top:1px solid #F3F4F6; display:flex; align-items:center; gap:6px; }
+.dr-photo-preview { position:relative; padding:8px 12px; }
+.dr-photo-preview img { width:100%; max-height:180px; object-fit:cover; border-radius:10px; display:block; }
+.dr-photo-remove { position:absolute; top:14px; right:18px; width:26px; height:26px; border-radius:50%; background:rgba(0,0,0,0.6); color:#fff; border:none; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.dr-photo-remove:hover { background:rgba(226,75,74,0.9); }
+.dr-comp-tool.has-photo { background:#1D9E75; color:#fff; }
+.dr-log-photo { margin-top:6px; }
+.dr-log-photo img { width:100%; max-height:200px; object-fit:cover; border-radius:8px; cursor:pointer; }
 .dr-comp-tool { width:34px; height:34px; border-radius:50%; background:#fff; border:1px solid #E5E7EB; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; transition:all .12s; }
 .dr-comp-tool:hover { background:#1F3864; color:#fff; border-color:#1F3864; }
 .dr-comp-tool.mic { background:linear-gradient(135deg,#7C3AED,#A855F7); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(124,58,237,0.25); }
@@ -273,6 +280,10 @@
       <div class="dr-comp-body">
         <textarea id="logInput" class="dr-comp-ta" placeholder="เกิดอะไรขึ้น? AI จะเข้าใจให้เอง"></textarea>
       </div>
+      <div id="photoPreview" class="dr-photo-preview" style="display:none">
+        <img id="photoPreviewImg" src="" alt="รูปแนบ">
+        <button class="dr-photo-remove" onclick="removePhoto()">✕</button>
+      </div>
       <div class="dr-comp-tags">
         <span class="dr-comp-tag-lb">ทางลัด</span>
         <button class="dr-comp-tag" onclick="quickInsert('🌧️ ฝนตก ')">🌧️ ฝน</button>
@@ -356,6 +367,9 @@ const drState = {
   matItems: null,
   unknownCtrs: null,
   unknownMats: null,
+  pendingPhoto: null,
+  pendingPhotoUrl: null,
+  pendingPhotoDriveId: null,
   recognition: null,
   recording: false,
 };
@@ -572,11 +586,16 @@ function renderLog(l) {
       </div>`;
   }
 
+  const photoHtml = l.photo_url
+    ? `<div class="dr-log-photo"><img src="${escapeHtml(l.photo_url)}" onclick="window.open('${escapeHtml(l.photo_url)}','_blank')" alt="รูปประกอบ" loading="lazy"></div>`
+    : '';
+
   return `
     <div class="dr-log ${isAuto?'auto':''}">
       <div class="dr-log-time">${time}</div>
       <div class="dr-log-bd">
         <div class="dr-log-txt">${escapeHtml(l.text)}</div>
+        ${photoHtml}
         ${tagsHtml.length ? '<div class="dr-log-tags">' + tagsHtml.join('') + '</div>' : ''}
       </div>
       ${actionsHtml}
@@ -670,7 +689,7 @@ function onMicClick() {
 }
 
 // =========================
-// PHOTO INPUT (capture context — saves as note, basic for now)
+// PHOTO INPUT
 // =========================
 function onPhotoClick() {
   document.getElementById('photoInput').click();
@@ -679,8 +698,33 @@ function onPhotoClick() {
 function onPhotoSelected(e) {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
-  Modal.toast('📷 อัปโหลดรูปจะมาใน Phase 3 (Smart Inputs)');
+
+  // Size check — 10MB
+  if (file.size > 10 * 1024 * 1024) {
+    Modal.toast('❌ รูปใหญ่เกิน 10MB');
+    e.target.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    drState.pendingPhoto = ev.target.result;  // base64
+    document.getElementById('photoPreviewImg').src = ev.target.result;
+    document.getElementById('photoPreview').style.display = 'block';
+    // Highlight camera button
+    const camBtn = document.querySelector('.dr-comp-tool[title="ถ่ายรูป"]');
+    if (camBtn) camBtn.classList.add('has-photo');
+  };
+  reader.readAsDataURL(file);
   e.target.value = '';
+}
+
+function removePhoto() {
+  drState.pendingPhoto = null;
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('photoPreviewImg').src = '';
+  const camBtn = document.querySelector('.dr-comp-tool[title="ถ่ายรูป"]');
+  if (camBtn) camBtn.classList.remove('has-photo');
 }
 
 // =========================
@@ -845,6 +889,24 @@ async function confirmLog() {
   Modal.toast('กำลังบันทึก...');
 
   try {
+    // 📷 ถ้ามีรูป → อัปโหลดก่อน
+    let photoUrl = '';
+    if (drState.pendingPhoto) {
+      Modal.toast('📷 กำลังอัปโหลดรูป...');
+      try {
+        const upRes = await API.callPost('upload_log_photo', {
+          image_base64: drState.pendingPhoto
+        });
+        if (upRes.ok && upRes.photo_url) {
+          photoUrl = upRes.photo_url;
+          drState.pendingPhotoUrl = upRes.photo_url;
+          drState.pendingPhotoDriveId = upRes.drive_id;
+        }
+      } catch (e) {
+        Modal.toast('⚠️ อัปรูปไม่สำเร็จ แต่จะบันทึก log ต่อ');
+      }
+    }
+
     // Use callWrite (no-cors POST) for reliability — same as materials save
     const payload = {
       text: text,
@@ -854,6 +916,7 @@ async function confirmLog() {
       tags_ctr: tags_ctr.join(','),
       tags_issue: tags_issue.join(','),
       tags_phase: tags_phase,
+      photo_url: photoUrl,
       date: drState.date
     };
     const res = await API.callWrite('add_activity_log', payload);
@@ -862,6 +925,7 @@ async function confirmLog() {
     Modal.toast('✓ บันทึกแล้ว');
     document.getElementById('logInput').value = '';
     drState.pendingLog = null;
+    removePhoto();
 
     // Wait a moment for backend to commit, then refresh
     setTimeout(() => refresh(), 1200);
@@ -1101,15 +1165,25 @@ async function confirmTaskTick() {
   Modal.toast('กำลังติ๊ก task...');
 
   try {
-    const res = await API.callWrite('confirm_task_tick', {
+    const payload = {
       task_id: taskId,
       done_date: drState.date
-    });
+    };
+    // 📷 ถ้า log มีรูป → ส่งไปผูกกับ task ด้วย
+    if (drState.pendingPhotoUrl) {
+      payload.photo_url = drState.pendingPhotoUrl;
+      payload.photo_drive_id = drState.pendingPhotoDriveId || '';
+    }
+
+    const res = await API.callWrite('confirm_task_tick', payload);
     if (!res.ok) throw new Error(res.error || 'Tick failed');
 
-    Modal.toast('✓ ติ๊ก "' + (task ? task.task_name : 'task') + '" เสร็จแล้ว');
+    const photoMsg = drState.pendingPhotoUrl ? ' + แนบรูปเข้างาน' : '';
+    Modal.toast('✓ ติ๊ก "' + (task ? task.task_name : 'task') + '" เสร็จแล้ว' + photoMsg);
     drState.taskCandidates = null;
     drState.selectedTaskId = null;
+    drState.pendingPhotoUrl = null;
+    drState.pendingPhotoDriveId = null;
     setTimeout(() => refresh(), 1200);
   } catch (err) {
     Modal.toast('❌ ' + err.message);
