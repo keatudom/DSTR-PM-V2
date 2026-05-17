@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Team · Bow House</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<style>
+.tm-app { padding-bottom: 80px; }
+
+/* Header */
+.tm-hdr { background: linear-gradient(135deg,#1F3864 0%,#0C447C 100%); color:#fff; padding:14px 16px; border-radius:0 0 16px 16px; margin:-16px -16px 12px; }
+.tm-hdr-r { display:flex; justify-content:space-between; align-items:center; }
+.tm-hdr-h { font-size:17px; font-weight:600; margin:0; color:#fff; }
+.tm-hdr-d { font-size:11px; opacity:0.85; margin-top:2px; }
+.tm-hdr-back { background:rgba(255,255,255,0.15); color:#fff; border:none; padding:6px 12px; border-radius:99px; font-size:11px; font-weight:500; font-family:inherit; cursor:pointer; }
+
+/* Tabs */
+.tm-tabs { display:flex; gap:6px; margin-bottom:12px; }
+.tm-tab { flex:1; text-align:center; padding:9px; border-radius:10px; font-size:12.5px; font-weight:500; font-family:inherit; cursor:pointer; border:1px solid #E5E7EB; background:#fff; color:#6B7280; }
+.tm-tab.on { background:#1F3864; color:#fff; border-color:#1F3864; }
+
+/* Team card */
+.tm-card { background:#fff; border:1px solid #E5E7EB; border-radius:14px; padding:14px; margin-bottom:10px; }
+.tm-card-head { display:flex; align-items:center; gap:10px; }
+.tm-avatar { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; }
+.tm-av-wood { background:#E6F1FB; color:#0C447C; }
+.tm-av-elec { background:#FAEEDA; color:#854F0B; }
+.tm-av-paint { background:#FBEAF0; color:#993556; }
+.tm-av-gen { background:#F1EFE8; color:#5F5E5A; }
+.tm-card-info { flex:1; min-width:0; }
+.tm-card-name { font-size:14px; font-weight:600; color:#1F2937; }
+.tm-card-sub { font-size:11.5px; color:#6B7280; margin-top:1px; }
+.tm-badge { font-size:10px; padding:3px 9px; border-radius:99px; font-weight:600; flex-shrink:0; }
+.tm-badge-active { background:#E1F5EE; color:#0F6E56; }
+.tm-chev { color:#9CA3AF; font-size:14px; cursor:pointer; }
+
+/* Contract box */
+.tm-contract { background:#F9FAFB; border-radius:10px; padding:10px; margin-top:10px; }
+.tm-ct-row { display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px; }
+.tm-ct-label { color:#6B7280; }
+.tm-ct-val { font-weight:600; color:#1F2937; }
+.tm-bar { height:6px; background:#E5E7EB; border-radius:99px; overflow:hidden; margin-bottom:6px; }
+.tm-bar-fill { height:100%; background:#1D9E75; transition:width .3s; }
+.tm-ct-foot { display:flex; justify-content:space-between; font-size:10.5px; }
+.tm-ct-paid { color:#0F6E56; }
+.tm-ct-left { color:#6B7280; }
+
+/* Milestones */
+.tm-ms-title { font-size:11px; color:#6B7280; margin:10px 0 4px; }
+.tm-ms-list { display:flex; flex-direction:column; gap:4px; }
+.tm-ms { display:flex; align-items:center; gap:7px; font-size:11.5px; padding:7px 9px; border-radius:8px; }
+.tm-ms-paid { background:#E1F5EE; }
+.tm-ms-partial { background:#FAEEDA; }
+.tm-ms-pending { background:#F3F4F6; }
+.tm-ms-ic { font-size:13px; flex-shrink:0; }
+.tm-ms-ic-paid { color:#0F6E56; }
+.tm-ms-ic-partial { color:#854F0B; }
+.tm-ms-ic-pending { color:#9CA3AF; }
+.tm-ms-name { flex:1; min-width:0; }
+.tm-ms-amt { font-weight:600; flex-shrink:0; }
+.tm-ms-amt-paid { color:#0F6E56; }
+.tm-ms-amt-partial { color:#854F0B; }
+.tm-ms-amt-pending { color:#6B7280; }
+
+/* Buttons */
+.tm-acts { display:flex; gap:6px; margin-top:10px; }
+.tm-btn { flex:1; padding:8px; border-radius:8px; font-size:11.5px; font-weight:600; font-family:inherit; cursor:pointer; border:1px solid #E5E7EB; background:#fff; color:#1F3864; }
+.tm-btn:hover { background:#F3F4F6; }
+.tm-btn-add { background:#1F3864; color:#fff; border-color:#1F3864; }
+.tm-btn-add:hover { background:#162a4d; }
+.tm-add-team { width:100%; margin-top:6px; padding:11px; border-radius:10px; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer; border:1px dashed #B4B2A9; background:#fff; color:#1F3864; }
+.tm-add-team:hover { background:#F9FAFB; }
+
+/* Staff card */
+.tm-staff { background:#fff; border:1px solid #E5E7EB; border-radius:12px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:11px; }
+.tm-staff-role { font-size:10px; padding:2px 8px; border-radius:99px; font-weight:600; }
+.tm-role-pm { background:#EEEDFE; color:#3C3489; }
+.tm-role-fm { background:#E6F1FB; color:#0C447C; }
+.tm-role-se { background:#E1F5EE; color:#0F6E56; }
+
+/* Collapsed */
+.tm-collapsed .tm-contract,
+.tm-collapsed .tm-ms-title,
+.tm-collapsed .tm-ms-list,
+.tm-collapsed .tm-acts { display:none; }
+
+/* Loading / empty */
+.tm-loading { text-align:center; padding:40px 0; color:#9CA3AF; }
+.tm-empty { text-align:center; padding:30px 16px; color:#9CA3AF; font-size:12.5px; }
+.tm-empty-ic { font-size:32px; opacity:0.4; margin-bottom:8px; }
+
+/* Bottom nav */
+.bnav { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #E5E7EB; padding:6px 4px 8px; display:flex; justify-content:space-around; z-index:48; }
+.bnav-i { display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 12px; color:#9CA3AF; cursor:pointer; min-width:54px; text-decoration:none; }
+.bnav-i.on { color:#1F3864; }
+.bnav-ic { font-size:18px; }
+.bnav-lb { font-size:9px; font-weight:500; }
+
+/* Modal extras */
+.tm-field { margin-bottom:10px; }
+.tm-field-label { font-size:11px; color:#6B7280; margin-bottom:4px; display:block; }
+.tm-input, .tm-select { width:100%; padding:8px 10px; border:1px solid #E5E7EB; border-radius:8px; font-size:12.5px; font-family:inherit; box-sizing:border-box; }
+.tm-input:focus, .tm-select:focus { outline:none; border-color:#1F3864; }
+.tm-row2 { display:flex; gap:8px; }
+.tm-row2 > * { flex:1; }
+.tm-note { font-size:10.5px; color:#6B7280; background:#F9FAFB; padding:7px 10px; border-radius:8px; margin-bottom:8px; }
+.tm-priv { font-size:10px; color:#854F0B; background:#FAEEDA; padding:6px 10px; border-radius:8px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="app-wrap">
+  <div class="tm-app">
+
+    <div id="loadingScreen" class="tm-loading">
+      <div class="spinner"></div>
+      <div style="margin-top:10px">กำลังโหลด...</div>
+    </div>
+
+    <div id="mainContent" style="display:none">
+      <div class="tm-hdr">
+        <div class="tm-hdr-r">
+          <div>
+            <h2 class="tm-hdr-h">👷 ทีมงาน</h2>
+            <div class="tm-hdr-d" id="hdrSub">Bow House · ผู้รับเหมา & ทีมบริษัท</div>
+          </div>
+          <button class="tm-hdr-back" onclick="window.location.href='dashboard.html?project=bow-house'">← กลับ</button>
+        </div>
+      </div>
+
+      <div class="tm-tabs">
+        <button class="tm-tab on" id="tabContractor" onclick="switchTab('contractor')">🔨 ผู้รับเหมา</button>
+        <button class="tm-tab" id="tabStaff" onclick="switchTab('staff')">👔 ทีมบริษัท</button>
+      </div>
+
+      <div id="tabContent"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="bnav">
+  <a class="bnav-i" href="dashboard.html?project=bow-house"><div class="bnav-ic">🏠</div><div class="bnav-lb">Home</div></a>
+  <a class="bnav-i" href="materials.html?project=bow-house"><div class="bnav-ic">📦</div><div class="bnav-lb">Materials</div></a>
+  <a class="bnav-i" href="daily.html?project=bow-house"><div class="bnav-ic">📝</div><div class="bnav-lb">Daily</div></a>
+  <a class="bnav-i on" href="#"><div class="bnav-ic">👷</div><div class="bnav-lb">Team</div></a>
+  <a class="bnav-i" href="projects.html"><div class="bnav-ic">⋯</div><div class="bnav-lb">More</div></a>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/modal.js"></script>
+<script>
+// Team page — allow both admin and client (client sees limited view)
+Auth.requireAuth();
+
+const tmState = {
+  tab: 'contractor',
+  teams: [],
+  contracts: [],
+  milestones: [],
+  staff: [],
+  isAdmin: true,
+  collapsed: {}
+};
+
+// =========================
+// LOAD
+// =========================
+async function loadAll() {
+  try {
+    // Determine role
+    tmState.isAdmin = (typeof Auth.getRole === 'function')
+      ? Auth.getRole() === 'admin'
+      : true;
+
+    const res = await API.callRead('get_teams_bundle');
+    if (!res.ok || !res.data) throw new Error(res.error || 'โหลดข้อมูลไม่สำเร็จ');
+
+    tmState.teams = res.data.teams || [];
+    tmState.contracts = res.data.contracts || [];
+    tmState.milestones = res.data.milestones || [];
+    tmState.staff = res.data.staff || [];
+
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    renderTab();
+  } catch (err) {
+    document.getElementById('loadingScreen').innerHTML =
+      '❌ ' + err.message + '<br><span style="font-size:11px">ลองรีเฟรชหน้า หรือเช็คว่า import sheet แล้ว</span>';
+  }
+}
+
+function switchTab(tab) {
+  tmState.tab = tab;
+  document.getElementById('tabContractor').classList.toggle('on', tab === 'contractor');
+  document.getElementById('tabStaff').classList.toggle('on', tab === 'staff');
+  renderTab();
+}
+
+function renderTab() {
+  if (tmState.tab === 'contractor') renderContractors();
+  else renderStaff();
+}
+
+// =========================
+// RENDER — CONTRACTORS
+// =========================
+function renderContractors() {
+  const el = document.getElementById('tabContent');
+  const teams = tmState.teams.filter(t => t.category === 'contractor');
+
+  if (teams.length === 0) {
+    el.innerHTML = `
+      <div class="tm-empty">
+        <div class="tm-empty-ic">🔨</div>
+        ยังไม่มีทีมผู้รับเหมา
+      </div>
+      ${tmState.isAdmin ? '<button class="tm-add-team" onclick="openAddTeam()">+ เพิ่มทีม / ผู้รับเหมา</button>' : ''}
+    `;
+    return;
+  }
+
+  let html = '';
+  teams.forEach(team => {
+    html += renderTeamCard(team);
+  });
+
+  if (tmState.isAdmin) {
+    html += '<button class="tm-add-team" onclick="openAddTeam()">+ เพิ่มทีม / ผู้รับเหมา</button>';
+  }
+  el.innerHTML = html;
+}
+
+function renderTeamCard(team) {
+  const avClass = team.type && team.type.indexOf('ไฟ') >= 0 ? 'tm-av-elec'
+    : team.type && team.type.indexOf('สี') >= 0 ? 'tm-av-paint'
+    : team.type && team.type.indexOf('ไม้') >= 0 ? 'tm-av-wood'
+    : 'tm-av-gen';
+  const avIcon = team.type && team.type.indexOf('ไฟ') >= 0 ? '⚡'
+    : team.type && team.type.indexOf('สี') >= 0 ? '🎨'
+    : team.type && team.type.indexOf('ไม้') >= 0 ? '🪵'
+    : '🔧';
+
+  const collapsed = tmState.collapsed[team.team_id];
+
+  // Find main contract for this team
+  const contracts = tmState.contracts.filter(c => c.team_id === team.team_id);
+  const mainContract = contracts.find(c => c.type === 'main') || contracts[0];
+
+  let bodyHtml = '';
+  if (tmState.isAdmin && mainContract) {
+    bodyHtml = renderContractBody(team, mainContract, contracts);
+  } else if (tmState.isAdmin && !mainContract) {
+    bodyHtml = `
+      <div class="tm-note" style="margin-top:10px">ยังไม่มีสัญญา</div>
+      <div class="tm-acts">
+        <button class="tm-btn tm-btn-add" onclick="openAddContract('${team.team_id}')">+ เพิ่มสัญญา</button>
+      </div>
+    `;
+  }
+  // Client: no contract body at all (privacy)
+
+  return `
+    <div class="tm-card ${collapsed ? 'tm-collapsed' : ''}">
+      <div class="tm-card-head">
+        <div class="tm-avatar ${avClass}">${avIcon}</div>
+        <div class="tm-card-info">
+          <div class="tm-card-name">${escapeHtml(team.name)}</div>
+          <div class="tm-card-sub">หัวหน้า: ${escapeHtml(team.lead_name || '-')}</div>
+        </div>
+        <span class="tm-badge tm-badge-active">ทำงานอยู่</span>
+        ${tmState.isAdmin ? `<span class="tm-chev" onclick="toggleCollapse('${team.team_id}')">${collapsed ? '▸' : '▾'}</span>` : ''}
+      </div>
+      ${bodyHtml}
+    </div>
+  `;
+}
+
+function renderContractBody(team, contract, allContracts) {
+  const value = contract.value || 0;
+  const paid = contract.paid_total || 0;
+  const left = value - paid;
+  const pct = value > 0 ? Math.round((paid / value) * 100) : 0;
+
+  // Milestones for this contract
+  const ms = tmState.milestones
+    .filter(m => m.contract_id === contract.contract_id)
+    .sort((a, b) => a.seq - b.seq);
+
+  let msHtml = '';
+  ms.forEach(m => {
+    const st = m.status || 'pending';
+    const icCls = st === 'paid' ? 'tm-ms-paid' : st === 'partial' ? 'tm-ms-partial' : 'tm-ms-pending';
+    const icon = st === 'paid' ? '✓' : st === 'partial' ? '◐' : '○';
+    const iconCls = st === 'paid' ? 'tm-ms-ic-paid' : st === 'partial' ? 'tm-ms-ic-partial' : 'tm-ms-ic-pending';
+    const amtCls = st === 'paid' ? 'tm-ms-amt-paid' : st === 'partial' ? 'tm-ms-amt-partial' : 'tm-ms-amt-pending';
+
+    let amtText;
+    if (st === 'paid') {
+      amtText = fmtMoney(m.paid_amount || m.amount) + '฿';
+    } else if (st === 'partial') {
+      const remain = (m.amount || 0) - (m.paid_amount || 0);
+      amtText = fmtMoney(m.paid_amount) + ' / ค้าง ' + fmtMoney(remain) + '฿';
+    } else {
+      amtText = fmtMoney(m.amount) + '฿';
+    }
+
+    msHtml += `
+      <div class="tm-ms ${icCls}" onclick="openMilestone('${m.milestone_id}','${contract.contract_id}')">
+        <span class="tm-ms-ic ${iconCls}">${icon}</span>
+        <span class="tm-ms-name">${escapeHtml(m.name)}</span>
+        <span class="tm-ms-amt ${amtCls}">${amtText}</span>
+      </div>
+    `;
+  });
+
+  // Variation orders (งานเพิ่ม)
+  const variations = allContracts.filter(c => c.type === 'variation');
+  let varHtml = '';
+  if (variations.length > 0) {
+    varHtml = '<div class="tm-ms-title">📋 งานเพิ่ม</div><div class="tm-ms-list">';
+    variations.forEach(v => {
+      varHtml += `
+        <div class="tm-ms tm-ms-pending">
+          <span class="tm-ms-ic tm-ms-ic-pending">+</span>
+          <span class="tm-ms-name">${escapeHtml(v.title || v.contract_no)}</span>
+          <span class="tm-ms-amt tm-ms-amt-pending">${fmtMoney(v.value)}฿</span>
+        </div>
+      `;
+    });
+    varHtml += '</div>';
+  }
+
+  const fileBtn = contract.file_link
+    ? `<button class="tm-btn" onclick="openLink('${escapeHtml(contract.file_link)}')">📄 ดูสัญญา</button>`
+    : `<button class="tm-btn" onclick="openEditContract('${contract.contract_id}')">📄 เพิ่มลิงก์สัญญา</button>`;
+
+  return `
+    <div class="tm-contract">
+      <div class="tm-ct-row">
+        <span class="tm-ct-label">มูลค่าสัญญา</span>
+        <span class="tm-ct-val">${fmtMoney(value)} ฿</span>
+      </div>
+      <div class="tm-bar"><div class="tm-bar-fill" style="width:${pct}%"></div></div>
+      <div class="tm-ct-foot">
+        <span class="tm-ct-paid">จ่ายแล้ว ${fmtMoney(paid)}฿</span>
+        <span class="tm-ct-left">คงเหลือ ${fmtMoney(left)}฿</span>
+      </div>
+    </div>
+    <div class="tm-ms-title">งวดการจ่าย · แตะเพื่อบันทึกจ่ายเงิน</div>
+    <div class="tm-ms-list">${msHtml || '<div class="tm-note">ยังไม่มีงวด</div>'}</div>
+    ${varHtml}
+    <div class="tm-acts">
+      ${fileBtn}
+      <button class="tm-btn" onclick="openAddVariation('${team.team_id}','${contract.contract_id}')">+ งานเพิ่ม</button>
+    </div>
+  `;
+}
+
+function toggleCollapse(teamId) {
+  tmState.collapsed[teamId] = !tmState.collapsed[teamId];
+  renderTab();
+}
+
+// =========================
+// RENDER — STAFF
+// =========================
+function renderStaff() {
+  const el = document.getElementById('tabContent');
+  if (tmState.staff.length === 0) {
+    el.innerHTML = `
+      <div class="tm-empty">
+        <div class="tm-empty-ic">👔</div>
+        ยังไม่มีทีมงานบริษัท
+      </div>
+      ${tmState.isAdmin ? '<button class="tm-add-team" onclick="openAddStaff()">+ เพิ่มทีมงาน</button>' : ''}
+    `;
+    return;
+  }
+
+  let html = '';
+  tmState.staff.forEach(s => {
+    const role = (s.role || '').toLowerCase();
+    const roleCls = role.indexOf('manager') >= 0 ? 'tm-role-pm'
+      : role.indexOf('foreman') >= 0 ? 'tm-role-fm'
+      : role.indexOf('engineer') >= 0 ? 'tm-role-se'
+      : 'tm-role-fm';
+    const initial = (s.name || '?').slice(0, 1);
+
+    html += `
+      <div class="tm-staff">
+        <div class="tm-avatar tm-av-gen">${initial}</div>
+        <div class="tm-card-info">
+          <div class="tm-card-name">${escapeHtml(s.name)}</div>
+          ${s.phone ? '<div class="tm-card-sub">📞 ' + escapeHtml(s.phone) + '</div>' : ''}
+        </div>
+        <span class="tm-staff-role ${roleCls}">${escapeHtml(s.role || '-')}</span>
+        ${tmState.isAdmin ? `<span class="tm-chev" onclick="openEditStaff('${s.staff_id}')">✏️</span>` : ''}
+      </div>
+    `;
+  });
+
+  if (tmState.isAdmin) {
+    html += '<button class="tm-add-team" onclick="openAddStaff()">+ เพิ่มทีมงาน</button>';
+  }
+  el.innerHTML = html;
+}
+
+// =========================
+// MODALS — TEAM
+// =========================
+function openAddTeam() {
+  Modal.show(`
+    <div class="modal-title">➕ เพิ่มทีม / ผู้รับเหมา</div>
+    <div class="tm-field">
+      <label class="tm-field-label">ชื่อทีม</label>
+      <input type="text" class="tm-input" id="ntName" placeholder="เช่น ทีมช่างไม้">
+    </div>
+    <div class="tm-row2">
+      <div class="tm-field">
+        <label class="tm-field-label">ประเภท</label>
+        <select class="tm-select" id="ntType">
+          <option>ช่างไม้</option>
+          <option>ช่างไฟ</option>
+          <option>ช่างสี</option>
+          <option>ช่างทั่วไป</option>
+        </select>
+      </div>
+      <div class="tm-field">
+        <label class="tm-field-label">เบอร์โทร</label>
+        <input type="text" class="tm-input" id="ntPhone" placeholder="08x-xxx-xxxx">
+      </div>
+    </div>
+    <div class="tm-field">
+      <label class="tm-field-label">ชื่อหัวหน้าทีม</label>
+      <input type="text" class="tm-input" id="ntLead" placeholder="ชื่อหัวหน้า">
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="saveTeam()">บันทึก</button>
+    </div>
+  `, 'pay-modal');
+}
+
+async function saveTeam() {
+  const name = document.getElementById('ntName').value.trim();
+  if (!name) { Modal.toast('กรุณาใส่ชื่อทีม'); return; }
+  Modal.close();
+  Modal.toast('กำลังบันทึก...');
+  try {
+    const res = await API.callWrite('create_team', {
+      name: name,
+      type: document.getElementById('ntType').value,
+      phone: document.getElementById('ntPhone').value.trim(),
+      lead_name: document.getElementById('ntLead').value.trim(),
+      category: 'contractor'
+    });
+    if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+    Modal.toast('✓ เพิ่มทีมแล้ว');
+    setTimeout(() => loadAll(), 1200);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+// =========================
+// MODALS — CONTRACT
+// =========================
+function openAddContract(teamId) {
+  Modal.show(`
+    <div class="modal-title">📄 เพิ่มสัญญาหลัก</div>
+    <div class="tm-priv">🔒 ข้อมูลสัญญาเห็นเฉพาะ Admin · อย่าใส่เลขบัตร ปชช./บัญชี</div>
+    <div class="tm-field">
+      <label class="tm-field-label">เลขที่สัญญา</label>
+      <input type="text" class="tm-input" id="ncNo" placeholder="DSTR-BK-xxxx">
+    </div>
+    <div class="tm-field">
+      <label class="tm-field-label">ชื่อสัญญา</label>
+      <input type="text" class="tm-input" id="ncTitle" placeholder="เช่น สัญญารับเหมา Built-in">
+    </div>
+    <div class="tm-row2">
+      <div class="tm-field">
+        <label class="tm-field-label">มูลค่า (฿)</label>
+        <input type="number" class="tm-input" id="ncValue" placeholder="0">
+      </div>
+      <div class="tm-field">
+        <label class="tm-field-label">วันเซ็น</label>
+        <input type="date" class="tm-input" id="ncDate">
+      </div>
+    </div>
+    <div class="tm-field">
+      <label class="tm-field-label">ลิงก์ไฟล์สัญญา (Google Drive)</label>
+      <input type="text" class="tm-input" id="ncLink" placeholder="https://drive.google.com/...">
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="saveContract('${teamId}')">บันทึก</button>
+    </div>
+  `, 'pay-modal');
+}
+
+async function saveContract(teamId) {
+  const value = Number(document.getElementById('ncValue').value || 0);
+  if (value <= 0) { Modal.toast('กรุณาใส่มูลค่าสัญญา'); return; }
+  Modal.close();
+  Modal.toast('กำลังบันทึก...');
+  try {
+    const res = await API.callWrite('create_contract', {
+      team_id: teamId,
+      type: 'main',
+      contract_no: document.getElementById('ncNo').value.trim(),
+      title: document.getElementById('ncTitle').value.trim(),
+      value: value,
+      sign_date: document.getElementById('ncDate').value,
+      file_link: document.getElementById('ncLink').value.trim()
+    });
+    if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+    Modal.toast('✓ เพิ่มสัญญาแล้ว');
+    setTimeout(() => loadAll(), 1200);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+function openEditContract(contractId) {
+  const c = tmState.contracts.find(x => x.contract_id === contractId);
+  if (!c) return;
+  Modal.show(`
+    <div class="modal-title">✏️ แก้ไขสัญญา</div>
+    <div class="tm-field">
+      <label class="tm-field-label">ลิงก์ไฟล์สัญญา (Google Drive)</label>
+      <input type="text" class="tm-input" id="ecLink" value="${escapeHtml(c.file_link || '')}" placeholder="https://drive.google.com/...">
+    </div>
+    <div class="tm-note">💡 อัปโหลดสัญญาขึ้น Drive เอง แล้ววางลิงก์ที่นี่ · ตั้งค่าแชร์ไฟล์ให้ทีมเข้าถึงได้</div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="saveContractLink('${contractId}')">บันทึก</button>
+    </div>
+  `, 'pay-modal');
+}
+
+async function saveContractLink(contractId) {
+  Modal.close();
+  Modal.toast('กำลังบันทึก...');
+  try {
+    const res = await API.callWrite('update_contract', {
+      contract_id: contractId,
+      file_link: document.getElementById('ecLink').value.trim()
+    });
+    if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+    Modal.toast('✓ บันทึกลิงก์แล้ว');
+    setTimeout(() => loadAll(), 1200);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+// =========================
+// MODALS — VARIATION ORDER (งานเพิ่ม)
+// =========================
+function openAddVariation(teamId, parentContractId) {
+  Modal.show(`
+    <div class="modal-title">➕ เพิ่มงานเพิ่ม (Variation Order)</div>
+    <div class="tm-note">💡 งานเพิ่ม = สัญญาเพิ่มเติม นอกเหนือสัญญาหลัก · ควรเซ็นเอกสารแยก</div>
+    <div class="tm-field">
+      <label class="tm-field-label">รายละเอียดงานเพิ่ม</label>
+      <input type="text" class="tm-input" id="nvTitle" placeholder="เช่น เพิ่มตู้เก็บของ">
+    </div>
+    <div class="tm-row2">
+      <div class="tm-field">
+        <label class="tm-field-label">มูลค่า (฿)</label>
+        <input type="number" class="tm-input" id="nvValue" placeholder="0">
+      </div>
+      <div class="tm-field">
+        <label class="tm-field-label">เลขที่เอกสาร</label>
+        <input type="text" class="tm-input" id="nvNo" placeholder="(ถ้ามี)">
+      </div>
+    </div>
+    <div class="tm-field">
+      <label class="tm-field-label">ลิงก์เอกสาร (ถ้ามี)</label>
+      <input type="text" class="tm-input" id="nvLink" placeholder="https://drive.google.com/...">
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="saveVariation('${teamId}','${parentContractId}')">บันทึก</button>
+    </div>
+  `, 'pay-modal');
+}
+
+async function saveVariation(teamId, parentId) {
+  const value = Number(document.getElementById('nvValue').value || 0);
+  if (value <= 0) { Modal.toast('กรุณาใส่มูลค่า'); return; }
+  const title = document.getElementById('nvTitle').value.trim();
+  if (!title) { Modal.toast('กรุณาใส่รายละเอียด'); return; }
+  Modal.close();
+  Modal.toast('กำลังบันทึก...');
+  try {
+    const res = await API.callWrite('create_contract', {
+      team_id: teamId,
+      type: 'variation',
+      parent_id: parentId,
+      title: title,
+      contract_no: document.getElementById('nvNo').value.trim(),
+      value: value,
+      file_link: document.getElementById('nvLink').value.trim(),
+      sign_date: new Date().toISOString().slice(0, 10)
+    });
+    if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+    Modal.toast('✓ เพิ่มงานเพิ่มแล้ว');
+    setTimeout(() => loadAll(), 1200);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+// =========================
+// MODALS — MILESTONE (บันทึกจ่ายเงิน)
+// =========================
+function openMilestone(milestoneId, contractId) {
+  if (!tmState.isAdmin) return;
+  const m = tmState.milestones.find(x => x.milestone_id === milestoneId);
+  if (!m) return;
+
+  const remain = (m.amount || 0) - (m.paid_amount || 0);
+
+  Modal.show(`
+    <div class="modal-title">💰 ${escapeHtml(m.name)}</div>
+    <div class="modal-desc">${escapeHtml(m.condition || '')}</div>
+    <div class="tm-contract" style="margin-top:0">
+      <div class="tm-ct-row">
+        <span class="tm-ct-label">มูลค่างวด</span>
+        <span class="tm-ct-val">${fmtMoney(m.amount)}฿</span>
+      </div>
+      <div class="tm-ct-row">
+        <span class="tm-ct-label">จ่ายแล้ว</span>
+        <span class="tm-ct-val">${fmtMoney(m.paid_amount || 0)}฿</span>
+      </div>
+      <div class="tm-ct-row" style="margin-bottom:0">
+        <span class="tm-ct-label">คงเหลือ</span>
+        <span class="tm-ct-val" style="color:#BA7517">${fmtMoney(remain)}฿</span>
+      </div>
+    </div>
+    <div class="tm-field" style="margin-top:10px">
+      <label class="tm-field-label">บันทึกยอดจ่าย (รวมที่จ่ายไปแล้ว)</label>
+      <input type="number" class="tm-input" id="mpAmount" value="${m.paid_amount || 0}">
+    </div>
+    <div class="tm-field">
+      <label class="tm-field-label">สถานะ</label>
+      <select class="tm-select" id="mpStatus">
+        <option value="pending" ${m.status==='pending'?'selected':''}>ยังไม่จ่าย</option>
+        <option value="partial" ${m.status==='partial'?'selected':''}>จ่ายบางส่วน</option>
+        <option value="paid" ${m.status==='paid'?'selected':''}>จ่ายครบงวด</option>
+      </select>
+    </div>
+    <div class="tm-priv">⚠️ ตรวจสอบกับสัญญาตัวจริง + ผู้ดูแลบัญชีก่อนจ่ายเงินจริง</div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="saveMilestone('${milestoneId}','${contractId}')">บันทึก</button>
+    </div>
+  `, 'pay-modal');
+}
+
+async function saveMilestone(milestoneId, contractId) {
+  const paidAmount = Number(document.getElementById('mpAmount').value || 0);
+  const status = document.getElementById('mpStatus').value;
+  Modal.close();
+  Modal.toast('กำลังบันทึก...');
+  try {
+    const res = await API.callWrite('update_milestone', {
+      milestone_id: milestoneId,
+      contract_id: contractId,
+      paid_amount: paidAmount,
+      status: status,
+      paid_date: status === 'pending' ? '' : new Date().toISOString().slice(0, 10)
+    });
+    if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+    Modal.toast('✓ บันทึกงวดแล้ว');
+    setTimeout(() => loadAll(), 1200);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+// =========================
+// MODALS — STAFF
+// =========================
+function openAddStaff() {
+  Modal.show(`
+    <div class="modal-title">➕ เพิ่มทีมงานบริษัท</div>
+    <div class="tm-field">
+      <label class="tm-field-label">ชื่อ</label>
+      <input type="text" class="tm-input" id="nsName" placeholder="ชื่อ-นามสกุล">
+    </div>
+    <div class="tm-row2">
+      <div class="tm-field">
+        <label class="tm-field-label">ตำแหน่ง</label>
+        <select class="tm-select" id="nsRole">
+          <option>Project Manager</option>
+          <option>Foreman</option>
+          <option>Site Engineer</option>
+          <option>Admin</option>
+        </select>
+      </div>
+      <div class="tm-field">
+        <label class="tm-field-label">เบอร์โทร</label>
+        <input type="text" class="tm-input" id="nsPhone" placeholder="08x-xxx-xxxx">
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="saveStaff()">บันทึก</button>
+    </div>
+  `, 'pay-modal');
+}
+
+async function saveStaff() {
+  const name = document.getElementById('nsName').value.trim();
+  if (!name) { Modal.toast('กรุณาใส่ชื่อ'); return; }
+  Modal.close();
+  Modal.toast('กำลังบันทึก...');
+  try {
+    const res = await API.callWrite('create_staff', {
+      name: name,
+      role: document.getElementById('nsRole').value,
+      phone: document.getElementById('nsPhone').value.trim()
+    });
+    if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+    Modal.toast('✓ เพิ่มทีมงานแล้ว');
+    setTimeout(() => loadAll(), 1200);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+function openEditStaff(staffId) {
+  const s = tmState.staff.find(x => x.staff_id === staffId);
+  if (!s) return;
+  Modal.show(`
+    <div class="modal-title">✏️ แก้ไขทีมงาน</div>
+    <div class="tm-field">
+      <label class="tm-field-label">ชื่อ</label>
+      <input type="text" class="tm-input" id="esName" value="${escapeHtml(s.name)}">
+    </div>
+    <div class="tm-row2">
+      <div class="tm-field">
+        <label class="tm-field-label">ตำแหน่ง</label>
+        <select class="tm-select" id="esRole">
+          <option ${s.role==='Project Manager'?'selected':''}>Project Manager</option>
+          <option ${s.role==='Foreman'?'selected':''}>Foreman</option>
+          <option ${s.role==='Site Engineer'?'selected':''}>Site Engineer</option>
+          <option ${s.role==='Admin'?'selected':''}>Admin</option>
+        </select>
+      </div>
+      <div class="tm-field">
+        <label class="tm-field-label">เบอร์โทร</label>
+        <input type="text" class="tm-input" id="esPhone" value="${escapeHtml(s.phone || '')}">
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="saveEditStaff('${staffId}')">บันทึก</button>
+    </div>
+  `, 'pay-modal');
+}
+
+async function saveEditStaff(staffId) {
+  const name = document.getElementById('esName').value.trim();
+  if (!name) { Modal.toast('กรุณาใส่ชื่อ'); return; }
+  Modal.close();
+  Modal.toast('กำลังบันทึก...');
+  try {
+    const res = await API.callWrite('update_staff', {
+      staff_id: staffId,
+      name: name,
+      role: document.getElementById('esRole').value,
+      phone: document.getElementById('esPhone').value.trim()
+    });
+    if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+    Modal.toast('✓ บันทึกแล้ว');
+    setTimeout(() => loadAll(), 1200);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+// =========================
+// UTILS
+// =========================
+function fmtMoney(n) {
+  return Number(n || 0).toLocaleString('en-US');
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function openLink(url) {
+  if (!url) return;
+  window.open(url, '_blank');
+}
+
+// =========================
+// INIT
+// =========================
+loadAll();
+</script>
+</body>
+</html>
