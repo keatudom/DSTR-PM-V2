@@ -336,7 +336,7 @@ function renderContractBody(team, contract, allContracts) {
 
   const fileBtn = contract.file_link
     ? `<button class="tm-btn" onclick="openLink('${escapeHtml(contract.file_link)}')">📄 ดูสัญญา</button>`
-    : `<button class="tm-btn" onclick="openEditContract('${contract.contract_id}')">📄 เพิ่มลิงก์สัญญา</button>`;
+    : `<button class="tm-btn" onclick="openUploadContract('${contract.contract_id}')">📎 แนบสัญญา</button>`;
 
   return `
     <div class="tm-contract">
@@ -357,6 +357,9 @@ function renderContractBody(team, contract, allContracts) {
       ${fileBtn}
       <button class="tm-btn" onclick="openAddVariation('${team.team_id}','${contract.contract_id}')">+ งานเพิ่ม</button>
     </div>
+    ${contract.file_link
+      ? `<div style="text-align:center;margin-top:6px"><span style="font-size:10.5px;color:#9CA3AF;cursor:pointer" onclick="openUploadContract('${contract.contract_id}')">🔄 เปลี่ยนไฟล์สัญญา</span></div>`
+      : ''}
   `;
 }
 
@@ -491,10 +494,7 @@ function openAddContract(teamId) {
         <input type="date" class="tm-input" id="ncDate">
       </div>
     </div>
-    <div class="tm-field">
-      <label class="tm-field-label">ลิงก์ไฟล์สัญญา (Google Drive)</label>
-      <input type="text" class="tm-input" id="ncLink" placeholder="https://drive.google.com/...">
-    </div>
+    <div class="tm-note">💡 บันทึกสัญญาก่อน แล้วค่อยกด "📎 แนบสัญญา" เพื่ออัปโหลดไฟล์</div>
     <div class="modal-btns">
       <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
       <button class="modal-btn modal-btn-primary" onclick="saveContract('${teamId}')">บันทึก</button>
@@ -514,8 +514,7 @@ async function saveContract(teamId) {
       contract_no: document.getElementById('ncNo').value.trim(),
       title: document.getElementById('ncTitle').value.trim(),
       value: value,
-      sign_date: document.getElementById('ncDate').value,
-      file_link: document.getElementById('ncLink').value.trim()
+      sign_date: document.getElementById('ncDate').value
     });
     if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
     Modal.toast('✓ เพิ่มสัญญาแล้ว');
@@ -525,36 +524,94 @@ async function saveContract(teamId) {
   }
 }
 
-function openEditContract(contractId) {
-  const c = tmState.contracts.find(x => x.contract_id === contractId);
-  if (!c) return;
+// =========================
+// MODALS — UPLOAD CONTRACT FILE
+// =========================
+function openUploadContract(contractId) {
   Modal.show(`
-    <div class="modal-title">✏️ แก้ไขสัญญา</div>
-    <div class="tm-field">
-      <label class="tm-field-label">ลิงก์ไฟล์สัญญา (Google Drive)</label>
-      <input type="text" class="tm-input" id="ecLink" value="${escapeHtml(c.file_link || '')}" placeholder="https://drive.google.com/...">
+    <div class="modal-title">📎 แนบไฟล์สัญญา</div>
+    <div class="tm-priv">
+      ⚠️ ห้ามแนบหน้าที่มีเลขบัตรประชาชน เลขบัญชี หรือรูปบัตร —
+      แนบเฉพาะหน้าที่ปลอดภัย (ขอบเขตงาน / มูลค่า / งวด)
     </div>
-    <div class="tm-note">💡 อัปโหลดสัญญาขึ้น Drive เอง แล้ววางลิงก์ที่นี่ · ตั้งค่าแชร์ไฟล์ให้ทีมเข้าถึงได้</div>
+    <div class="tm-field">
+      <label class="tm-field-label">เลือกไฟล์ (รูปภาพ หรือ PDF)</label>
+      <input type="file" class="tm-input" id="cfFile" accept="image/*,application/pdf"
+             style="padding:6px" onchange="previewContractFile()">
+    </div>
+    <div id="cfPreview" style="display:none;text-align:center;margin-bottom:10px">
+      <div id="cfPreviewInner"></div>
+    </div>
+    <div class="tm-note">💡 ไฟล์จะถูกเก็บใน Google Drive · เปิดดูได้ในแอป</div>
     <div class="modal-btns">
       <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
-      <button class="modal-btn modal-btn-primary" onclick="saveContractLink('${contractId}')">บันทึก</button>
+      <button class="modal-btn modal-btn-primary" id="cfUploadBtn" onclick="doUploadContract('${contractId}')">อัปโหลด</button>
     </div>
   `, 'pay-modal');
 }
 
-async function saveContractLink(contractId) {
-  Modal.close();
-  Modal.toast('กำลังบันทึก...');
+function previewContractFile() {
+  const input = document.getElementById('cfFile');
+  const file = input.files && input.files[0];
+  const box = document.getElementById('cfPreview');
+  const inner = document.getElementById('cfPreviewInner');
+  if (!file) { box.style.display = 'none'; return; }
+
+  // Size check — 10MB limit
+  if (file.size > 10 * 1024 * 1024) {
+    Modal.toast('❌ ไฟล์ใหญ่เกิน 10MB');
+    input.value = '';
+    box.style.display = 'none';
+    return;
+  }
+
+  box.style.display = 'block';
+  if (file.type.indexOf('pdf') >= 0) {
+    inner.innerHTML = '<div style="font-size:12px;color:#6B7280">📄 ' +
+      escapeHtml(file.name) + ' (' + Math.round(file.size/1024) + ' KB)</div>';
+  } else {
+    const reader = new FileReader();
+    reader.onload = e => {
+      inner.innerHTML = '<img src="' + e.target.result +
+        '" style="max-width:100%;max-height:160px;border-radius:8px">';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+async function doUploadContract(contractId) {
+  const input = document.getElementById('cfFile');
+  const file = input.files && input.files[0];
+  if (!file) { Modal.toast('กรุณาเลือกไฟล์'); return; }
+
+  const btn = document.getElementById('cfUploadBtn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังอัปโหลด...';
+
   try {
-    const res = await API.callWrite('update_contract', {
-      contract_id: contractId,
-      file_link: document.getElementById('ecLink').value.trim()
+    // Read file as base64
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
-    if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
-    Modal.toast('✓ บันทึกลิงก์แล้ว');
+
+    const res = await API.callPost('upload_contract_file', {
+      contract_id: contractId,
+      file_base64: base64,
+      file_name: file.name.replace(/\.[^.]+$/, '')
+    });
+
+    if (!res.ok) throw new Error(res.error || 'อัปโหลดไม่สำเร็จ');
+
+    Modal.close();
+    Modal.toast('✓ แนบไฟล์สัญญาแล้ว');
     setTimeout(() => loadAll(), 1200);
   } catch (err) {
     Modal.toast('❌ ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'อัปโหลด';
   }
 }
 
