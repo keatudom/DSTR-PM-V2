@@ -140,6 +140,19 @@
 .dr-summ-edit { width:100%; min-height:120px; border:1px solid #DDD6FE; border-radius:8px; padding:10px; font-size:12px; font-family:inherit; line-height:1.7; color:#1F2937; resize:vertical; }
 .dr-summ-edit:focus { outline:none; border-color:#7C3AED; }
 
+/* Task Tick Modal */
+.tk-list { display:flex; flex-direction:column; gap:6px; margin:10px 0; }
+.tk-opt { display:flex; align-items:flex-start; gap:9px; padding:10px 11px; border:1px solid #E5E7EB; border-radius:10px; cursor:pointer; transition:all .12s; }
+.tk-opt:hover { border-color:#1D9E75; background:#F0FDF4; }
+.tk-opt input { margin-top:2px; accent-color:#1D9E75; width:15px; height:15px; flex-shrink:0; }
+.tk-opt-body { flex:1; min-width:0; }
+.tk-opt-name { font-size:12.5px; font-weight:600; color:#1F2937; line-height:1.4; }
+.tk-opt-meta { display:flex; align-items:center; gap:6px; margin-top:3px; flex-wrap:wrap; }
+.tk-opt-ff { font-size:9.5px; background:#E6F1FB; color:#0C447C; padding:1.5px 7px; border-radius:99px; font-weight:600; }
+.tk-opt-pct { font-size:9.5px; background:#D1FAE5; color:#065F46; padding:1.5px 7px; border-radius:99px; font-weight:600; }
+.tk-opt-why { font-size:10px; color:#9CA3AF; }
+.tk-note { font-size:10.5px; color:#6B7280; background:#F9FAFB; padding:7px 10px; border-radius:8px; margin-bottom:4px; }
+
 /* AI Confirm modal */
 .aic-card { background:#fff; border:1px solid #E5E7EB; border-radius:10px; padding:11px 13px; margin-bottom:8px; }
 .aic-section { margin-bottom:8px; }
@@ -301,6 +314,8 @@ const drState = {
   summExpanded: false,
   summText: '',
   summEditing: false,
+  taskCandidates: null,
+  selectedTaskId: null,
   recognition: null,
   recording: false,
 };
@@ -772,7 +787,106 @@ async function confirmLog() {
     Modal.toast('✓ บันทึกแล้ว');
     document.getElementById('logInput').value = '';
     drState.pendingLog = null;
+
     // Wait a moment for backend to commit, then refresh
+    setTimeout(() => refresh(), 1200);
+
+    // 🎯 Phase 1A: Check if AI suggests ticking a task
+    checkTaskSuggestion(text, tags_ff);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+// =========================
+// 🎯 PHASE 1A: AUTO-TICK TASK
+// =========================
+async function checkTaskSuggestion(text, tags_ff) {
+  try {
+    const res = await API.callRead('suggest_task_from_log', {
+      text: text,
+      tags_ff: (tags_ff || []).join(',')
+    });
+
+    if (!res.ok || !res.data || !res.data.has_suggestion) return;
+
+    const data = res.data;
+    const candidates = data.candidates || [];
+    if (candidates.length === 0) return;
+
+    showTaskTickModal(candidates, data.confidence);
+  } catch (e) {
+    // Silent fail — task suggestion is a bonus, not critical
+  }
+}
+
+function showTaskTickModal(candidates, confidence) {
+  drState.taskCandidates = candidates;
+  drState.selectedTaskId = candidates[0].task_id;
+
+  // Confidence badge
+  let confClass = 'h', confText = '';
+  const c = Number(confidence);
+  if (c >= 0.85) { confClass = 'h'; confText = 'มั่นใจสูง ' + Math.round(c*100) + '%'; }
+  else if (c >= 0.65) { confClass = 'm'; confText = 'น่าจะใช่ ' + Math.round(c*100) + '%'; }
+  else { confClass = 'l'; confText = 'ไม่ค่อยมั่นใจ ' + Math.round(c*100) + '%'; }
+
+  let listHtml = '';
+  candidates.forEach((t, idx) => {
+    const checked = idx === 0 ? 'checked' : '';
+    const pct = Math.round(t.confidence * 100);
+    listHtml += `
+      <label class="tk-opt">
+        <input type="radio" name="tkTask" value="${t.task_id}" ${checked}
+               onchange="drState.selectedTaskId='${t.task_id}'">
+        <div class="tk-opt-body">
+          <div class="tk-opt-name">${escapeHtml(t.task_name)}</div>
+          <div class="tk-opt-meta">
+            <span class="tk-opt-ff">${t.ff_code}</span>
+            <span class="tk-opt-pct">${pct}%</span>
+            ${t.why ? '<span class="tk-opt-why">' + escapeHtml(t.why) + '</span>' : ''}
+          </div>
+        </div>
+      </label>
+    `;
+  });
+
+  const html = `
+    <div class="modal-title">🎯 AI พบงานที่น่าจะเสร็จ</div>
+    <div class="modal-desc">
+      <span class="aic-conf ${confClass}">${confText}</span>
+      จากบันทึกของคุณ AI คิดว่า task นี้ทำเสร็จแล้ว
+    </div>
+    <div class="tk-list">
+      ${listHtml}
+    </div>
+    <div class="tk-note">💡 เลือก task ที่ถูกต้อง แล้วกดยืนยัน — หรือข้ามถ้าไม่ใช่</div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ข้าม</button>
+      <button class="modal-btn modal-btn-primary" onclick="confirmTaskTick()">✓ ติ๊กว่าเสร็จ</button>
+    </div>
+  `;
+  Modal.show(html, 'pay-modal');
+}
+
+async function confirmTaskTick() {
+  const taskId = drState.selectedTaskId;
+  if (!taskId) { Modal.close(); return; }
+
+  const task = (drState.taskCandidates || []).find(t => t.task_id === taskId);
+  Modal.close();
+  Modal.toast('กำลังติ๊ก task...');
+
+  try {
+    const res = await API.callWrite('confirm_task_tick', {
+      task_id: taskId,
+      done_date: drState.date
+    });
+    if (!res.ok) throw new Error(res.error || 'Tick failed');
+
+    Modal.toast('✓ ติ๊ก "' + (task ? task.task_name : 'task') + '" เสร็จแล้ว');
+    drState.taskCandidates = null;
+    drState.selectedTaskId = null;
     setTimeout(() => refresh(), 1200);
   } catch (err) {
     Modal.toast('❌ ' + err.message);
