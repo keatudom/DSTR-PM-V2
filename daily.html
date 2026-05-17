@@ -16,6 +16,18 @@
 .dr-hdr-d { font-size:11px; opacity:0.85; margin-top:2px; }
 .dr-hdr-sub { font-size:10px; opacity:0.7; margin-top:1px; }
 .dr-hdr-back { background:rgba(255,255,255,0.15); color:#fff; border:none; padding:6px 12px; border-radius:99px; font-size:11px; font-weight:500; font-family:inherit; cursor:pointer; }
+.dr-hdr-btns { display:flex; gap:6px; flex-shrink:0; }
+
+/* Report modal content */
+.dr-rep-meta { font-size:11px; color:#6B7280; margin-bottom:10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.dr-rep-badge { background:#F0FDF4; color:#065F46; padding:2px 8px; border-radius:99px; font-size:10px; font-weight:600; }
+.dr-rep-body { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:14px; font-size:12.5px; line-height:1.75; color:#1F2937; white-space:pre-wrap; max-height:340px; overflow-y:auto; }
+.dr-rep-empty { text-align:center; padding:24px 12px; color:#9CA3AF; font-size:12px; }
+.dr-rep-empty-i { font-size:30px; margin-bottom:8px; opacity:0.4; }
+.dr-rep-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.dr-rep-stat { background:#EFF6FF; border-radius:8px; padding:8px; text-align:center; }
+.dr-rep-stat-v { font-size:16px; font-weight:700; color:#1F3864; }
+.dr-rep-stat-l { font-size:9px; color:#4B5563; margin-top:1px; }
 
 /* Date bar */
 .dr-date-bar { background:#fff; border-radius:10px; padding:9px 12px; margin-bottom:10px; display:flex; gap:8px; align-items:center; border:1px solid #E5E7EB; }
@@ -173,7 +185,10 @@
           <div class="dr-hdr-d" id="hdrDate">วันที่</div>
           <div class="dr-hdr-sub" id="hdrSub">Bow House · บันทึกประจำวัน</div>
         </div>
-        <button class="dr-hdr-back" onclick="window.location.href='dashboard.html?project=bow-house'">← กลับ</button>
+        <div class="dr-hdr-btns">
+          <button class="dr-hdr-back" onclick="openReportModal()">📄 รายงาน</button>
+          <button class="dr-hdr-back" onclick="window.location.href='dashboard.html?project=bow-house'">← กลับ</button>
+        </div>
       </div>
     </div>
 
@@ -880,6 +895,90 @@ function copySummary() {
   navigator.clipboard.writeText(drState.summText).then(() => {
     Modal.toast('✓ Copy แล้ว');
   });
+}
+
+// =========================
+// DAILY REPORT MODAL
+// =========================
+async function openReportModal() {
+  const dateLabel = formatThaiDate(new Date(drState.date)) + ' · ' + thaiDayName(drState.date);
+
+  // Show loading modal first
+  Modal.show(`
+    <div class="modal-title">📄 รายงานประจำวัน</div>
+    <div class="modal-desc">${dateLabel}</div>
+    <div class="dr-rep-empty">
+      <div class="dr-summ-loading">⏳ กำลังโหลดรายงาน...</div>
+    </div>
+  `, 'pay-modal');
+
+  try {
+    const res = await API.callRead('get_saved_summary', { date: drState.date });
+    const stats = drState.stats || {};
+
+    let html = `
+      <div class="modal-title">📄 รายงานประจำวัน</div>
+      <div class="modal-desc">${dateLabel}</div>
+    `;
+
+    // Stats grid
+    html += `
+      <div class="dr-rep-stats">
+        <div class="dr-rep-stat"><div class="dr-rep-stat-v">${stats.tasks_done||0}</div><div class="dr-rep-stat-l">✓ งานเสร็จ</div></div>
+        <div class="dr-rep-stat"><div class="dr-rep-stat-v">${stats.contractors_involved||0}</div><div class="dr-rep-stat-l">👷 ช่าง</div></div>
+        <div class="dr-rep-stat"><div class="dr-rep-stat-v">${stats.logs_total||0}</div><div class="dr-rep-stat-l">📋 events</div></div>
+      </div>
+    `;
+
+    if (res.ok && res.data && res.data.exists) {
+      const d = res.data;
+      const savedTime = String(d.saved_at || '').slice(0, 16).replace('T', ' ');
+      html += `
+        <div class="dr-rep-meta">
+          <span class="dr-rep-badge">✓ บันทึกแล้ว</span>
+          <span>โดย ${escapeHtml(d.author || 'Admin')}</span>
+          ${savedTime ? '<span>· ' + savedTime + '</span>' : ''}
+        </div>
+        <div class="dr-rep-body">${escapeHtml(d.summary)}</div>
+        <div class="modal-btns">
+          <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>
+          <button class="modal-btn modal-btn-primary" onclick="copyReportText(${JSON.stringify(d.summary).replace(/"/g,'&quot;')})">📋 Copy</button>
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="dr-rep-empty">
+          <div class="dr-rep-empty-i">📭</div>
+          ยังไม่มีรายงานที่บันทึกสำหรับวันนี้<br>
+          <span style="font-size:11px">กดปุ่ม 🤖 สรุปวันนี้ แล้วกด 💾 บันทึก</span>
+        </div>
+        <div class="modal-btns">
+          <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>
+          <button class="modal-btn modal-btn-primary" onclick="Modal.close();openSummaryFromReport()">🤖 สรุปเลย</button>
+        </div>
+      `;
+    }
+
+    Modal.show(html, 'pay-modal');
+  } catch (err) {
+    Modal.show(`
+      <div class="modal-title">📄 รายงานประจำวัน</div>
+      <div class="dr-rep-empty">❌ โหลดไม่สำเร็จ: ${err.message}</div>
+      <div class="modal-btns">
+        <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>
+      </div>
+    `, 'pay-modal');
+  }
+}
+
+function copyReportText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    Modal.toast('✓ Copy รายงานแล้ว');
+  });
+}
+
+function openSummaryFromReport() {
+  if (!drState.summExpanded) toggleSummary();
 }
 
 // =========================
