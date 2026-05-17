@@ -60,6 +60,8 @@
 .tm-ms-ic-pending { color:#9CA3AF; }
 .tm-ms-name { flex:1; min-width:0; }
 .tm-ms-amt { font-weight:600; flex-shrink:0; }
+.tm-ms-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.tm-ms-evid { font-size:9.5px; color:#6B7280; }
 .tm-ms-amt-paid { color:#0F6E56; }
 .tm-ms-amt-partial { color:#854F0B; }
 .tm-ms-amt-pending { color:#6B7280; }
@@ -172,6 +174,7 @@ const tmState = {
   milestones: [],
   staff: [],
   contractFiles: [],
+  paymentSlips: [],
   isAdmin: true,
   collapsed: {}
 };
@@ -194,6 +197,7 @@ async function loadAll() {
     tmState.milestones = res.data.milestones || [];
     tmState.staff = res.data.staff || [];
     tmState.contractFiles = res.data.contract_files || [];
+    tmState.paymentSlips = res.data.payment_slips || [];
 
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
@@ -319,10 +323,27 @@ function renderContractBody(team, contract, allContracts) {
       amtText = fmtMoney(m.amount) + '฿';
     }
 
+    // มิติหลักฐาน — แสดงเฉพาะงวดที่จ่ายแล้ว (partial/paid)
+    let evidHtml = '';
+    if (st === 'paid' || st === 'partial') {
+      const ev = m.evidence_status || 'none';
+      const slipCount = tmState.paymentSlips.filter(s => s.milestone_id === m.milestone_id).length;
+      const evMap = {
+        none:    { dot: '🔴', txt: 'ไม่มีหลักฐาน' },
+        partial: { dot: '🟡', txt: 'หลักฐานบางส่วน' },
+        full:    { dot: '🟢', txt: 'หลักฐานครบ' }
+      };
+      const e = evMap[ev] || evMap.none;
+      evidHtml = `<span class="tm-ms-evid">${e.dot} ${e.txt}${slipCount > 0 ? ' (' + slipCount + ')' : ''}</span>`;
+    }
+
     msHtml += `
       <div class="tm-ms ${icCls}" onclick="openMilestone('${m.milestone_id}','${contract.contract_id}')">
         <span class="tm-ms-ic ${iconCls}">${icon}</span>
-        <span class="tm-ms-name">${escapeHtml(m.name)}</span>
+        <div class="tm-ms-body">
+          <span class="tm-ms-name">${escapeHtml(m.name)}</span>
+          ${evidHtml}
+        </div>
         <span class="tm-ms-amt ${amtCls}">${amtText}</span>
       </div>
     `;
@@ -758,13 +779,22 @@ function openMilestone(milestoneId, contractId) {
       <input type="number" class="tm-input" id="mpAmount" value="${m.paid_amount || 0}">
     </div>
     <div class="tm-field">
-      <label class="tm-field-label">สถานะ</label>
+      <label class="tm-field-label">💰 สถานะการจ่าย</label>
       <select class="tm-select" id="mpStatus">
         <option value="pending" ${m.status==='pending'?'selected':''}>ยังไม่จ่าย</option>
         <option value="partial" ${m.status==='partial'?'selected':''}>จ่ายบางส่วน</option>
         <option value="paid" ${m.status==='paid'?'selected':''}>จ่ายครบงวด</option>
       </select>
     </div>
+    <div class="tm-field">
+      <label class="tm-field-label">📎 สถานะหลักฐาน (สลิป/ใบโอน)</label>
+      <select class="tm-select" id="mpEvidence">
+        <option value="none" ${(m.evidence_status||'none')==='none'?'selected':''}>🔴 ยังไม่มีหลักฐาน</option>
+        <option value="partial" ${m.evidence_status==='partial'?'selected':''}>🟡 มีหลักฐานบางส่วน</option>
+        <option value="full" ${m.evidence_status==='full'?'selected':''}>🟢 หลักฐานครบ</option>
+      </select>
+    </div>
+    ${renderSlipsSection(milestoneId)}
     <div class="tm-priv">⚠️ ตรวจสอบกับสัญญาตัวจริง + ผู้ดูแลบัญชีก่อนจ่ายเงินจริง</div>
     <div class="modal-btns">
       <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
@@ -773,9 +803,34 @@ function openMilestone(milestoneId, contractId) {
   `, 'pay-modal');
 }
 
+function renderSlipsSection(milestoneId) {
+  const slips = tmState.paymentSlips.filter(s => s.milestone_id === milestoneId);
+  let listHtml = '';
+  slips.forEach(s => {
+    const icon = s.file_type === 'pdf' ? '📄' : '🖼️';
+    listHtml += `
+      <div class="tm-file-row">
+        <span class="tm-file-ic">${icon}</span>
+        <span class="tm-file-name" onclick="openLink('${escapeHtml(s.url)}')">${escapeHtml(s.name)}</span>
+        <span class="tm-file-del" onclick="deletePaymentSlip('${s.slip_id}')">✕</span>
+      </div>
+    `;
+  });
+  return `
+    <div class="tm-field">
+      <label class="tm-field-label">หลักฐานที่แนบ (${slips.length})</label>
+      <div class="tm-file-list">
+        ${listHtml || '<div style="font-size:11px;color:#9CA3AF;padding:4px">ยังไม่มีหลักฐาน</div>'}
+      </div>
+      <button class="tm-btn" style="margin-top:6px;width:100%"
+              onclick="openUploadSlip('${milestoneId}')">📎 แนบสลิป/หลักฐาน</button>
+    </div>
+  `;
+
 async function saveMilestone(milestoneId, contractId) {
   const paidAmount = Number(document.getElementById('mpAmount').value || 0);
   const status = document.getElementById('mpStatus').value;
+  const evidenceStatus = document.getElementById('mpEvidence').value;
   Modal.close();
   Modal.toast('กำลังบันทึก...');
   try {
@@ -784,10 +839,123 @@ async function saveMilestone(milestoneId, contractId) {
       contract_id: contractId,
       paid_amount: paidAmount,
       status: status,
+      evidence_status: evidenceStatus,
       paid_date: status === 'pending' ? '' : new Date().toISOString().slice(0, 10)
     });
     if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
     Modal.toast('✓ บันทึกงวดแล้ว');
+    setTimeout(() => loadAll(), 1200);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+  }
+}
+
+// =========================
+// MODALS — UPLOAD PAYMENT SLIP
+// =========================
+function openUploadSlip(milestoneId) {
+  const m = tmState.milestones.find(x => x.milestone_id === milestoneId);
+  const contractId = m ? m.contract_id : '';
+  Modal.show(`
+    <div class="modal-title">📎 แนบสลิป/หลักฐาน</div>
+    <div class="tm-note">💡 แนบสลิปโอนเงิน ใบเสร็จ หรือหลักฐานการจ่าย (รูป/PDF)</div>
+    <div class="tm-field">
+      <label class="tm-field-label">เลือกไฟล์</label>
+      <input type="file" class="tm-input" id="slFile" accept="image/*,application/pdf"
+             style="padding:6px" onchange="previewSlip()">
+    </div>
+    <div class="tm-field">
+      <label class="tm-field-label">ชื่อ/คำอธิบาย</label>
+      <input type="text" class="tm-input" id="slName" placeholder="เช่น สลิปโอน 25,000฿">
+    </div>
+    <div id="slPreview" style="display:none;text-align:center;margin-bottom:10px">
+      <div id="slPreviewInner"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="openMilestone('${milestoneId}','${contractId}')">กลับ</button>
+      <button class="modal-btn modal-btn-primary" id="slUploadBtn" onclick="doUploadSlip('${milestoneId}','${contractId}')">อัปโหลด</button>
+    </div>
+  `, 'pay-modal');
+}
+
+function previewSlip() {
+  const input = document.getElementById('slFile');
+  const file = input.files && input.files[0];
+  const box = document.getElementById('slPreview');
+  const inner = document.getElementById('slPreviewInner');
+  if (!file) { box.style.display = 'none'; return; }
+
+  if (file.size > 10 * 1024 * 1024) {
+    Modal.toast('❌ ไฟล์ใหญ่เกิน 10MB');
+    input.value = '';
+    box.style.display = 'none';
+    return;
+  }
+
+  const nameInput = document.getElementById('slName');
+  if (nameInput && !nameInput.value.trim()) {
+    nameInput.value = file.name.replace(/\.[^.]+$/, '');
+  }
+
+  box.style.display = 'block';
+  if (file.type.indexOf('pdf') >= 0) {
+    inner.innerHTML = '<div style="font-size:12px;color:#6B7280">📄 ' +
+      escapeHtml(file.name) + ' (' + Math.round(file.size/1024) + ' KB)</div>';
+  } else {
+    const reader = new FileReader();
+    reader.onload = e => {
+      inner.innerHTML = '<img src="' + e.target.result +
+        '" style="max-width:100%;max-height:160px;border-radius:8px">';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+async function doUploadSlip(milestoneId, contractId) {
+  const input = document.getElementById('slFile');
+  const file = input.files && input.files[0];
+  if (!file) { Modal.toast('กรุณาเลือกไฟล์'); return; }
+
+  const fileName = document.getElementById('slName').value.trim()
+    || file.name.replace(/\.[^.]+$/, '');
+
+  const btn = document.getElementById('slUploadBtn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังอัปโหลด...';
+
+  try {
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const res = await API.callPost('upload_payment_slip', {
+      milestone_id: milestoneId,
+      contract_id: contractId,
+      file_base64: base64,
+      file_name: fileName
+    });
+
+    if (!res.ok) throw new Error(res.error || 'อัปโหลดไม่สำเร็จ');
+
+    Modal.toast('✓ แนบหลักฐานแล้ว');
+    setTimeout(() => loadAll(), 1200);
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'อัปโหลด';
+  }
+}
+
+async function deletePaymentSlip(slipId) {
+  if (!confirm('ลบหลักฐานนี้?')) return;
+  Modal.toast('กำลังลบ...');
+  try {
+    const res = await API.callWrite('delete_payment_slip', { slip_id: slipId });
+    if (!res.ok) throw new Error(res.error || 'ลบไม่สำเร็จ');
+    Modal.toast('✓ ลบแล้ว');
     setTimeout(() => loadAll(), 1200);
   } catch (err) {
     Modal.toast('❌ ' + err.message);
