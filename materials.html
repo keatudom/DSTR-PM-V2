@@ -126,6 +126,20 @@
 .mf-submit:disabled { background:#9CA3AF; }
 
 /* ============================================================
+   NEW MATERIAL MODAL (เพิ่มวัสดุใหม่)
+   ============================================================ */
+.nm-req { color:#E24B4A; }
+.nm-hint { font-size:10px; color:#9CA3AF; margin-top:3px; line-height:1.5; }
+.nm-mode { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.nm-mode-opt { border:1.5px solid #E5E7EB; border-radius:10px; padding:10px; cursor:pointer; text-align:center; transition:all .12s; background:#fff; font-family:inherit; }
+.nm-mode-opt:hover { border-color:#1F3864; }
+.nm-mode-opt.on { border-color:#1F3864; background:#EFF6FF; }
+.nm-mode-ic { font-size:20px; }
+.nm-mode-nm { font-size:12px; font-weight:600; color:#1F2937; margin-top:3px; }
+.nm-mode-ds { font-size:9.5px; color:#6B7280; margin-top:2px; line-height:1.4; }
+.nm-prefill { font-size:10.5px; background:#EFF6FF; color:#1E40AF; border-radius:7px; padding:6px 9px; margin-bottom:10px; }
+
+/* ============================================================
    FAB
    ============================================================ */
 .fab { position:fixed; right:18px; bottom:78px; width:54px; height:54px; background:#1F3864; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:28px; font-weight:300; box-shadow:0 6px 16px rgba(31,56,100,0.35); cursor:pointer; z-index:50; transition:transform .15s; }
@@ -504,7 +518,7 @@
       <div class="mf-form">
         <div class="mf-grp">
           <label class="mf-lb">วัสดุ</label>
-          <select id="cntMat" class="mf-in" onchange="onCountMatChange()"></select>
+          <select id="cntMat" class="mf-in"></select>
         </div>
         <div id="cntCountInput" class="mf-grp">
           <label class="mf-lb">จำนวนที่นับได้</label>
@@ -585,6 +599,7 @@ const matState = {
   alerts: [],
   stockFilter: 'all',
   parsedItems: [],
+  parsedClarif: [],
   cntSelectedStatus: null,
 };
 
@@ -1132,9 +1147,18 @@ async function confirmBillScan() {
 function populateSelects() {
   const matOpts = matState.materials.map(m =>
     `<option value="${m.id}">${m.id} - ${m.name}</option>`).join('');
+  // option พิเศษล่างสุด — เลือกแล้วเปิด modal เพิ่มวัสดุ
+  const addOpt = '<option value="__ADD_NEW__">➕ เพิ่มวัสดุใหม่...</option>';
   ['rcvMat','wdrMat','cntMat'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.innerHTML = '<option value="">— เลือกวัสดุ —</option>' + matOpts;
+    if (el) {
+      el.innerHTML = '<option value="">— เลือกวัสดุ —</option>' + matOpts + addOpt;
+      // ผูก handler เลือก "เพิ่มวัสดุใหม่" (ครั้งเดียว ไม่ผูกซ้ำ)
+      if (!el.dataset.nmBound) {
+        el.addEventListener('change', onMatSelectChange);
+        el.dataset.nmBound = '1';
+      }
+    }
   });
 
   const ctrOpts = matState.contractors
@@ -1147,6 +1171,30 @@ function populateSelects() {
     `<option value="${f.code}">${f.code} - ${f.name}</option>`).join('');
   const wdrFF = document.getElementById('wdrFF');
   if (wdrFF) wdrFF.innerHTML = '<option value="">— เลือก FF —</option>' + ffOpts;
+}
+
+/**
+ * เมื่อเลือกวัสดุใน dropdown — ถ้าเลือก "เพิ่มวัสดุใหม่" → เปิด modal
+ * เมื่อสร้างเสร็จ จะเลือกวัสดุใหม่ใน dropdown นั้นให้อัตโนมัติ
+ */
+function onMatSelectChange(e) {
+  const sel = e.target;
+  if (sel.value !== '__ADD_NEW__') {
+    // ถ้าเป็น cntMat ต้องอัปเดต UI โหมดนับด้วย
+    if (sel.id === 'cntMat') onCountMatChange();
+    return;
+  }
+  const selId = sel.id;
+  sel.value = '';  // reset ทันที กันค้างที่ option พิเศษ
+  openNewMaterialModal('', function(created) {
+    // เลือกวัสดุที่เพิ่งสร้างใน dropdown เดิม
+    const el = document.getElementById(selId);
+    if (el) {
+      el.value = created.id;
+      if (selId === 'cntMat') onCountMatChange();
+    }
+    Modal.toast('✓ เลือก "' + created.name + '" แล้ว — กรอกข้อมูลต่อได้เลย');
+  });
 }
 
 // ============================================================
@@ -1179,6 +1227,7 @@ async function parseQuickLog() {
       _selected: true,
       _resolvedField: null,
     }));
+    matState.parsedClarif = res.data.needs_clarification || [];
 
     renderAiConfirmation(res.data);
   } catch (err) {
@@ -1225,6 +1274,16 @@ function renderAiConfirmation(data) {
     const t = typeMap[item.type] || { cls:'cnt', icon:'❓' };
     const hasMissing = (item.missing || []).length > 0;
     const cardCls = hasMissing ? 'warn' : '';
+    const noQty = item.quantity === '' || item.quantity === null ||
+                  item.quantity === undefined || Number(item.quantity) <= 0;
+
+    // ถ้ายังไม่มีจำนวน → แสดงช่องกรอก inline
+    const qtyHtml = noQty
+      ? `<input type="number" min="1" placeholder="ใส่จำนวน"
+                value="" oninput="updateAiItemQty(${i}, this.value)"
+                style="width:90px;padding:4px 8px;border:1.5px solid #E24B4A;border-radius:6px;font-size:12px;font-family:inherit">
+         <strong>${item.unit || ''}</strong>`
+      : `<strong>${item.quantity} ${item.unit || ''}</strong>`;
 
     html += `
       <div class="ai-card ${cardCls}" data-idx="${i}">
@@ -1234,7 +1293,7 @@ function renderAiConfirmation(data) {
           <button class="ai-card-rmv" onclick="removeAiItem(${i})">✕</button>
         </div>
         <div class="ai-card-meta">
-          จำนวน <strong>${item.quantity} ${item.unit || ''}</strong>
+          จำนวน ${qtyHtml}
           ${item.contractor_name ? ` · ผู้เบิก <strong>${item.contractor_name}</strong>` : ''}
           ${item.ff_code ? ` · FF <strong>${item.ff_code}</strong>` : ''}
         </div>
@@ -1247,6 +1306,12 @@ function renderAiConfirmation(data) {
     const opts = (c.options || []).map(o =>
       `<button class="ai-card-opt" onclick="resolveClarif(${i},'${o.id}','${o.name.replace(/'/g,"\\'")}')">${o.name}</button>`
     ).join('');
+    // ถ้าไม่มี options เลย = วัสดุนี้ไม่มีในระบบ → เสนอให้สร้างใหม่
+    const noOptions = !(c.options && c.options.length > 0);
+    const createBtn = noOptions
+      ? `<button class="ai-card-opt" style="background:#1D9E75;color:#fff;border-color:#1D9E75"
+                 onclick="createMaterialFromClarif(${i})">➕ สร้างวัสดุนี้</button>`
+      : '';
     html += `
       <div class="ai-card warn" data-clarif="${i}">
         <div class="ai-card-r">
@@ -1254,7 +1319,7 @@ function renderAiConfirmation(data) {
           <span class="ai-card-nm">${c.raw_text}</span>
         </div>
         <div class="ai-card-meta"><strong>${c.issue}</strong></div>
-        ${opts ? `<div class="ai-card-opts">${opts}</div>` : ''}
+        ${(opts || createBtn) ? `<div class="ai-card-opts">${opts}${createBtn}</div>` : ''}
       </div>
     `;
   });
@@ -1271,33 +1336,121 @@ function renderAiConfirmation(data) {
 
 function removeAiItem(idx) {
   matState.parsedItems.splice(idx, 1);
-  const text = document.getElementById('qlInput').value;
-  parseQuickLog.lastInput = text;
-  if (matState.parsedItems.length === 0) {
+  if (matState.parsedItems.length === 0 &&
+      (matState.parsedClarif || []).length === 0) {
     cancelAi();
   } else {
-    // re-render
     renderAiConfirmation({
       items: matState.parsedItems,
-      needs_clarification: []
+      needs_clarification: matState.parsedClarif || [],
     });
   }
 }
 
+/**
+ * อัปเดตจำนวนของ item จากช่องกรอก inline ในการ์ด
+ * (ไม่ re-render เพื่อไม่ให้ช่อง input เสีย focus ระหว่างพิมพ์)
+ */
+function updateAiItemQty(idx, value) {
+  if (!matState.parsedItems[idx]) return;
+  matState.parsedItems[idx].quantity = value;
+  // ถ้ามี 'quantity' ใน missing แล้วกรอกแล้ว → เอาออก
+  const it = matState.parsedItems[idx];
+  if (Number(value) > 0 && Array.isArray(it.missing)) {
+    it.missing = it.missing.filter(m => m !== 'quantity');
+  }
+}
+
 function resolveClarif(idx, matId, matName) {
-  // เพิ่ม item ใหม่จาก clarification (ผู้ใช้เลือกขนาด)
-  Modal.toast('✓ เลือก ' + matName + ' แล้ว');
-  // TODO: prompt for missing info, add to items
+  // ผู้ใช้เลือกวัสดุที่ match จากตัวเลือกที่ AI เสนอ
+  Modal.toast('✓ เลือก ' + matName + ' แล้ว — เพิ่มเข้ารายการ');
+  const clarif = (matState.parsedClarif || [])[idx];
+  if (!clarif) return;
+  // เพิ่มเป็น item ใหม่ (ผู้ใช้ต้องตรวจจำนวน/ประเภทใน card ต่อ)
+  matState.parsedItems.push({
+    type: clarif.guessed_type || 'นับ',
+    material_id: matId,
+    material_name: matName,
+    quantity: clarif.quantity || '',
+    unit: clarif.unit || '',
+    raw_text: clarif.raw_text || '',
+    confidence: 'medium',
+    missing: ['quantity'],
+    _selected: true,
+  });
+  // ลบ clarif ที่แก้แล้วออก แล้ว re-render
+  matState.parsedClarif.splice(idx, 1);
+  renderAiConfirmation({
+    items: matState.parsedItems,
+    needs_clarification: matState.parsedClarif,
+  });
+}
+
+/**
+ * สร้างวัสดุใหม่จากการ์ด clarification (วัสดุที่ AI หาไม่เจอในระบบ)
+ * เปิด modal เพิ่มวัสดุ โดยเติมชื่อจาก raw_text ที่ผู้ใช้พิมพ์
+ */
+function createMaterialFromClarif(idx) {
+  const clarif = (matState.parsedClarif || [])[idx];
+  if (!clarif) return;
+  // ดึงชื่อวัสดุคร่าวๆ จาก raw_text — ตัดคำกริยา/จำนวนทิ้งให้เหลือชื่อ
+  const guessName = guessMaterialName(clarif.raw_text || '');
+  openNewMaterialModal(guessName, function(created) {
+    // สร้างเสร็จ → เพิ่มเป็น item เข้ารายการ Quick Log เลย
+    matState.parsedItems.push({
+      type: clarif.guessed_type || 'นับ',
+      material_id: created.id,
+      material_name: created.name,
+      quantity: clarif.quantity || '',
+      unit: created.unit || clarif.unit || '',
+      raw_text: clarif.raw_text || '',
+      confidence: 'medium',
+      missing: ['quantity'],
+      _selected: true,
+    });
+    // ลบ clarif นี้ออก
+    const ci = matState.parsedClarif.indexOf(clarif);
+    if (ci >= 0) matState.parsedClarif.splice(ci, 1);
+    renderAiConfirmation({
+      items: matState.parsedItems,
+      needs_clarification: matState.parsedClarif,
+    });
+    Modal.toast('✓ เพิ่ม "' + created.name + '" เข้ารายการแล้ว — ตรวจจำนวนก่อนยืนยัน');
+  });
+}
+
+/**
+ * เดาชื่อวัสดุจากข้อความดิบ — ตัดคำกริยาขึ้นต้น (รับ/เบิก/นับ) และ
+ * ตัวเลข+หน่วยท้ายข้อความออก เหลือไว้แต่ชื่อวัสดุ
+ */
+function guessMaterialName(raw) {
+  let s = String(raw || '').trim();
+  // ตัดคำกริยา/บุพบทขึ้นต้น
+  s = s.replace(/^(รับ|เบิก|นับ|ซื้อ|สั่ง|เพิ่ม)\s*/i, '');
+  // ตัดจำนวน + หน่วย (เช่น "5 แผ่น", "3 กล่อง") — เอาเฉพาะช่วงท้าย
+  s = s.replace(/\s*\d+(\.\d+)?\s*(แผ่น|กล่อง|เส้น|ตัว|อัน|ถุง|ม้วน|ชุด|กก\.?|กิโล|ลิตร|ขวด|หลอด)\s*$/i, '');
+  return s.trim();
 }
 
 function cancelAi() {
   matState.parsedItems = [];
+  matState.parsedClarif = [];
   document.getElementById('aiConfirmSection').innerHTML = '';
   document.getElementById('qlInput').value = '';
 }
 
 async function confirmAi() {
   if (matState.parsedItems.length === 0) return;
+
+  // เช็คว่าทุก item มีจำนวน — item ที่เพิ่งสร้างจาก clarification อาจยังว่าง
+  const incomplete = matState.parsedItems.filter(it =>
+    it.quantity === '' || it.quantity === null || it.quantity === undefined ||
+    Number(it.quantity) <= 0);
+  if (incomplete.length > 0) {
+    const names = incomplete.map(it => it.material_name || '?').join(', ');
+    Modal.toast('⚠️ ยังไม่ได้ใส่จำนวน: ' + names);
+    return;
+  }
 
   Modal.toast('กำลังบันทึก...');
 
@@ -1434,6 +1587,168 @@ async function submitCount() {
     document.getElementById('cntStatusSel').textContent = 'ยังไม่เลือก';
     await loadAll();
   }, photos.length > 0 ? 3500 : 1500);
+}
+
+// ============================================================
+// ➕ NEW MATERIAL MODAL — เพิ่มวัสดุใหม่ (ใช้ร่วมทั้ง form + Quick Log)
+// ============================================================
+const NM_CATEGORIES = ['ไม้แผ่น', 'ไม้โครง', 'ไฟฟ้า', 'ฮาร์ดแวร์', 'กาว', 'วัสดุสิ้นเปลือง', 'อื่นๆ'];
+
+// state สำหรับ modal
+matState.nm = { mode: 'COUNT', onCreated: null };
+
+/**
+ * เปิด modal เพิ่มวัสดุใหม่
+ * @param {string} prefillName - ชื่อวัสดุที่จะเติมไว้ล่วงหน้า (จาก Quick Log)
+ * @param {function} onCreated - callback(newMaterial) เมื่อสร้างเสร็จ
+ */
+function openNewMaterialModal(prefillName, onCreated) {
+  matState.nm = { mode: 'COUNT', onCreated: onCreated || null };
+
+  const catOpts = NM_CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+  const prefillNote = prefillName
+    ? `<div class="nm-prefill">💡 เพิ่มวัสดุจากที่พิมพ์ไว้ — ตรวจสอบ/แก้ไขให้ถูกต้องก่อนบันทึก</div>`
+    : '';
+
+  const html = `
+    <div class="modal-title">➕ เพิ่มวัสดุใหม่</div>
+    <div class="modal-desc">กรอกข้อมูลวัสดุเพื่อเพิ่มเข้าระบบ</div>
+    ${prefillNote}
+    <div class="mf-form" style="padding:0">
+
+      <div class="mf-grp">
+        <label class="mf-lb">ชื่อวัสดุ <span class="nm-req">*</span></label>
+        <input id="nmName" type="text" class="mf-in" placeholder="เช่น ไม้ HMR 18 มิล"
+               value="${prefillName ? escapeAttr(prefillName) : ''}">
+      </div>
+
+      <div class="mf-row">
+        <div class="mf-grp">
+          <label class="mf-lb">หน่วย <span class="nm-req">*</span></label>
+          <input id="nmUnit" type="text" class="mf-in" placeholder="แผ่น / กล่อง / เส้น">
+        </div>
+        <div class="mf-grp">
+          <label class="mf-lb">หมวด</label>
+          <select id="nmCat" class="mf-in">${catOpts}</select>
+        </div>
+      </div>
+
+      <div class="mf-grp">
+        <label class="mf-lb">โหมดติดตามสต๊อก <span class="nm-req">*</span></label>
+        <div class="nm-mode">
+          <button type="button" class="nm-mode-opt on" id="nmModeCount"
+                  onclick="selectNmMode('COUNT')">
+            <div class="nm-mode-ic">🔢</div>
+            <div class="nm-mode-nm">นับจำนวน</div>
+            <div class="nm-mode-ds">นับเป็นตัวเลข เช่น 25 แผ่น</div>
+          </button>
+          <button type="button" class="nm-mode-opt" id="nmModeStatus"
+                  onclick="selectNmMode('STATUS')">
+            <div class="nm-mode-ic">🚦</div>
+            <div class="nm-mode-nm">นับสถานะ</div>
+            <div class="nm-mode-ds">เต็ม/ใช้ได้/ใกล้หมด/หมด</div>
+          </button>
+        </div>
+        <div class="nm-hint">เลือกให้ถูกตั้งแต่แรก — มีผลกับวิธีนับสต๊อกของวัสดุนี้</div>
+      </div>
+
+      <div class="mf-row" id="nmCountFields">
+        <div class="mf-grp">
+          <label class="mf-lb">สต๊อกเริ่มต้น</label>
+          <input id="nmStock" type="number" min="0" class="mf-in" placeholder="0">
+        </div>
+        <div class="mf-grp">
+          <label class="mf-lb">ราคา/หน่วย</label>
+          <input id="nmPrice" type="number" min="0" class="mf-in" placeholder="0 (ถ้าทราบ)">
+        </div>
+      </div>
+
+      <div class="mf-grp" id="nmAlertGrp">
+        <label class="mf-lb">แจ้งเตือนเมื่อต่ำกว่า</label>
+        <input id="nmAlert" type="number" min="0" class="mf-in" placeholder="0 (ไม่บังคับ)">
+        <div class="nm-hint">ระบบจะเตือนเมื่อสต๊อกเหลือน้อยกว่าจำนวนนี้</div>
+      </div>
+
+      <button class="mf-submit" id="nmSubmit" onclick="submitNewMaterial()">
+        ➕ เพิ่มวัสดุนี้
+      </button>
+    </div>
+  `;
+  Modal.show(html, 'pay-modal');
+}
+
+/** escape สำหรับใส่ใน value="" ของ input */
+function escapeAttr(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/** เลือกโหมด COUNT / STATUS */
+function selectNmMode(mode) {
+  matState.nm.mode = mode;
+  document.getElementById('nmModeCount').classList.toggle('on', mode === 'COUNT');
+  document.getElementById('nmModeStatus').classList.toggle('on', mode === 'STATUS');
+  // โหมด STATUS ไม่ต้องกรอกสต๊อกเริ่มต้นเป็นตัวเลข
+  const countFields = document.getElementById('nmCountFields');
+  const stockInput = document.getElementById('nmStock');
+  if (mode === 'STATUS') {
+    if (stockInput) { stockInput.value = ''; stockInput.disabled = true; stockInput.placeholder = '— (ใช้สถานะ)'; }
+  } else {
+    if (stockInput) { stockInput.disabled = false; stockInput.placeholder = '0'; }
+  }
+}
+
+/** บันทึกวัสดุใหม่ */
+async function submitNewMaterial() {
+  const name = document.getElementById('nmName').value.trim();
+  const unit = document.getElementById('nmUnit').value.trim();
+  if (!name) { Modal.toast('กรุณาใส่ชื่อวัสดุ'); return; }
+  if (!unit) { Modal.toast('กรุณาใส่หน่วย'); return; }
+
+  // กันชื่อซ้ำ
+  const dup = matState.materials.find(m =>
+    String(m.name || '').trim().toLowerCase() === name.toLowerCase());
+  if (dup) {
+    Modal.toast('⚠️ มีวัสดุชื่อนี้แล้ว: ' + dup.id);
+    return;
+  }
+
+  const mode = matState.nm.mode;
+  const payload = {
+    name: name,
+    unit: unit,
+    category: document.getElementById('nmCat').value,
+    tracking_mode: mode,
+    default_price: document.getElementById('nmPrice').value || 0,
+    min_stock_alert: document.getElementById('nmAlert').value || 0,
+    current_stock: mode === 'STATUS' ? 0 : (document.getElementById('nmStock').value || 0),
+  };
+
+  const btn = document.getElementById('nmSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:13px;height:13px;border-width:2px;display:inline-block;vertical-align:middle"></span> กำลังบันทึก...';
+
+  try {
+    const res = await API.callWrite('create_material', payload);
+    if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+
+    Modal.toast('✓ เพิ่มวัสดุ "' + name + '" แล้ว');
+    const onCreated = matState.nm.onCreated;
+    Modal.close();
+
+    // โหลดรายการวัสดุใหม่ แล้วเรียก callback
+    await loadAll();
+    if (typeof onCreated === 'function') {
+      // หาวัสดุที่เพิ่งสร้าง (ชื่อตรงกัน) เพื่อส่งกลับให้ caller
+      const created = matState.materials.find(m =>
+        String(m.name || '').trim().toLowerCase() === name.toLowerCase());
+      if (created) onCreated(created);
+    }
+  } catch (err) {
+    Modal.toast('❌ ' + err.message);
+    btn.disabled = false;
+    btn.innerHTML = '➕ เพิ่มวัสดุนี้';
+  }
 }
 
 // START
