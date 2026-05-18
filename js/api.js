@@ -165,7 +165,9 @@ const API = {
         resolve(result);
       }
 
-      // รับ response จาก backend ผ่าน postMessage
+      var iframeLoaded = false;
+
+      // รับ response จาก backend ผ่าน postMessage (เส้นทางหลัก)
       function onMessage(ev) {
         var msg = ev.data;
         if (!msg || typeof msg !== 'object') return;
@@ -174,28 +176,43 @@ const API = {
       }
       window.addEventListener('message', onMessage);
 
-      // เผื่อ backend เวอร์ชันเก่าที่ยังตอบ JSON ธรรมดา (ไม่ postMessage)
-      // → iframe.onload จะ trigger แต่อ่านไม่ได้ → fallback optimistic
       iframe.onload = function() {
         if (done) return;
+        iframeLoaded = true;
+        // ลองอ่านเนื้อ iframe ตรงๆ — ได้เฉพาะถ้า same-origin
+        // (ปกติคนละ origin จะ throw → ข้ามไป รอ postMessage)
         var text = '';
         try {
           var doc = iframe.contentDocument || iframe.contentWindow.document;
           text = doc && doc.body ? doc.body.innerText : '';
         } catch (e) {
-          // คนละ origin — รอ postMessage อีกสักครู่ ถ้าไม่มาค่อย fallback
-          setTimeout(function() {
-            finish({ ok: true, _note: 'no postMessage; assumed success' });
-          }, 1500);
-          return;
+          return;  // คนละ origin — รอ postMessage จาก onMessage
         }
         if (!text) return;
+        // ถ้าอ่านได้และเป็น JSON → ใช้เลย (กรณี same-origin)
         try {
-          finish(JSON.parse(text));
+          var parsed = JSON.parse(text);
+          finish(parsed);
         } catch (e) {
-          finish({ ok: false, error: 'Bad JSON: ' + text.slice(0, 120) });
+          // ไม่ใช่ JSON (อาจเป็นหน้า HTML postMessage) — รอ onMessage
         }
       };
+
+      // ถ้า iframe โหลดเสร็จแล้วแต่ postMessage ไม่มาภายใน 8 วิ → แจ้ง error
+      // (ไม่คืน ok แบบลวงๆ เพราะหน้าเว็บจะเข้าใจผิดว่าสำเร็จ)
+      function watchdog() {
+        if (done) return;
+        if (iframeLoaded) {
+          finish({
+            ok: false,
+            error: 'ไม่ได้รับผลตอบกลับจาก server (postMessage ไม่มา) — ' +
+                   'อาจต้อง deploy Code.gs เวอร์ชันใหม่'
+          });
+        } else {
+          setTimeout(watchdog, 2000);  // iframe ยังไม่โหลด — รอต่อ
+        }
+      }
+      setTimeout(watchdog, 8000);
 
       timer = setTimeout(function() {
         if (done) return;
