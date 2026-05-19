@@ -54,6 +54,44 @@
 .dr-comp-pulse { width:6px; height:6px; background:#7C3AED; border-radius:50%; animation:pulse 1.5s infinite; }
 @keyframes pulse { 0%,100%{opacity:0.5}50%{opacity:1} }
 
+/* =========================
+   STRUCTURED PICKER (ขั้น 3 — เลือก F + ทีม ก่อนพิมพ์)
+   ต่อยอด .dr-tl-f/.on — ปุ่ม ≥44px contrast สูง
+   ========================= */
+.dr-pick { padding:11px 14px 4px; border-bottom:1px solid #F3F4F6; }
+.dr-pick-grp { margin-bottom:9px; }
+.dr-pick-grp:last-child { margin-bottom:4px; }
+.dr-pick-lb { font-size:10px; font-weight:600; color:#6B7280; margin-bottom:6px; display:flex; align-items:center; gap:5px; }
+.dr-pick-lb .dr-pick-req { color:#B5B5BD; font-weight:500; }
+.dr-pick-chips { display:flex; gap:6px; flex-wrap:wrap; }
+/* chip เลือก F/ทีม — hit area ≥44px, ต่อยอด .dr-tl-f */
+.dr-chip { min-height:44px; padding:6px 14px; background:#fff; border:1.5px solid #D1D5DB; border-radius:12px; font-size:12.5px; font-weight:600; color:#4B5563; cursor:pointer; font-family:inherit; transition:all .12s; display:flex; align-items:center; justify-content:center; line-height:1.2; }
+.dr-chip:hover { border-color:#1F3864; color:#1F3864; }
+.dr-chip.on { background:#1F3864; color:#fff; border-color:#1F3864; box-shadow:0 2px 6px rgba(31,56,100,0.22); }
+.dr-chip-ff.on { background:#0C447C; border-color:#0C447C; }
+.dr-chip-team.on { background:#1D9E75; border-color:#1D9E75; box-shadow:0 2px 6px rgba(29,158,117,0.22); }
+.dr-chip-more { background:#F9FAFB; border-style:dashed; color:#6B7280; }
+.dr-chip-more:hover { background:#F3F4F6; }
+.dr-pick-empty { font-size:11px; color:#9CA3AF; padding:3px 0; }
+/* แถว echo "F-xx · ทีม" ใต้ปุ่มบันทึก กันพลาด */
+.dr-comp-echo { padding:7px 14px 10px; font-size:11px; color:#6B7280; display:flex; align-items:center; gap:7px; flex-wrap:wrap; background:#FAFAFB; border-top:1px solid #F3F4F6; }
+.dr-comp-echo.empty { color:#B5B5BD; }
+.dr-echo-pill { font-size:10.5px; font-weight:600; padding:2px 9px; border-radius:99px; }
+.dr-echo-ff { background:#E6F1FB; color:#0C447C; }
+.dr-echo-team { background:#D1FAE5; color:#065F46; }
+
+/* Team tag in timeline (ขั้น 3 — แสดง tags_team) */
+.dr-tag-team { background:#D1FAE5; color:#065F46; }
+
+/* Optimistic 3-state log states (ต่อยอด .dr-log) */
+.dr-log.pending { opacity:0.55; }
+.dr-log.pending .dr-log-time::after { content:' ⏳'; font-size:9px; }
+.dr-log.failed { background:#FEF2F2; border-color:#FECACA; opacity:1; }
+.dr-log-retry { display:inline-flex; align-items:center; gap:4px; margin-top:5px; padding:5px 11px; min-height:30px; background:#E24B4A; color:#fff; border:none; border-radius:99px; font-size:10.5px; font-weight:600; font-family:inherit; cursor:pointer; }
+.dr-log-retry:hover { background:#C73B3A; }
+.dr-log-saved-tag { font-size:9px; padding:1.5px 7px; border-radius:99px; font-weight:600; background:#D1FAE5; color:#065F46; }
+.dr-log-failtag { font-size:9px; padding:1.5px 7px; border-radius:99px; font-weight:600; background:#FEE2E2; color:#991B1B; }
+
 /* Body */
 .dr-comp-body { padding:13px 14px; }
 .dr-comp-ta { width:100%; min-height:56px; max-height:140px; border:none; padding:0; font-size:13.5px; font-family:inherit; resize:none; color:#1F2937; line-height:1.55; background:transparent; }
@@ -312,10 +350,27 @@
     <div class="dr-comp">
       <div class="dr-comp-strip">
         <div class="dr-comp-pulse"></div>
-        <span>🤖 AI วิเคราะห์ + tag อัตโนมัติ — พิมพ์ พูด หรือถ่ายรูป</span>
+        <span>👇 เลือก F + ทีม → พิมพ์เพิ่ม → บันทึก (ไม่เลือก = AI ช่วยแท็กให้)</span>
       </div>
+
+      <!-- STRUCTURED PICKER (ขั้น 3) — เลือก F + ทีม ก่อนพิมพ์ -->
+      <div class="dr-pick">
+        <div class="dr-pick-grp">
+          <div class="dr-pick-lb">🏠 ทำงานที่ F ไหน? <span class="dr-pick-req">(แตะเลือก)</span></div>
+          <div class="dr-pick-chips" id="ffChips">
+            <div class="dr-pick-empty">กำลังโหลด F...</div>
+          </div>
+        </div>
+        <div class="dr-pick-grp">
+          <div class="dr-pick-lb">👥 ทีมไหนทำ? <span class="dr-pick-req">(เลือกได้หลายทีม)</span></div>
+          <div class="dr-pick-chips" id="selTeamChips">
+            <div class="dr-pick-empty">กำลังโหลดทีม...</div>
+          </div>
+        </div>
+      </div>
+
       <div class="dr-comp-body">
-        <textarea id="logInput" class="dr-comp-ta" placeholder="เกิดอะไรขึ้น? AI จะเข้าใจให้เอง"></textarea>
+        <textarea id="logInput" class="dr-comp-ta" placeholder="พิมพ์รายละเอียดเพิ่ม (ไม่บังคับ) — เลือก F/ทีมด้านบนแล้วกดบันทึกได้เลย"></textarea>
       </div>
       <div id="photoPreview" class="dr-photo-preview" style="display:none">
         <img id="photoPreviewImg" src="" alt="รูปแนบ">
@@ -337,6 +392,7 @@
         <button class="dr-comp-tool mic" id="micBtn" title="พูด" onclick="onMicClick()">🎤</button>
         <button class="dr-comp-send" id="logSubmitBtn" onclick="submitLog()">บันทึก →</button>
       </div>
+      <div class="dr-comp-echo empty" id="compEcho">ยังไม่เลือก — บันทึกแบบให้ AI ช่วยแท็ก</div>
       <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="onPhotoSelected(event)">
     </div>
 
@@ -398,6 +454,11 @@ const drState = {
   teams: [],            // master ทีมจาก 21_Teams [{team_id,name,type,lead_name}]
   checkins: {},          // สถานะเช็คอินของวันที่เลือก { team_id: worker_count }
   teamBusy: {},          // กัน double-tap ระหว่างเรียก API { team_id: true }
+  selFF: null,           // ขั้น3: F ที่เลือก (string code เช่น 'F-01') — null = ไม่เลือก
+  selTeams: [],          // ขั้น3: ทีมที่เลือก (array team_id) — เลือกได้หลายทีม
+  ffExpanded: false,     // ขั้น3: กางดู F ทั้งหมดหรือยัง
+  teamDefaultApplied: null,  // วันที่ที่ apply default ทีมแล้ว (กันทับการแตะของ user ในวันเดียวกัน)
+  optimistic: {},        // ขั้น3: log มองเห็นทันที { tmpId: {text,tags_ff,tags_team,status,payload} }
   pendingLog: null,
   summExpanded: false,
   summText: '',
@@ -469,9 +530,21 @@ async function loadAll() {
     // hydrate สถานะเช็คอินของวันที่เลือก จาก stats.teams_onsite_list
     hydrateCheckins(b.stats);
 
+    // ขั้น3: preselect F ล่าสุดจาก localStorage (ถ้ายังมีอยู่ในระบบ)
+    if (drState.selFF === null) {
+      const lastFF = localStorage.getItem('dstr_last_ff');
+      if (lastFF && (drState.ffs || []).some(f => f.code === lastFF)) {
+        drState.selFF = lastFF;
+      }
+    }
+
     if (b.stats) renderStats(b.stats);
     renderFeed();
     renderTeamChips();
+    applyTeamDefault();   // ขั้น3: default ทีม = ทีมเช็คอินวันนี้
+    renderFFChips();
+    renderSelTeamChips();
+    updateComposerEcho();
 
     const today = new Date().toISOString().slice(0, 10);
     document.getElementById('dateNext').disabled = drState.date >= today;
@@ -508,6 +581,9 @@ async function refresh() {
       if (res.data.stats) renderStats(res.data.stats);
       renderFeed();
       renderTeamChips();
+      applyTeamDefault();
+      renderSelTeamChips();
+      updateComposerEcho();
     }
   } catch (e) {
     console.error('Refresh failed:', e);
@@ -570,6 +646,9 @@ async function loadFeed() {
 
 function renderFeed() {
   let logs = drState.logs.slice();
+  // ขั้น3: ผสม optimistic logs (ยังไม่ confirm จาก server) ไว้บนสุด
+  const opt = Object.values(drState.optimistic || {});
+  if (opt.length) logs = opt.concat(logs);
   const f = drState.filter;
   if (f === 'manual') logs = logs.filter(l => l.type === 'manual');
   else if (f === 'auto') logs = logs.filter(l => l.type === 'auto');
@@ -611,6 +690,11 @@ function renderLog(l) {
   const isAuto = l.type === 'auto';
   const tagsHtml = [];
   (l.tags_ff || []).forEach(t => tagsHtml.push(`<span class="dr-log-tag dr-tag-ff">${t}</span>`));
+  // ขั้น3: tags_team (cross-ref get_teams เพื่อโชว์ชื่อทีม)
+  (l.tags_team || []).forEach(t => {
+    const tm = (drState.teams || []).find(x => x.team_id === t);
+    tagsHtml.push(`<span class="dr-log-tag dr-tag-team">👥 ${escapeHtml(tm ? (tm.name || t) : t)}</span>`);
+  });
   (l.tags_ctr || []).forEach(t => {
     const c = drState.contractors.find(x => x.id === t);
     tagsHtml.push(`<span class="dr-log-tag dr-tag-ctr">👤 ${c ? c.name : t}</span>`);
@@ -618,6 +702,31 @@ function renderLog(l) {
   (l.tags_issue || []).forEach(t => tagsHtml.push(`<span class="dr-log-tag dr-tag-issue">⚠️ ${t}</span>`));
   if (l.tags_phase) tagsHtml.push(`<span class="dr-log-tag dr-tag-phase">${l.tags_phase}</span>`);
   if (isAuto) tagsHtml.push('<span class="dr-log-tag dr-tag-auto">🤖 auto</span>');
+
+  // ขั้น3: optimistic 3-state (pending จาง / ok ✓ / failed แดง+ลองใหม่)
+  const optState = l._opt;
+  if (optState === 'pending') tagsHtml.push('<span class="dr-log-tag" style="background:#FEF3C7;color:#92400E">⏳ กำลังบันทึก</span>');
+  else if (optState === 'ok') tagsHtml.push('<span class="dr-log-saved-tag">✓ บันทึกแล้ว</span>');
+  else if (optState === 'failed') tagsHtml.push('<span class="dr-log-failtag">❌ ไม่สำเร็จ</span>');
+
+  // ขั้น3: optimistic row — ปุ่ม "ลองใหม่" เมื่อล้ม, ไม่มี delete ระหว่าง pending
+  if (optState) {
+    const retryBtn = optState === 'failed'
+      ? `<button class="dr-log-retry" onclick="retryOptimisticLog('${l.log_id}')">↻ ลองใหม่</button>`
+      : '';
+    const photoH = l.photo_url
+      ? `<div class="dr-log-photo"><img src="${escapeHtml(l.photo_url)}" alt="รูปประกอบ" loading="lazy"></div>` : '';
+    return `
+      <div class="dr-log ${optState === 'pending' ? 'pending' : ''}${optState === 'failed' ? ' failed' : ''}">
+        <div class="dr-log-time">${time}</div>
+        <div class="dr-log-bd">
+          <div class="dr-log-txt">${escapeHtml(l.text)}</div>
+          ${photoH}
+          ${tagsHtml.length ? '<div class="dr-log-tags">' + tagsHtml.join('') + '</div>' : ''}
+          ${retryBtn}
+        </div>
+      </div>`;
+  }
 
   // Determine action buttons
   const meta = l.meta || {};
@@ -809,6 +918,125 @@ function syncTeamStat() {
   if (el) el.textContent = n;
 }
 
+// =========================
+// 🎯 ขั้น3: STRUCTURED PICKER (เลือก F + ทีม ก่อนพิมพ์)
+// — deterministic 100% (ไม่พึ่ง AI) · จำค่าล่าสุด localStorage
+// — ต่อยอด pattern .dr-tl-f/.on + Modal/toast เดิม ไม่แตะ teamBar ขั้น1
+// =========================
+
+const FF_VISIBLE_COUNT = 8;  // โชว์ ~8 ตัวบ่อยก่อน + ปุ่ม "ดูทั้งหมด"
+
+function renderFFChips() {
+  const wrap = document.getElementById('ffChips');
+  if (!wrap) return;
+  const ffs = drState.ffs || [];
+  if (!ffs.length) {
+    wrap.innerHTML = '<div class="dr-pick-empty">ยังไม่มี F ในระบบ</div>';
+    return;
+  }
+
+  // ถ้า selFF ไม่อยู่ใน visible range → กางอัตโนมัติให้เห็น chip ที่เลือก
+  const selIdx = drState.selFF ? ffs.findIndex(f => f.code === drState.selFF) : -1;
+  if (selIdx >= FF_VISIBLE_COUNT) drState.ffExpanded = true;
+
+  const showAll = drState.ffExpanded;
+  const list = showAll ? ffs : ffs.slice(0, FF_VISIBLE_COUNT);
+
+  let html = '';
+  list.forEach(f => {
+    const on = drState.selFF === f.code ? ' on' : '';
+    const label = escapeHtml(f.code);
+    html += `<button class="dr-chip dr-chip-ff${on}" onclick="selectFF('${f.code}')" title="${escapeHtml(f.name || f.code)}">${label}</button>`;
+  });
+  if (!showAll && ffs.length > FF_VISIBLE_COUNT) {
+    html += `<button class="dr-chip dr-chip-more" onclick="expandFFChips()">ดูทั้งหมด (${ffs.length})</button>`;
+  }
+  wrap.innerHTML = html;
+}
+
+function expandFFChips() {
+  drState.ffExpanded = true;
+  renderFFChips();
+}
+
+function selectFF(code) {
+  // แตะซ้ำ = ยกเลิกเลือก (กลับไป fallback AI)
+  drState.selFF = (drState.selFF === code) ? null : code;
+  if (drState.selFF) {
+    localStorage.setItem('dstr_last_ff', drState.selFF);
+  }
+  renderFFChips();
+  updateComposerEcho();
+}
+
+// default ทีม = ทีมที่เช็คอินวันนี้ (ทีมเดียว=auto, หลายทีม=preselect)
+// ใช้ครั้งเดียวต่อวัน — เปลี่ยนวันแล้ว re-evaluate, แต่ไม่ทับการแตะของ user ในวันเดียวกัน
+function applyTeamDefault() {
+  if (drState.teamDefaultApplied === drState.date) return;
+  const checkedIn = Object.keys(drState.checkins || {});
+  if (checkedIn.length >= 1) {
+    // default = ทุกทีมที่เช็คอินวันนั้น (ทีมเดียว=auto, หลายทีม=preselect ปรับลดได้)
+    drState.selTeams = checkedIn.slice();
+    drState.teamDefaultApplied = drState.date;
+  } else {
+    // ไม่มีทีมเช็คอิน — เคลียร์ของวันก่อน, รอเช็คอิน/แตะเอง
+    drState.selTeams = [];
+    drState.teamDefaultApplied = drState.date;
+  }
+}
+
+function renderSelTeamChips() {
+  const wrap = document.getElementById('selTeamChips');
+  if (!wrap) return;
+  const teams = drState.teams || [];
+  if (!teams.length) {
+    wrap.innerHTML = '<div class="dr-pick-empty">ยังไม่มีทีมในระบบ</div>';
+    return;
+  }
+  // กรอง selTeams ที่ไม่มีในระบบแล้วทิ้ง
+  drState.selTeams = drState.selTeams.filter(id => teams.some(t => t.team_id === id));
+
+  let html = '';
+  teams.forEach(tm => {
+    const id = tm.team_id;
+    const on = drState.selTeams.indexOf(id) >= 0 ? ' on' : '';
+    const checked = Object.prototype.hasOwnProperty.call(drState.checkins, id) ? ' ✓' : '';
+    html += `<button class="dr-chip dr-chip-team${on}" onclick="toggleSelTeam('${id}')" title="${escapeHtml(tm.name || id)}">${escapeHtml(tm.name || id)}${checked}</button>`;
+  });
+  wrap.innerHTML = html;
+}
+
+function toggleSelTeam(id) {
+  const i = drState.selTeams.indexOf(id);
+  if (i >= 0) drState.selTeams.splice(i, 1);
+  else drState.selTeams.push(id);
+  drState.teamDefaultApplied = drState.date;  // user แตะแล้ว — หยุด auto-default วันนี้
+  renderSelTeamChips();
+  updateComposerEcho();
+}
+
+// แถว echo "F-xx · ทีม" ใต้ปุ่มบันทึก กันพลาด
+function updateComposerEcho() {
+  const el = document.getElementById('compEcho');
+  if (!el) return;
+  const parts = [];
+  if (drState.selFF) {
+    const ff = (drState.ffs || []).find(f => f.code === drState.selFF);
+    parts.push(`<span class="dr-echo-pill dr-echo-ff">🏠 ${escapeHtml(drState.selFF)}${ff && ff.name ? ': ' + escapeHtml(String(ff.name).slice(0, 18)) : ''}</span>`);
+  }
+  drState.selTeams.forEach(id => {
+    const tm = (drState.teams || []).find(t => t.team_id === id);
+    parts.push(`<span class="dr-echo-pill dr-echo-team">👥 ${escapeHtml(tm ? (tm.name || id) : id)}</span>`);
+  });
+  if (parts.length) {
+    el.classList.remove('empty');
+    el.innerHTML = 'บันทึกเข้า: ' + parts.join(' ');
+  } else {
+    el.classList.add('empty');
+    el.innerHTML = 'ยังไม่เลือก — บันทึกแบบให้ AI ช่วยแท็ก';
+  }
+}
+
 function setFilter(f, btn) {
   drState.filter = f;
   document.querySelectorAll('.dr-tl-f').forEach(b => b.classList.remove('on'));
@@ -979,8 +1207,24 @@ function removePhoto() {
 // =========================
 async function submitLog() {
   const text = document.getElementById('logInput').value.trim();
+
+  // ขั้น3: ถ้าเลือก F แล้ว → structured path (deterministic, ข้าม AI parse)
+  // ต้องมี F อย่างน้อย (ทีมไม่บังคับ แต่แนะนำ) — ข้อความไม่บังคับถ้ามี F
+  if (drState.selFF) {
+    if (!text) {
+      // ไม่มีข้อความ → ใส่ default สั้นๆ จาก F ที่เลือก (ลดการพิมพ์)
+      const ff = (drState.ffs || []).find(f => f.code === drState.selFF);
+      const auto = 'ทำงานที่ ' + drState.selFF + (ff && ff.name ? ' (' + String(ff.name).slice(0, 24) + ')' : '');
+      await submitStructuredLog(auto);
+    } else {
+      await submitStructuredLog(text);
+    }
+    return;
+  }
+
+  // ── Fallback flow เดิม (ไม่เลือก F = ให้ AI parse) — ไม่พัง ──
   if (!text) {
-    Modal.toast('กรุณาพิมพ์ข้อความก่อน');
+    Modal.toast('เลือก F หรือพิมพ์ข้อความก่อน');
     return;
   }
 
@@ -1000,6 +1244,133 @@ async function submitLog() {
   } finally {
     btn.disabled = false;
     btn.innerHTML = 'บันทึก →';
+  }
+}
+
+// =========================
+// 🎯 ขั้น3: STRUCTURED SAVE (เลือก F/ทีม → ส่ง tags ตรง, ข้าม AI)
+// — optimistic: log ขึ้น timeline ทันที(จาง) → ทึบ+✓ → ล้ม แดง+ปุ่มลองใหม่
+// — material branch (เบิก/รับของ) ยังทำงานเหมือนเดิม
+// =========================
+async function submitStructuredLog(text) {
+  // material intent → เข้า flow material เดิม (ไม่แตะ — ของเดิมต้องไม่พัง)
+  const matKeywords = ['เบิก', 'รับของ', 'รับเข้า', 'นับสต๊อก', 'นับ'];
+  const isMaterialIntent = matKeywords.some(k => text.indexOf(k) >= 0);
+  if (isMaterialIntent) {
+    document.getElementById('logInput').value = '';
+    await checkMaterialSuggestion(text);
+    return;
+  }
+
+  const selFF = drState.selFF;
+  const selTeams = drState.selTeams.slice();
+
+  // อัปโหลดรูปก่อน (มี retry 1 รอบ — ต่อยอด flow อัปรูปเดิม ไม่ค้าง flow)
+  let photoUrl = '';
+  let photoFailed = false;
+  let photoDriveId = '';
+  if (drState.pendingPhoto) {
+    Modal.toast('📷 กำลังอัปโหลดรูป... (อาจใช้เวลา 5-15 วินาที)');
+    let upRes = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        upRes = await API.uploadLogPhoto(drState.pendingPhoto);
+        if (upRes && upRes.ok && upRes.photo_url) break;
+      } catch (e) {
+        upRes = { ok: false, error: e.message };
+      }
+      if (attempt === 1) Modal.toast('📷 ลองอัพรูปใหม่อีกครั้ง...');
+    }
+    if (upRes && upRes.ok && upRes.photo_url) {
+      photoUrl = upRes.photo_url;
+      photoDriveId = upRes.drive_id || '';
+      drState.pendingPhotoUrl = upRes.photo_url;
+      drState.pendingPhotoDriveId = upRes.drive_id;
+    } else {
+      photoFailed = true;
+    }
+  }
+
+  const payload = {
+    text: text,
+    source: 'admin',
+    auto_tag: 'false',                 // ข้าม AI parse — ใช้ tags ที่เลือกตรง
+    tags_ff: selFF,
+    tags_team: selTeams.join(','),
+    photo_url: photoUrl,
+    date: drState.date
+  };
+
+  // optimistic: log ขึ้น timeline ทันที (สถานะ pending = จาง)
+  const tmpId = 'tmp_' + Date.now();
+  drState.optimistic[tmpId] = {
+    log_id: tmpId,
+    text: text,
+    type: 'manual',
+    tags_ff: selFF ? [selFF] : [],
+    tags_team: selTeams.slice(),
+    tags_ctr: [], tags_issue: [],
+    photo_url: photoUrl,
+    timestamp: new Date().toISOString(),
+    _opt: 'pending',
+    _payload: payload
+  };
+  renderFeed();
+  Modal.toast(photoFailed ? '⏳ กำลังบันทึก (รูปไม่ขึ้น)...' : '⏳ กำลังบันทึก...');
+
+  // clear text ทันที (sticky: คง F/ทีม ไว้ทำงานต่อเนื่อง)
+  document.getElementById('logInput').value = '';
+  removePhoto();
+
+  try {
+    const res = await API.callWrite('add_activity_log', payload);
+    if (!res.ok) throw new Error(res.error || 'Save failed');
+
+    // สำเร็จ — mark ทึบ + ✓
+    if (drState.optimistic[tmpId]) drState.optimistic[tmpId]._opt = 'ok';
+    renderFeed();
+    if (photoFailed) {
+      Modal.toast('✓ บันทึกแล้ว (รูปไม่ขึ้น — ลองถ่ายใหม่ทีหลังได้)', 4000);
+    } else if (photoUrl) {
+      Modal.toast('✓ บันทึก log + รูปแล้ว');
+    } else {
+      Modal.toast('✓ บันทึกแล้ว');
+    }
+
+    // refresh แล้วเคลียร์ optimistic (server feed จะมีตัวจริง)
+    setTimeout(() => {
+      delete drState.optimistic[tmpId];
+      refresh();
+    }, 1400);
+
+    // เสนอติ๊ก task — scope ด้วย F ที่เลือก (แม่นขึ้น)
+    checkTaskSuggestion(text, selFF ? [selFF] : []);
+  } catch (err) {
+    // ล้ม — mark แดง + ปุ่มลองใหม่ (text ไม่หาย เก็บใน _payload)
+    if (drState.optimistic[tmpId]) drState.optimistic[tmpId]._opt = 'failed';
+    renderFeed();
+    Modal.toast('❌ บันทึกไม่สำเร็จ — แตะ "ลองใหม่" ในรายการ', 4000);
+  }
+}
+
+// ลองส่ง optimistic log ที่ล้มใหม่
+async function retryOptimisticLog(tmpId) {
+  const item = drState.optimistic[tmpId];
+  if (!item || item._opt !== 'failed') return;
+  item._opt = 'pending';
+  renderFeed();
+  Modal.toast('⏳ กำลังลองใหม่...');
+  try {
+    const res = await API.callWrite('add_activity_log', item._payload);
+    if (!res.ok) throw new Error(res.error || 'Save failed');
+    item._opt = 'ok';
+    renderFeed();
+    Modal.toast('✓ บันทึกแล้ว');
+    setTimeout(() => { delete drState.optimistic[tmpId]; refresh(); }, 1400);
+  } catch (err) {
+    item._opt = 'failed';
+    renderFeed();
+    Modal.toast('❌ ยังไม่สำเร็จ — เช็คเน็ตแล้วลองอีกครั้ง', 4000);
   }
 }
 
@@ -1353,9 +1724,12 @@ function finishUnknowns() {
 // =========================
 async function checkTaskSuggestion(text, tags_ff) {
   try {
+    // ขั้น3: ส่ง ff_code scope (ถ้าเลือก F) → candidate เฉพาะ FF นั้น แม่นขึ้น
+    const ffCode = drState.selFF || ((tags_ff && tags_ff[0]) || '');
     const res = await API.callRead('suggest_task_from_log', {
       text: text,
-      tags_ff: (tags_ff || []).join(',')
+      tags_ff: (tags_ff || []).join(','),
+      ff_code: ffCode
     });
 
     if (!res.ok || !res.data || !res.data.has_suggestion) return;
