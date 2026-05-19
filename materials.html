@@ -2198,16 +2198,17 @@ function openDeleteMaterialModal(matId) {
   if (!m) { Modal.toast('ไม่พบวัสดุ'); return; }
   const html = `
     <div class="modal-icon warn">🗑</div>
-    <div class="modal-title">ลบ "${m.name}"?</div>
-    <div class="modal-desc">${m.id} · ${m.category}<br>เลือกวิธีลบ — แนะนำ "ปิดใช้งาน" เพื่อเก็บประวัติไว้</div>
+    <div class="modal-title">ลบ "${m.name}" ออกจากรายการ?</div>
+    <div class="modal-desc">${m.id} · ${m.category}<br>วัสดุจะหายจากทุกรายการ/ช่องเลือก — ประวัติเบิก-รับ-นับยังเก็บไว้ให้รายงาน (กู้คืนได้)</div>
     <button class="del-opt deact" onclick="doDeactivateMaterial('${matId}')">
-      🚫 ปิดใช้งาน (แนะนำ)
+      🗑 ลบออกจากรายการ
     </button>
-    <div class="del-opt-hint">ซ่อนจากรายการ แต่เก็บประวัติการรับ/เบิก/นับไว้ — กู้คืนได้</div>
-    <button class="del-opt hard" onclick="doDeleteMaterial('${matId}')">
-      ⚠️ ลบถาวร
+    <div class="del-opt-hint">นี่คือสิ่งที่ต้องการในกรณีทั่วไป — วัสดุหายจากหน้าจอทันที</div>
+    <button class="del-opt hard" onclick="doDeleteMaterial('${matId}')"
+            style="opacity:.6;font-size:12px;margin-top:14px">
+      ⚠️ ลบถาวรทิ้งทั้งหมด
     </button>
-    <div class="del-opt-hint">ลบทิ้งทั้งหมด — ทำได้เฉพาะวัสดุที่ยังไม่เคยมีรายการเคลื่อนไหว</div>
+    <div class="del-opt-hint">ใช้เฉพาะวัสดุที่สร้างผิด/ยังไม่เคยมีการเบิก-รับ — ถ้าเคยใช้แล้วระบบจะให้ "ลบออกจากรายการ" แทนเพื่อกันรายงานพัง</div>
     <div class="modal-btns" style="margin-top:18px">
       <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
     </div>
