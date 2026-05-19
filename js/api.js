@@ -270,6 +270,17 @@ const API = {
     return this.callRead('get_tasks', { ff_code: ffCode || '' });
   },
 
+  /**
+   * ดึงรูปงานของ task จาก 13_Task_Photos (read-only)
+   * ใช้ callRead (JSONP GET) — บทเรียน callwrite-loses-post-body
+   * @param {string} taskId - Task ID
+   * Returns: { ok:true, data:[{id,task_id,drive_url,drive_id,caption,uploaded_at,uploaded_by}] }
+   *          เรียงเก่า→ใหม่ · ไม่ส่ง taskId → data:[]
+   */
+  getTaskPhotos: function(taskId) {
+    return this.callRead('get_task_photos', { task_id: taskId });
+  },
+
   // ============================================================
   // 👷 CONTRACTORS
   // ============================================================

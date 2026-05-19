@@ -115,6 +115,7 @@
 .dr-comp-tool.has-photo { background:#1D9E75; color:#fff; }
 .dr-log-photo { margin-top:6px; }
 .dr-log-photo img { width:100%; max-height:200px; object-fit:cover; border-radius:8px; cursor:pointer; }
+.dr-log-linked { margin-top:5px; font-size:10px; font-weight:600; color:#065F46; }
 .dr-comp-tool { width:34px; height:34px; border-radius:50%; background:#fff; border:1px solid #E5E7EB; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; transition:all .12s; }
 .dr-comp-tool:hover { background:#1F3864; color:#fff; border-color:#1F3864; }
 .dr-comp-tool.mic { background:linear-gradient(135deg,#7C3AED,#A855F7); color:#fff; border-color:transparent; box-shadow:0 3px 8px rgba(124,58,237,0.25); }
@@ -807,12 +808,18 @@ function renderLog(l) {
     ? `<div class="dr-log-photo"><img src="${escapeHtml(l.photo_url)}" onclick="window.open('${escapeHtml(l.photo_url)}','_blank')" alt="รูปประกอบ" loading="lazy"></div>`
     : '';
 
+  // task_done + มีรูป → ยืนยันให้โฟร์แมนเห็นว่ารูปเข้า task จริง (ไม่ใช่แค่ toast หาย)
+  const linkedHtml = (isTaskDone && l.photo_url)
+    ? '<div class="dr-log-linked">🔗 รูปนี้ผูกกับงานแล้ว ✓</div>'
+    : '';
+
   return `
     <div class="dr-log ${isAuto?'auto':''}">
       <div class="dr-log-time">${time}</div>
       <div class="dr-log-bd">
         <div class="dr-log-txt">${escapeHtml(l.text)}</div>
         ${photoHtml}
+        ${linkedHtml}
         ${tagsHtml.length ? '<div class="dr-log-tags">' + tagsHtml.join('') + '</div>' : ''}
       </div>
       ${actionsHtml}
