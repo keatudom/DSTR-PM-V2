@@ -125,6 +125,53 @@
 .dr-comp-send:hover { background:#0C447C; }
 .dr-comp-send:disabled { background:#9CA3AF; cursor:not-allowed; }
 
+/* ขั้น4: ปุ่ม "เบิกวัสดุ" structured ใน composer foot */
+.dr-comp-mat { background:#fff; color:#0C447C; border:1.5px solid #BBD6EE; padding:7px 13px; border-radius:99px; font-size:11.5px; font-weight:700; font-family:inherit; cursor:pointer; display:flex; align-items:center; gap:5px; min-height:34px; }
+.dr-comp-mat:hover { background:#E6F1FB; border-color:#0C447C; }
+
+/* ขั้น4: Material picker (bottom sheet) — port จาก openMatPicker materials.html ขั้น2 */
+.dr-mp-wrap { display:flex; flex-direction:column; }
+.dr-mp-search { width:100%; padding:12px 14px; border:1.5px solid #E5E7EB; border-radius:10px; font-size:14px; font-family:inherit; box-sizing:border-box; color:#1F2937; }
+.dr-mp-search:focus { outline:none; border-color:#1F3864; box-shadow:0 0 0 3px rgba(31,56,100,0.1); }
+.dr-mp-chips { display:flex; gap:6px; overflow-x:auto; padding:10px 0 2px; margin:0 -2px; }
+.dr-mp-chips::-webkit-scrollbar { display:none; }
+.dr-mp-chip { padding:8px 14px; border-radius:99px; background:#fff; color:#4B5563; font-size:11.5px; font-weight:600; border:1px solid #E5E7EB; white-space:nowrap; cursor:pointer; font-family:inherit; flex-shrink:0; min-height:36px; }
+.dr-mp-chip.on { background:#0C447C; color:#fff; border-color:#0C447C; }
+.dr-mp-list { max-height:46vh; overflow-y:auto; margin-top:6px; -webkit-overflow-scrolling:touch; }
+.dr-mp-row { display:flex; align-items:center; gap:10px; min-height:48px; padding:11px 8px; border-bottom:1px solid #F3F4F6; cursor:pointer; }
+.dr-mp-row:active { background:#F3F4F6; }
+.dr-mp-row-ic { font-size:18px; flex-shrink:0; }
+.dr-mp-row-bd { flex:1; min-width:0; }
+.dr-mp-row-nm { font-size:13px; color:#1F2937; font-weight:500; }
+.dr-mp-row-meta { font-size:10px; color:#9CA3AF; margin-top:1px; }
+.dr-mp-row-stk { font-size:13px; font-weight:700; color:#1F3864; text-align:right; flex-shrink:0; min-width:54px; }
+.dr-mp-row-stk.low { color:#BA7517; }
+.dr-mp-row-stk.zero { color:#E24B4A; }
+.dr-mp-row-stk small { font-size:9px; color:#9CA3AF; font-weight:400; }
+.dr-mp-mode { font-size:9px; padding:1px 6px; border-radius:99px; font-weight:600; }
+.dr-mp-mode.count { background:#E6F1FB; color:#0C447C; }
+.dr-mp-mode.status { background:#FEF3C7; color:#92400E; }
+.dr-mp-empty { text-align:center; padding:24px 12px; color:#9CA3AF; font-size:12px; }
+
+/* ขั้น4: ฟอร์มกรอกจำนวนเบิก (COUNT) + ปุ่มสถานะ (STATUS) */
+.dr-wd-mat { background:#F8FAFC; border:1px solid #E5E7EB; border-radius:10px; padding:11px 13px; margin:4px 0 12px; }
+.dr-wd-mat-nm { font-size:13.5px; font-weight:700; color:#1F2937; }
+.dr-wd-mat-sub { font-size:10.5px; color:#6B7280; margin-top:2px; }
+.dr-wd-lb { font-size:11px; font-weight:600; color:#4B5563; margin:10px 0 6px; }
+.dr-wd-qty { display:flex; align-items:center; gap:10px; }
+.dr-wd-step { width:46px; height:46px; border-radius:12px; border:1.5px solid #D1D5DB; background:#fff; font-size:22px; font-weight:700; color:#1F3864; cursor:pointer; font-family:inherit; flex-shrink:0; }
+.dr-wd-step:active { background:#E6F1FB; }
+.dr-wd-input { flex:1; min-width:0; text-align:center; font-size:20px; font-weight:700; color:#1F2937; padding:11px 6px; border:1.5px solid #D1D5DB; border-radius:10px; font-family:inherit; box-sizing:border-box; }
+.dr-wd-input:focus { outline:none; border-color:#0C447C; }
+.dr-wd-unit { font-size:13px; color:#6B7280; font-weight:600; flex-shrink:0; min-width:40px; }
+.dr-wd-status { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.dr-wd-sb { min-height:48px; border:1.5px solid #D1D5DB; background:#fff; border-radius:10px; font-size:13px; font-weight:700; color:#4B5563; cursor:pointer; font-family:inherit; }
+.dr-wd-sb.on { color:#fff; }
+.dr-wd-sb[data-v="3"].on { background:#1D9E75; border-color:#1D9E75; }
+.dr-wd-sb[data-v="2"].on { background:#0C447C; border-color:#0C447C; }
+.dr-wd-sb[data-v="1"].on { background:#BA7517; border-color:#BA7517; }
+.dr-wd-sb[data-v="0"].on { background:#E24B4A; border-color:#E24B4A; }
+
 /* Timeline */
 .dr-tl-h { font-size:11px; font-weight:600; color:#4B5563; margin:14px 4px 6px; display:flex; justify-content:space-between; text-transform:uppercase; letter-spacing:0.04em; }
 .dr-tl-filters { display:flex; gap:5px; margin-bottom:8px; flex-wrap:wrap; }
@@ -390,6 +437,7 @@
       <div class="dr-comp-foot">
         <button class="dr-comp-tool" title="ถ่ายรูป" onclick="onPhotoClick()">📷</button>
         <button class="dr-comp-tool mic" id="micBtn" title="พูด" onclick="onMicClick()">🎤</button>
+        <button class="dr-comp-mat" title="เบิกวัสดุ (เลือกจากรายการ)" onclick="openMaterialDraw()">📦 เบิกวัสดุ</button>
         <button class="dr-comp-send" id="logSubmitBtn" onclick="submitLog()">บันทึก →</button>
       </div>
       <div class="dr-comp-echo empty" id="compEcho">ยังไม่เลือก — บันทึกแบบให้ AI ช่วยแท็ก</div>
@@ -466,6 +514,10 @@ const drState = {
   taskCandidates: null,
   selectedTaskId: null,
   matItems: null,
+  materials: [],             // ขั้น4: master วัสดุจาก get_materials (lazy load ตอนเปิด picker)
+  matLoaded: false,          // ขั้น4: โหลด materials แล้วหรือยัง (cache ในหน้า)
+  matPicker: { onPick: null, q: '', cat: 'all' },  // ขั้น4: state ของ bottom-sheet picker
+  wdDraft: null,             // ขั้น4: { mat, qty } ระหว่างกรอกจำนวนก่อน confirm
   unknownCtrs: null,
   unknownMats: null,
   pendingPhoto: null,
@@ -1357,6 +1409,8 @@ async function submitStructuredLog(text) {
 async function retryOptimisticLog(tmpId) {
   const item = drState.optimistic[tmpId];
   if (!item || item._opt !== 'failed') return;
+  // ขั้น4: ถ้าเป็น material item → retry ผ่าน confirm_material_log (คนละ endpoint)
+  if (item._matItem) { return drRetryWithdraw(tmpId); }
   item._opt = 'pending';
   renderFeed();
   Modal.toast('⏳ กำลังลองใหม่...');
@@ -1824,6 +1878,443 @@ async function confirmTaskTick() {
     setTimeout(() => refresh(), 1200);
   } catch (err) {
     Modal.toast('❌ ' + err.message);
+  }
+}
+
+// =========================
+// 🎯 ขั้น4: STRUCTURED เบิกวัสดุ (เลือกจาก list — ไม่พึ่ง AI parse)
+// — port pattern openMatPicker จาก materials.html ขั้น2 (daily.html ไม่ share JS)
+// — pre-check stock → confirm card (กฎ HUB: สต็อก ripple ต้อง human confirm 1 จังหวะ)
+// — optimistic + 3-state log เข้า feed · F ที่เลือกใน composer = ff_code · ทีม = notes
+// — AI flow เดิม (checkMaterialSuggestion) ไม่ถูกแตะ ยังเป็น fallback ถ้าพิมพ์ free text
+// =========================
+
+const DR_MAT_STATUS_LBL = ['🔴 หมด', '🟡 ใกล้หมด', '🔵 ใช้ได้', '🟢 เต็ม'];
+
+function drMatIcon(cat) {
+  const map = { 'ไม้แผ่น': '🪵', 'ไฟฟ้า': '⚡', 'ฮาร์ดแวร์': '🔩', 'กาว': '🧴', 'วัสดุสิ้นเปลือง': '📋' };
+  return map[cat] || '📦';
+}
+
+// โหลด master วัสดุครั้งเดียว (cache ในหน้า) — ไม่ block ถ้าโหลดแล้ว
+async function ensureMaterials() {
+  if (drState.matLoaded && drState.materials.length) return true;
+  try {
+    const res = await API.callRead('get_materials', { mode: '', category: '' });
+    if (res.ok && Array.isArray(res.data)) {
+      drState.materials = res.data;
+      drState.matLoaded = true;
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+// เปิด flow เบิกวัสดุ structured (ปุ่ม 📦 เบิกวัสดุ ใน composer)
+async function openMaterialDraw() {
+  Modal.toast('📦 กำลังโหลดรายการวัสดุ...');
+  const ok = await ensureMaterials();
+  if (!ok || !drState.materials.length) {
+    Modal.toast('❌ โหลดรายการวัสดุไม่สำเร็จ — ลองพิมพ์ "เบิก..." ให้ AI ช่วยแทน', 4000);
+    return;
+  }
+  openMatPicker(onDrawMatPicked);
+}
+
+// bottom sheet เลือกวัสดุ (ค้นหา + chip หมวด + แถว ≥48px) — port จาก materials.html
+function openMatPicker(onPick) {
+  drState.matPicker = { onPick: onPick, q: '', cat: 'all' };
+  const cats = ['all'].concat(
+    Array.from(new Set(drState.materials.map(m => m.category).filter(Boolean))));
+  const chipHtml = cats.map(c =>
+    `<button class="dr-mp-chip ${c === 'all' ? 'on' : ''}" onclick="setMatPickerCat('${escapeHtml(String(c)).replace(/'/g, '&#39;')}',this)">${c === 'all' ? 'ทั้งหมด' : escapeHtml(String(c))}</button>`
+  ).join('');
+
+  const html = `
+    <div class="modal-title">📦 เลือกวัสดุที่จะเบิก</div>
+    <div class="dr-mp-wrap">
+      <input id="drMpSearch" class="dr-mp-search" type="text" placeholder="🔍 ค้นหาชื่อ / รหัส / สเปก"
+             oninput="onMatPickerSearch(this.value)" autocomplete="off">
+      <div class="dr-mp-chips">${chipHtml}</div>
+      <div id="drMpList" class="dr-mp-list"></div>
+    </div>
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>
+    </div>
+  `;
+  Modal.show(html, 'pay-modal');
+  renderMatPickerList();
+  setTimeout(() => { const s = document.getElementById('drMpSearch'); if (s) s.focus(); }, 80);
+}
+
+function onMatPickerSearch(v) {
+  drState.matPicker.q = String(v || '').trim().toLowerCase();
+  renderMatPickerList();
+}
+
+function setMatPickerCat(cat, btn) {
+  drState.matPicker.cat = cat;
+  document.querySelectorAll('.dr-mp-chip').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderMatPickerList();
+}
+
+function renderMatPickerList() {
+  const p = drState.matPicker;
+  let list = drState.materials.filter(m => m.active !== false);
+  if (p.cat !== 'all') list = list.filter(m => m.category === p.cat);
+  if (p.q) {
+    list = list.filter(m => {
+      const hay = [m.id, m.name, m.spec, m.size, m.category]
+        .map(x => String(x || '').toLowerCase()).join(' ');
+      return hay.indexOf(p.q) >= 0;
+    });
+  }
+  const el = document.getElementById('drMpList');
+  if (!el) return;
+  if (list.length === 0) {
+    el.innerHTML = '<div class="dr-mp-empty">ไม่พบวัสดุที่ตรงกับคำค้น<br>ลองพิมพ์คำอื่น หรือเพิ่มวัสดุที่หน้า Materials</div>';
+    return;
+  }
+  el.innerHTML = list.map(m => {
+    const isStatus = m.tracking_mode === 'STATUS';
+    const stk = Number(m.current_stock || 0);
+    const min = Number(m.min_stock_alert || 0);
+    let stkCls = '', stkTxt;
+    if (isStatus) {
+      stkTxt = DR_MAT_STATUS_LBL[stk] || '?';
+      if (stk === 0) stkCls = 'zero'; else if (stk === 1) stkCls = 'low';
+    } else {
+      if (stk === 0) stkCls = 'zero'; else if (min > 0 && stk <= min) stkCls = 'low';
+      stkTxt = stk + ' <small>' + escapeHtml(m.unit || '') + '</small>';
+    }
+    const modeBadge = isStatus
+      ? '<span class="dr-mp-mode status">🚦 สถานะ</span>'
+      : '<span class="dr-mp-mode count">🔢 นับ</span>';
+    const sub = [m.id, m.spec, m.size].filter(Boolean).map(x => escapeHtml(String(x))).join(' · ');
+    return `
+      <div class="dr-mp-row" onclick="pickMaterial('${escapeHtml(String(m.id)).replace(/'/g, '&#39;')}')">
+        <div class="dr-mp-row-ic">${drMatIcon(m.category)}</div>
+        <div class="dr-mp-row-bd">
+          <div class="dr-mp-row-nm">${escapeHtml(m.name || m.id)}</div>
+          <div class="dr-mp-row-meta">${sub} ${modeBadge}</div>
+        </div>
+        <div class="dr-mp-row-stk ${stkCls}">${stkTxt}</div>
+      </div>`;
+  }).join('');
+}
+
+function pickMaterial(matId) {
+  const m = drState.materials.find(x => String(x.id) === String(matId));
+  if (!m) return;
+  const cb = drState.matPicker.onPick;
+  Modal.close();
+  if (typeof cb === 'function') cb(m);
+}
+
+// เลือกวัสดุแล้ว → กรอกจำนวน (COUNT) หรือเลือกสถานะ (STATUS)
+function onDrawMatPicked(m) {
+  drState.wdDraft = { mat: m, qty: 1 };
+  showWithdrawQtyModal();
+}
+
+function showWithdrawQtyModal() {
+  const d = drState.wdDraft;
+  if (!d || !d.mat) return;
+  const m = d.mat;
+  const isStatus = m.tracking_mode === 'STATUS';
+
+  const selFF = drState.selFF;
+  const ff = selFF ? (drState.ffs || []).find(f => f.code === selFF) : null;
+  const teamNames = (drState.selTeams || []).map(id => {
+    const t = (drState.teams || []).find(x => x.team_id === id);
+    return t ? (t.name || id) : id;
+  });
+
+  let echoHtml = '';
+  if (selFF || teamNames.length) {
+    const parts = [];
+    if (selFF) parts.push(`<span class="dr-echo-pill dr-echo-ff">🏠 ${escapeHtml(selFF)}${ff && ff.name ? ': ' + escapeHtml(String(ff.name).slice(0, 18)) : ''}</span>`);
+    teamNames.forEach(n => parts.push(`<span class="dr-echo-pill dr-echo-team">👥 ${escapeHtml(n)}</span>`));
+    echoHtml = `<div class="dr-comp-echo" style="border:none;background:transparent;padding:8px 0 0">ผูกเข้า: ${parts.join(' ')}</div>`;
+  } else {
+    echoHtml = `<div class="dr-comp-echo empty" style="border:none;background:transparent;padding:8px 0 0">ยังไม่เลือก F/ทีม — เลือกใน composer ก่อนกดเบิกได้ (ไม่บังคับ)</div>`;
+  }
+
+  const sub = [m.id, m.spec, m.size].filter(Boolean).map(x => escapeHtml(String(x))).join(' · ');
+
+  let bodyHtml;
+  if (isStatus) {
+    const cur = Number(m.current_stock || 0);
+    bodyHtml = `
+      <div class="dr-wd-lb">วัสดุนี้ใช้ "สถานะ" (ไม่ใช่จำนวน) — เลือกสถานะปัจจุบันหลังเบิก</div>
+      <div class="dr-wd-status">
+        ${[3, 2, 1, 0].map(v =>
+          `<button class="dr-wd-sb ${v === cur ? 'on' : ''}" data-v="${v}" onclick="drSelectWdStatus(${v},this)">${DR_MAT_STATUS_LBL[v]}</button>`
+        ).join('')}
+      </div>`;
+  } else {
+    bodyHtml = `
+      <div class="dr-wd-lb">จำนวนที่เบิก</div>
+      <div class="dr-wd-qty">
+        <button class="dr-wd-step" onclick="drAdjustWdQty(-1)">−</button>
+        <input id="drWdQty" class="dr-wd-input" type="number" inputmode="decimal" min="0" step="1"
+               value="1" oninput="drOnWdQtyInput(this.value)">
+        <span class="dr-wd-unit">${escapeHtml(m.unit || 'หน่วย')}</span>
+        <button class="dr-wd-step" onclick="drAdjustWdQty(1)">+</button>
+      </div>
+      <div class="dr-wd-lb" style="margin-top:6px;color:#9CA3AF;font-weight:500">คงเหลือในระบบ: <b>${Number(m.current_stock || 0)}</b> ${escapeHtml(m.unit || '')}</div>`;
+  }
+
+  const html = `
+    <div class="modal-title">📤 เบิก ${escapeHtml(m.name || m.id)}</div>
+    <div class="dr-wd-mat">
+      <div class="dr-wd-mat-nm">${drMatIcon(m.category)} ${escapeHtml(m.name || m.id)}</div>
+      <div class="dr-wd-mat-sub">${sub}</div>
+    </div>
+    ${bodyHtml}
+    ${echoHtml}
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="modal-btn modal-btn-cancel" onclick="drBackToMatPicker()">← เปลี่ยนวัสดุ</button>
+      <button class="modal-btn modal-btn-primary" onclick="drSubmitWithdraw()">ถัดไป →</button>
+    </div>
+  `;
+  Modal.show(html, 'pay-modal');
+}
+
+function drBackToMatPicker() {
+  drState.wdDraft = null;
+  openMatPicker(onDrawMatPicked);
+}
+
+function drAdjustWdQty(delta) {
+  const inp = document.getElementById('drWdQty');
+  if (!inp) return;
+  let v = Number(inp.value || 0) + delta;
+  if (v < 0) v = 0;
+  inp.value = v;
+  drState.wdDraft.qty = v;
+}
+
+function drOnWdQtyInput(v) {
+  let n = Number(v);
+  if (isNaN(n) || n < 0) n = 0;
+  drState.wdDraft.qty = n;
+}
+
+function drSelectWdStatus(v, btn) {
+  drState.wdDraft.qty = v;          // STATUS: qty = new_stock 0-3
+  drState.wdDraft.isStatusPick = true;
+  btn.parentNode.querySelectorAll('.dr-wd-sb').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+// ตรวจ input → pre-check stock → confirm card (กฎ HUB) → ยืนยันเบิกจริง
+async function drSubmitWithdraw() {
+  const d = drState.wdDraft;
+  if (!d || !d.mat) { Modal.close(); return; }
+  const m = d.mat;
+  const isStatus = m.tracking_mode === 'STATUS';
+
+  if (!isStatus) {
+    const qInp = document.getElementById('drWdQty');
+    if (qInp) d.qty = Number(qInp.value || 0);
+    if (!d.qty || d.qty <= 0) { Modal.toast('กรอกจำนวนที่จะเบิกก่อน'); return; }
+  }
+
+  // สร้าง item ตาม shape ของ confirm_material_log / check_stock_for_items
+  const teamNames = (drState.selTeams || []).map(id => {
+    const t = (drState.teams || []).find(x => x.team_id === id);
+    return t ? (t.name || id) : id;
+  });
+  const ffCode = drState.selFF || '';
+  const noteParts = ['[เบิก-เลือกจากรายการ]'];
+  if (teamNames.length) noteParts.push('ทีม: ' + teamNames.join(', '));
+  const rawNote = noteParts.join(' ');
+
+  let item;
+  if (isStatus) {
+    // STATUS: ใช้ type 'นับ' (backend countMaterial) ตั้ง new_stock = qty (0-3) — สอดคล้องขั้น2
+    item = {
+      type: 'นับ',
+      material_id: m.id,
+      material_name: m.name,
+      quantity: d.qty,
+      unit: m.unit || '',
+      ff_code: ffCode,
+      raw_text: rawNote + ' (สถานะ: ' + (DR_MAT_STATUS_LBL[d.qty] || d.qty) + ')'
+    };
+  } else {
+    item = {
+      type: 'เบิก',
+      material_id: m.id,
+      material_name: m.name,
+      quantity: d.qty,
+      unit: m.unit || '',
+      ff_code: ffCode,
+      raw_text: rawNote
+    };
+  }
+
+  Modal.close();
+  Modal.toast('🔍 ตรวจสอบสต๊อก...');
+
+  // pre-check stock (เฉพาะ type 'เบิก' COUNT — STATUS ไม่มี stock)
+  let warnings = [];
+  if (!isStatus) {
+    try {
+      const chk = await API.callRead('check_stock_for_items', {
+        items: JSON.stringify([item])
+      });
+      if (chk.ok && chk.data && chk.data.has_warnings) {
+        warnings = chk.data.warnings || [];
+      }
+    } catch (e) { /* เช็คล้ม → ไม่ block, ให้ confirm ตัดสิน */ }
+  }
+
+  showWithdrawConfirmCard(item, warnings);
+}
+
+// confirm card — กฎ HUB: สต็อก ripple ต้อง human confirm 1 จังหวะ
+function showWithdrawConfirmCard(item, warnings) {
+  const errors = (warnings || []).filter(w => w.level === 'error');
+  const warns = (warnings || []).filter(w => w.level === 'warning');
+  const isStatus = item.type === 'นับ';
+
+  const ffCode = item.ff_code;
+  const ff = ffCode ? (drState.ffs || []).find(f => f.code === ffCode) : null;
+  const teamNames = (drState.selTeams || []).map(id => {
+    const t = (drState.teams || []).find(x => x.team_id === id);
+    return t ? (t.name || id) : id;
+  });
+
+  let echoParts = [];
+  if (ffCode) echoParts.push(`<span class="dr-echo-pill dr-echo-ff">🏠 ${escapeHtml(ffCode)}${ff && ff.name ? ': ' + escapeHtml(String(ff.name).slice(0, 18)) : ''}</span>`);
+  teamNames.forEach(n => echoParts.push(`<span class="dr-echo-pill dr-echo-team">👥 ${escapeHtml(n)}</span>`));
+
+  const qtyLine = isStatus
+    ? 'ตั้งสถานะเป็น <b>' + escapeHtml(DR_MAT_STATUS_LBL[item.quantity] || String(item.quantity)) + '</b>'
+    : 'เบิก <b>' + escapeHtml(String(item.quantity)) + '</b> ' + escapeHtml(item.unit || '');
+
+  let warnHtml = '';
+  if (errors.length) {
+    errors.forEach(w => {
+      warnHtml += `<div class="sw-item sw-err"><div class="sw-item-h">🔴 ${escapeHtml(w.material_name || '')}</div><div class="sw-item-m">${escapeHtml(w.message || '')}</div></div>`;
+    });
+  }
+  if (warns.length) {
+    warns.forEach(w => {
+      warnHtml += `<div class="sw-item sw-warn"><div class="sw-item-h">🟡 ${escapeHtml(w.material_name || '')}</div><div class="sw-item-m">${escapeHtml(w.message || '')}</div></div>`;
+    });
+  }
+  if (warnHtml) warnHtml = '<div class="sw-list" style="margin-top:8px">' + warnHtml + '</div>';
+
+  let btnsHtml;
+  if (errors.length) {
+    warnHtml += '<div class="tk-note" style="background:#FEE2E2;color:#991B1B">⚠️ เบิกเกินสต๊อก — "บังคับเบิก" จะทำให้สต๊อกติดลบ</div>';
+    btnsHtml = `
+      <button class="modal-btn modal-btn-cancel" onclick="drCancelWithdraw()">ยกเลิก</button>
+      <button class="modal-btn" style="background:#E24B4A;color:#fff" onclick="drConfirmWithdraw(true)">บังคับเบิก</button>`;
+  } else {
+    btnsHtml = `
+      <button class="modal-btn modal-btn-cancel" onclick="drCancelWithdraw()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="drConfirmWithdraw(false)">✓ ยืนยันเบิก</button>`;
+  }
+
+  drState.matItems = [item];  // เก็บไว้ส่งตอน confirm (reuse ช่องเดิม)
+
+  const html = `
+    <div class="modal-title">📤 ยืนยันการเบิก</div>
+    <div class="modal-desc">ตรวจให้ชัดก่อน — การเบิกจะตัดสต๊อกจริง</div>
+    <div class="dr-wd-mat">
+      <div class="dr-wd-mat-nm">${drMatIcon(item.material_name)} ${escapeHtml(item.material_name || item.material_id)}</div>
+      <div class="dr-wd-mat-sub">${qtyLine}</div>
+    </div>
+    ${echoParts.length ? `<div class="dr-comp-echo" style="border:none;background:transparent;padding:6px 0 0">ผูกเข้า: ${echoParts.join(' ')}</div>` : ''}
+    ${warnHtml}
+    <div class="tk-note">💡 ยืนยันแล้วระบบจะปรับสต๊อก + บันทึกลง Timeline</div>
+    <div class="modal-btns">${btnsHtml}</div>
+  `;
+  Modal.show(html, 'pay-modal');
+}
+
+function drCancelWithdraw() {
+  Modal.close();
+  drState.matItems = null;
+  drState.wdDraft = null;
+}
+
+// ยืนยันเบิกจริง → optimistic log เข้า feed + 3-state + confirm_material_log
+async function drConfirmWithdraw(force) {
+  const items = (drState.matItems || []).map(it =>
+    Object.assign({}, it, force ? { force: true } : {}));
+  if (!items.length) { Modal.close(); return; }
+  const item = items[0];
+  Modal.close();
+
+  // optimistic: log ขึ้น timeline ทันที (จาง) — ข้อความสรุปการเบิก
+  const isStatus = item.type === 'นับ';
+  const optText = isStatus
+    ? '📦 ปรับสถานะ ' + (item.material_name || item.material_id) + ' → ' + (DR_MAT_STATUS_LBL[item.quantity] || item.quantity)
+    : '📤 เบิก ' + (item.material_name || item.material_id) + ' ' + item.quantity + ' ' + (item.unit || '');
+  const tmpId = 'tmpm_' + Date.now();
+  drState.optimistic[tmpId] = {
+    log_id: tmpId,
+    text: optText,
+    type: 'manual',
+    tags_ff: item.ff_code ? [item.ff_code] : [],
+    tags_team: (drState.selTeams || []).slice(),
+    tags_ctr: [], tags_issue: [],
+    timestamp: new Date().toISOString(),
+    _opt: 'pending',
+    _matItem: item
+  };
+  renderFeed();
+  Modal.toast('⏳ กำลังบันทึกการเบิก...');
+
+  try {
+    const res = await API.callWrite('confirm_material_log', {
+      items: JSON.stringify(items)
+    });
+    if (!res.ok) throw new Error(res.error || 'Confirm failed');
+
+    if (drState.optimistic[tmpId]) drState.optimistic[tmpId]._opt = 'ok';
+    renderFeed();
+    Modal.toast('✓ บันทึกการเบิกแล้ว — สต๊อกอัปเดต');
+    drState.matItems = null;
+    drState.wdDraft = null;
+
+    setTimeout(() => {
+      delete drState.optimistic[tmpId];
+      refresh();
+    }, 1400);
+  } catch (err) {
+    if (drState.optimistic[tmpId]) drState.optimistic[tmpId]._opt = 'failed';
+    renderFeed();
+    Modal.toast('❌ เบิกไม่สำเร็จ — แตะ "ลองใหม่" ในรายการ', 4000);
+  }
+}
+
+// ลองส่งการเบิกที่ล้มใหม่ (เรียกจาก retryOptimisticLog ถ้าเป็น material item)
+async function drRetryWithdraw(tmpId) {
+  const it = drState.optimistic[tmpId];
+  if (!it || it._opt !== 'failed' || !it._matItem) return;
+  it._opt = 'pending';
+  renderFeed();
+  Modal.toast('⏳ กำลังลองเบิกใหม่...');
+  try {
+    const res = await API.callWrite('confirm_material_log', {
+      items: JSON.stringify([it._matItem])
+    });
+    if (!res.ok) throw new Error(res.error || 'Confirm failed');
+    it._opt = 'ok';
+    renderFeed();
+    Modal.toast('✓ บันทึกการเบิกแล้ว');
+    setTimeout(() => { delete drState.optimistic[tmpId]; refresh(); }, 1400);
+  } catch (err) {
+    it._opt = 'failed';
+    renderFeed();
+    Modal.toast('❌ ยังไม่สำเร็จ — เช็คเน็ตแล้วลองอีกครั้ง', 4000);
   }
 }
 
