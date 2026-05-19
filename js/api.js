@@ -283,6 +283,27 @@ const API = {
   },
 
   // ============================================================
+  // 👥 TEAMS (team check-in — Daily Activity Hub ขั้น 1)
+  // ============================================================
+
+  /**
+   * ดึงรายชื่อทีมทั้งหมดจาก 21_Teams
+   * Returns: { ok:true, data:[{team_id,name,type,lead_name}] }
+   */
+  getTeams: function() {
+    return this.callRead('get_teams');
+  },
+
+  /**
+   * เช็คอิน/อัปเดตจำนวนคนของทีม (1 record/ทีม/วัน — เช็คอินซ้ำ = อัปเดต)
+   * @param {object} data - { team_id (req), worker_count, action ('in'/'out'), date }
+   * หมายเหตุ: ใช้ callRead เพราะต้องอ่าน response (updated/log_id) มายืนยัน optimistic UI
+   */
+  teamCheckin: function(data) {
+    return this.callRead('team_checkin', data || {});
+  },
+
+  // ============================================================
   // 🏪 SUPPLIERS
   // ============================================================
 
