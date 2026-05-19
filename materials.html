@@ -482,15 +482,15 @@
 
     <!-- Tabs -->
     <div class="mat-tabs">
-      <button class="mat-tab on" onclick="switchTab('ql', this)">⚡ Quick Log</button>
-      <button class="mat-tab" onclick="switchTab('stock', this)">📊 Stock</button>
-      <button class="mat-tab" onclick="switchTab('rcv', this)">📥 รับ</button>
-      <button class="mat-tab" onclick="switchTab('wdr', this)">📤 เบิก</button>
-      <button class="mat-tab" onclick="switchTab('cnt', this)">📝 นับ</button>
+      <button class="mat-tab" id="matTab-ql" onclick="switchTab('ql', this)" style="display:none">⚡ Quick Log</button>
+      <button class="mat-tab on" id="matTab-stock" onclick="switchTab('stock', this)">📊 Stock</button>
+      <button class="mat-tab" id="matTab-rcv" onclick="switchTab('rcv', this)">📥 รับ</button>
+      <button class="mat-tab" id="matTab-wdr" onclick="switchTab('wdr', this)">📤 เบิก</button>
+      <button class="mat-tab" id="matTab-cnt" onclick="switchTab('cnt', this)">📝 นับ</button>
     </div>
 
     <!-- TAB: Quick Log -->
-    <div id="tab-ql" class="mat-tab-pane on">
+    <div id="tab-ql" class="mat-tab-pane">
       <div class="ql-wrap">
         <div class="ql-label">💬 พิมพ์รายการวัสดุที่จะบันทึก</div>
         <textarea id="qlInput" class="ql-ta" placeholder="เช่น: สากลเบิก HMR 18 มิล 5 แผ่น F-03&#10;รับสกรู 2 นิ้ว 3 กล่อง&#10;นับไม้ 9 มิล เหลือ 5 แผ่น"></textarea>
@@ -512,7 +512,7 @@
     </div>
 
     <!-- TAB: Stock -->
-    <div id="tab-stock" class="mat-tab-pane">
+    <div id="tab-stock" class="mat-tab-pane on">
       <div class="stk-filter" id="stkFilter">
         <button class="stk-f-btn on" onclick="setStockFilter('all',this)">ทั้งหมด</button>
         <button class="stk-f-btn" onclick="setStockFilter('low',this)">⚠ เหลือน้อย</button>
@@ -651,14 +651,8 @@
   </div>
 </div>
 
-<!-- FAB -->
-<div id="fab" class="fab" onclick="toggleFab()">+</div>
-<div id="fabMenu" class="fab-menu">
-  <div class="fab-mi" onclick="quickAction('ql')"><span class="fab-mi-i">⚡</span>Quick Log</div>
-  <div class="fab-mi" onclick="quickAction('rcv')"><span class="fab-mi-i">📥</span>รับวัสดุ</div>
-  <div class="fab-mi" onclick="quickAction('wdr')"><span class="fab-mi-i">📤</span>เบิกวัสดุ</div>
-  <div class="fab-mi" onclick="quickAction('cnt')"><span class="fab-mi-i">📝</span>นับสต๊อก</div>
-</div>
+<!-- FAB: เพิ่มวัสดุใหม่ (ตรงสัญชาตญาณ "+") -->
+<div id="fab" class="fab" onclick="openNewMaterialModal('')" role="button" tabindex="0" aria-label="เพิ่มวัสดุใหม่" title="เพิ่มวัสดุใหม่">+</div>
 
 <!-- Bottom Nav -->
 <div class="bnav">
@@ -684,6 +678,15 @@
 <script src="js/api.js"></script>
 <script src="js/modal.js"></script>
 <script>
+// ============================================================
+// FEATURE FLAGS — เปิด/ปิด UI โดยไม่ลบโค้ด (revert ง่าย)
+// FEATURE_MAT_QUICKLOG=false → ซ่อนแท็บ Quick Log + pane ของมัน
+//   (โค้ด parseQuickLog/aiConfirmSection/useExample คงไว้ครบ ไม่ลบ
+//    daily.html ที่ใช้ parse_material_log เป็น fallback ไม่กระทบ)
+//   เปิดคืนได้แค่เปลี่ยนค่าเป็น true
+// ============================================================
+var FEATURE_MAT_QUICKLOG = false;
+
 // ตรวจสอบสิทธิ์
 if (!Auth.requireAuth('admin')) {
   // จะถูก redirect
@@ -739,29 +742,23 @@ async function loadAll() {
 // TABS
 // ============================================================
 function switchTab(name, btn) {
+  // กัน: Quick Log ถูกซ่อนด้วย FEATURE_MAT_QUICKLOG → fallback ไป Stock
+  if (name === 'ql' && !FEATURE_MAT_QUICKLOG) {
+    name = 'stock';
+    btn = document.getElementById('matTab-stock');
+  }
   document.querySelectorAll('.mat-tab').forEach(t => t.classList.remove('on'));
   document.querySelectorAll('.mat-tab-pane').forEach(p => p.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('tab-' + name).classList.add('on');
+  if (btn) btn.classList.add('on');
+  const pane = document.getElementById('tab-' + name);
+  if (pane) pane.classList.add('on');
 }
 
 // ============================================================
-// FAB
+// FAB → เปิดฟอร์มเพิ่มวัสดุโดยตรง (onclick=openNewMaterialModal('') ใน HTML)
+// fabMenu (เมนู 4 รายการซ้ำแท็บ) ถูกลบทิ้งแล้ว — toggleFab/quickAction
+// เป็น dead code ไม่มี caller เหลือ จึงลบออก
 // ============================================================
-function toggleFab() {
-  document.getElementById('fab').classList.toggle('on');
-  document.getElementById('fabMenu').classList.toggle('on');
-}
-
-function quickAction(tab) {
-  toggleFab();
-  const btnMap = { ql:0, stock:1, rcv:2, wdr:3, cnt:4 };
-  const idx = btnMap[tab];
-  const btn = document.querySelectorAll('.mat-tab')[idx];
-  if (btn) switchTab(tab, btn);
-  document.body.scrollTop = 0;
-  document.documentElement.scrollTop = 0;
-}
 
 // ============================================================
 // AI ALERTS BANNER
@@ -2249,6 +2246,36 @@ async function doDeleteMaterial(matId) {
     Modal.toast('❌ ' + err.message);
   }
 }
+
+// ============================================================
+// บังคับใช้ feature flag: ซ่อน/แสดงแท็บ+pane Quick Log จาก JS
+// (single source of truth = FEATURE_MAT_QUICKLOG) ถ้า flag=true
+// → แท็บกลับมาโชว์ และตั้งเป็น default tab เหมือนพฤติกรรมเดิม
+// ============================================================
+function applyMatFeatureFlags() {
+  var tabQl = document.getElementById('matTab-ql');
+  var paneQl = document.getElementById('tab-ql');
+  var tabStock = document.getElementById('matTab-stock');
+  var paneStock = document.getElementById('tab-stock');
+  if (FEATURE_MAT_QUICKLOG) {
+    // เปิดคืน: Quick Log เป็น default tab เหมือนเดิม
+    if (tabQl) tabQl.style.display = '';
+    if (tabQl && paneQl && tabStock && paneStock) {
+      document.querySelectorAll('.mat-tab').forEach(function (t) { t.classList.remove('on'); });
+      document.querySelectorAll('.mat-tab-pane').forEach(function (p) { p.classList.remove('on'); });
+      tabQl.classList.add('on');
+      paneQl.classList.add('on');
+    }
+  } else {
+    // ปิด: ซ่อนปุ่มแท็บ + pane (โค้ด parseQuickLog/useExample คงไว้ครบ)
+    if (tabQl) tabQl.style.display = 'none';
+    if (tabQl) tabQl.classList.remove('on');
+    if (paneQl) paneQl.classList.remove('on');
+    if (tabStock && !tabStock.classList.contains('on')) tabStock.classList.add('on');
+    if (paneStock && !paneStock.classList.contains('on')) paneStock.classList.add('on');
+  }
+}
+applyMatFeatureFlags();
 
 // START
 loadAll();
