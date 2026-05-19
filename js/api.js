@@ -198,21 +198,20 @@ const API = {
         }
       };
 
-      // ถ้า iframe โหลดเสร็จแล้วแต่ postMessage ไม่มาภายใน 8 วิ → แจ้ง error
-      // (ไม่คืน ok แบบลวงๆ เพราะหน้าเว็บจะเข้าใจผิดว่าสำเร็จ)
+      // ถ้า iframe โหลดเสร็จแล้วแต่ postMessage ไม่มาภายใน 15 วิ → แจ้ง error
+      // (เพิ่มจาก 8s → 15s รองรับ Apps Script cold start + slow mobile network)
       function watchdog() {
         if (done) return;
         if (iframeLoaded) {
           finish({
             ok: false,
-            error: 'ไม่ได้รับผลตอบกลับจาก server (postMessage ไม่มา) — ' +
-                   'อาจต้อง deploy Code.gs เวอร์ชันใหม่'
+            error: 'อัพรูปไม่ทันเวลา — server ตอบช้า (ลองใหม่ได้ log จะบันทึกอยู่)'
           });
         } else {
           setTimeout(watchdog, 2000);  // iframe ยังไม่โหลด — รอต่อ
         }
       }
-      setTimeout(watchdog, 8000);
+      setTimeout(watchdog, 15000);
 
       timer = setTimeout(function() {
         if (done) return;

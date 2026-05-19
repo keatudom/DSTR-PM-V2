@@ -936,23 +936,30 @@ async function confirmLog() {
   Modal.toast('กำลังบันทึก...');
 
   try {
-    // 📷 ถ้ามีรูป → อัปโหลดก่อน
+    // 📷 ถ้ามีรูป → อัปโหลดก่อน (มี retry 1 รอบถ้าล้มครั้งแรก)
     let photoUrl = '';
+    let photoFailed = false;
     if (drState.pendingPhoto) {
-      Modal.toast('📷 กำลังอัปโหลดรูป...');
-      try {
-        // ใช้ callUpload (hidden iframe) — base64 รูปใหญ่เกิน fetch
-        // fetch เจอ redirect ของ Apps Script แล้ว body หาย
-        const upRes = await API.uploadLogPhoto(drState.pendingPhoto);
-        if (upRes.ok && upRes.photo_url) {
-          photoUrl = upRes.photo_url;
-          drState.pendingPhotoUrl = upRes.photo_url;
-          drState.pendingPhotoDriveId = upRes.drive_id;
-        } else {
-          Modal.toast('⚠️ อัปรูปไม่สำเร็จ' + (upRes.error ? ': ' + upRes.error : '') + ' — บันทึก log ต่อ');
+      Modal.toast('📷 กำลังอัปโหลดรูป... (อาจใช้เวลา 5-15 วินาที)');
+      let upRes = null;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          upRes = await API.uploadLogPhoto(drState.pendingPhoto);
+          if (upRes && upRes.ok && upRes.photo_url) break;  // success
+        } catch (e) {
+          upRes = { ok: false, error: e.message };
         }
-      } catch (e) {
-        Modal.toast('⚠️ อัปรูปไม่สำเร็จ แต่จะบันทึก log ต่อ');
+        if (attempt === 1) {
+          Modal.toast('📷 ลองอัพรูปใหม่อีกครั้ง...');
+        }
+      }
+      if (upRes && upRes.ok && upRes.photo_url) {
+        photoUrl = upRes.photo_url;
+        drState.pendingPhotoUrl = upRes.photo_url;
+        drState.pendingPhotoDriveId = upRes.drive_id;
+      } else {
+        photoFailed = true;
+        // ไม่ค้าง flow — log จะถูกบันทึกต่อโดยไม่มีรูป (user จะเห็น toast สรุปทีหลัง)
       }
     }
 
@@ -971,7 +978,14 @@ async function confirmLog() {
     const res = await API.callWrite('add_activity_log', payload);
     if (!res.ok) throw new Error(res.error || 'Save failed');
 
-    Modal.toast('✓ บันทึกแล้ว');
+    // ✅ Toast สรุปชัดเจนว่า log บันทึกแล้ว — แยกกรณีรูป
+    if (photoFailed) {
+      Modal.toast('✓ บันทึก log แล้ว (รูปไม่ขึ้น — ลองถ่ายใหม่ทีหลังได้)', 4000);
+    } else if (photoUrl) {
+      Modal.toast('✓ บันทึก log + รูปแล้ว');
+    } else {
+      Modal.toast('✓ บันทึกแล้ว');
+    }
     document.getElementById('logInput').value = '';
     drState.pendingLog = null;
     removePhoto();
