@@ -330,12 +330,15 @@ const API = {
     return this.callRead('get_material', { mat_id: matId });
   },
 
+  // หมายเหตุ: material mutation ใช้ callRead (JSONP GET) ไม่ใช่ callWrite
+  // เพราะ callWrite = POST no-cors → Apps Script 302 redirect ทำ body หาย
+  // → param ไม่ถึง backend + อ่านผลจริงไม่ได้ (เคยทำลบ/แก้ "เหมือนสำเร็จแต่ไม่เกิดอะไร")
   createMaterial: function(data) {
-    return this.callWrite('create_material', data);
+    return this.callRead('create_material', data);
   },
 
   updateMaterial: function(matId, updates) {
-    return this.callWrite('update_material', Object.assign({ mat_id: matId }, updates));
+    return this.callRead('update_material', Object.assign({ mat_id: matId }, updates));
   },
 
   /**
@@ -343,7 +346,7 @@ const API = {
    * @param {string} matId - material_id
    */
   deactivateMaterial: function(matId) {
-    return this.callWrite('deactivate_material', { material_id: matId });
+    return this.callRead('deactivate_material', { material_id: matId });
   },
 
   /**
@@ -362,7 +365,7 @@ const API = {
    * @param {number} status - 0=หมด 1=ใกล้หมด 2=ใช้ได้ 3=เต็ม
    */
   changeMaterialStatus: function(matId, status) {
-    return this.callWrite('count_material', {
+    return this.callRead('count_material', {
       material_id: matId,
       new_stock: status,
       notes: 'เปลี่ยนสถานะจากการ์ดวัสดุ',
