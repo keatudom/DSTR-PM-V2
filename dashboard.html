@@ -349,6 +349,31 @@
   font-size: 10px; color: #1D4ED8; background: #EFF6FF;
   border: 1px solid #BFDBFE; border-radius: 99px;
   padding: 1px 7px; flex-shrink: 0; font-weight: 600;
+  cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.subtask-photo:active { transform: scale(.92); }
+/* ไม่มีรูป → เทาจาง (แตะ = เพิ่มเลย) */
+.subtask-photo.empty {
+  color: #9CA3AF; background: #F9FAFB; border-color: #E5E7EB; font-weight: 500;
+}
+/* กำลังอัป → จาง + นาฬิกา */
+.subtask-photo.uploading {
+  color: #B45309; background: #FFFBEB; border-color: #FDE68A; opacity: .75;
+}
+/* อัปล้ม → แดง (แตะ = ลองใหม่) */
+.subtask-photo.failed {
+  color: #B91C1C; background: #FEF2F2; border-color: #FECACA;
+}
+/* ปุ่ม + เพิ่มรูป ใน gallery modal (reuse .tp-cell) */
+.tp-cell.tp-add {
+  border: 1.5px dashed #BFDBFE; background: #F8FAFF;
+  display: flex; align-items: center; justify-content: center;
+  color: #1D4ED8;
+}
+.tp-cell.tp-add .tp-add-ic { font-size: 26px; line-height: 1; }
+.tp-cell.tp-add .tp-add-lb { font-size: 10px; font-weight: 600; margin-top: 2px; }
+.tp-cell.tp-add > div {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .tp-sec { margin-top: 14px; text-align: left; }
 .tp-sec-h { font-size: 12px; font-weight: 600; color: #1F2937; margin-bottom: 8px; }
@@ -900,10 +925,15 @@ function renderFFSubtasks(ffCode) {
     tasks.forEach(t => {
       const isDone = t.status === 'Done';
       const pc = Number(t.photoCount) || 0;
+      // chip 📷 แตะได้เสมอ — R7: stopPropagation กันแตะทะลุไป toggleTask
+      // มีรูป → 📷N (เปิด gallery+เพิ่ม) · ไม่มี → 📷＋ เทาจาง (เพิ่มเลย)
+      const photoChip = pc > 0
+        ? `<span class="subtask-photo" id="spc-${tpEsc(t.id)}" title="ดู/เพิ่มรูปงาน (${pc})" onclick="event.stopPropagation();subtaskPhotoTap('${tpEsc(t.id)}',true)">📷${pc}</span>`
+        : `<span class="subtask-photo empty" id="spc-${tpEsc(t.id)}" title="เพิ่มรูปงาน" onclick="event.stopPropagation();subtaskPhotoTap('${tpEsc(t.id)}',false)">📷＋</span>`;
       html += `<div class="subtask-item ${isDone?'done':''}" onclick="event.stopPropagation();toggleTask('${t.id}')">
         <div class="subtask-check ${isDone?'on':''}">${isDone?'✓':''}</div>
         <span class="subtask-name">${t.name}</span>
-        ${pc > 0 ? `<span class="subtask-photo" title="มีรูปงาน ${pc} รูป">📷${pc}</span>` : ''}
+        ${photoChip}
         ${t.doneDate ? `<span class="subtask-date">${t.doneDate}</span>` : ''}
       </div>`;
     });
@@ -1009,14 +1039,23 @@ async function loadTaskPhotos(taskId) {
   if (!box) return;  // modal ปิดไปแล้ว — ไม่ทำอะไรต่อ
 
   const photos = (res && res.ok && Array.isArray(res.data)) ? res.data : [];
+
+  // ปุ่ม ＋ เพิ่มรูป — อยู่หน้าสุดเสมอ (แตะ = file picker เดียวกับ chip)
+  // tpEsc(taskId) กัน quote พัง · ไม่แตะ lightbox/onerror/placeholder เดิม
+  const addCell = `<div class="tp-cell tp-add" title="เพิ่มรูป"
+        onclick="spAddFromGallery('${tpEsc(taskId)}')">
+      <div><span class="tp-add-ic">＋</span><span class="tp-add-lb">เพิ่มรูป</span></div>
+    </div>`;
+
   if (photos.length === 0) {
-    box.innerHTML = '<div class="tp-empty">ยังไม่มีรูปงานนี้</div>';
+    box.innerHTML = '<div class="tp-grid">' + addCell + '</div>'
+      + '<div class="tp-empty">ยังไม่มีรูปงานนี้ — แตะ ＋ เพื่อเพิ่ม</div>';
     return;
   }
 
   // เก็บไว้ให้ lightbox อ้างถึง (key ด้วย index)
   window._tpPhotos = photos;
-  let cells = '';
+  let cells = addCell;
   photos.forEach((p, i) => {
     const thumb = tpThumbUrl(p);
     if (thumb) {
@@ -1053,6 +1092,197 @@ function openTaskPhoto(idx) {
 function closeTaskPhoto() {
   const lb = document.getElementById('tpLightbox');
   if (lb && lb.parentNode) lb.parentNode.removeChild(lb);
+}
+
+// ============================================================
+// 📷 SUBTASK PHOTO-ADD (เพิ่มรูปที่ subtask ตรง dashboard)
+// ============================================================
+// decouple 100% จาก progress: ไม่เรียก markDone/confirmUncheck/toggleTask,
+// ไม่แตะ % / ไม่ยิง confirm. รูปล้ม → task เหมือนเดิมเป๊ะ.
+// R6: _uploading guard ต่อ task กัน double-tap
+// R5: ไม่มี user ใน session → ส่ง '' (ไม่ throw)
+// R7: chip เรียกผ่าน onclick ที่ stopPropagation แล้ว (ใน renderFFSubtasks)
+const _spUploading = {};   // { taskId: true } — R6 guard
+const _spRetryMem  = {};   // { taskId: dataUrl } — เก็บรูปที่ล้มไว้ retry (ไม่หาย)
+
+// compressImage — copy มาจาก daily.html (คนละไฟล์ ไม่ share JS — tactic เดิม repo)
+function compressImage(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.onload = ev => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('decode failed'));
+      img.onload = () => {
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if (w > maxDim || h > maxDim) {
+          if (w >= h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else        { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        try {
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } catch (err) {
+          reject(err);
+        }
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// user จาก session (auth.js เก็บแค่ role — ไม่มี username) · R5: ว่าง = ''
+function _spUploadedBy() {
+  try {
+    const s = (typeof Auth !== 'undefined' && Auth.getSession) ? Auth.getSession() : null;
+    return (s && s.role) ? String(s.role) : '';
+  } catch (e) { return ''; }
+}
+
+// chip DOM helper — อัปสถานะ chip ในเครื่อง โดยไม่ re-render ทั้ง list
+function _spSetChip(taskId, mode, count) {
+  const el = document.getElementById('spc-' + taskId);
+  if (!el) return;  // chip ไม่อยู่บนจอแล้ว (ผู้ใช้ collapse FF) — ข้าม
+  el.classList.remove('empty', 'uploading', 'failed');
+  if (mode === 'uploading') {
+    el.classList.add('uploading');
+    el.textContent = '⏳';
+    el.title = 'กำลังอัปรูป...';
+  } else if (mode === 'failed') {
+    el.classList.add('failed');
+    el.textContent = '📷↻';
+    el.title = 'อัปไม่สำเร็จ — แตะเพื่อลองใหม่';
+  } else if (mode === 'has') {
+    el.textContent = '📷' + (count || 0);
+    el.title = 'ดู/เพิ่มรูปงาน (' + (count || 0) + ')';
+  } else { // empty
+    el.classList.add('empty');
+    el.textContent = '📷＋';
+    el.title = 'เพิ่มรูปงาน';
+  }
+}
+
+// แตะ chip / ปุ่ม ＋ ใน gallery
+// hasPhotos=true → เปิด modal gallery (reuse loadTaskPhotos) ที่มีปุ่ม ＋
+// hasPhotos=false → ข้าม modal เปิด file picker เพิ่มเลย
+// ถ้า chip อยู่สถานะ failed → แตะ = retry ด้วยรูปเดิมที่เก็บไว้
+function subtaskPhotoTap(taskId, hasPhotos) {
+  if (_spRetryMem[taskId]) {            // มีรูปค้างจากครั้งก่อนที่ล้ม → retry เลย
+    _spDoUpload(taskId, _spRetryMem[taskId]);
+    return;
+  }
+  if (hasPhotos) {
+    _spOpenGalleryModal(taskId);
+  } else {
+    _spOpenPicker(taskId);
+  }
+}
+
+// ปุ่ม ＋ ใน gallery modal → file picker เดียวกัน (ไม่ re-open gallery)
+// retry ค้าง → ใช้รูปเดิม (เหมือน subtaskPhotoTap)
+function spAddFromGallery(taskId) {
+  if (_spRetryMem[taskId]) { _spDoUpload(taskId, _spRetryMem[taskId]); return; }
+  _spOpenPicker(taskId);
+}
+
+// modal gallery (reuse .tp-* + loadTaskPhotos) — มีปุ่ม ＋ จาก loadTaskPhotos prepend
+function _spOpenGalleryModal(taskId) {
+  const task = state.data.tasks.find(t => t.id === taskId);
+  const name = task ? task.name : '';
+  const html = `
+    <div class="modal-icon info">📷</div>
+    <div class="modal-title">รูปงาน</div>
+    ${name ? `<div class="modal-desc">${tpEsc(name)}</div>` : ''}
+    <div class="tp-sec">
+      <div class="tp-sec-h">📷 รูปงาน</div>
+      <div id="tpGallery"><div class="tp-skel"><div class="tp-skel-c"></div><div class="tp-skel-c"></div><div class="tp-skel-c"></div></div></div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>
+    </div>
+  `;
+  Modal.show(html);
+  loadTaskPhotos(taskId);   // จะ prepend .tp-add ให้เอง
+}
+
+// file picker — input ชั่วคราว ไม่ฝัง DOM ถาวร (additive, ไม่ชน element เดิม)
+function _spOpenPicker(taskId) {
+  if (_spUploading[taskId]) { Modal.toast('⏳ กำลังอัปรูปงานนี้อยู่'); return; }
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'image/*';
+  inp.capture = 'environment';
+  inp.style.display = 'none';
+  inp.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (inp.parentNode) inp.parentNode.removeChild(inp);
+    if (!file) return;
+    let dataUrl;
+    try {
+      dataUrl = await compressImage(file, 1600, 0.8);
+    } catch (err) {
+      Modal.toast('❌ อ่านรูปไม่ได้ — ลองรูปอื่น');
+      return;
+    }
+    _spDoUpload(taskId, dataUrl);
+  });
+  document.body.appendChild(inp);
+  inp.click();
+}
+
+// upload จริง — optimistic 3-state + retry ×2 · decouple จาก progress
+async function _spDoUpload(taskId, dataUrl) {
+  if (_spUploading[taskId]) { Modal.toast('⏳ กำลังอัปรูปงานนี้อยู่'); return; }  // R6
+  _spUploading[taskId] = true;
+  _spRetryMem[taskId] = dataUrl;            // เก็บไว้ก่อน — ถ้าล้มจะ retry ได้
+  _spSetChip(taskId, 'uploading');
+  Modal.toast('📷 กำลังอัปรูป... (5-15 วิ)');
+
+  let upRes = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      upRes = await API.uploadLogPhoto(dataUrl);
+      if (upRes && upRes.ok && upRes.photo_url) break;
+    } catch (e) {
+      upRes = { ok: false, error: e.message };
+    }
+    if (attempt === 1) Modal.toast('📷 ลองอัปใหม่อีกครั้ง...');
+  }
+
+  const task = state.data.tasks.find(t => t.id === taskId);
+
+  if (upRes && upRes.ok && upRes.photo_url) {
+    // ผูกรูปเข้า task (route add_photo มีแล้ว) — callWrite no-cors, fire & ถือว่าสำเร็จ
+    try {
+      await API.addPhoto({
+        task_id: taskId,
+        // backend addPhoto อ่าน drive_url/drive_id — ส่งทั้งคู่ + alias ตาม spec
+        drive_url: upRes.photo_url,
+        drive_id: upRes.drive_id || '',
+        photo_url: upRes.photo_url,
+        photo_drive_id: upRes.drive_id || '',
+        uploaded_by: _spUploadedBy()        // R5: '' ได้ ไม่ throw
+      });
+    } catch (e) { /* no-cors เขียนแล้ว — ไม่ขวาง UX */ }
+
+    delete _spRetryMem[taskId];
+    if (task) task.photoCount = (Number(task.photoCount) || 0) + 1;  // อัป state ในเครื่อง
+    _spSetChip(taskId, 'has', task ? task.photoCount : 1);            // ไม่ refetch dashboard
+    Modal.toast('✓ เพิ่มรูปงานแล้ว');
+
+    // ถ้า gallery modal เปิดอยู่ → reload ให้เห็นรูปใหม่ทันที
+    if (document.getElementById('tpGallery')) loadTaskPhotos(taskId);
+  } else {
+    // ล้ม ×2 — chip แดง + แตะ=retry (รูปเก็บใน _spRetryMem ไม่หาย)
+    _spSetChip(taskId, 'failed');
+    Modal.toast('❌ อัปไม่สำเร็จ — งานไม่กระทบ · แตะ chip เพื่อลองใหม่', 4500);
+  }
+  _spUploading[taskId] = false;            // R6: ปลด guard เสมอ
 }
 
 async function markDone(taskId, doneDate) {
