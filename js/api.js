@@ -338,6 +338,38 @@ const API = {
     return this.callWrite('update_material', Object.assign({ mat_id: matId }, updates));
   },
 
+  /**
+   * ปิดใช้งานวัสดุ (soft delete — active=false) — ปลอดภัย default
+   * @param {string} matId - material_id
+   */
+  deactivateMaterial: function(matId) {
+    return this.callWrite('deactivate_material', { material_id: matId });
+  },
+
+  /**
+   * ลบวัสดุถาวร (hard delete) — backend ปฏิเสธถ้ามี transaction อ้างอยู่
+   * ใช้ callRead เพื่ออ่าน response (ok/error) มาแจ้งผู้ใช้ว่าลบได้หรือถูกปฏิเสธ
+   * @param {string} matId - material_id
+   */
+  deleteMaterial: function(matId) {
+    return this.callRead('delete_material', { material_id: matId });
+  },
+
+  /**
+   * เปลี่ยนสถานะวัสดุโหมด STATUS อย่างรวดเร็ว (แตะปุ่มบนการ์ด)
+   * ใช้ count_material เพื่อให้ถูกบันทึก transaction + auto-log เหมือนการนับปกติ
+   * @param {string} matId - material_id
+   * @param {number} status - 0=หมด 1=ใกล้หมด 2=ใช้ได้ 3=เต็ม
+   */
+  changeMaterialStatus: function(matId, status) {
+    return this.callWrite('count_material', {
+      material_id: matId,
+      new_stock: status,
+      notes: 'เปลี่ยนสถานะจากการ์ดวัสดุ',
+      trigger_source: 'card_quick',
+    });
+  },
+
   // ============================================================
   // 💰 MATERIAL TRANSACTIONS
   // ============================================================
