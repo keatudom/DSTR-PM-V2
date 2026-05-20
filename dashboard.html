@@ -412,6 +412,93 @@
   position: absolute; bottom: 18px; left: 0; right: 0; text-align: center;
   color: #fff; font-size: 12px; padding: 0 16px;
 }
+
+/* ============================================================
+   🔍 FF DETAIL OVERLAY (ขั้น C — full-screen ทับ dashboard)
+   z-index hierarchy: overlay 9000 < Modal 9500 < Lightbox 9999
+   ============================================================ */
+.ffd-overlay {
+  position: fixed; inset: 0; background: #F9FAFB; z-index: 9000;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.ffd-hdr {
+  position: sticky; top: 0; background: #fff; z-index: 1;
+  border-bottom: 1px solid #E5E7EB; padding: 14px 16px 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.ffd-hdr-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.ffd-hdr-code {
+  font-size: 11px; font-weight: 700; padding: 4px 10px;
+  border-radius: 99px; background: #E6F1FB; color: #0C447C;
+}
+.ffd-hdr-name { flex: 1; font-size: 14px; font-weight: 600; color: #1F2937;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ffd-hdr-x {
+  font-size: 22px; color: #6B7280; cursor: pointer;
+  padding: 4px 10px; border-radius: 6px; line-height: 1;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.ffd-hdr-x:active { background: #F3F4F6; }
+.ffd-meta { display: flex; gap: 10px; font-size: 11px; color: #6B7280; flex-wrap: wrap; }
+.ffd-meta strong { color: #1F2937; font-weight: 600; }
+.ffd-kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.ffd-kpi-c { background: #F9FAFB; border-radius: 8px; padding: 8px 6px; text-align: center; }
+.ffd-kpi-l { font-size: 10px; color: #6B7280; }
+.ffd-kpi-v { font-size: 16px; font-weight: 700; color: #1F2937; font-variant-numeric: tabular-nums; }
+.ffd-kpi-v.var-bad  { color: #DC2626 }
+.ffd-kpi-v.var-warn { color: #D97706 }
+.ffd-kpi-v.var-ok   { color: #10B981 }
+
+.ffd-body { padding: 14px 16px 80px; }
+.ffd-sec { background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+.ffd-sec-h {
+  font-size: 12px; font-weight: 600; color: #1F2937;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.ffd-sec-h .ffd-sec-hint { font-size: 10px; color: #9CA3AF; font-weight: 400; margin-left: auto; }
+
+/* กราฟแผน-vs-จริง 4 งวด — แต่ละ phase = column 2 แท่งคู่ (plan + actual) */
+.ffd-graph {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  align-items: end; padding: 18px 4px 0;
+}
+.ffd-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ffd-bars { display: flex; gap: 5px; height: 100px; align-items: flex-end; position: relative; }
+.ffd-bar {
+  width: 20px; border-radius: 4px 4px 0 0; min-height: 2px;
+  position: relative; transition: height 0.35s ease-out;
+}
+.ffd-bar.plan { background: #D1D5DB; }
+.ffd-bar.actual.p1 { background: #1F3864; }
+.ffd-bar.actual.p2 { background: #378ADD; }
+.ffd-bar.actual.p3 { background: #1D9E75; }
+.ffd-bar.actual.p4 { background: #BA7517; }
+.ffd-bar-v {
+  position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+  font-size: 9px; font-weight: 600; color: #1F2937; white-space: nowrap;
+}
+.ffd-col-l { font-size: 10px; font-weight: 600; color: #1F2937; text-align: center; margin-top: 2px; }
+.ffd-col-w { font-size: 9px; color: #9CA3AF; }
+.ffd-legend { display: flex; gap: 14px; justify-content: center; margin-top: 10px; font-size: 10px; color: #6B7280; }
+.ffd-legend-d { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+
+.ffd-empty { font-size: 11px; color: #9CA3AF; padding: 10px 0; text-align: center; }
+
+/* ปุ่ม → ท้าย FF row + ปุ่ม CTA เต็มกว้างใต้ subtasks */
+.wp-arrow {
+  font-size: 16px; color: #3B82F6; cursor: pointer;
+  padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.wp-arrow:active { background: #DBEAFE; transform: scale(0.92); }
+.ffd-cta {
+  margin: 10px 0 4px; padding: 11px;
+  background: linear-gradient(90deg, #1F3864 0%, #3B82F6 100%);
+  color: #fff; border-radius: 8px; text-align: center;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.ffd-cta:active { transform: scale(0.98); opacity: 0.92; }
 </style>
 </head>
 <body>
@@ -879,6 +966,7 @@ function renderWeightList() {
       <span class="wp-weight">${wPct}%</span>
       <div class="wp-prog"><div class="wp-prog-fill" style="width:${prog.pct}%;background:${color}"></div></div>
       <span class="wp-pct ${pctClass}">${prog.pct}%</span>
+      <span class="wp-arrow" title="ดูรายละเอียด" onclick="event.stopPropagation();openFFDetail('${ff.code}')">→</span>
       <span class="wp-chev">▾</span>
     </div>`;
 
@@ -911,6 +999,9 @@ function setSort(mode, btn) {
 function renderFFSubtasks(ffCode) {
   const phases = ['p1','p2','p3','p4'];
   const phaseNames = { p1: 'งวด 1 · Pre-Production', p2: 'งวด 2 · วัสดุ+โครง', p3: 'งวด 3 · ติดตั้ง', p4: 'งวด 4 · ส่งมอบ' };
+  // เปิดผ่าน FF Detail overlay (renderFFDTasksSection) จะ pass _inOverlay=true
+  // เพื่อ "ซ่อนปุ่ม CTA ในตัวเอง" (กันวนซ้ำ + R7 stopPropagation ไม่ต้องในนี้)
+  const inOverlay = arguments[1] === true;
   let html = '<div class="subtasks">';
   phases.forEach(p => {
     const tasks = state.data.tasks.filter(t => t.ffCode === ffCode && t.phase === p);
@@ -939,6 +1030,10 @@ function renderFFSubtasks(ffCode) {
     });
     html += '</div>';
   });
+  // ปุ่ม CTA เต็มกว้าง → เปิด FF Detail overlay (เฉพาะ context ใน dashboard, ไม่ใช่ใน overlay)
+  if (!inOverlay) {
+    html += `<div class="ffd-cta" onclick="event.stopPropagation();openFFDetail('${ffCode}')">📋 เปิดรายละเอียด ${ffCode} (กราฟ · แบบ · รูปรวม)</div>`;
+  }
   html += '</div>';
   return html;
 }
@@ -1630,9 +1725,209 @@ function renderRisks() {
   document.getElementById('riskList').innerHTML = html;
 }
 
+// ============================================================
+// 🔍 FF DETAIL OVERLAY (ขั้น C)
+// full-screen overlay ทับ dashboard. reuse calcFFPlanByGantt + ทุก helper
+// task photo เดิม (compressImage/_sp*/loadTaskPhotos/openTaskPhoto/lightbox)
+// อ่านอย่างเดียว ไม่ ripple ไป backend ใหม่ (ไม่กระทบ HUB)
+// ============================================================
+function openFFDetail(ffCode) {
+  const ff = state.data.ffs.find(f => f.code === ffCode);
+  if (!ff) { Modal.toast('ไม่พบ F นี้'); return; }
+
+  const ov = document.getElementById('ffdOverlay');
+  ov.style.display = 'block';
+  ov.scrollTop = 0;
+  document.body.style.overflow = 'hidden';   // กัน scroll background
+
+  ov.innerHTML = renderFFDHeader(ff) + '<div class="ffd-body">'
+    + renderFFDGraph(ff)
+    + renderFFDDesignSection(ffCode)
+    + renderFFDTasksSection(ffCode)
+    + renderFFDGallerySection(ffCode)
+    + '</div>';
+
+  // lazy: load task photos แบบรวม (gallery + design ใช้ data เดียวกัน)
+  loadFFDPhotosBundle(ffCode);
+}
+
+function closeFFDetail() {
+  const ov = document.getElementById('ffdOverlay');
+  if (!ov) return;
+  ov.style.display = 'none';
+  ov.innerHTML = '';                          // เคลียร์ DOM กัน memory
+  document.body.style.overflow = '';
+}
+
+// ---- HEADER + KPI variance ----
+function renderFFDHeader(ff) {
+  const prog = calcFFProgressWeighted(ff.code);
+  const plan = calcFFPlanByGantt(ff.code, project);
+  const variance = Math.round((prog.pct - plan.overall) * 10) / 10;
+  let vCls = 'var-ok', vTxt = '● ตามแผน';
+  if (variance < -15) { vCls = 'var-bad'; vTxt = '▲ ล่าช้ามาก'; }
+  else if (variance < -5) { vCls = 'var-warn'; vTxt = '⚠ ใกล้ล่าช้า'; }
+  else if (variance > 5) { vCls = 'var-ok'; vTxt = '🚀 เร็วกว่าแผน'; }
+  const planTxt = plan.hasGantt ? plan.overall + '%' : '—';
+  const varTxt  = plan.hasGantt ? (variance > 0 ? '+' : '') + variance + '%' : '—';
+  return `
+    <div class="ffd-hdr">
+      <div class="ffd-hdr-top">
+        <span class="ffd-hdr-code">${ff.code}</span>
+        <div class="ffd-hdr-name">${ff.name || '-'}</div>
+        <span class="ffd-hdr-x" onclick="closeFFDetail()" title="ปิด">✕</span>
+      </div>
+      <div class="ffd-meta">
+        <span>📍 Zone <strong>${ff.zone || '-'}</strong></span>
+        ${ff.area ? `<span>🏠 <strong>${ff.area}</strong></span>` : ''}
+        <span>💰 <strong>${fmt(ff.price || 0)}</strong></span>
+        ${ff.scopeType ? `<span>📝 ${ff.scopeType}</span>` : ''}
+      </div>
+      <div class="ffd-kpi">
+        <div class="ffd-kpi-c">
+          <div class="ffd-kpi-l">ทำได้</div>
+          <div class="ffd-kpi-v">${prog.pct}%</div>
+        </div>
+        <div class="ffd-kpi-c">
+          <div class="ffd-kpi-l">แผน ณ วันนี้</div>
+          <div class="ffd-kpi-v">${planTxt}</div>
+        </div>
+        <div class="ffd-kpi-c">
+          <div class="ffd-kpi-l">${vTxt}</div>
+          <div class="ffd-kpi-v ${vCls}">${varTxt}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ---- กราฟ แผน-vs-จริง 4 งวด ----
+function renderFFDGraph(ff) {
+  const plan = calcFFPlanByGantt(ff.code, project);
+  const phaseLabels = { p1: 'งวด 1', p2: 'งวด 2', p3: 'งวด 3', p4: 'งวด 4' };
+  let cols = '';
+  ['p1','p2','p3','p4'].forEach(p => {
+    const tasks = state.data.tasks.filter(t => t.ffCode === ff.code && t.phase === p);
+    const total = tasks.length;
+    const done = tasks.filter(t => t.status === 'Done').length;
+    const actualPct = total > 0 ? Math.round((done / total) * 1000) / 10 : 0;
+    const ph = plan.phases.find(x => x.phase === p);
+    const planPct = ph ? ph.planPct : 0;
+    const weeks = ph && ph.startWeek ? ('W' + ph.startWeek + '-' + ph.endWeek) : '';
+    cols += `<div class="ffd-col">
+      <div class="ffd-bars">
+        <div class="ffd-bar plan" style="height:${Math.max(2, planPct)}%">
+          <span class="ffd-bar-v">${planPct}</span>
+        </div>
+        <div class="ffd-bar actual ${p}" style="height:${Math.max(2, actualPct)}%">
+          <span class="ffd-bar-v">${actualPct}</span>
+        </div>
+      </div>
+      <div class="ffd-col-l">${phaseLabels[p]}</div>
+      <div class="ffd-col-w">${weeks} · ${done}/${total}</div>
+    </div>`;
+  });
+  const hint = plan.hasGantt ? `สัปดาห์ที่ ${Math.floor(plan.currentWeek)}` : 'ไม่มีแผน Gantt';
+  return `
+    <div class="ffd-sec">
+      <div class="ffd-sec-h">📊 แผน vs ทำได้ รายงวด<span class="ffd-sec-hint">${hint}</span></div>
+      <div class="ffd-graph">${cols}</div>
+      <div class="ffd-legend">
+        <span><span class="ffd-legend-d" style="background:#D1D5DB"></span>แผน</span>
+        <span><span class="ffd-legend-d" style="background:#1F3864"></span>ทำได้จริง</span>
+      </div>
+    </div>
+  `;
+}
+
+// ---- Section 📐 แบบ/รูปทรง — tactic A: reuse 13_Task_Photos + caption prefix ----
+function renderFFDDesignSection(ffCode) {
+  return `
+    <div class="ffd-sec">
+      <div class="ffd-sec-h">📐 แบบ/รูปทรง <span class="ffd-sec-hint">รูปที่มี caption [แบบ:..]</span></div>
+      <div id="ffdDesignBox"><div class="tp-skel"><div class="tp-skel-c"></div><div class="tp-skel-c"></div><div class="tp-skel-c"></div></div></div>
+    </div>
+  `;
+}
+
+// ---- Section งานรายงวด (reuse renderFFSubtasks เดิม — chip 📷 ทำงานเหมือนเดิม) ----
+// flag _inOverlay=true → ซ่อน CTA ในตัวเอง (กันวนซ้ำใน overlay)
+function renderFFDTasksSection(ffCode) {
+  return `
+    <div class="ffd-sec">
+      <div class="ffd-sec-h">📋 งานรายงวด</div>
+      ${renderFFSubtasks(ffCode, true)}
+    </div>
+  `;
+}
+
+// ---- Gallery รวม — โหลด lazy ใต้ทุก section ----
+function renderFFDGallerySection(ffCode) {
+  return `
+    <div class="ffd-sec">
+      <div class="ffd-sec-h">🖼 รูปงานรวม</div>
+      <div id="ffdGalleryBox"><div class="tp-skel"><div class="tp-skel-c"></div><div class="tp-skel-c"></div><div class="tp-skel-c"></div></div></div>
+    </div>
+  `;
+}
+
+// ---- โหลดรูปทุก task ใน FF แล้วแยกเข้า 2 section ----
+async function loadFFDPhotosBundle(ffCode) {
+  const tasks = state.data.tasks.filter(t => t.ffCode === ffCode);
+  const candidates = tasks.filter(t => (Number(t.photoCount) || 0) > 0);
+
+  let allPhotos = [];
+  if (candidates.length > 0) {
+    try {
+      const results = await Promise.all(candidates.map(t =>
+        API.getTaskPhotos(t.id).catch(() => null)
+      ));
+      results.forEach((r, i) => {
+        if (r && r.ok && Array.isArray(r.data)) {
+          r.data.forEach(p => allPhotos.push(Object.assign({}, p, { _task_name: candidates[i].name })));
+        }
+      });
+    } catch (e) {}
+  }
+
+  // แยก: caption ขึ้นต้น "[แบบ:" → design, ที่เหลือ → gallery รวม
+  const design = allPhotos.filter(p => String(p.caption || '').indexOf('[แบบ:') === 0);
+  const others = allPhotos.filter(p => String(p.caption || '').indexOf('[แบบ:') !== 0);
+
+  renderFFDPhotoGrid('ffdDesignBox', design, 'ยังไม่มีรูปแบบ — แนบรูปแล้วใส่ caption ขึ้นต้น [แบบ:ref] / [แบบ:shop] / [แบบ:render]');
+  renderFFDPhotoGrid('ffdGalleryBox', others, 'ยังไม่มีรูปงานใน F นี้ — เพิ่มผ่าน chip 📷 ของแต่ละ task');
+}
+
+function renderFFDPhotoGrid(boxId, photos, emptyMsg) {
+  const box = document.getElementById(boxId);
+  if (!box) return;  // overlay ปิดไปแล้ว
+  if (!photos || photos.length === 0) {
+    box.innerHTML = `<div class="ffd-empty">${emptyMsg}</div>`;
+    return;
+  }
+  // เก็บไว้ให้ lightbox อ้างถึง (key ด้วย index) — ใช้ window._tpPhotos ร่วมกับ openTaskPhoto เดิม
+  window._tpPhotos = photos;
+  let cells = '';
+  photos.forEach((p, i) => {
+    const thumb = tpThumbUrl(p);
+    if (thumb) {
+      cells += `<div class="tp-cell" onclick="openTaskPhoto(${i})">
+        <img src="${tpEsc(thumb)}" alt="รูปงาน" loading="lazy"
+             onerror="this.parentNode.innerHTML='&lt;div class=\\'tp-ph\\' onclick=\\'event.stopPropagation()\\'&gt;&lt;span class=tp-ph-ic&gt;🖼️&lt;/span&gt;เปิดไม่ได้&lt;/div&gt;'">
+      </div>`;
+    } else {
+      cells += `<div class="tp-cell"><div class="tp-ph"><span class="tp-ph-ic">🖼️</span>เปิดไม่ได้</div></div>`;
+    }
+  });
+  box.innerHTML = '<div class="tp-grid">' + cells + '</div>';
+}
+
 // START
 loadData();
 </script>
+
+<!-- 🔍 FF Detail overlay container — แทรกในเฟรมหลังสุด เกิน .container -->
+<div id="ffdOverlay" class="ffd-overlay" style="display:none"></div>
 
 </body>
 </html>
