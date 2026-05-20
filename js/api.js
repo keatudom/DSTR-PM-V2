@@ -516,6 +516,30 @@ const API = {
   },
 
   // ============================================================
+  // 👥 PROJECT STAFF — assign คนในบริษัทเข้าโปรเจค (27_Project_Staff)
+  // ============================================================
+
+  getAllStaff: function() {
+    return this.callRead('get_all_staff');
+  },
+
+  getProjectStaff: function(projectId) {
+    return this.callRead('get_project_staff', { project_id: projectId });
+  },
+
+  // mutation → callRead (JSONP GET) ตามบทเรียน callwrite-loses-post-body
+  assignProjectStaff: function(projectId, staffId, roleInProject) {
+    return this.callRead('assign_project_staff', {
+      project_id: projectId, staff_id: staffId,
+      role_in_project: roleInProject || ''
+    });
+  },
+
+  unassignProjectStaff: function(assignmentId) {
+    return this.callRead('unassign_project_staff', { assignment_id: assignmentId });
+  },
+
+  // ============================================================
   // 🧪 UTILS
   // ============================================================
 

@@ -118,6 +118,20 @@
 .tm-file-name:hover { text-decoration:underline; }
 .tm-file-del { font-size:12px; color:#D1D5DB; cursor:pointer; padding:0 4px; flex-shrink:0; }
 .tm-file-del:hover { color:#E24B4A; }
+
+/* 👥 Project Staff — section header + assigned card + toggle buttons */
+.ps-sec-h { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#1F2937; margin:4px 0 10px; padding-bottom:6px; border-bottom:1px solid #E5E7EB; }
+.ps-sec-h-ic { font-size:16px; }
+.ps-sec-h-cnt { margin-left:auto; font-size:10.5px; color:#6B7280; font-weight:500; background:#F3F4F6; padding:2px 9px; border-radius:99px; }
+.ps-empty { font-size:11.5px; color:#9CA3AF; padding:12px; text-align:center; background:#F9FAFB; border-radius:10px; margin-bottom:8px; }
+.tm-staff.ps-assigned { background:#F0F7FF; border-color:#BFDBFE; }
+.ps-btn { font-size:10.5px; font-weight:600; padding:5px 11px; border-radius:99px; border:none; cursor:pointer; font-family:inherit; flex-shrink:0; }
+.ps-btn-add { background:#1F3864; color:#fff; }
+.ps-btn-add:hover:not(:disabled) { background:#0C447C; }
+.ps-btn-add:disabled { opacity:0.5; cursor:wait; }
+.ps-btn-out { background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA; }
+.ps-btn-out:hover { background:#FEE2E2; }
+.ps-chip-on { font-size:10px; padding:3px 9px; border-radius:99px; font-weight:600; background:#E1F5EE; color:#0F6E56; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -173,10 +187,12 @@ const tmState = {
   contracts: [],
   milestones: [],
   staff: [],
+  projectStaff: [],        // staff ที่ assign ใน Bow House (27_Project_Staff)
   contractFiles: [],
   paymentSlips: [],
   isAdmin: true,
-  collapsed: {}
+  collapsed: {},
+  projectId: 'bow-house'   // hardcode ตอนนี้ (single-project)
 };
 
 // =========================
@@ -198,6 +214,12 @@ async function loadAll() {
     tmState.staff = res.data.staff || [];
     tmState.contractFiles = res.data.contract_files || [];
     tmState.paymentSlips = res.data.payment_slips || [];
+
+    // โหลด project staff แยก (ไม่อยู่ใน bundle เดิม — feature ใหม่)
+    try {
+      const psRes = await API.getProjectStaff(tmState.projectId);
+      tmState.projectStaff = (psRes && psRes.ok && Array.isArray(psRes.data)) ? psRes.data : [];
+    } catch (e) { tmState.projectStaff = []; }
 
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
@@ -432,7 +454,49 @@ function renderStaff() {
     return;
   }
 
-  let html = '';
+  // build set ของ staff_id ที่ assigned (จาก projectStaff) สำหรับ check toggle state
+  const assignedSet = new Set(tmState.projectStaff.map(a => String(a.staff_id)));
+
+  // ---- SECTION 1: ทีมในโครงการนี้ ----
+  let html = `
+    <div class="ps-sec-h">
+      <span class="ps-sec-h-ic">🎯</span>
+      <span>ทีมในโครงการนี้</span>
+      <span class="ps-sec-h-cnt">${tmState.projectStaff.length} คน</span>
+    </div>
+  `;
+  if (tmState.projectStaff.length === 0) {
+    html += '<div class="ps-empty">ยังไม่มีคนถูกเลือกเข้าโครงการนี้ — กด "📌 เพิ่มเข้าโครงการ" ที่รายการด้านล่าง</div>';
+  } else {
+    tmState.projectStaff.forEach(a => {
+      const role = (a.role || '').toLowerCase();
+      const roleCls = role.indexOf('manager') >= 0 ? 'tm-role-pm'
+        : role.indexOf('foreman') >= 0 ? 'tm-role-fm'
+        : role.indexOf('engineer') >= 0 ? 'tm-role-se'
+        : 'tm-role-fm';
+      const initial = (a.name || '?').slice(0, 1);
+      html += `
+        <div class="tm-staff ps-assigned">
+          <div class="tm-avatar tm-av-gen">${initial}</div>
+          <div class="tm-card-info">
+            <div class="tm-card-name">${escapeHtml(a.name)}</div>
+            ${a.phone ? '<div class="tm-card-sub">📞 ' + escapeHtml(a.phone) + '</div>' : ''}
+          </div>
+          <span class="tm-staff-role ${roleCls}">${escapeHtml(a.role || '-')}</span>
+          ${tmState.isAdmin ? `<button class="ps-btn ps-btn-out" onclick="unassignStaff('${a.assignment_id}','${escapeHtml(a.name)}')">− ออก</button>` : ''}
+        </div>
+      `;
+    });
+  }
+
+  // ---- SECTION 2: ทีมบริษัททั้งหมด ----
+  html += `
+    <div class="ps-sec-h" style="margin-top:18px">
+      <span class="ps-sec-h-ic">👔</span>
+      <span>ทีมบริษัททั้งหมด</span>
+      <span class="ps-sec-h-cnt">${tmState.staff.length} คน</span>
+    </div>
+  `;
   tmState.staff.forEach(s => {
     const role = (s.role || '').toLowerCase();
     const roleCls = role.indexOf('manager') >= 0 ? 'tm-role-pm'
@@ -440,6 +504,12 @@ function renderStaff() {
       : role.indexOf('engineer') >= 0 ? 'tm-role-se'
       : 'tm-role-fm';
     const initial = (s.name || '?').slice(0, 1);
+    const isAssigned = assignedSet.has(String(s.staff_id));
+    const toggleBtn = tmState.isAdmin
+      ? (isAssigned
+          ? `<span class="ps-chip-on">✓ ในโครงการ</span>`
+          : `<button class="ps-btn ps-btn-add" onclick="assignStaff('${s.staff_id}','${escapeHtml(s.name)}')">📌 เพิ่ม</button>`)
+      : '';
 
     html += `
       <div class="tm-staff">
@@ -449,15 +519,50 @@ function renderStaff() {
           ${s.phone ? '<div class="tm-card-sub">📞 ' + escapeHtml(s.phone) + '</div>' : ''}
         </div>
         <span class="tm-staff-role ${roleCls}">${escapeHtml(s.role || '-')}</span>
+        ${toggleBtn}
         ${tmState.isAdmin ? `<span class="tm-chev" onclick="openEditStaff('${s.staff_id}')">✏️</span>` : ''}
       </div>
     `;
   });
 
   if (tmState.isAdmin) {
-    html += '<button class="tm-add-team" onclick="openAddStaff()">+ เพิ่มทีมงาน</button>';
+    html += '<button class="tm-add-team" onclick="openAddStaff()">+ เพิ่มทีมงานใหม่ในระบบ</button>';
   }
   el.innerHTML = html;
+}
+
+// ---- Assign/Unassign staff to project ----
+async function assignStaff(staffId, staffName) {
+  const btn = event && event.target;
+  if (btn) btn.disabled = true;
+  try {
+    const res = await API.assignProjectStaff(tmState.projectId, staffId, '');
+    if (!res || !res.ok) {
+      alert('❌ เพิ่มไม่สำเร็จ — ลองใหม่');
+      if (btn) btn.disabled = false;
+      return;
+    }
+    // refresh project staff list
+    const psRes = await API.getProjectStaff(tmState.projectId);
+    tmState.projectStaff = (psRes && psRes.ok && Array.isArray(psRes.data)) ? psRes.data : [];
+    renderStaff();
+  } catch (e) {
+    alert('❌ เพิ่มไม่สำเร็จ: ' + e.message);
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function unassignStaff(assignmentId, staffName) {
+  if (!confirm(`ลบ "${staffName}" ออกจากโครงการนี้?`)) return;
+  try {
+    const res = await API.unassignProjectStaff(assignmentId);
+    if (!res || !res.ok) { alert('❌ ลบไม่สำเร็จ'); return; }
+    const psRes = await API.getProjectStaff(tmState.projectId);
+    tmState.projectStaff = (psRes && psRes.ok && Array.isArray(psRes.data)) ? psRes.data : [];
+    renderStaff();
+  } catch (e) {
+    alert('❌ ลบไม่สำเร็จ: ' + e.message);
+  }
 }
 
 // =========================

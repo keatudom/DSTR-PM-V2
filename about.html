@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เกี่ยวกับเรา · บริษัท ดีไซน์ ทีเรีย จำกัด</title>
+<meta name="description" content="ทีมงานคุณภาพของ DESIGNTERIOR — บริษัท ดีไซน์ ทีเรีย จำกัด งานบิวท์อินและตกแต่งภายในครบวงจร">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans Thai', sans-serif; background: #F9FAFB; color: #1F2937; line-height: 1.55; }
+
+/* Sticky header */
+.ab-hdr { position: sticky; top: 0; background: #fff; border-bottom: 1px solid #E5E7EB;
+  z-index: 10; padding: 11px 16px; display: flex; align-items: center; justify-content: space-between; }
+.ab-hdr-logo { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1F3864; font-size: 14px; letter-spacing: 0.5px; }
+.ab-hdr-logo-mark { font-style: italic; font-weight: 800; font-size: 22px; line-height: 1; color: #1F3864; }
+.ab-hdr-back { font-size: 12px; color: #1F3864; text-decoration: none; padding: 6px 12px;
+  border-radius: 99px; background: #F3F4F6; font-weight: 500; }
+.ab-hdr-back:active { background: #E5E7EB; }
+
+/* Hero */
+.ab-hero { background: linear-gradient(135deg, #1F3864 0%, #0C447C 100%); color: #fff;
+  padding: 36px 20px 32px; text-align: center; }
+.ab-hero-brand { font-size: 26px; font-weight: 700; letter-spacing: 3px; margin-bottom: 6px; }
+.ab-hero-name { font-size: 15px; font-weight: 500; opacity: 0.95; margin-bottom: 12px; }
+.ab-hero-tag { font-size: 12.5px; opacity: 0.85; max-width: 320px; margin: 0 auto 14px; line-height: 1.7; }
+.ab-hero-meta { display: inline-flex; gap: 18px; font-size: 11px; opacity: 0.8;
+  border-top: 1px solid rgba(255,255,255,0.2); padding-top: 12px; flex-wrap: wrap; justify-content: center; }
+.ab-hero-meta strong { font-weight: 600; color: #fff; opacity: 1; }
+
+/* Section heading */
+.ab-sec { padding: 28px 16px 4px; }
+.ab-sec-h {
+  font-size: 17px; font-weight: 700; color: #1F2937;
+  display: inline-block; padding-bottom: 6px; margin-bottom: 4px;
+}
+.ab-sec-h.exec { border-bottom: 3px solid #BA7517; }
+.ab-sec-h.team { border-bottom: 3px solid #378ADD; }
+.ab-sec-d { font-size: 11.5px; color: #6B7280; margin-bottom: 14px; margin-top: 2px; }
+
+/* Cards container */
+.ab-cards { padding: 0 16px 8px; display: flex; flex-direction: column; gap: 10px; }
+
+/* Executive card — รูปใหญ่ + bio inline */
+.ab-card-exec {
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 14px;
+  padding: 14px; display: flex; gap: 12px; align-items: flex-start;
+}
+.ab-photo, .ab-mono {
+  width: 88px; height: 88px; border-radius: 50%; flex-shrink: 0;
+  overflow: hidden; background: #F3F4F6; object-fit: cover;
+  border: 2px solid #fff; box-shadow: 0 0 0 1px #E5E7EB;
+}
+.ab-mono {
+  display: flex; align-items: center; justify-content: center;
+  background: #1F3864; color: #fff; font-size: 24px; font-weight: 600;
+  letter-spacing: 1px;
+}
+.ab-info { flex: 1; min-width: 0; }
+.ab-name { font-size: 15px; font-weight: 700; color: #1F2937; }
+.ab-role { font-size: 12px; color: #BA7517; font-weight: 600; margin-top: 1px; }
+.ab-role.team { color: #378ADD; }
+.ab-edu { font-size: 11.5px; color: #1F3864; font-weight: 500; margin-top: 7px; line-height: 1.5; }
+.ab-edu-li { display: block; padding-left: 10px; position: relative; }
+.ab-edu-li::before { content: '·'; position: absolute; left: 2px; color: #9CA3AF; font-weight: 700; }
+.ab-bio { font-size: 11.5px; color: #4B5563; margin-top: 7px; line-height: 1.6; }
+
+/* Team (Sales/PM) — compact */
+.ab-card-team {
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
+  padding: 12px; display: flex; gap: 11px; align-items: center;
+}
+.ab-card-team .ab-photo, .ab-card-team .ab-mono { width: 60px; height: 60px; }
+.ab-card-team .ab-mono { font-size: 18px; }
+.ab-card-team .ab-name { font-size: 14px; }
+.ab-card-team .ab-role { font-size: 11.5px; }
+.ab-card-team .ab-edu { font-size: 11px; margin-top: 5px; }
+
+/* Footer / company info */
+.ab-foot { padding: 24px 16px 18px; background: #F3F4F6; margin-top: 16px;
+  font-size: 11.5px; color: #4B5563; line-height: 1.7; }
+.ab-foot-h { font-size: 12px; font-weight: 700; color: #1F2937; margin-bottom: 6px; }
+.ab-foot-row { margin-bottom: 4px; }
+.ab-foot-row strong { font-weight: 600; color: #1F2937; }
+
+/* CTA */
+.ab-cta-wrap { padding: 14px 16px 40px; background: #F3F4F6; }
+.ab-cta {
+  display: block; width: 100%; padding: 14px; border-radius: 12px;
+  background: #1F3864; color: #fff; text-align: center; text-decoration: none;
+  font-size: 14px; font-weight: 600; transition: transform 0.1s;
+}
+.ab-cta:active { transform: scale(0.98); background: #0C447C; }
+
+/* Desktop: 2-col grid for team section */
+@media (min-width: 720px) {
+  .ab-sec { padding: 36px 28px 6px; max-width: 880px; margin: 0 auto; }
+  .ab-cards { padding: 0 28px 8px; max-width: 880px; margin: 0 auto; }
+  .ab-cards.team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex-direction: unset; }
+  .ab-foot, .ab-cta-wrap { max-width: 880px; margin: 0 auto; }
+  .ab-foot { margin-top: 24px; border-radius: 14px; }
+}
+</style>
+</head>
+<body>
+
+<header class="ab-hdr">
+  <div class="ab-hdr-logo"><span class="ab-hdr-logo-mark">D1</span> DESIGNTERIOR</div>
+  <a class="ab-hdr-back" href="index.html">← กลับ</a>
+</header>
+
+<!-- HERO -->
+<section class="ab-hero">
+  <div class="ab-hero-brand">DESIGNTERIOR</div>
+  <div class="ab-hero-name">บริษัท ดีไซน์ ทีเรีย จำกัด</div>
+  <div class="ab-hero-tag">ผู้เชี่ยวชาญงานบิวท์อินและตกแต่งภายในครบวงจร — ออกแบบ ผลิต ติดตั้ง โดยทีมวิศวกร สถาปนิก และช่างประจำของบริษัท</div>
+  <div class="ab-hero-meta">
+    <span>ก่อตั้งปี <strong>พ.ศ. 2555</strong></span>
+    <span>ทุนจดทะเบียน <strong>20 ล้านบาท</strong></span>
+    <span>สำนักงานใหญ่ <strong>อุบลราชธานี</strong></span>
+  </div>
+</section>
+
+<!-- EXECUTIVE -->
+<section class="ab-sec">
+  <h2 class="ab-sec-h exec">คณะผู้บริหาร</h2>
+  <div class="ab-sec-d">ผู้ตัดสินใจสำคัญและทีมที่ปรึกษาวิศวกรรมของบริษัท</div>
+</section>
+<div class="ab-cards">
+
+  <!-- Mr.Ekkavit (Senior Consultant — PM agent ฟันธงให้เด่นที่สุด: anchor of trust) -->
+  <article class="ab-card-exec">
+    <img class="ab-photo" src="assets/staff/ekkavit.jpg" alt="คุณเอกวิชญ์ วีระพันธ์"
+         onerror="this.outerHTML='<div class=&quot;ab-mono&quot;>วช</div>'">
+    <div class="ab-info">
+      <div class="ab-name">คุณเอกวิชญ์ วีระพันธ์</div>
+      <div class="ab-role">วุฒิวิศวกรโยธา · ที่ปรึกษาอาวุโส · กรรมการบริหาร</div>
+      <div class="ab-edu">
+        <span class="ab-edu-li">วิศวกรรมศาสตร์ สาขาวิศวกรรมโยธา จุฬาลงกรณ์มหาวิทยาลัย</span>
+      </div>
+      <div class="ab-bio">
+        ที่ปรึกษาควบคุมงานก่อสร้างโครงการรัฐมูลค่าหลายพันล้าน:
+        รถไฟรางคู่ภาคตะวันออกเฉียงเหนือ (บมจ. ช.ทวี)
+        และโครงสร้างพื้นฐานในที่ดิน 723 ไร่ของบริษัท ท่าอากาศยานไทย จำกัด (มหาชน)
+      </div>
+    </div>
+  </article>
+
+  <!-- Mr.Ekkaratana (Managing Director) -->
+  <article class="ab-card-exec">
+    <img class="ab-photo" src="assets/staff/ekkaratana.jpg" alt="คุณเอกรัตน์ วีระพันธ์"
+         onerror="this.outerHTML='<div class=&quot;ab-mono&quot;>อร</div>'">
+    <div class="ab-info">
+      <div class="ab-name">คุณเอกรัตน์ วีระพันธ์</div>
+      <div class="ab-role">กรรมการผู้จัดการ (Managing Director)</div>
+      <div class="ab-edu">
+        <span class="ab-edu-li">วิศวกรรมศาสตร์ สาขาวิศวกรรมคอมพิวเตอร์ จุฬาลงกรณ์มหาวิทยาลัย</span>
+        <span class="ab-edu-li">M.Sc. Investment Management, Henley Business School, University of Reading (UK)</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- Mr.Krit (Director) -->
+  <article class="ab-card-exec">
+    <img class="ab-photo" src="assets/staff/krit.jpg" alt="คุณกฤช ตริยางกูรศรี"
+         onerror="this.outerHTML='<div class=&quot;ab-mono&quot;>กฤ</div>'">
+    <div class="ab-info">
+      <div class="ab-name">คุณกฤช ตริยางกูรศรี</div>
+      <div class="ab-role">กรรมการบริหาร (Director)</div>
+      <div class="ab-edu">
+        <span class="ab-edu-li">พาณิชยศาสตร์และการบัญชี มหาวิทยาลัยธรรมศาสตร์</span>
+        <span class="ab-edu-li">M.Sc. Investment Management, University of Reading (UK)</span>
+      </div>
+    </div>
+  </article>
+
+</div>
+
+<!-- SALES & MARKETING -->
+<section class="ab-sec">
+  <h2 class="ab-sec-h team">ทีมงานที่ดูแลโครงการ</h2>
+  <div class="ab-sec-d">ทีมปฏิบัติการประจำพื้นที่ — ผู้รับผิดชอบโครงการของคุณตั้งแต่ออกแบบจนส่งมอบ</div>
+</section>
+<div class="ab-cards team-grid">
+
+  <article class="ab-card-team">
+    <img class="ab-photo" src="assets/staff/narong.jpg" alt="คุณณรงค์ ผาบวุฒิ"
+         onerror="this.outerHTML='<div class=&quot;ab-mono&quot;>ณร</div>'">
+    <div class="ab-info">
+      <div class="ab-name">คุณณรงค์ ผาบวุฒิ</div>
+      <div class="ab-role team">ผู้จัดการโรงงาน (Factory Manager)</div>
+      <div class="ab-edu">
+        <span class="ab-edu-li">วิศวกรรมอุตสาหการ ม.เทคโนโลยีราชมงคลอีสาน วิทยาเขตขอนแก่น</span>
+      </div>
+    </div>
+  </article>
+
+  <article class="ab-card-team">
+    <img class="ab-photo" src="assets/staff/prapatsorn.jpg" alt="คุณประภัสสร จันทรสอน"
+         onerror="this.outerHTML='<div class=&quot;ab-mono&quot;>ปภ</div>'">
+    <div class="ab-info">
+      <div class="ab-name">คุณประภัสสร จันทรสอน</div>
+      <div class="ab-role team">สถาปนิกออกแบบภายใน (Interior Architect)</div>
+      <div class="ab-edu">
+        <span class="ab-edu-li">สถาปัตยกรรมศาสตร์ สาขาสถาปัตยกรรมภายใน ม.มหาสารคาม</span>
+      </div>
+    </div>
+  </article>
+
+  <article class="ab-card-team">
+    <img class="ab-photo" src="assets/staff/direk.jpg" alt="คุณดิเรก ใบกว้าง"
+         onerror="this.outerHTML='<div class=&quot;ab-mono&quot;>ดร</div>'">
+    <div class="ab-info">
+      <div class="ab-name">คุณดิเรก ใบกว้าง</div>
+      <div class="ab-role team">ผู้จัดการฝ่ายขายและโครงการ · สาขากรุงเทพมหานครและปริมณฑล</div>
+      <div class="ab-edu">
+        <span class="ab-edu-li">บริหารธุรกิจ ภาควิชาการบริหารทั่วไป ม.รามคำแหง</span>
+        <span class="ab-edu-li">MBA, University of Victoria</span>
+      </div>
+    </div>
+  </article>
+
+  <article class="ab-card-team">
+    <img class="ab-photo" src="assets/staff/khatavut.jpg" alt="คุณคฑาวุธ ขันทอง"
+         onerror="this.outerHTML='<div class=&quot;ab-mono&quot;>คฑ</div>'">
+    <div class="ab-info">
+      <div class="ab-name">คุณคฑาวุธ ขันทอง</div>
+      <div class="ab-role team">ผู้จัดการฝ่ายขายและโครงการ · สาขาอุบลราชธานี ขอนแก่น นครราชสีมา</div>
+      <div class="ab-edu">
+        <span class="ab-edu-li">เกษตรศาสตร์ ม.อุบลราชธานี</span>
+      </div>
+    </div>
+  </article>
+
+</div>
+
+<!-- FOOTER COMPANY INFO -->
+<section class="ab-foot">
+  <div class="ab-foot-h">📍 สำนักงานใหญ่</div>
+  <div class="ab-foot-row">89 หมู่ 4 ตำบลสระสมิง อำเภอวารินชำราบ จังหวัดอุบลราชธานี 34190</div>
+  <div class="ab-foot-row">เลขทะเบียนนิติบุคคล: <strong>0105555121538</strong> · จดทะเบียน 20 สิงหาคม 2555</div>
+  <div class="ab-foot-row">เลขผู้เสียภาษีอากร: <strong>0-1055-55121-53-8</strong></div>
+</section>
+
+<!-- CTA -->
+<div class="ab-cta-wrap">
+  <a class="ab-cta" href="index.html">เข้าสู่ระบบติดตามโครงการ →</a>
+</div>
+
+</body>
+</html>
