@@ -90,6 +90,66 @@ function calcPlanProgress(project) {
   return Math.round(pct * 10) / 10;
 }
 
+// คำนวณ %แผน ราย F / ราย phase อิง CONFIG.GANTT_PLAN
+// (calcPlanProgress เดิม linear ทั้งโปรเจกต์ — ใช้ใน header/KPI/timeline งวด 1
+//  เตรียมการช้า งวด 3 ติดตั้งเร็ว ไม่ linear → ต้องอันใหม่สำหรับ FF Detail)
+// คืน { hasGantt, currentWeek, overall, phases }
+//   hasGantt:    false ถ้า ffCode ไม่อยู่ใน GANTT_PLAN (ไม่ crash)
+//   currentWeek: float (1.0 = ต้นสัปดาห์ที่ 1 ของโปรเจกต์ / 8.43 = กลางสัปดาห์ 8)
+//   overall:     0-100 %แผน รวมราย F ณ วันนี้ (weighted ด้วย phaseWeights)
+//   phases:      4 entries (p1-p4) — { phase, startWeek, endWeek, planPct, weight }
+function calcFFPlanByGantt(ffCode, project) {
+  const plan = (typeof CONFIG !== 'undefined' && CONFIG.GANTT_PLAN) ? CONFIG.GANTT_PLAN : {};
+  const ffPlan = plan[ffCode];
+
+  // currentWeek convention เดียวกับ renderTimeline เดิม แต่ floating (ละเอียด):
+  // day 0 (วันเริ่ม) = 1.0, day 7 = 2.0
+  const start = new Date(project.startDate);
+  const today = new Date();
+  const daysSinceStart = (today - start) / (1000 * 60 * 60 * 24);
+  const currentWeek = daysSinceStart / 7 + 1;
+
+  if (!ffPlan || !ffPlan.length) {
+    return { hasGantt: false, currentWeek, overall: 0, phases: [] };
+  }
+
+  // phaseWeights: ถ้า FF ไม่มี task เลย fallback equal 0.25 ต่อ phase
+  const w = state.weights && state.weights[ffCode];
+  const weights = (w && w.totalTasks > 0)
+    ? w.phaseWeights
+    : { p1: 0.25, p2: 0.25, p3: 0.25, p4: 0.25 };
+
+  // ห่อ entry ที่ส่งกลับให้ครบ 4 phase เสมอ (UI วาดกราฟง่าย)
+  const byPhase = { 1: null, 2: null, 3: null, 4: null };
+  ffPlan.forEach(([n, s, e]) => { byPhase[n] = { startWeek: s, endWeek: e }; });
+
+  let weightedSum = 0;
+  const phases = [1, 2, 3, 4].map(n => {
+    const key = 'p' + n;
+    const weight = weights[key] || 0;
+    const slot = byPhase[n];
+    if (!slot) {
+      // phase ไม่อยู่ใน GANTT_PLAN — ปกติไม่เกิดถ้า schema ครบ 4
+      return { phase: key, startWeek: null, endWeek: null, planPct: 0, weight };
+    }
+    const { startWeek, endWeek } = slot;
+    const duration = endWeek - startWeek + 1;          // สัปดาห์
+    const elapsed = currentWeek - startWeek;           // ต้นสัปดาห์ startWeek = elapsed 0
+    let planPct = 0;
+    if (elapsed >= duration) planPct = 100;
+    else if (elapsed > 0) planPct = (elapsed / duration) * 100;
+    weightedSum += weight * (planPct / 100);
+    return { phase: key, startWeek, endWeek, planPct: Math.round(planPct * 10) / 10, weight };
+  });
+
+  return {
+    hasGantt: true,
+    currentWeek: Math.round(currentWeek * 100) / 100,
+    overall: Math.round(weightedSum * 100 * 10) / 10,  // 1 decimal
+    phases
+  };
+}
+
 // คำนวณ Variance
 function calcVariance(actualPct, planPct) {
   return Math.round((actualPct - planPct) * 10) / 10;

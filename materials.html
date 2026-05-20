@@ -532,7 +532,7 @@
         <button class="bill-scan-btn" onclick="document.getElementById('billInput').click()">
           🤖📷 สแกนบิลด้วย AI
         </button>
-        <input id="billInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="onBillSelected(event)">
+        <input id="billInput" type="file" accept="image/*" style="display:none" onchange="onBillSelected(event)">
         <div class="bill-divider">หรือกรอกเอง</div>
 
         <div class="mf-grp">
@@ -588,7 +588,7 @@
         </div>
         <div class="mf-row">
           <div class="mf-grp">
-            <label class="mf-lb">ผู้เบิก (ช่าง)</label>
+            <label class="mf-lb">ผู้เบิก (ทีม)</label>
             <select id="wdrCtr" class="mf-in"></select>
           </div>
           <div class="mf-grp">
@@ -641,7 +641,7 @@
           <button id="cntPhotoBtn" type="button" class="photo-btn" onclick="document.getElementById('cntPhotoInput').click()">
             <span>📷</span> ถ่ายรูป/เลือกรูป
           </button>
-          <input id="cntPhotoInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="onCountPhotoSelected(event)" multiple>
+          <input id="cntPhotoInput" type="file" accept="image/*" style="display:none" onchange="onCountPhotoSelected(event)" multiple>
           <div id="cntPhotoPrev" class="photo-previews"></div>
         </div>
         <button class="mf-submit" onclick="submitCount()">📝 บันทึกการนับ</button>
@@ -696,6 +696,7 @@ if (!Auth.requireAuth('admin')) {
 const matState = {
   materials: [],
   contractors: [],
+  teams: [],
   ffs: [],
   alerts: [],
   stockFilter: 'all',
@@ -709,16 +710,19 @@ const matState = {
 // ============================================================
 async function loadAll() {
   try {
-    // โหลดข้อมูลพื้นฐาน 4 อย่างพร้อมกัน
-    const [matsRes, ctrsRes, ffsRes, alertsRes] = await Promise.all([
+    // โหลดข้อมูลพื้นฐาน 5 อย่างพร้อมกัน (เพิ่ม teams สำหรับ dropdown ผู้เบิก
+    // ทีม master จริง — 09_Contractors ว่างเปล่า ตามที่ HUB doc ส่วน 3 ฟันธง)
+    const [matsRes, ctrsRes, teamsRes, ffsRes, alertsRes] = await Promise.all([
       API.callRead('get_materials'),
       API.callRead('get_contractors'),
+      API.callRead('get_teams'),
       API.callRead('get_ff_list'),
       API.callRead('get_ai_alerts'),
     ]);
 
     matState.materials = (matsRes.ok && matsRes.data) ? matsRes.data : [];
     matState.contractors = (ctrsRes.ok && ctrsRes.data) ? ctrsRes.data : [];
+    matState.teams = (teamsRes.ok && teamsRes.data) ? teamsRes.data : [];
     matState.ffs = (ffsRes.ok && ffsRes.data) ? ffsRes.data : [];
     matState.alerts = (alertsRes.ok && alertsRes.data) ? alertsRes.data : [];
 
@@ -969,7 +973,7 @@ async function showMatDetail(matId) {
     galleryHtml += `
       <div class="mat-gallery-item add" onclick="document.getElementById('matPhotoInput_${matId}').click()">+</div>
     </div>
-    <input id="matPhotoInput_${matId}" type="file" accept="image/*" capture="environment" style="display:none" onchange="onMatPhotoSelected(event,'${matId}')">
+    <input id="matPhotoInput_${matId}" type="file" accept="image/*" style="display:none" onchange="onMatPhotoSelected(event,'${matId}')">
     `;
 
     const modeTxt = isStatus ? '🚦 นับสถานะ' : '🔢 นับจำนวน';
@@ -1320,11 +1324,13 @@ function populateSelects() {
   // — sync label ปุ่มที่เลือกไว้ให้ตรงข้อมูลล่าสุด (ชื่อ/สต๊อกอาจเปลี่ยนหลัง reload)
   ['rcv','wdr','cnt'].forEach(syncMatPickLabel);
 
-  const ctrOpts = matState.contractors
-    .filter(c => c.role === 'CONTRACTOR' || c.role === 'FOREMAN')
-    .map(c => `<option value="${c.id}">${c.name} (${c.role})</option>`).join('');
+  // dropdown ผู้เบิก = ทีม (T01/T02) อ่านจาก 21_Teams (Contractors ว่างเปล่า)
+  // value ส่ง team_id ใน field contractor_id ของ withdraw_material — backend
+  // withdrawMaterial fallback lookup teams ให้ ctrName ใน auto-log แสดงชื่อทีมเต็ม
+  const teamOpts = matState.teams
+    .map(t => `<option value="${t.team_id}">${t.name}${t.type ? ' ('+t.type+')' : ''}</option>`).join('');
   const wdrCtr = document.getElementById('wdrCtr');
-  if (wdrCtr) wdrCtr.innerHTML = '<option value="">— เลือก —</option>' + ctrOpts;
+  if (wdrCtr) wdrCtr.innerHTML = '<option value="">— เลือก —</option>' + teamOpts;
 
   const ffOpts = matState.ffs.map(f =>
     `<option value="${f.code}">${f.code} - ${f.name}</option>`).join('');
