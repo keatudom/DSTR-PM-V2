@@ -281,6 +281,12 @@ const API = {
     return this.callRead('get_task_photos', { task_id: taskId });
   },
 
+  // ลบรูป task (13_Task_Photos) — ใช้ callRead เพื่ออ่านผล {ok,error} จริง
+  // (callWrite no-cors POST → param หายตาม redirect, ดู callwrite-loses-post-body)
+  deleteTaskPhoto: function(photoId) {
+    return this.callRead('delete_task_photo', { photo_id: photoId });
+  },
+
   // ============================================================
   // 👷 CONTRACTORS
   // ============================================================

@@ -738,8 +738,36 @@ function renderFeed() {
   document.getElementById('timeline').innerHTML = html;
 }
 
+// format เวลาแบบไทย "HH.MM น." (24hr Asia/Bangkok) — รองรับทั้ง string จาก
+// backend nowStr ("yyyy-MM-dd HH:mm:ss"), Date object (สผ่าน Sheet datetime
+// cell), ISO UTC ("...Z"), หรือ ISO with TZ offset. ถ้า parse ไม่ได้ → ''
+function fmtLogTime(ts) {
+  if (!ts) return '';
+  const s = String(ts);
+  // pattern "HH:mm" ที่อยู่ท้าย (ก่อนตัวเลข sec เผื่อมี) — case backend string
+  // หรือ Date.toString() ที่มี "14:30:25" อยู่กลาง
+  const m = s.match(/(\d{2}):(\d{2})(?::\d{2})?(?!.*\d:\d)/);
+  if (m && s.indexOf('T') === -1 && s.indexOf('Z') === -1 && s.indexOf('+') === -1) {
+    return m[1] + '.' + m[2] + ' น.';
+  }
+  // fallback: parse แล้ว format ผ่าน Intl Asia/Bangkok (กัน ISO UTC เพี้ยน 7 ชั่วโมง)
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return '';
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Bangkok', hour12: false,
+      hour: '2-digit', minute: '2-digit'
+    }).formatToParts(d);
+    const hh = parts.find(p => p.type === 'hour').value;
+    const mm = parts.find(p => p.type === 'minute').value;
+    return hh + '.' + mm + ' น.';
+  } catch (e) {
+    return '';
+  }
+}
+
 function renderLog(l) {
-  const time = String(l.timestamp || '').slice(11, 16);
+  const time = fmtLogTime(l.timestamp);
   const isAuto = l.type === 'auto';
   const tagsHtml = [];
   (l.tags_ff || []).forEach(t => tagsHtml.push(`<span class="dr-log-tag dr-tag-ff">${t}</span>`));
@@ -2587,7 +2615,7 @@ async function checkSavedSummary() {
     const res = await API.callRead('get_saved_summary', { date: drState.date });
     if (res.ok && res.data && res.data.exists) {
       const saved = document.getElementById('summSaved');
-      const t = String(res.data.saved_at || '').slice(11, 16);
+      const t = fmtLogTime(res.data.saved_at);
       saved.innerHTML = '✓ บันทึกแล้วใน Daily Report' + (t ? ' · ' + t : '');
       saved.style.display = 'flex';
     }

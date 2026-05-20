@@ -412,6 +412,14 @@
   position: absolute; bottom: 18px; left: 0; right: 0; text-align: center;
   color: #fff; font-size: 12px; padding: 0 16px;
 }
+.tp-lightbox .tp-lb-del {
+  position: absolute; top: 14px; left: 18px;
+  background: rgba(220,38,38,.92); color: #fff;
+  padding: 7px 14px; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.tp-lightbox .tp-lb-del:active { transform: scale(0.96); }
 
 /* ============================================================
    🔍 FF DETAIL OVERLAY (ขั้น C — full-screen ทับ dashboard)
@@ -597,8 +605,8 @@
       </div>
       <div class="sort-row" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
         <span style="font-size:10px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">เรียงตาม:</span>
-        <button class="zt on" onclick="setSort('weight',this)">มูลค่า ↓</button>
-        <button class="zt" onclick="setSort('code',this)">FF Code</button>
+        <button class="zt on" onclick="setSort('code',this)">FF Code</button>
+        <button class="zt" onclick="setSort('weight',this)">มูลค่า ↓</button>
         <button class="zt" onclick="setSort('progress',this)">% คืบหน้า</button>
       </div>
       <div id="weightList"></div>
@@ -938,7 +946,7 @@ function renderGauge() {
 function renderWeightList() {
   let filtered = state.zone === 'all' ? state.data.ffs.slice() : state.data.ffs.filter(ff => ff.zone === state.zone);
 
-  const sortMode = state.sortMode || 'weight';
+  const sortMode = state.sortMode || 'code';
   if (sortMode === 'weight') {
     filtered.sort((a,b) => {
       const wa = state.weights[a.code]?.ffWeight || 0;
@@ -1175,14 +1183,53 @@ function openTaskPhoto(idx) {
   const lb = document.createElement('div');
   lb.className = 'tp-lightbox';
   lb.id = 'tpLightbox';
+  // ปุ่ม 🗑 ลบรูปนี้ — โชว์เฉพาะรูปที่มี id + task_id (ไม่ใช่รูปที่ผูกแบบอื่น)
+  const delBtn = (p.id && p.task_id)
+    ? `<span class="tp-lb-del" onclick="event.stopPropagation();deleteTaskPhotoFlow('${tpEsc(p.id)}','${tpEsc(p.task_id)}',${idx})">🗑 ลบรูปนี้</span>`
+    : '';
   lb.innerHTML = `
     <span class="tp-lb-x" onclick="closeTaskPhoto()">✕</span>
+    ${delBtn}
     <img src="${tpEsc(full)}" alt="รูปงาน"
          onerror="this.outerHTML='&lt;div style=\\'color:#fff;font-size:13px\\'&gt;🖼️ เปิดรูปไม่ได้&lt;/div&gt;'">
     ${p.caption ? `<div class="tp-lb-cap">${tpEsc(p.caption)}</div>` : ''}
   `;
   lb.addEventListener('click', (e) => { if (e.target === lb) closeTaskPhoto(); });
   document.body.appendChild(lb);
+}
+
+// ลบรูป task — confirm 1 ครั้ง → backend delete (Drive + sheet) → refresh UI ทุกที่ที่
+// gallery กำลังเปิดอยู่ + ลด photoCount ใน state เพื่อให้ chip 📷 ถูกต้องทันที
+// ripple: ไม่กระทบ Tasks Status/Activity_Logs/stock/เงิน (HUB-safe, ไม่ต้อง re-confirm)
+async function deleteTaskPhotoFlow(photoId, taskId, idx) {
+  if (!confirm('ลบรูปนี้ถาวร? (ไม่สามารถกู้คืน)')) return;
+  Modal.toast('⏳ กำลังลบ...');
+  let res;
+  try { res = await API.deleteTaskPhoto(photoId); } catch (e) { res = null; }
+  if (!res || !res.ok) {
+    Modal.toast('❌ ลบไม่สำเร็จ — ลองใหม่');
+    return;
+  }
+  if (window._tpPhotos && idx >= 0 && idx < window._tpPhotos.length) {
+    window._tpPhotos.splice(idx, 1);
+  }
+  closeTaskPhoto();
+  const task = state.data.tasks.find(t => String(t.id) === String(taskId));
+  if (task) task.photoCount = Math.max(0, (Number(task.photoCount) || 0) - 1);
+
+  // refresh gallery container ที่ยังเปิดอยู่
+  const ov = document.getElementById('ffdOverlay');
+  if (ov && ov.style.display !== 'none' && task) {
+    // FF Detail overlay — re-render ทั้ง overlay (header KPI ไม่กระทบ, แต่ section
+    // task chip 📷 + gallery + design จะ update จริง)
+    openFFDetail(task.ffCode);
+  } else if (document.getElementById('tpGallery')) {
+    // Modal task "ยกเลิกงาน" gallery
+    loadTaskPhotos(taskId);
+  }
+  // chip 📷 ใน weight list (ถ้า FF เปิด expanded อยู่)
+  if (state.openFFs.size > 0) renderWeightList();
+  Modal.toast('✓ ลบรูปแล้ว');
 }
 function closeTaskPhoto() {
   const lb = document.getElementById('tpLightbox');
