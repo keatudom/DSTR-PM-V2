@@ -554,7 +554,7 @@
       <div class="hub-card" onclick="window.location.href='team.html?project=bow-house'">
         <div class="hub-card-icon">👷</div>
         <div class="hub-card-title">Team</div>
-        <div class="hub-card-sub" id="hubTeamSub">3 คน</div>
+        <div class="hub-card-sub" id="hubTeamSub">— ทีม</div>
         <div class="hub-card-arrow">→</div>
       </div>
       <div class="hub-card" onclick="alert('เร็วๆ นี้: BOQ')">
@@ -685,6 +685,7 @@ const project = CONFIG.PROJECTS['bow-house'];
 // 🆕 Extended state
 state.materials = [];
 state.contractors = [];
+state.teams = [];
 state.alerts = [];
 
 // ============================================================
@@ -701,6 +702,15 @@ async function loadData() {
     state.contractors = data.contractors || [];
 
     buildWeights();
+
+    // โหลดรายชื่อทีม (parallel) — 21_Teams เป็น master ที่มีชีวิตจริง
+    // (09_Contractors ว่างเปล่า ตาย — ดู HUB doc ส่วน 3)
+    API.getTeams().then(res => {
+      if (res.ok && Array.isArray(res.data)) {
+        state.teams = res.data;
+        renderHubCards();
+      }
+    }).catch(()=>{});
 
     // โหลด AI alerts (parallel)
     API.callRead('get_ai_alerts').then(res => {
@@ -815,7 +825,7 @@ function renderAiAlertsBanner() {
 // ============================================================
 function renderHubCards() {
   document.getElementById('hubMatSub').textContent = `${state.materials.length} รายการ`;
-  document.getElementById('hubTeamSub').textContent = `${state.contractors.length} คน`;
+  document.getElementById('hubTeamSub').textContent = `${state.teams.length} ทีม`;
   const critical = state.alerts.filter(a =>
     a.severity === 'high' || a.severity === 'medium').length;
   const badge = document.getElementById('hubMatBadge');
