@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>โครงการของฉัน · Design Theria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CLIENT VIEW — DSTR PM
+   Self-contained styles (prefix .cl-*) แยกขาดจาก main.css
+   Mobile-first · max-width 480px · base 17px
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'IBM Plex Sans Thai', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+  color: #1F2937;
+  background: #F7F6F2; /* warm off-white */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+img { max-width: 100%; display: block; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+/* ============================================================
+   LAYOUT — centered column
+   ============================================================ */
+.cl-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #F7F6F2;
+  position: relative;
+  padding-bottom: 60px;
+}
+
+/* ============================================================
+   TOP BAR — minimal (brand + logout)
+   ============================================================ */
+.cl-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px 10px;
+}
+.cl-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1F3864;
+  letter-spacing: 0.4px;
+}
+.cl-brand-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #1F3864, #0C447C);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.cl-logout {
+  font-size: 13px;
+  color: #6B7280;
+  padding: 6px 10px;
+  border-radius: 99px;
+  transition: all .15s;
+}
+.cl-logout:hover { background: #ECEAE3; color: #1F3864; }
+.cl-logout:active { transform: scale(0.96); }
+
+/* ============================================================
+   SECTION — reveal-on-scroll animation
+   ============================================================ */
+.cl-sec {
+  padding: 0 20px;
+  margin-bottom: 36px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .5s ease, transform .5s ease;
+}
+.cl-sec.cl-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+.cl-sec-h {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B7280;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.3px;
+}
+.cl-sec-h-ico {
+  font-size: 15px;
+}
+
+/* ============================================================
+   SECTION 1 — HERO
+   ============================================================ */
+.cl-hero {
+  padding: 4px 20px 0;
+}
+.cl-hero-greet {
+  font-size: 15px;
+  color: #6B7280;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.cl-hero-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1F3864;
+  line-height: 1.25;
+  margin-bottom: 20px;
+  letter-spacing: -0.3px;
+}
+
+.cl-hero-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #E5E7EB, #D1D5DB);
+  box-shadow: 0 4px 20px rgba(31, 56, 100, 0.08);
+  margin-bottom: 20px;
+}
+.cl-hero-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .6s ease;
+}
+.cl-hero-cover:hover img { transform: scale(1.02); }
+.cl-hero-cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.55) 100%);
+  pointer-events: none;
+}
+.cl-hero-cover-caption {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.cl-hero-cover-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9CA3AF;
+  gap: 8px;
+}
+.cl-hero-cover-empty-ico { font-size: 36px; opacity: 0.6; }
+.cl-hero-cover-empty-txt { font-size: 13px; }
+
+/* Hero info cards (2 rows) */
+.cl-hero-info {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  border: 1px solid #EEEAE0;
+}
+.cl-hero-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 0;
+}
+.cl-hero-row + .cl-hero-row {
+  border-top: 1px solid #F3F0E6;
+}
+.cl-hero-row-ico {
+  font-size: 20px;
+  line-height: 1.2;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+.cl-hero-row-body { flex: 1; min-width: 0; }
+.cl-hero-row-label {
+  font-size: 13px;
+  color: #8A8578;
+  margin-bottom: 2px;
+  font-weight: 500;
+}
+.cl-hero-row-value {
+  font-size: 17px;
+  color: #1F2937;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.cl-hero-row-value-sub {
+  font-size: 13px;
+  color: #6B7280;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   SECTION 2 — PHOTO STRIP (horizontal scroll-snap)
+   ============================================================ */
+.cl-photos-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 20px 12px;
+  margin: 0 -20px;
+  scrollbar-width: none;
+}
+.cl-photos-scroll::-webkit-scrollbar { display: none; }
+
+.cl-photo-card {
+  flex: 0 0 auto;
+  width: 220px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+.cl-photo-card:active { transform: scale(0.97); }
+.cl-photo-img-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #E5E7EB;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  position: relative;
+}
+.cl-photo-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .3s ease;
+}
+.cl-photo-card:hover .cl-photo-img-wrap img { transform: scale(1.04); }
+.cl-photo-caption {
+  font-size: 14px;
+  color: #1F2937;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cl-photo-date {
+  font-size: 12px;
+  color: #8A8578;
+}
+
+/* Empty state */
+.cl-photos-empty {
+  background: #fff;
+  border: 1px dashed #E5E0D0;
+  border-radius: 14px;
+  padding: 32px 20px;
+  text-align: center;
+  color: #8A8578;
+}
+.cl-photos-empty-ico { font-size: 32px; opacity: 0.5; margin-bottom: 8px; }
+.cl-photos-empty-txt { font-size: 14px; line-height: 1.5; }
+
+/* ============================================================
+   SECTION 3 — TIMELINE MILESTONES
+   ============================================================ */
+.cl-tl {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px 20px 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  border: 1px solid #EEEAE0;
+}
+.cl-tl-item {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 14px;
+  padding-bottom: 18px;
+  position: relative;
+}
+.cl-tl-item:last-child { padding-bottom: 2px; }
+
+/* Vertical connector line */
+.cl-tl-item::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 26px;
+  bottom: -2px;
+  width: 2px;
+  background: #E5E7EB;
+}
+.cl-tl-item:last-child::before { display: none; }
+.cl-tl-item.cl-tl-done::before { background: #1D9E75; }
+
+.cl-tl-dot {
+  position: relative;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #D1D5DB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #9CA3AF;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cl-tl-done .cl-tl-dot {
+  background: #1D9E75;
+  border-color: #1D9E75;
+  color: #fff;
+}
+.cl-tl-now .cl-tl-dot {
+  background: #BA7517;
+  border-color: #BA7517;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(186, 117, 23, 0.18);
+  animation: cl-pulse 2s ease-in-out infinite;
+}
+@keyframes cl-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(186, 117, 23, 0.18); }
+  50%      { box-shadow: 0 0 0 8px rgba(186, 117, 23, 0.06); }
+}
+.cl-tl-upcoming .cl-tl-dot {
+  background: #fff;
+  border-color: #D1D5DB;
+}
+
+.cl-tl-body { padding-top: 2px; min-width: 0; }
+.cl-tl-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+  line-height: 1.35;
+  margin-bottom: 3px;
+}
+.cl-tl-done .cl-tl-name { color: #1F2937; }
+.cl-tl-now .cl-tl-name { color: #1F3864; }
+.cl-tl-upcoming .cl-tl-name { color: #6B7280; font-weight: 500; }
+
+.cl-tl-meta {
+  font-size: 13px;
+  color: #8A8578;
+}
+.cl-tl-meta-now {
+  display: inline-block;
+  background: #FDF2E3;
+  color: #BA7517;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 99px;
+  margin-top: 4px;
+}
+.cl-tl-meta-done {
+  color: #1D9E75;
+  font-weight: 500;
+}
+
+/* ============================================================
+   SECTION 4 — PAYMENTS (งวดงาน)
+   ============================================================ */
+.cl-pay-list { display: flex; flex-direction: column; gap: 12px; }
+
+.cl-pay {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 18px;
+  border: 1px solid #EEEAE0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  transition: transform .15s ease, box-shadow .15s ease;
+  position: relative;
+  overflow: hidden;
+}
+.cl-pay::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: #E5E7EB;
+}
+.cl-pay-paid::before { background: #1D9E75; }
+.cl-pay-next::before { background: #BA7517; }
+.cl-pay-next {
+  box-shadow: 0 4px 16px rgba(186, 117, 23, 0.08);
+  border-color: #F4E4C8;
+}
+
+.cl-pay-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.cl-pay-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.cl-pay-status-ico {
+  font-size: 14px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+.cl-pay-paid .cl-pay-status-ico { background: #D1FAE5; color: #1D9E75; }
+.cl-pay-next .cl-pay-status-ico { background: #FDF2E3; color: #BA7517; }
+.cl-pay-upcoming .cl-pay-status-ico { background: #F3F4F6; color: #9CA3AF; }
+
+.cl-pay-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cl-pay-upcoming .cl-pay-name { color: #6B7280; font-weight: 500; }
+
+.cl-pay-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 99px;
+  flex-shrink: 0;
+  letter-spacing: 0.2px;
+}
+.cl-pay-paid .cl-pay-badge { background: #D1FAE5; color: #065F46; }
+.cl-pay-next .cl-pay-badge { background: #FDF2E3; color: #92560F; }
+.cl-pay-upcoming .cl-pay-badge { background: #F3F4F6; color: #6B7280; }
+
+.cl-pay-amount {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1F3864;
+  letter-spacing: -0.3px;
+  margin-bottom: 4px;
+}
+.cl-pay-upcoming .cl-pay-amount { color: #6B7280; font-weight: 600; }
+
+.cl-pay-meta {
+  font-size: 13px;
+  color: #6B7280;
+  line-height: 1.5;
+}
+.cl-pay-cond {
+  font-size: 13px;
+  color: #8A8578;
+  font-style: italic;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed #F3F0E6;
+}
+
+/* ============================================================
+   SECTION 5 — CONTACT PM
+   ============================================================ */
+.cl-contact {
+  background: #fff;
+  border-radius: 16px;
+  padding: 22px 20px;
+  border: 1px solid #EEEAE0;
+  box-shadow: 0 2px 14px rgba(0,0,0,0.04);
+}
+.cl-contact-pm {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.cl-contact-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1F3864, #0C447C);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cl-contact-info { min-width: 0; }
+.cl-contact-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 2px;
+}
+.cl-contact-role {
+  font-size: 13px;
+  color: #8A8578;
+}
+
+.cl-contact-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.cl-contact-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  transition: transform .12s ease, box-shadow .15s ease;
+  font-family: inherit;
+}
+.cl-contact-btn:active { transform: scale(0.97); }
+.cl-btn-line {
+  background: linear-gradient(135deg, #1D9E75, #16855F);
+  box-shadow: 0 3px 10px rgba(29, 158, 117, 0.22);
+}
+.cl-btn-line:hover { box-shadow: 0 5px 14px rgba(29, 158, 117, 0.28); }
+.cl-btn-call {
+  background: linear-gradient(135deg, #1F3864, #0C447C);
+  box-shadow: 0 3px 10px rgba(31, 56, 100, 0.22);
+}
+.cl-btn-call:hover { box-shadow: 0 5px 14px rgba(31, 56, 100, 0.28); }
+
+.cl-contact-note {
+  text-align: center;
+  font-size: 13px;
+  color: #8A8578;
+  margin-top: 16px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.cl-footer {
+  text-align: center;
+  padding: 16px 20px 30px;
+  color: #8A8578;
+}
+.cl-footer-thanks {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+  margin-bottom: 4px;
+}
+.cl-footer-brand {
+  font-size: 12px;
+  color: #8A8578;
+  letter-spacing: 0.4px;
+}
+
+/* ============================================================
+   SKELETON LOADING
+   ============================================================ */
+.cl-sk {
+  background: linear-gradient(90deg, #ECEAE3 0%, #F5F3EC 50%, #ECEAE3 100%);
+  background-size: 200% 100%;
+  animation: cl-shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes cl-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.cl-sk-line { height: 14px; margin-bottom: 8px; }
+.cl-sk-line.w-80 { width: 80%; }
+.cl-sk-line.w-60 { width: 60%; }
+.cl-sk-line.w-40 { width: 40%; }
+.cl-sk-cover { width: 100%; aspect-ratio: 16/9; border-radius: 16px; margin-bottom: 20px; }
+.cl-sk-card { height: 90px; margin-bottom: 12px; border-radius: 14px; }
+.cl-sk-photo { width: 220px; aspect-ratio: 4/3; border-radius: 12px; flex-shrink: 0; }
+
+/* ============================================================
+   ERROR SCREEN
+   ============================================================ */
+.cl-err {
+  text-align: center;
+  padding: 60px 24px;
+}
+.cl-err-ico {
+  font-size: 52px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+.cl-err-title {
+  font-size: 19px;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 8px;
+}
+.cl-err-msg {
+  font-size: 15px;
+  color: #6B7280;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.cl-err-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 280px;
+  margin: 0 auto;
+}
+.cl-err-btn {
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: transform .12s ease;
+}
+.cl-err-btn:active { transform: scale(0.97); }
+.cl-err-btn-primary {
+  background: #1F3864;
+  color: #fff;
+}
+.cl-err-btn-secondary {
+  background: #fff;
+  color: #1F3864;
+  border: 1.5px solid #D1D5DB;
+}
+
+/* ============================================================
+   LIGHTBOX (photo full-screen)
+   ============================================================ */
+.cl-lb {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: cl-fade .25s ease;
+}
+.cl-lb.on { display: flex; }
+@keyframes cl-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.cl-lb-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.cl-lb-img {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.cl-lb-cap {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 24px;
+  text-align: center;
+  color: #fff;
+  font-size: 14px;
+  padding: 0 24px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (min-width: 481px) {
+  .cl-shell {
+    margin-top: 24px;
+    margin-bottom: 24px;
+    border-radius: 24px;
+    box-shadow: 0 6px 40px rgba(31, 56, 100, 0.08);
+    min-height: calc(100vh - 48px);
+    overflow: hidden;
+  }
+  body { background: #ECEAE3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-sec { transition: none; opacity: 1; transform: none; }
+  .cl-tl-now .cl-tl-dot { animation: none; }
+  .cl-sk { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="cl-shell" id="clShell">
+
+  <!-- TOP BAR -->
+  <div class="cl-topbar">
+    <div class="cl-brand">
+      <div class="cl-brand-mark">DT</div>
+      <span>DESIGN THERIA</span>
+    </div>
+    <button class="cl-logout" onclick="doLogout()">ออกจากระบบ</button>
+  </div>
+
+  <!-- LOADING SKELETON -->
+  <div id="clLoading">
+    <div style="padding: 4px 20px 0;">
+      <div class="cl-sk cl-sk-line w-40" style="height: 13px;"></div>
+      <div class="cl-sk cl-sk-line w-80" style="height: 28px; margin-bottom: 20px;"></div>
+      <div class="cl-sk cl-sk-cover"></div>
+      <div class="cl-sk cl-sk-card"></div>
+    </div>
+    <div style="padding: 24px 20px 0;">
+      <div class="cl-sk cl-sk-line w-40"></div>
+      <div style="display: flex; gap: 12px; overflow: hidden;">
+        <div class="cl-sk cl-sk-photo"></div>
+        <div class="cl-sk cl-sk-photo"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERROR SCREEN -->
+  <div id="clError" style="display: none;">
+    <div class="cl-err">
+      <div class="cl-err-ico">🌐</div>
+      <div class="cl-err-title">เชื่อมต่อไม่สำเร็จ</div>
+      <div class="cl-err-msg" id="clErrMsg">ลองรีเฟรชหน้านี้อีกครั้ง<br>ถ้ายังไม่ได้ ติดต่อ PM ได้เลยค่ะ</div>
+      <div class="cl-err-btns">
+        <button class="cl-err-btn cl-err-btn-primary" onclick="location.reload()">ลองใหม่อีกครั้ง</button>
+        <a class="cl-err-btn cl-err-btn-secondary" href="tel:0812345678" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">โทรหา PM</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="clMain" style="display: none;">
+
+    <!-- SECTION 1 — HERO -->
+    <section class="cl-sec cl-hero" id="secHero">
+      <div class="cl-hero-greet" id="heroGreet">สวัสดี</div>
+      <h1 class="cl-hero-title" id="heroTitle">โครงการของคุณ</h1>
+
+      <div class="cl-hero-cover" id="heroCover">
+        <!-- filled by JS -->
+      </div>
+
+      <div class="cl-hero-info">
+        <div class="cl-hero-row">
+          <div class="cl-hero-row-ico">🏗️</div>
+          <div class="cl-hero-row-body">
+            <div class="cl-hero-row-label">ตอนนี้อยู่ในช่วง</div>
+            <div class="cl-hero-row-value" id="heroPhase">—</div>
+          </div>
+        </div>
+        <div class="cl-hero-row">
+          <div class="cl-hero-row-ico">📅</div>
+          <div class="cl-hero-row-body">
+            <div class="cl-hero-row-label">คาดว่าเสร็จ</div>
+            <div class="cl-hero-row-value" id="heroDue">—</div>
+          </div>
+        </div>
+        <div class="cl-hero-row" id="heroTeamsRow">
+          <div class="cl-hero-row-ico">👷</div>
+          <div class="cl-hero-row-body">
+            <div class="cl-hero-row-label">วันนี้ที่หน้างาน</div>
+            <div class="cl-hero-row-value" id="heroTeams">—</div>
+            <div class="cl-hero-row-value-sub" id="heroTeamsSub" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 — PHOTO STRIP -->
+    <section class="cl-sec" id="secPhotos">
+      <div class="cl-sec-h"><span class="cl-sec-h-ico">📸</span> งานล่าสุด</div>
+      <div id="photosContainer">
+        <div class="cl-photos-scroll" id="photosScroll"></div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 — TIMELINE -->
+    <section class="cl-sec" id="secTimeline">
+      <div class="cl-sec-h"><span class="cl-sec-h-ico">🎯</span> ผังงาน</div>
+      <div class="cl-tl" id="timelineWrap"></div>
+    </section>
+
+    <!-- SECTION 4 — PAYMENTS -->
+    <section class="cl-sec" id="secPayments">
+      <div class="cl-sec-h"><span class="cl-sec-h-ico">💰</span> งวดงาน</div>
+      <div class="cl-pay-list" id="paymentsList"></div>
+    </section>
+
+    <!-- SECTION 5 — CONTACT -->
+    <section class="cl-sec" id="secContact">
+      <div class="cl-sec-h"><span class="cl-sec-h-ico">📞</span> ติดต่อทีมงาน</div>
+      <div class="cl-contact">
+        <div class="cl-contact-pm">
+          <div class="cl-contact-avatar" id="pmAvatar">ด</div>
+          <div class="cl-contact-info">
+            <div class="cl-contact-name" id="pmName">คุณดิเรก สีหา</div>
+            <div class="cl-contact-role">Project Manager</div>
+          </div>
+        </div>
+        <div class="cl-contact-btns">
+          <a class="cl-contact-btn cl-btn-line" id="pmLine" href="#">
+            <span>💬</span><span>ไลน์</span>
+          </a>
+          <a class="cl-contact-btn cl-btn-call" id="pmCall" href="tel:0812345678">
+            <span>📞</span><span>โทร</span>
+          </a>
+        </div>
+        <div class="cl-contact-note">เปิดดูตอนนี้แล้ว — มีคำถามทักได้เลยค่ะ</div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <div class="cl-footer">
+      <div class="cl-footer-thanks">ขอบคุณที่ไว้วางใจ</div>
+      <div class="cl-footer-brand">DESIGN THERIA · ดีไซน์ ทีเรีย</div>
+    </div>
+
+  </div><!-- /clMain -->
+</div><!-- /clShell -->
+
+<!-- LIGHTBOX -->
+<div class="cl-lb" id="lightbox" onclick="closeLightbox(event)">
+  <button class="cl-lb-close" onclick="closeLightbox(event)" aria-label="ปิด">×</button>
+  <img class="cl-lb-img" id="lbImg" src="" alt="">
+  <div class="cl-lb-cap" id="lbCap"></div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/modal.js"></script>
+<script>
+// ============================================================
+// CLIENT VIEW — main script
+// ============================================================
+
+// 1) Auth guard — เฉพาะ role=client
+if (!Auth.requireAuth('client')) {
+  // requireAuth จะ redirect ไป index.html อยู่แล้ว
+}
+
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+const clState = {
+  overview: null,
+  photos: [],
+  milestones: [],
+  payments: []
+};
+
+// ─────────────────────────────────────────────
+// Utils
+// ─────────────────────────────────────────────
+const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
+                     'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const THAI_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                          'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+function parseDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// "ส.ค. 2026"
+function formatThaiMonthYear(v) {
+  const d = parseDate(v);
+  if (!d) return '—';
+  const yearBE = d.getFullYear() + 543;
+  return THAI_MONTHS[d.getMonth()] + ' ' + yearBE;
+}
+
+// "15 มิ.ย."
+function formatThaiDayMonth(v) {
+  const d = parseDate(v);
+  if (!d) return '';
+  return d.getDate() + ' ' + THAI_MONTHS[d.getMonth()];
+}
+
+// "15 มิ.ย. 2026"
+function formatThaiFull(v) {
+  const d = parseDate(v);
+  if (!d) return '';
+  return d.getDate() + ' ' + THAI_MONTHS[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+}
+
+// "2 ชม.ที่แล้ว" / "เมื่อวาน" / "3 วันที่แล้ว"
+function relativeTime(v) {
+  const d = parseDate(v);
+  if (!d) return '';
+  const diff = Date.now() - d.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'เมื่อสักครู่';
+  if (mins < 60) return mins + ' นาทีที่แล้ว';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + ' ชม.ที่แล้ว';
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'เมื่อวาน';
+  if (days < 7) return days + ' วันที่แล้ว';
+  return formatThaiFull(v);
+}
+
+function formatBaht(n) {
+  if (typeof n !== 'number') n = Number(n) || 0;
+  return n.toLocaleString('en-US') + ' ฿';
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// safely first char of name (Thai-friendly)
+function firstChar(s) {
+  if (!s) return '?';
+  // ดึงตัวอักษรแรก (รองรับ Thai)
+  return String(s).trim().charAt(0).toUpperCase();
+}
+
+// ─────────────────────────────────────────────
+// Main loader — fetch ทั้ง 4 endpoints คู่ขนาน
+// ─────────────────────────────────────────────
+async function loadAll() {
+  try {
+    // Parallel fetch — เร็วกว่า serial 4 รอบ
+    const results = await Promise.allSettled([
+      API.callRead('client_get_overview',   { role: 'client' }),
+      API.callRead('client_get_photos',     { role: 'client', limit: 20 }),
+      API.callRead('client_get_milestones', { role: 'client' }),
+      API.callRead('client_get_payments',   { role: 'client' })
+    ]);
+
+    const [overviewRes, photosRes, milestonesRes, paymentsRes] = results;
+
+    // ตรวจ access denied (auth fail) จาก overview เป็นหลัก
+    const overviewVal = overviewRes.status === 'fulfilled' ? overviewRes.value : null;
+    if (overviewVal && overviewVal.ok === false &&
+        /access.?denied|unauthor/i.test(overviewVal.error || '')) {
+      Auth.logout();
+      return;
+    }
+
+    // ถ้า overview fail ทั้งดุ้น → ขึ้น error screen
+    if (!overviewVal || (overviewVal.ok === false && !overviewVal.data)) {
+      throw new Error((overviewVal && overviewVal.error) || 'no overview data');
+    }
+
+    clState.overview   = (overviewVal && overviewVal.data) || {};
+    clState.photos     = pickData(photosRes);
+    clState.milestones = pickData(milestonesRes);
+    clState.payments   = pickData(paymentsRes);
+
+    renderAll();
+
+    // hide loading → show main
+    document.getElementById('clLoading').style.display = 'none';
+    document.getElementById('clMain').style.display = 'block';
+
+    // เริ่ม reveal animation
+    initSectionReveal();
+
+  } catch (err) {
+    console.error('Client view load error:', err);
+    document.getElementById('clLoading').style.display = 'none';
+    document.getElementById('clError').style.display = 'block';
+  }
+}
+
+function pickData(settled) {
+  if (!settled || settled.status !== 'fulfilled') return [];
+  const v = settled.value;
+  if (!v) return [];
+  if (Array.isArray(v.data)) return v.data;
+  if (Array.isArray(v)) return v;
+  return [];
+}
+
+// ─────────────────────────────────────────────
+// RENDER — top-level
+// ─────────────────────────────────────────────
+function renderAll() {
+  renderHero();
+  renderPhotos();
+  renderTimeline();
+  renderPayments();
+  renderContact();
+}
+
+// ─────────────────────────────────────────────
+// HERO
+// ─────────────────────────────────────────────
+function renderHero() {
+  const o = clState.overview || {};
+
+  // greeting
+  const clientName = (o.client_name || '').trim();
+  const greet = clientName ? ('สวัสดี ' + escapeHtml(clientName)) : 'สวัสดีค่ะ';
+  document.getElementById('heroGreet').innerHTML = greet;
+
+  // project title
+  document.getElementById('heroTitle').textContent = o.project_name || 'โครงการของคุณ';
+
+  // cover photo
+  const cover = document.getElementById('heroCover');
+  if (o.cover_photo_url) {
+    const updateTxt = o.last_update ? ('อัปเดต ' + relativeTime(o.last_update)) : '';
+    cover.innerHTML = `
+      <img src="${escapeHtml(o.cover_photo_url)}" alt="ภาพหน้างาน" loading="eager"
+           onerror="this.parentElement.innerHTML=coverEmptyHtml()">
+      <div class="cl-hero-cover-overlay"></div>
+      ${updateTxt ? `<div class="cl-hero-cover-caption">${escapeHtml(updateTxt)}</div>` : ''}
+    `;
+  } else {
+    cover.innerHTML = coverEmptyHtml();
+  }
+
+  // current phase
+  document.getElementById('heroPhase').textContent = o.current_phase || 'รอ PM อัปเดต';
+
+  // expected completion
+  document.getElementById('heroDue').textContent = o.expected_completion
+    ? formatThaiMonthYear(o.expected_completion)
+    : 'รอ PM อัปเดต';
+
+  // teams today
+  const teamsCount = Number(o.teams_today) || 0;
+  const teamsNames = Array.isArray(o.teams_today_names) ? o.teams_today_names : [];
+  const teamsRow = document.getElementById('heroTeamsRow');
+  const teamsEl = document.getElementById('heroTeams');
+  const teamsSubEl = document.getElementById('heroTeamsSub');
+
+  if (teamsCount > 0) {
+    teamsEl.textContent = 'มีทีม ' + teamsCount + ' ทีมเข้าทำงาน';
+    if (teamsNames.length) {
+      teamsSubEl.textContent = teamsNames.join(' · ');
+      teamsSubEl.style.display = 'block';
+    } else {
+      teamsSubEl.style.display = 'none';
+    }
+  } else {
+    teamsEl.textContent = 'วันนี้ยังไม่มีทีมเข้าทำงาน';
+    teamsSubEl.style.display = 'none';
+  }
+}
+
+function coverEmptyHtml() {
+  return `
+    <div class="cl-hero-cover-empty">
+      <div class="cl-hero-cover-empty-ico">🏗️</div>
+      <div class="cl-hero-cover-empty-txt">รอ PM อัปเดตภาพหน้างาน</div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────
+// PHOTO STRIP
+// ─────────────────────────────────────────────
+function renderPhotos() {
+  const container = document.getElementById('photosContainer');
+  const photos = clState.photos || [];
+
+  if (!photos.length) {
+    container.innerHTML = `
+      <div class="cl-photos-empty">
+        <div class="cl-photos-empty-ico">📷</div>
+        <div class="cl-photos-empty-txt">PM กำลังเลือกรูปสวยๆ มาให้คุณ<br>ลองกลับมาดูใหม่พรุ่งนี้</div>
+      </div>
+    `;
+    return;
+  }
+
+  const html = `<div class="cl-photos-scroll">${
+    photos.map((p, i) => {
+      const url = p.drive_url || p.url || '';
+      const cap = p.caption || '';
+      const rel = relativeTime(p.uploaded_at);
+      return `
+        <div class="cl-photo-card" onclick="openLightbox(${i})">
+          <div class="cl-photo-img-wrap">
+            <img src="${escapeHtml(url)}" alt="${escapeHtml(cap)}" loading="lazy"
+                 onerror="this.style.opacity=0.3;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%23ECEAE3%22 width=%22100%22 height=%22100%22/></svg>'">
+          </div>
+          ${cap ? `<div class="cl-photo-caption">${escapeHtml(cap)}</div>` : ''}
+          ${rel ? `<div class="cl-photo-date">${escapeHtml(rel)}</div>` : ''}
+        </div>
+      `;
+    }).join('')
+  }</div>`;
+
+  container.innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+// TIMELINE
+// ─────────────────────────────────────────────
+function renderTimeline() {
+  const sec = document.getElementById('secTimeline');
+  const wrap = document.getElementById('timelineWrap');
+  const items = clState.milestones || [];
+
+  if (!items.length) {
+    // ตามสเปก — ซ่อนทั้ง section ถ้าไม่มี milestone
+    sec.style.display = 'none';
+    return;
+  }
+  sec.style.display = '';
+
+  wrap.innerHTML = items.map(m => {
+    const status = String(m.status || 'upcoming').toLowerCase();
+    let cls = 'cl-tl-upcoming';
+    let dotContent = '○';
+    let metaHtml = '';
+
+    if (status === 'completed' || status === 'done') {
+      cls = 'cl-tl-done';
+      dotContent = '✓';
+      if (m.completed_at) {
+        metaHtml = `<div class="cl-tl-meta cl-tl-meta-done">เสร็จเมื่อ ${escapeHtml(formatThaiFull(m.completed_at))}</div>`;
+      } else {
+        metaHtml = `<div class="cl-tl-meta cl-tl-meta-done">เสร็จแล้ว</div>`;
+      }
+    } else if (status === 'in_progress' || status === 'current' || status === 'now') {
+      cls = 'cl-tl-now';
+      dotContent = '●';
+      metaHtml = `<div class="cl-tl-meta-now">กำลังดำเนินงาน</div>`;
+      if (m.target_date) {
+        metaHtml += `<div class="cl-tl-meta" style="margin-top:6px;">กำหนดเสร็จ ~ ${escapeHtml(formatThaiMonthYear(m.target_date))}</div>`;
+      }
+    } else {
+      // upcoming
+      cls = 'cl-tl-upcoming';
+      dotContent = '○';
+      if (m.target_date) {
+        metaHtml = `<div class="cl-tl-meta">คาด ${escapeHtml(formatThaiMonthYear(m.target_date))}</div>`;
+      }
+    }
+
+    return `
+      <div class="cl-tl-item ${cls}">
+        <div class="cl-tl-dot">${dotContent}</div>
+        <div class="cl-tl-body">
+          <div class="cl-tl-name">${escapeHtml(m.name || '—')}</div>
+          ${metaHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────
+function renderPayments() {
+  const wrap = document.getElementById('paymentsList');
+  const items = clState.payments || [];
+
+  if (!items.length) {
+    wrap.innerHTML = `
+      <div class="cl-photos-empty">
+        <div class="cl-photos-empty-ico">📋</div>
+        <div class="cl-photos-empty-txt">ยังไม่มีกำหนดงวดงาน<br>รอ PM อัปเดต</div>
+      </div>
+    `;
+    return;
+  }
+
+  // หา "งวดถัดไป" — pending/unpaid ที่ใกล้สุด (index แรกที่ยังไม่จ่าย)
+  let nextIdx = -1;
+  for (let i = 0; i < items.length; i++) {
+    const st = String(items[i].status || '').toLowerCase();
+    if (st !== 'paid' && st !== 'completed' && nextIdx === -1) {
+      nextIdx = i;
+      break;
+    }
+  }
+
+  wrap.innerHTML = items.map((p, idx) => {
+    const status = String(p.status || '').toLowerCase();
+    let cls = 'cl-pay-upcoming';
+    let badgeText = 'รอเก็บ';
+    let statusIco = '○';
+    let metaHtml = '';
+
+    const installmentLabel = p.installment_no
+      ? ('งวด ' + escapeHtml(p.installment_no))
+      : 'งวด';
+    const nameTxt = p.name ? (installmentLabel + ' · ' + p.name) : installmentLabel;
+
+    if (status === 'paid' || status === 'completed') {
+      cls = 'cl-pay-paid';
+      badgeText = 'จ่ายแล้ว';
+      statusIco = '✓';
+      if (p.paid_date) {
+        metaHtml = `<div class="cl-pay-meta">จ่ายเมื่อ ${escapeHtml(formatThaiFull(p.paid_date))}</div>`;
+      }
+    } else if (idx === nextIdx) {
+      cls = 'cl-pay-next';
+      badgeText = 'งวดถัดไป';
+      statusIco = '◐';
+      const due = p.due_date ? formatThaiDayMonth(p.due_date) : '';
+      if (due) {
+        metaHtml = `<div class="cl-pay-meta">คาดเก็บ ~ ${escapeHtml(due)}</div>`;
+      }
+      if (p.condition) {
+        metaHtml += `<div class="cl-pay-cond">เงื่อนไข: ${escapeHtml(p.condition)}</div>`;
+      }
+    } else {
+      cls = 'cl-pay-upcoming';
+      badgeText = 'ยังไม่ถึง';
+      statusIco = '○';
+      const due = p.due_date ? formatThaiMonthYear(p.due_date) : '';
+      if (due) {
+        metaHtml = `<div class="cl-pay-meta">คาด ${escapeHtml(due)}</div>`;
+      }
+    }
+
+    return `
+      <div class="cl-pay ${cls}">
+        <div class="cl-pay-head">
+          <div class="cl-pay-title">
+            <div class="cl-pay-status-ico">${statusIco}</div>
+            <div class="cl-pay-name">${escapeHtml(nameTxt)}</div>
+          </div>
+          <div class="cl-pay-badge">${badgeText}</div>
+        </div>
+        <div class="cl-pay-amount">${formatBaht(p.amount)}</div>
+        ${metaHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// CONTACT
+// ─────────────────────────────────────────────
+function renderContact() {
+  const o = clState.overview || {};
+  const pmName = o.pm_name || 'คุณดิเรก สีหา';
+  const pmPhone = o.pm_phone || '0812345678';
+  const pmLineId = o.pm_line_id || '';
+
+  document.getElementById('pmName').textContent = pmName;
+  document.getElementById('pmAvatar').textContent = firstChar(pmName);
+
+  const callBtn = document.getElementById('pmCall');
+  callBtn.href = 'tel:' + pmPhone.replace(/[^0-9+]/g, '');
+
+  const lineBtn = document.getElementById('pmLine');
+  if (pmLineId) {
+    lineBtn.href = 'https://line.me/ti/p/' + encodeURIComponent(pmLineId);
+  } else {
+    // ถ้าไม่มี Line ID → ใช้ tel เป็น fallback แทน
+    lineBtn.href = 'tel:' + pmPhone.replace(/[^0-9+]/g, '');
+  }
+}
+
+// ─────────────────────────────────────────────
+// LIGHTBOX
+// ─────────────────────────────────────────────
+function openLightbox(idx) {
+  const p = (clState.photos || [])[idx];
+  if (!p) return;
+  const url = p.drive_url || p.url || '';
+  document.getElementById('lbImg').src = url;
+  document.getElementById('lbCap').textContent =
+    [p.caption, relativeTime(p.uploaded_at)].filter(Boolean).join(' · ');
+  document.getElementById('lightbox').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox(ev) {
+  // ปิดได้เมื่อกดพื้นที่ดำหรือปุ่ม × แต่ไม่ใช่ตอนกดที่รูปเอง
+  if (ev && ev.target.tagName === 'IMG') return;
+  document.getElementById('lightbox').classList.remove('on');
+  document.body.style.overflow = '';
+}
+
+// ─────────────────────────────────────────────
+// Section reveal — Intersection Observer
+// ─────────────────────────────────────────────
+function initSectionReveal() {
+  const secs = document.querySelectorAll('.cl-sec');
+  if (!('IntersectionObserver' in window)) {
+    // fallback — โชว์ทั้งหมดเลย
+    secs.forEach(s => s.classList.add('cl-in'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('cl-in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+  secs.forEach(s => io.observe(s));
+
+  // ตัวแรก (Hero) ให้ขึ้นทันทีโดยไม่รอ scroll
+  const hero = document.getElementById('secHero');
+  if (hero) hero.classList.add('cl-in');
+}
+
+// ─────────────────────────────────────────────
+// Logout
+// ─────────────────────────────────────────────
+function doLogout() {
+  if (confirm('ออกจากระบบใช่ไหม?')) {
+    Auth.logout();
+  }
+}
+
+// ─────────────────────────────────────────────
+// ESC = close lightbox
+// ─────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// ─────────────────────────────────────────────
+// Start
+// ─────────────────────────────────────────────
+loadAll();
+
+</script>
+</body>
+</html>
