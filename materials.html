@@ -451,6 +451,440 @@
 .del-opt.deact { background:#1F3864; color:#fff; }
 .del-opt.hard { background:#fff; color:#E24B4A; border:1.5px solid #FECACA; margin-top:22px; }
 .del-opt-hint { font-size:10.5px; color:#9CA3AF; text-align:center; margin-top:5px; line-height:1.5; }
+
+/* ============================================================
+   📋 HISTORY TAB (Materials Transactions) — prefix .mh-*
+   อิงภาษาดีไซน์เดียวกับ daily.html (timeline card) แต่ class แยกขาด
+   ============================================================ */
+
+/* Filter Bar — sticky ใต้แถบแท็บ */
+.mh-filter {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #F9FAFB;
+  margin: -2px -2px 8px;
+  padding: 10px 2px 8px;
+  border-bottom: 1px solid #F3F4F6;
+}
+.mh-filter-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.mh-filter-row::-webkit-scrollbar { display: none; }
+.mh-filter-row + .mh-filter-row { margin-top: 6px; }
+
+.mh-chip {
+  padding: 7px 13px;
+  border-radius: 99px;
+  background: #fff;
+  color: #4B5563;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1px solid #E5E7EB;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .12s;
+}
+.mh-chip:hover { border-color: #1F3864; }
+.mh-chip:active { transform: scale(0.96); }
+.mh-chip.on { background: #1F3864; color: #fff; border-color: #1F3864; }
+.mh-chip.type-rcv.on { background: #1D9E75; border-color: #1D9E75; }
+.mh-chip.type-wdr.on { background: #BA7517; border-color: #BA7517; }
+.mh-chip.type-cnt.on { background: #7C3AED; border-color: #7C3AED; }
+.mh-chip.mat-active { background: #EFF6FF; color: #1E40AF; border-color: #BFD7F0; }
+.mh-chip.mat-active .mh-chip-x { font-size: 12px; margin-left: 3px; opacity: 0.7; }
+.mh-chip-ic { font-size: 12px; line-height: 1; }
+
+/* Summary line — เล็ก อ่านง่าย */
+.mh-summary {
+  font-size: 10.5px;
+  color: #6B7280;
+  padding: 2px 4px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.mh-summary strong { color: #1F2937; font-weight: 600; }
+
+/* Day Header — sticky ภายใน list */
+.mh-day {
+  padding: 14px 4px 6px;
+}
+.mh-day:first-child { padding-top: 4px; }
+.mh-day-hdr {
+  position: sticky;
+  top: 92px; /* below mh-filter (ปรับให้พอดี — sticky stack) */
+  z-index: 5;
+  background: linear-gradient(to bottom, #F9FAFB 0%, #F9FAFB 75%, rgba(249,250,251,0) 100%);
+  padding: 6px 4px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1F3864;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mh-day-hdr-r { font-size: 10px; color: #9CA3AF; font-weight: 500; }
+.mh-day-hdr.today { color: #0C447C; }
+.mh-day-hdr.today .mh-day-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: #1D9E75;
+  border-radius: 50%;
+  margin-right: 5px;
+  animation: mhPulse 2s ease-in-out infinite;
+}
+@keyframes mhPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* Timeline container — relative สำหรับ indicator line */
+.mh-day-body {
+  position: relative;
+  padding-left: 0;
+}
+
+/* Transaction card */
+.mh-tx {
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border: 1px solid #F3F4F6;
+  border-left: 3px solid #E5E7EB;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+  transition: all .12s;
+  position: relative;
+}
+.mh-tx:hover { border-color: #D1D5DB; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.mh-tx:active { transform: scale(0.985); }
+
+/* Border-left สีตาม type */
+.mh-tx.rcv { border-left-color: #1D9E75; }
+.mh-tx.wdr { border-left-color: #BA7517; }
+.mh-tx.cnt { border-left-color: #7C3AED; }
+
+/* Icon sphere ด้านซ้าย */
+.mh-tx-ic {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  background: #F3F4F6;
+}
+.mh-tx.rcv .mh-tx-ic { background: #D1FAE5; }
+.mh-tx.wdr .mh-tx-ic { background: #FEF3C7; }
+.mh-tx.cnt .mh-tx-ic { background: #EDE9FE; }
+
+/* Body */
+.mh-tx-bd { flex: 1; min-width: 0; }
+.mh-tx-r1 {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+.mh-tx-time {
+  font-size: 10.5px;
+  color: #1F3864;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.mh-tx-type {
+  font-size: 9.5px;
+  padding: 2px 7px;
+  border-radius: 99px;
+  font-weight: 600;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+.mh-tx-type.rcv { background: #D1FAE5; color: #065F46; }
+.mh-tx-type.wdr { background: #FEF3C7; color: #92400E; }
+.mh-tx-type.cnt { background: #EDE9FE; color: #5B21B6; }
+.mh-tx-actor {
+  font-size: 11px;
+  color: #4B5563;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.mh-tx-actor.muted { color: #9CA3AF; font-style: italic; }
+
+.mh-tx-nm {
+  font-size: 13px;
+  color: #1F2937;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 1px 0 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.mh-tx-qty {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1F3864;
+  font-variant-numeric: tabular-nums;
+}
+.mh-tx.rcv .mh-tx-qty { color: #065F46; }
+.mh-tx.wdr .mh-tx-qty { color: #92400E; }
+.mh-tx.cnt .mh-tx-qty { color: #5B21B6; }
+.mh-tx-qty-unit { font-size: 11px; font-weight: 500; color: #6B7280; }
+
+.mh-tx-meta {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 3px;
+}
+.mh-tx-tag {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 99px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1.4;
+}
+.mh-tx-tag.ff { background: #E6F1FB; color: #0C447C; }
+.mh-tx-tag.team { background: #D1FAE5; color: #065F46; }
+.mh-tx-tag.sup { background: #F3F4F6; color: #4B5563; }
+.mh-tx-tag.price { background: #FFFBEB; color: #92400E; font-variant-numeric: tabular-nums; }
+.mh-tx-tag.remain { background: #F9FAFB; color: #6B7280; font-variant-numeric: tabular-nums; }
+.mh-tx-tag.warn-boq { background: #FEE2E2; color: #991B1B; }
+
+.mh-tx-note {
+  font-size: 10.5px;
+  color: #6B7280;
+  margin-top: 4px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* Chevron บอกว่ากดได้ */
+.mh-tx-chev {
+  font-size: 14px;
+  color: #D1D5DB;
+  align-self: center;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+.mh-tx:hover .mh-tx-chev { color: #6B7280; }
+
+/* Empty state — ใหญ่ใจดี */
+.mh-empty {
+  text-align: center;
+  padding: 48px 24px 36px;
+  color: #9CA3AF;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%);
+  border: 1.5px dashed #E5E7EB;
+  border-radius: 14px;
+  margin: 12px 2px;
+}
+.mh-empty-ic {
+  font-size: 44px;
+  margin-bottom: 10px;
+  opacity: 0.55;
+  filter: grayscale(0.3);
+}
+.mh-empty-tx {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4B5563;
+  margin-bottom: 4px;
+}
+.mh-empty-sub {
+  font-size: 11px;
+  color: #9CA3AF;
+  line-height: 1.6;
+}
+
+/* Skeleton loading — 3 cards */
+.mh-sk {
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border: 1px solid #F3F4F6;
+  border-left: 3px solid #E5E7EB;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.mh-sk-ic {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(90deg,#F3F4F6 0%,#E5E7EB 50%,#F3F4F6 100%);
+  background-size: 200% 100%;
+  animation: mhShimmer 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.mh-sk-bd { flex: 1; }
+.mh-sk-line {
+  height: 10px;
+  border-radius: 4px;
+  background: linear-gradient(90deg,#F3F4F6 0%,#E5E7EB 50%,#F3F4F6 100%);
+  background-size: 200% 100%;
+  animation: mhShimmer 1.2s ease-in-out infinite;
+  margin-bottom: 6px;
+}
+.mh-sk-line.w70 { width: 70%; }
+.mh-sk-line.w50 { width: 50%; }
+.mh-sk-line.w90 { width: 90%; height: 14px; }
+@keyframes mhShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Load more button */
+.mh-more {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px;
+  margin: 10px 2px 4px;
+  background: #fff;
+  color: #1F3864;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all .12s;
+}
+.mh-more:hover { border-color: #1F3864; background: #F9FAFB; }
+.mh-more:active { transform: scale(0.985); }
+.mh-more-count { color: #9CA3AF; font-weight: 500; }
+
+/* Detail modal — section style */
+.mh-d-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #F3F4F6;
+  font-size: 12px;
+}
+.mh-d-row:last-child { border-bottom: none; }
+.mh-d-key { color: #6B7280; font-weight: 500; flex-shrink: 0; }
+.mh-d-val { color: #1F2937; font-weight: 600; text-align: right; word-break: break-word; }
+.mh-d-val.muted { color: #9CA3AF; font-weight: 400; font-style: italic; }
+.mh-d-val.qty { font-size: 16px; color: #1F3864; }
+.mh-d-hero {
+  background: linear-gradient(135deg,#F9FAFB 0%,#fff 100%);
+  border-radius: 12px;
+  padding: 14px;
+  margin: 8px 0 14px;
+  border: 1px solid #F3F4F6;
+}
+.mh-d-hero-r {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.mh-d-hero-ic {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.mh-d-hero-ic.rcv { background: #D1FAE5; }
+.mh-d-hero-ic.wdr { background: #FEF3C7; }
+.mh-d-hero-ic.cnt { background: #EDE9FE; }
+.mh-d-hero-bd { flex: 1; min-width: 0; }
+.mh-d-hero-type {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 700;
+  display: inline-block;
+}
+.mh-d-hero-type.rcv { background: #1D9E75; color: #fff; }
+.mh-d-hero-type.wdr { background: #BA7517; color: #fff; }
+.mh-d-hero-type.cnt { background: #7C3AED; color: #fff; }
+.mh-d-hero-nm {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1F2937;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+.mh-d-hero-q {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1F3864;
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.mh-d-hero-q-unit { font-size: 14px; font-weight: 500; color: #6B7280; }
+.mh-d-actions { display: flex; gap: 8px; margin-top: 12px; }
+.mh-d-link {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px;
+  background: #fff;
+  color: #1F3864;
+  border: 1.5px solid #BFD7F0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.mh-d-link:active { transform: scale(0.97); }
+
+/* Mobile fine-tune */
+@media (max-width: 480px) {
+  .mh-tx-nm { font-size: 12.5px; }
+  .mh-tx-qty { font-size: 14px; }
+  .mh-d-hero-q { font-size: 22px; }
+  .mh-day-hdr { font-size: 11px; top: 84px; }
+}
 </style>
 </head>
 <body>
@@ -487,6 +921,7 @@
       <button class="mat-tab" id="matTab-rcv" onclick="switchTab('rcv', this)">📥 รับ</button>
       <button class="mat-tab" id="matTab-wdr" onclick="switchTab('wdr', this)">📤 เบิก</button>
       <button class="mat-tab" id="matTab-cnt" onclick="switchTab('cnt', this)">📝 นับ</button>
+      <button class="mat-tab" id="matTab-hist" onclick="switchTab('hist', this)">📋 ประวัติ</button>
     </div>
 
     <!-- TAB: Quick Log -->
@@ -648,6 +1083,44 @@
       </div>
     </div>
 
+    <!-- TAB: ประวัติ (History) -->
+    <div id="tab-hist" class="mat-tab-pane">
+      <!-- Filter bar (sticky) -->
+      <div class="mh-filter">
+        <!-- Row 1: Date range presets -->
+        <div class="mh-filter-row" id="mhDateChips">
+          <button class="mh-chip" data-range="today" onclick="setMatHistRange('today',this)">วันนี้</button>
+          <button class="mh-chip" data-range="yesterday" onclick="setMatHistRange('yesterday',this)">เมื่อวาน</button>
+          <button class="mh-chip on" data-range="7d" onclick="setMatHistRange('7d',this)">7 วัน</button>
+          <button class="mh-chip" data-range="30d" onclick="setMatHistRange('30d',this)">30 วัน</button>
+          <button class="mh-chip" data-range="custom" onclick="openMatHistDateModal()">
+            <span class="mh-chip-ic">📅</span><span id="mhCustomLabel">เลือกวัน</span>
+          </button>
+        </div>
+        <!-- Row 2: Type + material filter -->
+        <div class="mh-filter-row" id="mhTypeChips">
+          <button class="mh-chip on" data-type="" onclick="setMatHistType('',this)">ทั้งหมด</button>
+          <button class="mh-chip type-rcv" data-type="รับ" onclick="setMatHistType('รับ',this)">
+            <span class="mh-chip-ic">📥</span>รับ
+          </button>
+          <button class="mh-chip type-wdr" data-type="เบิก" onclick="setMatHistType('เบิก',this)">
+            <span class="mh-chip-ic">📤</span>เบิก
+          </button>
+          <button class="mh-chip type-cnt" data-type="นับ" onclick="setMatHistType('นับ',this)">
+            <span class="mh-chip-ic">📝</span>นับ
+          </button>
+          <button class="mh-chip" id="mhMatChip" onclick="openMatHistMatPicker()">
+            <span class="mh-chip-ic">🔍</span><span id="mhMatChipLabel">กรองตามวัสดุ</span>
+          </button>
+        </div>
+        <!-- Summary -->
+        <div class="mh-summary" id="mhSummary"></div>
+      </div>
+
+      <!-- List container -->
+      <div id="mhList"></div>
+    </div>
+
   </div>
 </div>
 
@@ -756,6 +1229,11 @@ function switchTab(name, btn) {
   if (btn) btn.classList.add('on');
   const pane = document.getElementById('tab-' + name);
   if (pane) pane.classList.add('on');
+
+  // Lazy-load history เมื่อแตะแท็บครั้งแรก (กันโหลด tx 500 ตอนเปิดหน้า)
+  if (name === 'hist' && !matHistState.loaded) {
+    loadMatHistory();
+  }
 }
 
 // ============================================================
@@ -2282,6 +2760,632 @@ function applyMatFeatureFlags() {
   }
 }
 applyMatFeatureFlags();
+
+// ============================================================
+// 📋 HISTORY TAB — Materials Transactions Timeline
+// ============================================================
+//
+// Read-only ปลายทาง (HUB: ไม่ ripple — แค่อ่าน 12_Material_Transactions
+// แสดง timeline). ใช้ API.callRead เท่านั้น (no callWrite — บทเรียน
+// callwrite-loses-post-body).
+//
+// Decisions:
+// - default = 7 วันล่าสุด (สมดุล "วันนี้น้อยไป" กับ "30 วันหนัก")
+// - lazy-load (เปิดแท็บค่อยยิง — กัน get_material_transactions 500 rows
+//   ตอนโหลดหน้า)
+// - render สูงสุด 100/รอบ + "โหลดเพิ่ม" (ดึง 500 ครั้งเดียวจริง — page client)
+// - สีตาม type: รับ=เขียว/เบิก=ส้ม/นับ=ม่วง (semantics ชัด)
+// - group by date (ไม่ใช่ period morning/afternoon เหมือน daily — มุมนี้
+//   ดูข้ามวัน)
+// ============================================================
+
+var matHistState = {
+  loaded: false,           // โหลดครั้งแรกแล้วหรือยัง
+  loading: false,          // กำลังโหลดอยู่ (กันยิงซ้ำ)
+  range: '7d',             // preset key: today/yesterday/7d/30d/custom
+  date_from: '',           // YYYY-MM-DD (compute จาก range)
+  date_to: '',             // YYYY-MM-DD
+  type: '',                // '' | 'รับ' | 'เบิก' | 'นับ'
+  material_id: '',         // ''  | 'M01'
+  transactions: [],        // raw จาก API
+  renderLimit: 100,        // pagination client-side
+};
+
+/** เปิดแท็บประวัติครั้งแรก → คำนวณช่วงวัน + load */
+async function loadMatHistory() {
+  if (matHistState.loading) return;
+  applyMatHistRange(matHistState.range);
+  await fetchMatHistory();
+}
+
+/** ตั้งช่วงวันที่จาก preset key → set date_from/date_to */
+function applyMatHistRange(key) {
+  const today = mhTodayStr();
+  if (key === 'today') {
+    matHistState.date_from = today;
+    matHistState.date_to = today;
+  } else if (key === 'yesterday') {
+    const y = mhAddDays(today, -1);
+    matHistState.date_from = y;
+    matHistState.date_to = y;
+  } else if (key === '7d') {
+    matHistState.date_from = mhAddDays(today, -6);
+    matHistState.date_to = today;
+  } else if (key === '30d') {
+    matHistState.date_from = mhAddDays(today, -29);
+    matHistState.date_to = today;
+  }
+  // custom = คงค่าเดิมจาก modal
+  matHistState.range = key;
+}
+
+/** ยิง API ดึง transactions ตาม state ปัจจุบัน */
+async function fetchMatHistory() {
+  matHistState.loading = true;
+  matHistState.renderLimit = 100;
+  renderMatHistory(); // โชว์ skeleton
+
+  try {
+    const params = {
+      date_from: matHistState.date_from,
+      date_to: matHistState.date_to,
+      limit: 500,
+    };
+    if (matHistState.type) params.type = matHistState.type;
+    if (matHistState.material_id) params.material_id = matHistState.material_id;
+
+    const res = await API.callRead('get_material_transactions', params);
+    matHistState.transactions = (res && res.ok && res.data) ? res.data : [];
+    matHistState.loaded = true;
+  } catch (err) {
+    console.error('[history] load fail:', err);
+    matHistState.transactions = [];
+    Modal.toast('❌ โหลดประวัติไม่สำเร็จ');
+  }
+  matHistState.loading = false;
+  renderMatHistory();
+}
+
+/** preset chip → reload */
+function setMatHistRange(key, btn) {
+  if (key === 'custom') return; // เปิด modal แยก
+  document.querySelectorAll('#mhDateChips .mh-chip').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  // เคลียร์ label ของ custom เพราะกลับมา preset
+  const lbl = document.getElementById('mhCustomLabel');
+  if (lbl) lbl.textContent = 'เลือกวัน';
+  applyMatHistRange(key);
+  fetchMatHistory();
+}
+
+/** type filter chip → reload */
+function setMatHistType(type, btn) {
+  document.querySelectorAll('#mhTypeChips .mh-chip[data-type]').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  matHistState.type = type;
+  fetchMatHistory();
+}
+
+/** เปิด picker เลือกวัสดุ (reuse openMatPicker) */
+function openMatHistMatPicker() {
+  // ถ้าเลือกอยู่แล้ว → แตะ chip = ลบ filter
+  if (matHistState.material_id) {
+    matHistState.material_id = '';
+    updateMatHistMatChip();
+    fetchMatHistory();
+    return;
+  }
+  openMatPicker(function (mat) {
+    Modal.close();
+    matHistState.material_id = mat.id;
+    updateMatHistMatChip();
+    fetchMatHistory();
+  });
+}
+
+function updateMatHistMatChip() {
+  const chip = document.getElementById('mhMatChip');
+  const lbl = document.getElementById('mhMatChipLabel');
+  if (!chip || !lbl) return;
+  if (matHistState.material_id) {
+    const m = matState.materials.find(x => x.id === matHistState.material_id);
+    const nm = m ? m.name : matHistState.material_id;
+    chip.classList.add('mat-active');
+    lbl.innerHTML = mhEsc(nm) + '<span class="mh-chip-x">✕</span>';
+  } else {
+    chip.classList.remove('mat-active');
+    lbl.textContent = 'กรองตามวัสดุ';
+  }
+}
+
+/** Modal เลือกวันที่ custom range */
+function openMatHistDateModal() {
+  const from = matHistState.date_from || mhTodayStr();
+  const to = matHistState.date_to || mhTodayStr();
+  const html =
+    '<div class="modal-title">📅 เลือกช่วงวันที่</div>' +
+    '<div class="modal-desc">กรองประวัติเฉพาะช่วงนี้</div>' +
+    '<div style="margin-top:14px">' +
+      '<div class="mf-grp">' +
+        '<label class="mf-lb">ตั้งแต่วันที่</label>' +
+        '<input id="mhDateFrom" type="date" class="mf-in" value="' + mhEsc(from) + '" max="' + mhEsc(mhTodayStr()) + '">' +
+      '</div>' +
+      '<div class="mf-grp">' +
+        '<label class="mf-lb">ถึงวันที่</label>' +
+        '<input id="mhDateTo" type="date" class="mf-in" value="' + mhEsc(to) + '" max="' + mhEsc(mhTodayStr()) + '">' +
+      '</div>' +
+    '</div>' +
+    '<div class="modal-btns" style="margin-top:14px">' +
+      '<button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>' +
+      '<button class="modal-btn modal-btn-primary" onclick="applyMatHistCustomDate()">ใช้ช่วงนี้</button>' +
+    '</div>';
+  Modal.show(html);
+}
+
+function applyMatHistCustomDate() {
+  const from = (document.getElementById('mhDateFrom') || {}).value;
+  const to = (document.getElementById('mhDateTo') || {}).value;
+  if (!from || !to) {
+    Modal.toast('กรุณาเลือกครบทั้ง 2 ช่อง');
+    return;
+  }
+  if (from > to) {
+    Modal.toast('วันที่เริ่มต้องไม่เกินวันสิ้นสุด');
+    return;
+  }
+  matHistState.range = 'custom';
+  matHistState.date_from = from;
+  matHistState.date_to = to;
+  // mark custom chip
+  document.querySelectorAll('#mhDateChips .mh-chip').forEach(b => b.classList.remove('on'));
+  const custBtn = document.querySelector('#mhDateChips .mh-chip[data-range="custom"]');
+  if (custBtn) custBtn.classList.add('on');
+  const lbl = document.getElementById('mhCustomLabel');
+  if (lbl) lbl.textContent = mhFmtDayShort(from) + ' – ' + mhFmtDayShort(to);
+  Modal.close();
+  fetchMatHistory();
+}
+
+/** Render timeline ทั้งหมด */
+function renderMatHistory() {
+  const el = document.getElementById('mhList');
+  const sumEl = document.getElementById('mhSummary');
+  if (!el) return;
+
+  // Loading state → skeleton
+  if (matHistState.loading) {
+    el.innerHTML =
+      '<div style="margin-top:14px">' +
+      mhSkeletonHtml() + mhSkeletonHtml() + mhSkeletonHtml() +
+      '</div>';
+    if (sumEl) sumEl.innerHTML = '<span>กำลังโหลด...</span>';
+    return;
+  }
+
+  const txs = matHistState.transactions || [];
+  // Summary
+  if (sumEl) {
+    if (txs.length === 0) {
+      sumEl.innerHTML = '<span>' + mhFmtRange() + '</span><span>0 รายการ</span>';
+    } else {
+      const counts = { 'รับ': 0, 'เบิก': 0, 'นับ': 0 };
+      txs.forEach(t => { if (counts[t.type] !== undefined) counts[t.type]++; });
+      const parts = [];
+      if (counts['รับ']) parts.push('<strong>' + counts['รับ'] + '</strong> รับ');
+      if (counts['เบิก']) parts.push('<strong>' + counts['เบิก'] + '</strong> เบิก');
+      if (counts['นับ']) parts.push('<strong>' + counts['นับ'] + '</strong> นับ');
+      sumEl.innerHTML = '<span>' + mhFmtRange() + '</span><span>' + parts.join(' · ') + '</span>';
+    }
+  }
+
+  // Empty state
+  if (txs.length === 0) {
+    el.innerHTML =
+      '<div class="mh-empty">' +
+        '<div class="mh-empty-ic">📭</div>' +
+        '<div class="mh-empty-tx">ยังไม่มีธุรกรรมในช่วงนี้</div>' +
+        '<div class="mh-empty-sub">ลองขยายช่วงวันที่ หรือเปลี่ยน filter ดู</div>' +
+      '</div>';
+    return;
+  }
+
+  // Sort: ใหม่สุดก่อน (created_at desc, fallback date)
+  const sorted = txs.slice().sort(function (a, b) {
+    const ka = (a.created_at || a.date || '');
+    const kb = (b.created_at || b.date || '');
+    return ka < kb ? 1 : (ka > kb ? -1 : 0);
+  });
+
+  // Pagination client-side
+  const visible = sorted.slice(0, matHistState.renderLimit);
+  const remain = sorted.length - visible.length;
+
+  // Group by date
+  const groups = {}; // dateKey → array
+  const order = [];  // dateKey order (preserved)
+  visible.forEach(function (t) {
+    const dk = mhDateKey(t.date || t.created_at);
+    if (!groups[dk]) { groups[dk] = []; order.push(dk); }
+    groups[dk].push(t);
+  });
+
+  let html = '';
+  order.forEach(function (dk) {
+    const list = groups[dk];
+    const isToday = (dk === mhTodayStr());
+    const hdrCls = isToday ? 'mh-day-hdr today' : 'mh-day-hdr';
+    const dayLbl = isToday
+      ? '<span class="mh-day-dot"></span>วันนี้ · ' + mhFmtDayFull(dk)
+      : mhFmtDayFull(dk);
+    html += '<div class="mh-day">';
+    html += '<div class="' + hdrCls + '">' +
+              '<span>' + dayLbl + '</span>' +
+              '<span class="mh-day-hdr-r">' + list.length + ' รายการ</span>' +
+            '</div>';
+    html += '<div class="mh-day-body">';
+    list.forEach(function (t) { html += renderMatHistTx(t); });
+    html += '</div></div>';
+  });
+
+  // Load more
+  if (remain > 0) {
+    html += '<button class="mh-more" onclick="loadMoreMatHist()">' +
+              '⬇️ โหลดเพิ่ม ' +
+              '<span class="mh-more-count">(เหลืออีก ' + remain + ' รายการ)</span>' +
+            '</button>';
+  } else if (sorted.length >= 500) {
+    // ถึงเพดาน API
+    html += '<div style="text-align:center;padding:14px 12px;color:#9CA3AF;font-size:10.5px">' +
+              'แสดงครบ 500 รายการล่าสุด (จำกัดสูงสุด) · ปรับช่วงวันให้แคบลงเพื่อดูเก่ากว่านี้' +
+            '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function loadMoreMatHist() {
+  matHistState.renderLimit += 100;
+  renderMatHistory();
+}
+
+/** Render 1 transaction card — 3 variants ตาม type */
+function renderMatHistTx(t) {
+  const type = t.type || '';
+  let typeKey = '', typeIc = '', typeLbl = '';
+  if (type === 'รับ') { typeKey = 'rcv'; typeIc = '📥'; typeLbl = 'รับ'; }
+  else if (type === 'เบิก') { typeKey = 'wdr'; typeIc = '📤'; typeLbl = 'เบิก'; }
+  else if (type === 'นับ') { typeKey = 'cnt'; typeIc = '📝'; typeLbl = 'นับ'; }
+  else { typeKey = 'cnt'; typeIc = '•'; typeLbl = type || '?'; }
+
+  const time = mhFmtTime(t.created_at || t.date || '');
+  const matName = t.material_name || ('วัสดุ ' + (t.material_id || ''));
+  const unit = t.material_unit || '';
+  const mode = t.material_tracking_mode || 'COUNT';
+  const qty = Number(t.quantity || 0);
+
+  // Actor: รับ=supplier, เบิก=contractor, นับ=created_by (admin/staff)
+  let actor = '', actorMuted = false;
+  if (type === 'รับ') {
+    actor = t.supplier_name || (t.supplier_id ? 'ซัพ ' + t.supplier_id : '');
+    if (!actor) { actor = 'ไม่ระบุร้าน'; actorMuted = true; }
+  } else if (type === 'เบิก') {
+    actor = t.contractor_name || (t.contractor_id ? 'ทีม ' + t.contractor_id : '');
+    if (!actor) { actor = 'ไม่ระบุทีม'; actorMuted = true; }
+  } else if (type === 'นับ') {
+    actor = t.created_by || 'ระบบ';
+  }
+
+  // Quantity display — แตกต่างตาม type + mode
+  let qtyHtml = '';
+  if (type === 'นับ' && mode === 'STATUS') {
+    // STATUS: remaining_after = 0-3 (สถานะใหม่)
+    const newStatus = Number(t.remaining_after);
+    const lbl = ['🔴 หมด', '🟡 ใกล้หมด', '🔵 ใช้ได้', '🟢 เต็ม'][newStatus] || '?';
+    qtyHtml = '<span class="mh-tx-qty" style="font-size:13px">→ ' + lbl + '</span>';
+  } else if (type === 'นับ') {
+    // COUNT นับ: quantity = variance (อาจ -), remaining_after = ตัวเลข
+    const sign = qty > 0 ? '+' : (qty < 0 ? '' : '±');
+    qtyHtml = '<span class="mh-tx-qty">' + sign + qty.toLocaleString() +
+              '</span><span class="mh-tx-qty-unit"> ' + mhEsc(unit) + '</span>';
+  } else {
+    // รับ / เบิก: แสดงจำนวนปกติ
+    qtyHtml = '<span class="mh-tx-qty">' + qty.toLocaleString() +
+              '</span><span class="mh-tx-qty-unit"> ' + mhEsc(unit) + '</span>';
+  }
+
+  // Meta tags
+  const tags = [];
+  if (t.ff_code) {
+    tags.push('<span class="mh-tx-tag ff">🏠 ' + mhEsc(t.ff_code) + '</span>');
+  }
+  if (type === 'เบิก' && t.contractor_name) {
+    // ทีมที่ actor ไม่ได้แสดง (เผื่อ contractor_name มี supplier ซ้อน)
+    // ปกติ actor=contractor_name แล้ว → skip
+  }
+  if (type === 'รับ' && Number(t.unit_price) > 0) {
+    const total = Number(t.total_value || (qty * Number(t.unit_price)));
+    tags.push('<span class="mh-tx-tag price">฿' + Math.round(total).toLocaleString() + '</span>');
+  }
+  if (type !== 'นับ' && t.remaining_after !== undefined && t.remaining_after !== '' && t.remaining_after !== null) {
+    // เหลือ X หลังธุรกรรม
+    if (mode !== 'STATUS') {
+      tags.push('<span class="mh-tx-tag remain">เหลือ ' + Number(t.remaining_after).toLocaleString() + '</span>');
+    }
+  }
+  if (type === 'นับ' && mode !== 'STATUS' && t.remaining_after !== undefined && t.remaining_after !== '' && t.remaining_after !== null) {
+    tags.push('<span class="mh-tx-tag remain">→ คงเหลือ ' + Number(t.remaining_after).toLocaleString() + '</span>');
+  }
+  // Warning: เบิกเกิน BOQ (มาจาก notes prefix "[⚠️ เกิน BOQ]")
+  const notesStr = String(t.notes || '');
+  const hasBoqWarn = notesStr.indexOf('⚠️ เกิน BOQ') >= 0 || notesStr.indexOf('เกิน BOQ') >= 0;
+  if (hasBoqWarn) {
+    tags.push('<span class="mh-tx-tag warn-boq">⚠️ เกิน BOQ</span>');
+  }
+
+  // Note (ตัด prefix BOQ warn ออก เพราะแสดง chip แล้ว)
+  let cleanNote = notesStr.replace(/\[⚠️ เกิน BOQ\]\s*/g, '').replace(/⚠️ เกิน BOQ\s*/g, '').trim();
+
+  const actorCls = actorMuted ? 'mh-tx-actor muted' : 'mh-tx-actor';
+  const txId = t.id || '';
+
+  return (
+    '<div class="mh-tx ' + typeKey + '" onclick="openMatHistDetail(\'' + mhEsc(txId) + '\')">' +
+      '<div class="mh-tx-ic">' + typeIc + '</div>' +
+      '<div class="mh-tx-bd">' +
+        '<div class="mh-tx-r1">' +
+          '<span class="mh-tx-time">' + mhEsc(time) + '</span>' +
+          '<span class="mh-tx-type ' + typeKey + '">' + typeLbl + '</span>' +
+          '<span class="' + actorCls + '">' + mhEsc(actor) + '</span>' +
+        '</div>' +
+        '<div class="mh-tx-nm">' +
+          '<span style="flex:1;min-width:0">' + mhEsc(matName) + '</span>' +
+          qtyHtml +
+        '</div>' +
+        (tags.length ? '<div class="mh-tx-meta">' + tags.join('') + '</div>' : '') +
+        (cleanNote ? '<div class="mh-tx-note">' + mhEsc(cleanNote) + '</div>' : '') +
+      '</div>' +
+      '<div class="mh-tx-chev">›</div>' +
+    '</div>'
+  );
+}
+
+/** Skeleton card สำหรับ loading */
+function mhSkeletonHtml() {
+  return (
+    '<div class="mh-sk">' +
+      '<div class="mh-sk-ic"></div>' +
+      '<div class="mh-sk-bd">' +
+        '<div class="mh-sk-line w50"></div>' +
+        '<div class="mh-sk-line w90"></div>' +
+        '<div class="mh-sk-line w70"></div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+/** Detail modal — read-only แสดงรายละเอียดเต็ม */
+function openMatHistDetail(txId) {
+  const t = (matHistState.transactions || []).find(x => String(x.id) === String(txId));
+  if (!t) { Modal.toast('ไม่พบรายละเอียด'); return; }
+
+  const type = t.type || '';
+  let typeKey = 'cnt', typeIc = '•', typeLbl = type || '?';
+  if (type === 'รับ') { typeKey = 'rcv'; typeIc = '📥'; typeLbl = 'รับเข้า'; }
+  else if (type === 'เบิก') { typeKey = 'wdr'; typeIc = '📤'; typeLbl = 'เบิกออก'; }
+  else if (type === 'นับ') { typeKey = 'cnt'; typeIc = '📝'; typeLbl = 'นับสต๊อก'; }
+
+  const matName = t.material_name || ('วัสดุ ' + (t.material_id || ''));
+  const unit = t.material_unit || '';
+  const mode = t.material_tracking_mode || 'COUNT';
+  const qty = Number(t.quantity || 0);
+
+  // Hero quantity
+  let heroQ = '';
+  if (type === 'นับ' && mode === 'STATUS') {
+    const lbl = ['🔴 หมด', '🟡 ใกล้หมด', '🔵 ใช้ได้', '🟢 เต็ม'][Number(t.remaining_after)] || '?';
+    heroQ = '<div class="mh-d-hero-q" style="font-size:20px">' + lbl + '</div>';
+  } else if (type === 'นับ') {
+    const sign = qty > 0 ? '+' : '';
+    heroQ = '<div class="mh-d-hero-q">' + sign + qty.toLocaleString() +
+            '<span class="mh-d-hero-q-unit"> ' + mhEsc(unit) + '</span></div>';
+  } else {
+    heroQ = '<div class="mh-d-hero-q">' + qty.toLocaleString() +
+            '<span class="mh-d-hero-q-unit"> ' + mhEsc(unit) + '</span></div>';
+  }
+
+  // Rows
+  const rows = [];
+  rows.push(['🆔 รหัสธุรกรรม', mhEsc(t.id || '—')]);
+  rows.push(['📅 วันที่', mhFmtDayFull(t.date) + ' · ' + mhFmtTime(t.created_at || t.date)]);
+  if (t.material_id) {
+    rows.push(['📦 รหัสวัสดุ', mhEsc(t.material_id)]);
+  }
+  if (type === 'รับ') {
+    rows.push(['🏪 ซัพพลายเออร์', t.supplier_name ? mhEsc(t.supplier_name) : '<span class="mh-d-val muted">—</span>']);
+    if (t.receipt_no) rows.push(['🧾 เลขที่ใบเสร็จ', mhEsc(t.receipt_no)]);
+    if (Number(t.unit_price) > 0) {
+      rows.push(['💵 ราคา/หน่วย', Number(t.unit_price).toLocaleString() + ' ฿']);
+      const tv = Number(t.total_value || (qty * Number(t.unit_price)));
+      rows.push(['💰 รวม', '<strong>' + Math.round(tv).toLocaleString() + ' ฿</strong>']);
+    }
+  } else if (type === 'เบิก') {
+    rows.push(['👥 ทีมที่เบิก', t.contractor_name ? mhEsc(t.contractor_name) : '<span class="mh-d-val muted">—</span>']);
+    if (t.ff_code) rows.push(['🏠 FF Code', mhEsc(t.ff_code)]);
+  } else if (type === 'นับ') {
+    if (mode !== 'STATUS' && t.remaining_after !== undefined) {
+      rows.push(['📊 คงเหลือหลังนับ', Number(t.remaining_after).toLocaleString() + ' ' + mhEsc(unit)]);
+    }
+  }
+  if (type !== 'นับ' && t.remaining_after !== undefined && t.remaining_after !== '' && t.remaining_after !== null) {
+    if (mode !== 'STATUS') {
+      rows.push(['📊 คงเหลือหลังธุรกรรม', Number(t.remaining_after).toLocaleString() + ' ' + mhEsc(unit)]);
+    }
+  }
+  if (t.created_by) rows.push(['✍️ บันทึกโดย', mhEsc(t.created_by)]);
+  const notesStr = String(t.notes || '').trim();
+  if (notesStr) rows.push(['📝 หมายเหตุ', mhEsc(notesStr)]);
+
+  const rowsHtml = rows.map(r =>
+    '<div class="mh-d-row">' +
+      '<span class="mh-d-key">' + r[0] + '</span>' +
+      '<span class="mh-d-val">' + r[1] + '</span>' +
+    '</div>'
+  ).join('');
+
+  // ลิงก์ไปดูสต็อก
+  const linkBtn = t.material_id
+    ? '<button class="mh-d-link" onclick="goToMatFromHistory(\'' + mhEsc(t.material_id) + '\')">📦 ดูสต๊อกวัสดุนี้</button>'
+    : '';
+
+  const html =
+    '<div class="modal-title">รายละเอียดธุรกรรม</div>' +
+    '<div class="mh-d-hero">' +
+      '<div class="mh-d-hero-r">' +
+        '<div class="mh-d-hero-ic ' + typeKey + '">' + typeIc + '</div>' +
+        '<div class="mh-d-hero-bd">' +
+          '<span class="mh-d-hero-type ' + typeKey + '">' + typeLbl + '</span>' +
+          '<div class="mh-d-hero-nm">' + mhEsc(matName) + '</div>' +
+        '</div>' +
+      '</div>' +
+      heroQ +
+    '</div>' +
+    '<div>' + rowsHtml + '</div>' +
+    (linkBtn ? '<div class="mh-d-actions">' + linkBtn + '</div>' : '') +
+    '<div class="modal-btns" style="margin-top:14px">' +
+      '<button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>' +
+    '</div>';
+  Modal.show(html, 'pay-modal');
+}
+
+/** ปุ่ม "ดูสต๊อกวัสดุนี้" → switch ไป tab stock + scroll หา card */
+function goToMatFromHistory(matId) {
+  Modal.close();
+  const tabBtn = document.getElementById('matTab-stock');
+  switchTab('stock', tabBtn);
+  setTimeout(function () {
+    const card = document.querySelector('.stk-card[data-mat="' + matId + '"]');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // pulse highlight สั้นๆ ให้ตาเห็น
+      const orig = card.style.boxShadow;
+      card.style.transition = 'box-shadow .3s';
+      card.style.boxShadow = '0 0 0 3px rgba(31,56,100,0.25)';
+      setTimeout(function () { card.style.boxShadow = orig; }, 1500);
+    }
+  }, 150);
+}
+
+// ============================================================
+// 📋 HISTORY — Helper functions (date / format / escape)
+// ============================================================
+
+/** วันนี้ใน YYYY-MM-DD (Asia/Bangkok via local — ผู้ใช้อยู่ TH) */
+function mhTodayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + dd;
+}
+
+/** บวก/ลบวัน คืน YYYY-MM-DD */
+function mhAddDays(dateStr, n) {
+  const parts = String(dateStr).split('-');
+  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  d.setDate(d.getDate() + n);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + dd;
+}
+
+/** ดึง YYYY-MM-DD จาก date string (รองรับทั้ง "2026-05-21" และ "2026-05-21 14:30:25") */
+function mhDateKey(s) {
+  if (!s) return '';
+  const str = String(s);
+  // ตัด 10 ตัวแรกถ้าตรง format YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+  // fallback parse
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return '';
+  return mhFmtIsoLocal(d);
+}
+
+function mhFmtIsoLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + dd;
+}
+
+/** Format วันแบบสั้น "21 พ.ค." (ใส่ปีถ้าข้ามปี) */
+function mhFmtDayShort(s) {
+  if (!s) return '';
+  const parts = String(s).split('-');
+  if (parts.length < 3) return s;
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  const monthsTh = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const currentY = new Date().getFullYear();
+  const yPart = (y !== currentY) ? (' ' + (y + 543).toString().slice(-2)) : '';
+  return d + ' ' + (monthsTh[m - 1] || '?') + yPart;
+}
+
+/** Format วันแบบเต็ม "📅 จ. 21 พ.ค." (มี emoji + วันในสัปดาห์ไทย) */
+function mhFmtDayFull(s) {
+  if (!s) return '';
+  const dk = mhDateKey(s);
+  if (!dk) return '';
+  const parts = dk.split('-');
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  const date = new Date(y, m - 1, d);
+  const daysTh = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+  const dayName = daysTh[date.getDay()];
+  return '📅 ' + dayName + ' ' + mhFmtDayShort(dk);
+}
+
+/** Format เวลา "14.30 น." จาก created_at — copy pattern จาก daily.html fmtLogTime */
+function mhFmtTime(ts) {
+  if (!ts) return '';
+  const s = String(ts);
+  const m = s.match(/(\d{2}):(\d{2})(?::\d{2})?(?!.*\d:\d)/);
+  if (m && s.indexOf('T') === -1 && s.indexOf('Z') === -1 && s.indexOf('+') === -1) {
+    return m[1] + '.' + m[2] + ' น.';
+  }
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return '';
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Bangkok', hour12: false,
+      hour: '2-digit', minute: '2-digit'
+    }).formatToParts(d);
+    const hh = parts.find(p => p.type === 'hour').value;
+    const mm = parts.find(p => p.type === 'minute').value;
+    return hh + '.' + mm + ' น.';
+  } catch (e) {
+    return '';
+  }
+}
+
+/** Summary label ช่วงวัน */
+function mhFmtRange() {
+  const f = matHistState.date_from;
+  const t = matHistState.date_to;
+  if (!f || !t) return '';
+  if (f === t) return mhFmtDayShort(f);
+  return mhFmtDayShort(f) + ' – ' + mhFmtDayShort(t);
+}
+
+/** Escape ป้องกัน XSS — alias ของ escapeAttr (ที่มีอยู่แล้วในไฟล์นี้) */
+function mhEsc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+  });
+}
 
 // START
 loadAll();
