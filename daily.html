@@ -16,7 +16,30 @@
 .dr-hdr-d { font-size:11px; opacity:0.85; margin-top:2px; }
 .dr-hdr-sub { font-size:10px; opacity:0.7; margin-top:1px; }
 .dr-hdr-back { background:rgba(255,255,255,0.15); color:#fff; border:none; padding:6px 12px; border-radius:99px; font-size:11px; font-weight:500; font-family:inherit; cursor:pointer; }
-.dr-hdr-btns { display:flex; gap:6px; flex-shrink:0; }
+.dr-hdr-btns { display:flex; gap:6px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+
+/* Reporter role chip in header */
+.dr-hdr-role { background:rgba(255,255,255,0.25); border:1px solid rgba(255,255,255,0.3); display:inline-flex; align-items:center; gap:4px; }
+.dr-hdr-role:hover { background:rgba(255,255,255,0.35); }
+.dr-hdr-role-i { font-size:10px; }
+
+/* Role badge in log */
+.dr-log-role { display:inline-flex; align-items:center; font-size:9.5px; font-weight:700; padding:1.5px 7px; border-radius:99px; letter-spacing:0.3px; margin-left:6px; vertical-align:middle; }
+.dr-role-pm { background:#DBEAFE; color:#1E40AF; }
+.dr-role-eng { background:#EDE9FE; color:#5B21B6; }
+.dr-role-fm { background:#D1FAE5; color:#065F46; }
+.dr-role-admin { background:#F3F4F6; color:#4B5563; }
+
+/* Role picker modal options */
+.dr-role-opts { display:flex; flex-direction:column; gap:8px; padding:4px 0 12px; }
+.dr-role-opt { display:flex; align-items:center; gap:10px; padding:12px 14px; background:#F9FAFB; border:1.5px solid #E5E7EB; border-radius:10px; cursor:pointer; font-family:inherit; text-align:left; transition:all .12s; }
+.dr-role-opt:hover { background:#EFF6FF; border-color:#1F3864; }
+.dr-role-opt.on { background:#EFF6FF; border-color:#1F3864; }
+.dr-role-opt-ic { font-size:22px; }
+.dr-role-opt-bd { flex:1; }
+.dr-role-opt-n { font-size:13px; font-weight:700; color:#1F2937; }
+.dr-role-opt-d { font-size:10.5px; color:#6B7280; margin-top:1px; }
+.dr-role-opt-check { color:#1F3864; font-size:18px; font-weight:700; }
 
 /* Report modal content */
 .dr-rep-meta { font-size:11px; color:#6B7280; margin-bottom:10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
@@ -355,6 +378,11 @@
           <div class="dr-hdr-sub" id="hdrSub">Bow House · บันทึกประจำวัน</div>
         </div>
         <div class="dr-hdr-btns">
+          <button class="dr-hdr-back dr-hdr-role" id="hdrRoleBtn" onclick="openRolePicker()" title="เลือกบทบาทผู้รายงาน">
+            <span class="dr-hdr-role-i" id="hdrRoleIcon">👷</span>
+            <span id="hdrRoleLabel">โฟร์แมน</span>
+            <span style="opacity:0.7;font-size:9px">▾</span>
+          </button>
           <button class="dr-hdr-back" onclick="openReportModal()">📄 รายงาน</button>
           <button class="dr-hdr-back" onclick="window.location.href='dashboard.html?project=bow-house'">← กลับ</button>
         </div>
@@ -493,6 +521,67 @@
 <script>
 if (!Auth.requireAuth('admin')) {}
 
+// ============================================================
+// REPORTER ROLE — บทบาทของผู้กรอก daily log (PM/Engineer/Foreman)
+// เก็บใน localStorage เพื่อจำข้ามวัน, เปลี่ยนได้ตลอดผ่านปุ่ม header
+// ============================================================
+const REPORTER_ROLES = {
+  PM:            { code:'PM',            label:'PM',          short:'PM',          icon:'👔', desc:'Project Manager — ผู้จัดการโครงการ',  cls:'dr-role-pm'  },
+  SITE_ENGINEER: { code:'SITE_ENGINEER', label:'วิศวกร',       short:'ENG',         icon:'🦺', desc:'Site Engineer — วิศวกรหน้างาน',         cls:'dr-role-eng' },
+  FOREMAN:       { code:'FOREMAN',       label:'โฟร์แมน',     short:'FOREMAN',     icon:'👷', desc:'Foreman — หัวหน้าช่าง/โฟร์แมนหน้างาน', cls:'dr-role-fm'  },
+};
+const REPORTER_ROLE_KEY = 'dstr_daily_reporter_role';
+
+function getReporterSource() {
+  const code = localStorage.getItem(REPORTER_ROLE_KEY);
+  return (code && REPORTER_ROLES[code]) ? code : 'FOREMAN';
+}
+function setReporterRole(code) {
+  if (!REPORTER_ROLES[code]) return;
+  localStorage.setItem(REPORTER_ROLE_KEY, code);
+  renderRoleHeader();
+}
+function renderRoleHeader() {
+  const r = REPORTER_ROLES[getReporterSource()];
+  const lblEl = document.getElementById('hdrRoleLabel');
+  const icEl = document.getElementById('hdrRoleIcon');
+  if (lblEl) lblEl.textContent = r.label;
+  if (icEl) icEl.textContent = r.icon;
+}
+function openRolePicker() {
+  const current = getReporterSource();
+  const opts = Object.values(REPORTER_ROLES).map(r => `
+    <button class="dr-role-opt ${r.code===current?'on':''}" onclick="pickRole('${r.code}')">
+      <div class="dr-role-opt-ic">${r.icon}</div>
+      <div class="dr-role-opt-bd">
+        <div class="dr-role-opt-n">${r.label}</div>
+        <div class="dr-role-opt-d">${r.desc}</div>
+      </div>
+      ${r.code===current?'<div class="dr-role-opt-check">✓</div>':''}
+    </button>
+  `).join('');
+  const html = `
+    <div class="modal-title">👤 เลือกบทบาทผู้รายงาน</div>
+    <div class="modal-desc">บทบาทจะถูกบันทึกกับทุก log ที่คุณกรอก — เปลี่ยนได้ตลอด</div>
+    <div class="dr-role-opts">${opts}</div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>
+    </div>
+  `;
+  Modal.show(html);
+}
+function pickRole(code) {
+  setReporterRole(code);
+  Modal.close();
+  const r = REPORTER_ROLES[code];
+  Modal.toast(`✓ เปลี่ยนบทบาทเป็น ${r.icon} ${r.label}`);
+}
+function roleBadgeHtml(source) {
+  const r = REPORTER_ROLES[source];
+  if (!r) return ''; // ไม่ใช่ role ที่รู้จัก (เช่น 'admin' หรือ 'system') → ไม่แสดง
+  return `<span class="dr-log-role ${r.cls}">${r.icon} ${r.short}</span>`;
+}
+
 const drState = {
   date: new Date().toISOString().slice(0, 10),
   logs: [],
@@ -536,6 +625,7 @@ async function loadAll() {
       refresh();
     };
     updateHeaderDate();
+    renderRoleHeader();
 
     // Use cached contractors + ffs + teams if available
     const cachedCtrs = localStorage.getItem('dstr_contractors');
@@ -769,6 +859,9 @@ function fmtLogTime(ts) {
 function renderLog(l) {
   const time = fmtLogTime(l.timestamp);
   const isAuto = l.type === 'auto';
+  // Role badge — แสดงเฉพาะ manual log ที่มี source = role ที่รู้จัก
+  // (auto logs ไม่ต้องโชว์ เพราะระบบเป็นคนสร้าง)
+  const roleBadge = !isAuto ? roleBadgeHtml(l.source) : '';
   const tagsHtml = [];
   (l.tags_ff || []).forEach(t => tagsHtml.push(`<span class="dr-log-tag dr-tag-ff">${t}</span>`));
   // ขั้น3: tags_team (cross-ref get_teams เพื่อโชว์ชื่อทีม)
@@ -801,7 +894,7 @@ function renderLog(l) {
       <div class="dr-log ${optState === 'pending' ? 'pending' : ''}${optState === 'failed' ? ' failed' : ''}">
         <div class="dr-log-time">${time}</div>
         <div class="dr-log-bd">
-          <div class="dr-log-txt">${escapeHtml(l.text)}</div>
+          <div class="dr-log-txt">${roleBadge}${escapeHtml(l.text)}</div>
           ${photoH}
           ${tagsHtml.length ? '<div class="dr-log-tags">' + tagsHtml.join('') + '</div>' : ''}
           ${retryBtn}
@@ -845,7 +938,7 @@ function renderLog(l) {
     <div class="dr-log ${isAuto?'auto':''}">
       <div class="dr-log-time">${time}</div>
       <div class="dr-log-bd">
-        <div class="dr-log-txt">${escapeHtml(l.text)}</div>
+        <div class="dr-log-txt">${roleBadge}${escapeHtml(l.text)}</div>
         ${photoHtml}
         ${linkedHtml}
         ${tagsHtml.length ? '<div class="dr-log-tags">' + tagsHtml.join('') + '</div>' : ''}
@@ -1380,7 +1473,7 @@ async function submitStructuredLog(text) {
 
   const payload = {
     text: text,
-    source: 'admin',
+    source: getReporterSource(),
     auto_tag: 'false',                 // ข้าม AI parse — ใช้ tags ที่เลือกตรง
     tags_ff: selFF,
     tags_team: selTeams.join(','),
@@ -1626,7 +1719,7 @@ async function confirmLog() {
     // Use callWrite (no-cors POST) for reliability — same as materials save
     const payload = {
       text: text,
-      source: 'admin',
+      source: getReporterSource(),
       auto_tag: 'false',
       tags_ff: tags_ff.join(','),
       tags_ctr: tags_ctr.join(','),
@@ -2391,7 +2484,7 @@ async function saveFallbackLog(text) {
   try {
     const res = await API.callWrite('add_activity_log', {
       text: text,
-      source: 'admin',
+      source: getReporterSource(),
       auto_tag: 'true',
       date: drState.date
     });
