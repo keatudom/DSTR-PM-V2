@@ -248,8 +248,10 @@ function renderActiveCard(proj, ffData) {
 function renderPendingCard(proj) {
   const value = parseFloat(proj.total_value) || 0;
   const days = parseInt(proj.total_days, 10) || 0;
+  const targetPage = role === 'admin' ? 'dashboard.html' : 'client.html';
+  const goUrl = targetPage + '?project=' + encodeURIComponent(proj.project_id);
   return `
-    <div class="proj-card" onclick="openFFWizardModal('${esc(proj.project_id)}', '${esc(proj.name)}')">
+    <div class="proj-card" onclick="window.location.href='${goUrl}'">
       <div class="proj-status-row">
         <div>
           <div class="proj-name">${esc(proj.name)}</div>
@@ -274,130 +276,8 @@ function renderPendingCard(proj) {
   `;
 }
 
-// ============================================================
-// Phase C-1: FF Onboarding Wizard
-// ============================================================
-
-function openFFWizardModal(projectId, projectName) {
-  const html = `
-    <div class="modal-title" style="text-align:left;font-size:17px;margin-bottom:4px">
-      เพิ่ม FF เข้าโครงการ
-    </div>
-    <div style="text-align:left;color:#6B7280;font-size:13px;margin-bottom:16px">
-      ${esc(projectName)}
-    </div>
-    <div class="pf-grp">
-      <label class="pf-lb">รายการ FF (1 บรรทัด = 1 FF)</label>
-      <textarea id="ffwTa" class="pf-in" rows="9"
-        style="font-family:'IBM Plex Mono',Consolas,monospace;font-size:12px;line-height:1.6"
-        placeholder="F-01 | Wardrobe ห้องนอน 1 | 50000
-F-02 | TV Console | 30000
-F-03 | โต๊ะ Built-in | 45000"></textarea>
-      <div style="font-size:11px;color:#6B7280;margin-top:6px;line-height:1.5">
-        รูปแบบ: <b>FF-Code <code>|</code> ชื่อ <code>|</code> ราคา</b><br>
-        ราคาเป็นบาท · ไม่ใส่ลูกน้ำ · ราคาไม่บังคับ (default 0)
-      </div>
-    </div>
-    <div id="ffwErr" class="pf-err" style="display:none;font-family:monospace;font-size:11px;line-height:1.6;max-height:120px;overflow-y:auto"></div>
-    <div class="modal-btns" style="margin-top:18px">
-      <button type="button" class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
-      <button type="button" id="ffwSubmit" class="modal-btn modal-btn-primary"
-        onclick="submitFFWizard('${esc(projectId)}', '${esc(projectName)}')">เพิ่ม FF</button>
-    </div>
-  `;
-  Modal.show(html, 'ff-wizard-modal');
-  setTimeout(() => {
-    const el = document.getElementById('ffwTa');
-    if (el) el.focus();
-  }, 100);
-}
-
-function parseFFList(text) {
-  const items = [];
-  const errors = [];
-  (text || '').split('\n').forEach((rawLine, idx) => {
-    const line = rawLine.trim();
-    if (!line) return;
-    const parts = line.split('|').map(s => s.trim());
-    const lnum = idx + 1;
-    if (parts.length < 2) {
-      errors.push('บรรทัด ' + lnum + ': ต้องมี Code | Name อย่างน้อย');
-      return;
-    }
-    const code = parts[0];
-    const name = parts[1];
-    const priceStr = parts[2] || '0';
-    const price = parseFloat(priceStr.replace(/[,\s฿]/g, '')) || 0;
-    if (!code) { errors.push('บรรทัด ' + lnum + ': FF Code ว่าง'); return; }
-    if (!name) { errors.push('บรรทัด ' + lnum + ': Name ว่าง'); return; }
-    items.push({ code, name, price });
-  });
-  return { items, errors };
-}
-
-function showFFWizardError(html) {
-  const el = document.getElementById('ffwErr');
-  if (!el) return;
-  el.innerHTML = html;
-  el.style.display = 'block';
-}
-
-async function submitFFWizard(projectId, projectName) {
-  const ta = document.getElementById('ffwTa');
-  const parsed = parseFFList(ta ? ta.value : '');
-  if (parsed.errors.length) {
-    showFFWizardError('❌ Parse errors:<br>' + parsed.errors.join('<br>'));
-    return;
-  }
-  if (!parsed.items.length) {
-    showFFWizardError('ต้องมี FF อย่างน้อย 1 รายการ');
-    return;
-  }
-
-  const btn = document.getElementById('ffwSubmit');
-  btn.disabled = true;
-  btn.textContent = 'กำลังเพิ่ม...';
-
-  try {
-    // ตั้ง state.projectId ชั่วคราว — _injectProjectId จะส่งให้ backend
-    // (projects.html state.projectId='bow-house' default → ต้อง override)
-    const savedPid = state.projectId;
-    state.projectId = projectId;
-
-    const res = await API.createFFBatch(parsed.items);
-
-    state.projectId = savedPid;  // restore
-
-    if (!res || !res.ok) {
-      showFFWizardError('❌ ' + ((res && res.error) || 'เพิ่มไม่สำเร็จ'));
-      btn.disabled = false;
-      btn.textContent = 'เพิ่ม FF';
-      return;
-    }
-
-    const d = res.data || {};
-    const ok = d.created_count || 0;
-    const fail = d.failed_count || 0;
-
-    if (fail > 0) {
-      const errs = (d.failed || []).map(f => '· ' + (f.code || 'unknown') + ': ' + f.error).join('<br>');
-      showFFWizardError('สำเร็จ ' + ok + ' / ล้มเหลว ' + fail + '<br>' + errs);
-      btn.disabled = false;
-      btn.textContent = 'เพิ่ม FF';
-      return;
-    }
-
-    Modal.close();
-    Modal.toast('เพิ่ม ' + ok + ' FF เข้า ' + projectName + ' สำเร็จ — กำลังเปิด Dashboard');
-    setTimeout(() => {
-      window.location.href = 'dashboard.html?project=' + encodeURIComponent(projectId);
-    }, 1200);
-  } catch (err) {
-    showFFWizardError('❌ ' + err.message);
-    btn.disabled = false;
-    btn.textContent = 'เพิ่ม FF';
-  }
-}
+// FF Wizard ย้ายไป dashboard.html — projects.html แค่ navigate ไปการ์ด
+// (ตามดีไซน์: รายละเอียดทุกอย่างเกี่ยวกับโครงการแก้จากใน dashboard ของโปรเจกต์นั้น)
 
 /**
  * เปิดฟอร์มสร้างโปรเจกต์ใหม่
