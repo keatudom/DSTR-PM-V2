@@ -7,8 +7,53 @@ const state = {
   zone: 'all',          // Zone filter
   openFFs: new Set(),   // FF ที่เปิดอยู่ใน Checklist
   weights: {},          // { ffCode: { ffWeight, phaseWeights } }
-  recentUncheck: {}     // Cache วันที่ Done ที่ถูก uncheck (5 นาที)
+  recentUncheck: {},    // Cache วันที่ Done ที่ถูก uncheck (5 นาที)
+  projectId: 'bow-house' // Phase B-3: project scope (อ่านจาก ?project= URL — default = legacy)
 };
+
+// ============================================================
+// Phase B-3: Project scoping
+// ============================================================
+// อ่าน ?project= จาก URL → set state.projectId
+// + rewrite ทุก link ที่ hardcode '?project=bow-house' เป็น project ปัจจุบัน
+// ทำงานทันทีตอน state.js โหลด (top-level) → api.js เรียกได้ทันที
+(function _initProjectScope() {
+  let pid = 'bow-house';
+  try {
+    if (typeof window !== 'undefined' && window.location) {
+      const url = new URL(window.location.href);
+      pid = url.searchParams.get('project') || 'bow-house';
+    }
+  } catch (e) { /* fallback bow-house */ }
+  state.projectId = pid;
+
+  // ไม่ใช่ bow-house → rewrite ทุก link ที่ hardcode bow-house เป็น project ปัจจุบัน
+  if (pid === 'bow-house') return;
+  if (typeof document === 'undefined') return;
+
+  function rewrite() {
+    const enc = encodeURIComponent(pid);
+    // <a href="...?project=bow-house...">
+    document.querySelectorAll('a[href]').forEach(a => {
+      const href = a.getAttribute('href');
+      if (!href) return;
+      if (href.indexOf('project=bow-house') === -1) return;
+      a.setAttribute('href', href.replace(/project=bow-house\b/g, 'project=' + enc));
+    });
+    // onclick="window.location.href='...?project=bow-house...'"
+    document.querySelectorAll('[onclick]').forEach(el => {
+      const oc = el.getAttribute('onclick');
+      if (!oc || oc.indexOf('project=bow-house') === -1) return;
+      el.setAttribute('onclick', oc.replace(/project=bow-house\b/g, 'project=' + enc));
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', rewrite);
+  } else {
+    rewrite();
+  }
+})();
 
 // ============================================================
 // WEIGHT CALCULATION ENGINE

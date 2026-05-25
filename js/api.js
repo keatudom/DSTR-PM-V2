@@ -13,12 +13,28 @@ const API = {
   // ============================================================
 
   /**
+   * Phase B-3: auto-inject project_id จาก state.projectId
+   * เรียกใน callRead/callWrite/callPost/callUpload
+   * - ถ้า caller ส่ง project_id มาแล้ว → ใช้ของ caller (assign_project_staff ฯลฯ)
+   * - ถ้าไม่ส่ง → ใช้ state.projectId (default 'bow-house' ถ้า state ไม่โหลด)
+   */
+  _injectProjectId: function(params) {
+    params = params || {};
+    if (params.project_id !== undefined && params.project_id !== null && params.project_id !== '') {
+      return params;
+    }
+    var pid = (typeof state !== 'undefined' && state.projectId) ? state.projectId : 'bow-house';
+    params.project_id = pid;
+    return params;
+  },
+
+  /**
    * อ่านข้อมูลด้วย JSONP (bypass CORS)
    * @param {string} action - ชื่อ action ที่ Apps Script รู้จัก
    * @param {object} params - query parameters
    */
   callRead(action, params) {
-    params = params || {};
+    params = this._injectProjectId(params);
     return new Promise(function(resolve, reject) {
       var cbName = 'jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
       var script = document.createElement('script');
@@ -64,6 +80,7 @@ const API = {
    * หมายเหตุ: no-cors mode = ไม่สามารถอ่าน response ได้ คืน {ok: true} เสมอ
    */
   callWrite: function(action, data) {
+    data = this._injectProjectId(data);
     return fetch(CONFIG.APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -86,6 +103,7 @@ const API = {
    *    fetch + redirect ของ Apps Script ทำให้ POST กลายเป็น GET → body หาย
    */
   callPost: function(action, data) {
+    data = this._injectProjectId(data);
     return fetch(CONFIG.APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -120,8 +138,9 @@ const API = {
    * @returns {Promise<object>} JSON response จาก backend
    */
   callUpload: function(action, data) {
+    var self = this;
     return new Promise(function(resolve, reject) {
-      data = data || {};
+      data = self._injectProjectId(data);
 
       var uid = 'up_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
       var iframe = document.createElement('iframe');
