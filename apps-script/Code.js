@@ -367,6 +367,7 @@ function route(action, p) {
     case 'get_projects': return getProjects_();
     case 'create_project': return createProject_(p);
     case '_phase_a_fix': return phaseAFix_();  // เก็บกวาดข้อมูล test smoke + seed bow-house (idempotent)
+    case '_phase_b1_migrate': return phaseB1Migrate_();  // schema: เพิ่ม project_id + backfill bow-house (idempotent)
 
     // 🪟 CLIENT VIEW — read-only routes with field whitelist
     // (role gate ใน _requireRole_ ด้านบน บังคับให้ p.role='client' หรือ 'admin')
