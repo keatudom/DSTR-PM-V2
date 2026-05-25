@@ -762,10 +762,25 @@ async function refreshProjectMeta() {
 }
 
 function _updateProjectHeaderUI() {
-  if (!project || !project.name) return;
+  if (!project) return;
   const nameEl = document.getElementById('projName');
-  if (nameEl) nameEl.textContent = project.name + ' · Dashboard';
-  document.title = project.name + ' · Admin Dashboard';
+  if (nameEl && project.name) nameEl.textContent = project.name + ' · Dashboard';
+  if (project.name) document.title = project.name + ' · Admin Dashboard';
+
+  // projSub = "ลูกค้า · QT-xxx" — ถ้าไม่มีข้อมูล (โครงการใหม่) ให้ซ่อน
+  const subEl = document.getElementById('projSub');
+  if (subEl) {
+    const parts = [];
+    if (project.client && String(project.client).trim()) parts.push(String(project.client).trim());
+    if (project.quoteNo && String(project.quoteNo).trim()) parts.push(String(project.quoteNo).trim());
+    if (parts.length) {
+      subEl.textContent = parts.join(' · ');
+      subEl.style.display = '';
+    } else {
+      subEl.textContent = '';
+      subEl.style.display = 'none';
+    }
+  }
 }
 
 // 🆕 Extended state
