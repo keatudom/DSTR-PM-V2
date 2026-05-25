@@ -110,35 +110,44 @@ async function loadProjects() {
   const grid = document.getElementById('projGrid');
   const countEl = document.getElementById('projCount');
 
-  // 1) ดึง project list
-  let projects = [];
+  // 1) MERGE: เริ่มจาก CONFIG.PROJECTS (legacy hardcode) → overlay ด้วย API
+  //    เหตุผล: bow-house ฯลฯ ที่ hardcode ไว้ ต้องไม่หายแม้ 00_Projects ยังไม่ seed
+  const byId = {};
+  Object.keys(CONFIG.PROJECTS).forEach(id => {
+    const p = CONFIG.PROJECTS[id];
+    byId[id] = {
+      project_id: id,
+      name: p.name,
+      client: p.client,
+      quote_no: p.quoteNo,
+      start_date: p.startDate,
+      end_date: p.endDate,
+      total_days: p.totalDays,
+      total_value: p.totalValue,
+      contractor: p.contractor,
+      status: p.status || 'active'
+    };
+  });
+
   try {
     const res = await API.getProjects();
-    if (res && res.ok && Array.isArray(res.data) && res.data.length) {
-      projects = res.data;
+    if (res && res.ok && Array.isArray(res.data)) {
+      // API ทับ CONFIG ที่ project_id เดียวกัน (API = source of truth ถ้ามี)
+      res.data.forEach(p => { byId[p.project_id] = p; });
     }
   } catch (e) {
-    console.warn('[projects] getProjects fail — fallback to CONFIG', e);
+    console.warn('[projects] getProjects fail — ใช้ CONFIG อย่างเดียว', e);
   }
 
-  if (projects.length === 0) {
-    // fallback: ใช้ CONFIG.PROJECTS (รูปแบบเก่า)
-    projects = Object.keys(CONFIG.PROJECTS).map(id => {
-      const p = CONFIG.PROJECTS[id];
-      return {
-        project_id: id,
-        name: p.name,
-        client: p.client,
-        quote_no: p.quoteNo,
-        start_date: p.startDate,
-        end_date: p.endDate,
-        total_days: p.totalDays,
-        total_value: p.totalValue,
-        contractor: p.contractor,
-        status: p.status || 'active'
-      };
-    });
-  }
+  // เรียง: bow-house (legacy active) ขึ้นก่อน → status active → created_at ใหม่→เก่า
+  const projects = Object.values(byId).sort((a, b) => {
+    if (a.project_id === 'bow-house') return -1;
+    if (b.project_id === 'bow-house') return 1;
+    const sa = (a.status || 'active') === 'active' ? 0 : 1;
+    const sb = (b.status || 'active') === 'active' ? 0 : 1;
+    if (sa !== sb) return sa - sb;
+    return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+  });
 
   // 2) โหลด FF data (เฉพาะที่ผูก sheet ปัจจุบัน — bow-house ในเฟส A)
   let ffData = null;
