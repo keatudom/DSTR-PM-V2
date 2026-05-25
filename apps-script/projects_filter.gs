@@ -1,9 +1,21 @@
 // ============================================================
-// projects_filter.gs — Phase B-2: Project-scoped read helper
+// projects_filter.gs — Phase B-2 (read filter) + B-4 (write stamp)
 // ============================================================
-// ใช้กรอง rows ตาม project_id — ถูกเรียกใน getFFList, getTasksAsObjects,
-// getMaterials, getTransactions, getBOQ ฯลฯ
+// READ: _filterByProject_(rows, projectId) — เรียกใน getFFList ฯลฯ
+// WRITE: _CURRENT_PROJECT_ID_ — ตั้งใน handle() แล้ว appendRow() auto-stamp
 // ============================================================
+
+// Phase B-4: เก็บ project_id ของ request ปัจจุบัน (ตั้งใน handle, ใช้ใน appendRow)
+// Apps Script เรียก script context ใหม่ทุก request → ปลอดภัยจาก race condition
+let _CURRENT_PROJECT_ID_ = null;
+
+function _setCurrentProjectId_(pid) {
+  _CURRENT_PROJECT_ID_ = (pid && String(pid).trim()) ? String(pid).trim() : null;
+}
+
+function _getCurrentProjectId_() {
+  return _CURRENT_PROJECT_ID_;
+}
 
 /**
  * กรอง rows ตาม project_id

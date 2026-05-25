@@ -124,6 +124,11 @@ function handle(e, method) {
       // form-urlencoded → ค่าอยู่ใน e.parameter อยู่แล้ว ไม่ต้อง parse
     }
     const payload = Object.assign({}, params, body);
+
+    // Phase B-4: stash project_id สำหรับ appendRow() auto-stamp
+    // ใช้ default 'bow-house' = legacy compat (เหมือน Phase B-2)
+    _setCurrentProjectId_(payload.project_id || 'bow-house');
+
     const data = route(payload.action || action, payload);
 
     // 🔄 Legacy actions ไม่ wrap ใน {ok,data} เพื่อ backward compat กับ Dashboard เก่า
@@ -418,6 +423,15 @@ function getAllRows(sheetName) {
 function appendRow(sheetName, obj) {
   const sh = getSheet(sheetName);
   const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+
+  // Phase B-4: auto-stamp project_id ถ้า sheet มี column นี้และ obj ยังไม่ได้ set
+  // (shared tables เช่น 09_Contractors ไม่มี column 'project_id' → skip)
+  const pid = _getCurrentProjectId_();
+  if (pid && headers.indexOf('project_id') !== -1 &&
+      (obj.project_id === undefined || obj.project_id === null || obj.project_id === '')) {
+    obj.project_id = pid;
+  }
+
   const row = headers.map(h => (h && obj[h] !== undefined ? obj[h] : ''));
   sh.appendRow(row);
   return obj;
