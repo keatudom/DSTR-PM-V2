@@ -123,32 +123,61 @@ function createProject_(p) {
 }
 
 /**
- * One-shot cleanup หลัง deploy Phase A:
- *  1. ลบ row test smoke (name='Test Smoke' หรือ project_id ขึ้นต้น 'prj_' ที่ name='Test Smoke')
- *  2. Seed bow-house ถ้ายังไม่มี
+ * One-shot cleanup หลัง deploy:
+ *  1. ลบ row test smoke ใน 00_Projects (name='Test Smoke' หรือ 'PhaseC-Test')
+ *  2. ลบ row F-TEST-* ใน 02_FF_Items
+ *  3. Seed bow-house ถ้ายังไม่มี
  * เรียกได้หลายครั้ง (idempotent) — ใช้ผ่าน endpoint '_phase_a_fix'
  */
 function phaseAFix_() {
-  const sh = getOrCreateProjectsSheet_();
-  const lastRow = sh.getLastRow();
-  let removed = 0;
+  const ss = SpreadsheetApp.openById(SHEETS_ID);
 
-  if (lastRow >= 2) {
-    // ลบจากล่างขึ้นบน (กัน index ขยับ)
-    const data = sh.getRange(2, 1, lastRow - 1, PROJECTS_HEADERS_.length).getValues();
+  // 1. Clean test rows ใน 00_Projects
+  const shProj = getOrCreateProjectsSheet_();
+  const lastRowProj = shProj.getLastRow();
+  let removedProj = 0;
+  const TEST_PROJECT_NAMES = ['Test Smoke', 'PhaseC-Test'];
+  if (lastRowProj >= 2) {
+    const data = shProj.getRange(2, 1, lastRowProj - 1, PROJECTS_HEADERS_.length).getValues();
     for (let i = data.length - 1; i >= 0; i--) {
       const name = String(data[i][1] || '').trim();
-      if (name === 'Test Smoke') {
-        sh.deleteRow(i + 2);
-        removed++;
+      if (TEST_PROJECT_NAMES.indexOf(name) !== -1) {
+        shProj.deleteRow(i + 2);
+        removedProj++;
       }
     }
   }
 
-  // Seed bow-house ถ้ายังไม่มี
+  // 2. Clean test rows ใน 02_FF_Items (FF Code ขึ้นต้น 'F-TEST-')
+  const shFF = ss.getSheetByName(SHEET.FF);
+  let removedFF = 0;
+  if (shFF) {
+    const lastRowFF = shFF.getLastRow();
+    if (lastRowFF >= 2) {
+      const lastCol = shFF.getLastColumn();
+      const headers = shFF.getRange(1, 1, 1, lastCol).getValues()[0];
+      const codeCol = headers.indexOf('FF Code');
+      if (codeCol !== -1) {
+        const data = shFF.getRange(2, 1, lastRowFF - 1, lastCol).getValues();
+        for (let i = data.length - 1; i >= 0; i--) {
+          const code = String(data[i][codeCol] || '').trim();
+          if (code.indexOf('F-TEST-') === 0) {
+            shFF.deleteRow(i + 2);
+            removedFF++;
+          }
+        }
+      }
+    }
+  }
+
+  // 3. Seed bow-house
   seedBowHouse_();
 
-  return { removed_test_rows: removed, seeded: 'bow-house' };
+  return {
+    removed_test_projects: removedProj,
+    removed_test_ffs: removedFF,
+    seeded: 'bow-house'
+  };
 }
 
 /**
