@@ -1889,7 +1889,7 @@ function skipUnknownCtr(idx) {
 
 function gotoAddMaterial(name) {
   // Open Materials page — user adds the material there
-  const url = 'materials.html?project=bow-house';
+  const url = 'materials.html?project=' + encodeURIComponent((typeof state !== 'undefined' && state.projectId) ? state.projectId : 'bow-house');
   window.open(url, '_blank');
   Modal.toast('เปิดหน้า Materials — เพิ่ม "' + name + '" ที่นั่น');
 }

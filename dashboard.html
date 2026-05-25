@@ -757,6 +757,15 @@ async function refreshProjectMeta() {
   } catch (e) {
     console.warn('[dashboard] refreshProjectMeta fail — ใช้ CONFIG fallback', e);
   }
+  // อัปเดต DOM ที่ hardcode 'Kun Beau House' ใน HTML ให้ตรงกับโปรเจกต์ปัจจุบัน
+  _updateProjectHeaderUI();
+}
+
+function _updateProjectHeaderUI() {
+  if (!project || !project.name) return;
+  const nameEl = document.getElementById('projName');
+  if (nameEl) nameEl.textContent = project.name + ' · Dashboard';
+  document.title = project.name + ' · Admin Dashboard';
 }
 
 // 🆕 Extended state
@@ -898,7 +907,7 @@ function renderAiAlertsBanner() {
     <div class="dash-ai-bnr-arr">→</div>
   `;
   bnr.style.display = 'flex';
-  bnr.onclick = () => window.location.href = 'materials.html?project=bow-house';
+  bnr.onclick = () => window.location.href = 'materials.html?project=' + encodeURIComponent(state.projectId);
 }
 
 // ============================================================

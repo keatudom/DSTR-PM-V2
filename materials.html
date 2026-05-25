@@ -1199,8 +1199,17 @@ async function loadAll() {
     matState.ffs = (ffsRes.ok && ffsRes.data) ? ffsRes.data : [];
     matState.alerts = (alertsRes.ok && alertsRes.data) ? alertsRes.data : [];
 
+    // Phase B-3: ดึงชื่อโปรเจกต์ตาม state.projectId (default 'Bow House' ถ้ายังไม่ได้ resolve)
+    let _projName = 'Bow House';
+    try {
+      const pjRes = await API.getProjects();
+      if (pjRes && pjRes.ok && Array.isArray(pjRes.data)) {
+        const p = pjRes.data.find(p => p.project_id === state.projectId);
+        if (p && p.name) _projName = p.name;
+      }
+    } catch (e) { /* keep default */ }
     document.getElementById('hdrSub').textContent =
-      `Bow House · ${matState.materials.length} รายการ`;
+      `${_projName} · ${matState.materials.length} รายการ`;
 
     renderAlerts();
     renderStock();

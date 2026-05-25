@@ -53,6 +53,36 @@ const state = {
   } else {
     rewrite();
   }
+
+  // Phase C-3: แทนที่ชื่อโปรเจกต์ที่ hardcode ('Kun Beau House' / 'Bow House')
+  // ในทุก HTML ของหน้าให้ตรงกับโปรเจกต์ปัจจุบัน — fetch จาก 00_Projects
+  function applyProjectName() {
+    if (typeof API === 'undefined' || !API.getProjects) return;
+    API.getProjects().then(res => {
+      if (!res || !res.ok || !Array.isArray(res.data)) return;
+      const proj = res.data.find(p => p.project_id === pid);
+      if (!proj || !proj.name) return;
+      const newName = String(proj.name);
+      const rxKun = /Kun Beau House/g;
+      const rxBow = /Bow House/g;
+      // page title
+      if (document.title) {
+        document.title = document.title.replace(rxKun, newName).replace(rxBow, newName);
+      }
+      // common header elements (id ที่หน้าต่างๆ ใช้)
+      ['projName', 'hdrSub', 'projTitle', 'loadingText'].forEach(elId => {
+        const el = document.getElementById(elId);
+        if (el && el.textContent) {
+          el.textContent = el.textContent.replace(rxKun, newName).replace(rxBow, newName);
+        }
+      });
+    }).catch(() => {});
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyProjectName);
+  } else {
+    applyProjectName();
+  }
 })();
 
 // ============================================================

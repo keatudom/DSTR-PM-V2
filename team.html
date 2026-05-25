@@ -192,7 +192,8 @@ const tmState = {
   paymentSlips: [],
   isAdmin: true,
   collapsed: {},
-  projectId: 'bow-house'   // hardcode ตอนนี้ (single-project)
+  // Phase B-3: อ่านจาก state.projectId (set โดย state.js IIFE จาก ?project= URL)
+  projectId: (typeof state !== 'undefined' && state.projectId) || 'bow-house'
 };
 
 // =========================
