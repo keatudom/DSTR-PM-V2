@@ -48,9 +48,42 @@ function createFF_(p) {
 }
 
 /**
- * เพิ่ม FF หลายรายการ — รายใดล้มเหลวจะรายงาน ไม่ break ตัวที่เหลือ
- * @param {object} p - { items: [ { code, name, price, ... }, ... ] }
+ * สร้าง task 1 รายการ — ใช้ภายใน batch
+ * @param {object} p - { ff_code (req), zone, phase (1-4), name (req) }
+ */
+function createTask_(p) {
+  p = p || {};
+  const ffCode = String(p.ff_code || '').trim();
+  const name = String(p.name || p.task_name || '').trim();
+  if (!ffCode) throw new Error('Task: FF Code ต้องไม่ว่าง');
+  if (!name) throw new Error('Task: ชื่อ task ต้องไม่ว่าง');
+
+  const phaseNum = parseInt(p.phase, 10);
+  const phaseStr = (phaseNum >= 1 && phaseNum <= 4) ? ('งวด ' + phaseNum) : '';
+
+  const id = generateId('T', SHEET.TASKS, 'Task ID');
+  const row = {
+    'Task ID':    id,
+    'FF Code':    ffCode,
+    'Zone':       String(p.zone || '').trim(),
+    'Phase':      phaseStr,
+    'Task Name':  name,
+    'Status':     'Not Started',
+    'Start Date': '',
+    'End Date':   '',
+    'Done Date':  '',
+    'Person In Charge': '',
+    'Notes':      '',
+  };
+  appendRow(SHEET.TASKS, row);  // Phase B-4 auto-stamps project_id
+  return row;
+}
+
+/**
+ * เพิ่ม FF หลายรายการ + tasks (optional ต่อ FF) — รายใดล้มเหลวจะรายงาน ไม่ break ตัวที่เหลือ
+ * @param {object} p - { items: [ { code, name, price, zone, tasks: [{ name, phase }] }, ... ] }
  *                     items อาจเป็น JSON string (จาก callRead) หรือ array จริง (จาก callPost)
+ *                     tasks ต่อ item เป็น optional
  */
 function createFFBatch_(p) {
   p = p || {};
@@ -65,11 +98,41 @@ function createFFBatch_(p) {
 
   const created = [];
   const failed = [];
+  let tasksCreated = 0;
+  const taskErrors = [];
 
   items.forEach((item, i) => {
+    item = item || {};
     try {
-      const r = createFF_(item || {});
-      created.push({ code: r['FF Code'], name: r['Item Name'] });
+      const ff = createFF_(item);
+      const ffCode = ff['FF Code'];
+      const zone = ff['Zone'];
+
+      // สร้าง tasks ของ FF นี้ (ถ้ามี) — error ใน task ไม่ rollback FF
+      let taskCountThisFF = 0;
+      if (Array.isArray(item.tasks)) {
+        item.tasks.forEach(t => {
+          if (!t || !t.name) return;
+          try {
+            createTask_({
+              ff_code: ffCode,
+              zone: zone,
+              phase: t.phase,
+              name: t.name
+            });
+            taskCountThisFF++;
+            tasksCreated++;
+          } catch (te) {
+            taskErrors.push({ ff_code: ffCode, task: t.name, error: te.message });
+          }
+        });
+      }
+
+      created.push({
+        code: ffCode,
+        name: ff['Item Name'],
+        tasks: taskCountThisFF
+      });
     } catch (err) {
       failed.push({
         index: i,
@@ -82,7 +145,9 @@ function createFFBatch_(p) {
   return {
     created_count: created.length,
     failed_count: failed.length,
+    tasks_created: tasksCreated,
     created: created,
-    failed: failed
+    failed: failed,
+    task_errors: taskErrors
   };
 }
