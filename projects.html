@@ -6,6 +6,24 @@
 <title>DSTR — เลือกโปรเจกต์</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/main.css">
+<style>
+  /* Create-project form (modal) */
+  .pf-grp { margin-bottom: 14px; }
+  .pf-lb { font-size: 11px; color: #4B5563; font-weight: 500; margin-bottom: 5px; display: block; }
+  .pf-in {
+    width: 100%; padding: 10px 12px; border: 1px solid #E5E7EB;
+    border-radius: 8px; font-size: 13px; font-family: inherit;
+    background: #fff; box-sizing: border-box; color: #1F2937;
+  }
+  .pf-in:focus { outline: none; border-color: #1F3864; box-shadow: 0 0 0 3px rgba(31,56,100,0.1); }
+  .pf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pf-err {
+    background: #FEE2E2; color: #991B1B; padding: 8px 12px;
+    border-radius: 6px; font-size: 12px; margin-top: 10px;
+  }
+  .proj-status.s-pending { background: #F3F4F6; color: #6B7280; }
+  .proj-tag.t-pending { background: #FEF3C7; color: #92400E; }
+</style>
 </head>
 <body>
 
@@ -31,8 +49,8 @@
   </div>
 
   <div class="section-head">
-    <span>กำลังดำเนินการ <span class="section-count">· 1 โปรเจกต์</span></span>
-    <button class="add-btn" id="addBtn" onclick="alert('เร็วๆนี้: เพิ่มโปรเจกต์ใหม่')">+ เปิดโปรเจกต์ใหม่</button>
+    <span>กำลังดำเนินการ <span class="section-count" id="projCount">· กำลังโหลด...</span></span>
+    <button class="add-btn" id="addBtn" onclick="openCreateProjectModal()">+ เปิดโปรเจกต์ใหม่</button>
   </div>
 
   <div class="proj-grid" id="projGrid">
@@ -48,6 +66,7 @@
 <script src="js/auth.js"></script>
 <script src="js/api.js"></script>
 <script src="js/state.js"></script>
+<script src="js/modal.js"></script>
 <script>
 // ตรวจสอบสิทธิ์
 if (!Auth.requireAuth()) {
@@ -55,6 +74,13 @@ if (!Auth.requireAuth()) {
 }
 
 const role = Auth.getRole();
+
+// helper
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 // อัปเดต User Bar
 function updateUserBar() {
@@ -74,75 +100,279 @@ function updateUserBar() {
   }
 }
 
-// โหลดข้อมูลและแสดงโปรเจกต์
+/**
+ * โหลดรายการโปรเจกต์ + render
+ * แหล่งข้อมูล:
+ *   1) API.getProjects() — source of truth (Phase A)
+ *   2) Fallback: CONFIG.PROJECTS (ใช้กรณี backend ยังไม่ deploy projects_patch.gs)
+ */
 async function loadProjects() {
+  const grid = document.getElementById('projGrid');
+  const countEl = document.getElementById('projCount');
+
+  // 1) ดึง project list
+  let projects = [];
+  try {
+    const res = await API.getProjects();
+    if (res && res.ok && Array.isArray(res.data) && res.data.length) {
+      projects = res.data;
+    }
+  } catch (e) {
+    console.warn('[projects] getProjects fail — fallback to CONFIG', e);
+  }
+
+  if (projects.length === 0) {
+    // fallback: ใช้ CONFIG.PROJECTS (รูปแบบเก่า)
+    projects = Object.keys(CONFIG.PROJECTS).map(id => {
+      const p = CONFIG.PROJECTS[id];
+      return {
+        project_id: id,
+        name: p.name,
+        client: p.client,
+        quote_no: p.quoteNo,
+        start_date: p.startDate,
+        end_date: p.endDate,
+        total_days: p.totalDays,
+        total_value: p.totalValue,
+        contractor: p.contractor,
+        status: p.status || 'active'
+      };
+    });
+  }
+
+  // 2) โหลด FF data (เฉพาะที่ผูก sheet ปัจจุบัน — bow-house ในเฟส A)
+  let ffData = null;
   try {
     const data = await API.fetchAll();
-    if (!data || !data.ffs) {
-      document.getElementById('projGrid').innerHTML = '<div class="loading">❌ โหลดข้อมูลไม่สำเร็จ</div>';
-      return;
+    if (data && data.ffs) {
+      state.data = data;
+      buildWeights();
+      ffData = data;
     }
+  } catch (e) {
+    console.warn('[projects] fetchAll fail', e);
+  }
 
-    state.data = data;
-    buildWeights();
+  // 3) Render
+  const activeCount = projects.filter(p => (p.status || 'active') === 'active').length;
+  countEl.textContent = '· ' + activeCount + ' โปรเจกต์';
 
-    const project = CONFIG.PROJECTS['bow-house'];
-    const actualPct = calcProjectProgress();
-    const planPct = calcPlanProgress(project);
-    const variance = calcVariance(actualPct, planPct);
-    const daysLeft = Math.max(0, daysBetween(new Date(), new Date(project.endDate)));
+  let html = '';
+  projects.forEach(proj => {
+    // bow-house ยังเป็นโปรเจกต์เดียวที่มี FF data (เฟส A ยังไม่ scope ตาม project_id)
+    if (proj.project_id === 'bow-house' && ffData) {
+      html += renderActiveCard(proj, ffData);
+    } else {
+      html += renderPendingCard(proj);
+    }
+  });
 
-    let statusClass = 'warn', statusText = '⚠ ใกล้ล่าช้า';
-    if (variance >= -5) { statusClass = 'onplan'; statusText = '● ตามแผน'; }
-    else if (variance < -15) { statusClass = 'warn'; statusText = '⚠ ล่าช้า'; }
-
-    const targetPage = role === 'admin' ? 'dashboard.html' : 'client.html';
-
-    let html = `
-      <div class="proj-card ${variance < -5 ? 'warn' : ''}" onclick="window.location.href='${targetPage}?project=bow-house'">
-        <div class="proj-status-row">
-          <div>
-            <div class="proj-name">${project.name}</div>
-            <div class="proj-client">${project.client} · ${project.quoteNo}</div>
-          </div>
-          <span class="proj-status s-${statusClass}">${statusText}</span>
-        </div>
-        <div class="proj-stats">
-          <div>
-            <div class="proj-stat-l">มูลค่าโครงการ</div>
-            <div class="proj-stat-v">${fmt(project.totalValue)} ฿</div>
-          </div>
-          <div>
-            <div class="proj-stat-l">วันเหลือ</div>
-            <div class="proj-stat-v">${daysLeft} / ${project.totalDays}</div>
-          </div>
-        </div>
-        <div class="prog-row">
-          <span class="prog-label">ความคืบหน้า</span>
-          <div class="prog-track"><div class="prog-fill" style="width:${actualPct}%;background:${actualPct >= planPct - 5 ? '#10B981' : '#F59E0B'}"></div></div>
-          <span class="prog-pct" style="color:${actualPct >= planPct - 5 ? '#0d6e4f' : '#BA7517'}">${actualPct}%</span>
-        </div>
-        <div class="proj-tags">
-          <span class="proj-tag">${state.data.ffs.length} FF</span>
-          <span class="proj-tag">4 Zone</span>
-        </div>
+  if (role === 'admin') {
+    html += `
+      <div class="proj-card empty" onclick="openCreateProjectModal()">
+        <div class="proj-empty-icon">+</div>
+        <div class="proj-empty-text">เปิดโปรเจกต์ใหม่</div>
+        <div class="proj-empty-sub">เพิ่มเข้ามาเมื่อมีลูกค้าใหม่</div>
       </div>
     `;
+  }
 
-    if (role === 'admin') {
-      html += `
-        <div class="proj-card empty" onclick="alert('เร็วๆนี้: เพิ่มโปรเจกต์ใหม่')">
-          <div class="proj-empty-icon">+</div>
-          <div class="proj-empty-text">เปิดโปรเจกต์ใหม่</div>
-          <div class="proj-empty-sub">เพิ่มเข้ามาเมื่อมีลูกค้าใหม่</div>
+  grid.innerHTML = html;
+}
+
+/**
+ * Card สำหรับโปรเจกต์ที่มี FF data — เหมือนของเดิม
+ */
+function renderActiveCard(proj, ffData) {
+  const cfg = CONFIG.PROJECTS[proj.project_id] || {
+    endDate: proj.end_date,
+    totalDays: proj.total_days,
+    name: proj.name
+  };
+  const actualPct = calcProjectProgress();
+  const planPct = calcPlanProgress(cfg);
+  const variance = calcVariance(actualPct, planPct);
+  const daysLeft = Math.max(0, daysBetween(new Date(), new Date(cfg.endDate)));
+
+  let statusClass = 'warn', statusText = '⚠ ใกล้ล่าช้า';
+  if (variance >= -5) { statusClass = 'onplan'; statusText = '● ตามแผน'; }
+  else if (variance < -15) { statusClass = 'warn'; statusText = '⚠ ล่าช้า'; }
+
+  const targetPage = role === 'admin' ? 'dashboard.html' : 'client.html';
+  const goUrl = targetPage + '?project=' + encodeURIComponent(proj.project_id);
+
+  return `
+    <div class="proj-card ${variance < -5 ? 'warn' : ''}" onclick="window.location.href='${goUrl}'">
+      <div class="proj-status-row">
+        <div>
+          <div class="proj-name">${esc(proj.name)}</div>
+          <div class="proj-client">${esc(proj.client)} · ${esc(proj.quote_no || cfg.quoteNo || '')}</div>
         </div>
-      `;
-    }
+        <span class="proj-status s-${statusClass}">${statusText}</span>
+      </div>
+      <div class="proj-stats">
+        <div>
+          <div class="proj-stat-l">มูลค่าโครงการ</div>
+          <div class="proj-stat-v">${fmt(proj.total_value || cfg.totalValue)} ฿</div>
+        </div>
+        <div>
+          <div class="proj-stat-l">วันเหลือ</div>
+          <div class="proj-stat-v">${daysLeft} / ${proj.total_days || cfg.totalDays}</div>
+        </div>
+      </div>
+      <div class="prog-row">
+        <span class="prog-label">ความคืบหน้า</span>
+        <div class="prog-track"><div class="prog-fill" style="width:${actualPct}%;background:${actualPct >= planPct - 5 ? '#10B981' : '#F59E0B'}"></div></div>
+        <span class="prog-pct" style="color:${actualPct >= planPct - 5 ? '#0d6e4f' : '#BA7517'}">${actualPct}%</span>
+      </div>
+      <div class="proj-tags">
+        <span class="proj-tag">${ffData.ffs.length} FF</span>
+        <span class="proj-tag">4 Zone</span>
+      </div>
+    </div>
+  `;
+}
 
-    document.getElementById('projGrid').innerHTML = html;
+/**
+ * Card สำหรับโปรเจกต์ใหม่ที่ยังไม่มี FF — แสดง metadata อย่างเดียว
+ */
+function renderPendingCard(proj) {
+  const value = parseFloat(proj.total_value) || 0;
+  const days = parseInt(proj.total_days, 10) || 0;
+  return `
+    <div class="proj-card" onclick="onPendingClick('${esc(proj.project_id)}')">
+      <div class="proj-status-row">
+        <div>
+          <div class="proj-name">${esc(proj.name)}</div>
+          <div class="proj-client">${esc(proj.client || '—')}${proj.quote_no ? ' · ' + esc(proj.quote_no) : ''}</div>
+        </div>
+        <span class="proj-status s-pending">⏳ ยังไม่เริ่ม</span>
+      </div>
+      <div class="proj-stats">
+        <div>
+          <div class="proj-stat-l">มูลค่าโครงการ</div>
+          <div class="proj-stat-v">${fmt(value)} ฿</div>
+        </div>
+        <div>
+          <div class="proj-stat-l">ระยะเวลา</div>
+          <div class="proj-stat-v">${days ? days + ' วัน' : '—'}</div>
+        </div>
+      </div>
+      <div class="proj-tags">
+        <span class="proj-tag t-pending">รอเพิ่ม FF</span>
+      </div>
+    </div>
+  `;
+}
+
+function onPendingClick(projectId) {
+  Modal.toast('โปรเจกต์นี้ยังไม่มี FF — จะเพิ่มได้ในเฟส C');
+}
+
+/**
+ * เปิดฟอร์มสร้างโปรเจกต์ใหม่
+ */
+function openCreateProjectModal() {
+  const today = new Date().toISOString().slice(0, 10);
+  const end = new Date(Date.now() + 120 * 86400000).toISOString().slice(0, 10);
+
+  const html = `
+    <div class="modal-title" style="text-align:left;font-size:17px;margin-bottom:16px">
+      เปิดโปรเจกต์ใหม่
+    </div>
+    <form id="pfForm" onsubmit="submitCreateProject(event)">
+      <div class="pf-grp">
+        <label class="pf-lb">ชื่อโครงการ <span style="color:#E24B4A">*</span></label>
+        <input id="pfName" class="pf-in" type="text" placeholder="เช่น Kun Beau House" required>
+      </div>
+      <div class="pf-grp">
+        <label class="pf-lb">ลูกค้า</label>
+        <input id="pfClient" class="pf-in" type="text" placeholder="ชื่อ-นามสกุล ลูกค้า">
+      </div>
+      <div class="pf-grp">
+        <label class="pf-lb">เลขที่ใบเสนอราคา</label>
+        <input id="pfQuote" class="pf-in" type="text" placeholder="เช่น QT-690400007">
+      </div>
+      <div class="pf-row">
+        <div class="pf-grp">
+          <label class="pf-lb">วันเริ่ม</label>
+          <input id="pfStart" class="pf-in" type="date" value="${today}">
+        </div>
+        <div class="pf-grp">
+          <label class="pf-lb">วันสิ้นสุด</label>
+          <input id="pfEnd" class="pf-in" type="date" value="${end}">
+        </div>
+      </div>
+      <div class="pf-grp">
+        <label class="pf-lb">มูลค่ารวม (บาท)</label>
+        <input id="pfValue" class="pf-in" type="number" min="0" placeholder="เช่น 1695000">
+      </div>
+      <div class="pf-grp">
+        <label class="pf-lb">ผู้รับเหมา</label>
+        <input id="pfContractor" class="pf-in" type="text" value="บริษัท ดีไซน์ ทีเรีย จำกัด">
+      </div>
+      <div id="pfErr" class="pf-err" style="display:none"></div>
+      <div class="modal-btns" style="margin-top:18px">
+        <button type="button" class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+        <button type="submit" id="pfSubmit" class="modal-btn modal-btn-primary">สร้างโปรเจกต์</button>
+      </div>
+    </form>
+  `;
+  Modal.show(html, 'create-project-modal');
+  setTimeout(() => {
+    const el = document.getElementById('pfName');
+    if (el) el.focus();
+  }, 100);
+}
+
+function showPfError(msg) {
+  const el = document.getElementById('pfErr');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function submitCreateProject(event) {
+  event.preventDefault();
+  const name = document.getElementById('pfName').value.trim();
+  if (!name) { showPfError('ต้องระบุชื่อโครงการ'); return; }
+
+  const start = document.getElementById('pfStart').value;
+  const end = document.getElementById('pfEnd').value;
+  if (start && end && start >= end) {
+    showPfError('วันสิ้นสุดต้องอยู่หลังวันเริ่ม');
+    return;
+  }
+
+  const btn = document.getElementById('pfSubmit');
+  btn.disabled = true;
+  btn.textContent = 'กำลังสร้าง...';
+
+  const data = {
+    name: name,
+    client: document.getElementById('pfClient').value.trim(),
+    quote_no: document.getElementById('pfQuote').value.trim(),
+    start_date: start,
+    end_date: end,
+    total_value: parseFloat(document.getElementById('pfValue').value) || 0,
+    contractor: document.getElementById('pfContractor').value.trim()
+  };
+
+  try {
+    const res = await API.createProject(data);
+    if (!res || !res.ok) {
+      showPfError((res && res.error) || 'สร้างโปรเจกต์ไม่สำเร็จ');
+      btn.disabled = false;
+      btn.textContent = 'สร้างโปรเจกต์';
+      return;
+    }
+    Modal.close();
+    Modal.toast('สร้างโปรเจกต์ "' + name + '" สำเร็จ');
+    await loadProjects();
   } catch (err) {
-    console.error(err);
-    document.getElementById('projGrid').innerHTML = '<div class="loading">❌ เกิดข้อผิดพลาด: ' + err.message + '</div>';
+    showPfError('เกิดข้อผิดพลาด: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'สร้างโปรเจกต์';
   }
 }
 

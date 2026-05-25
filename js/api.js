@@ -259,6 +259,30 @@ const API = {
   },
 
   // ============================================================
+  // 🏗️ PROJECTS (00_Projects — multi-project registry)
+  // ============================================================
+
+  /**
+   * ดึงรายการโปรเจกต์ทั้งหมด
+   * Returns: { ok:true, data:[{project_id, name, client, quote_no,
+   *           start_date, end_date, total_days, total_value,
+   *           contractor, status, sheets_id, created_at}] }
+   */
+  getProjects: function() {
+    return this.callRead('get_projects');
+  },
+
+  /**
+   * สร้างโปรเจกต์ใหม่
+   * ใช้ callRead (JSONP GET) เพื่ออ่าน response — บทเรียน callwrite-loses-post-body
+   * @param {object} data - { name (req), client, quote_no, start_date, end_date, total_value, contractor }
+   * Returns: { ok:true, project_id, project }
+   */
+  createProject: function(data) {
+    return this.callRead('create_project', data);
+  },
+
+  // ============================================================
   // 🏠 FF ITEMS
   // ============================================================
 
