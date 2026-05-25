@@ -301,6 +301,17 @@ const API = {
     return this.callRead('create_project', data);
   },
 
+  /**
+   * เพิ่ม FF หลายรายการในโปรเจกต์ (Phase C-1 wizard)
+   * ใช้ callPost — รับ array ผ่าน body (callRead URL อาจยาวเกิน)
+   * project_id ส่งอัตโนมัติจาก state.projectId ผ่าน _injectProjectId
+   * @param {Array} items - [ { code, name, price, area, zone, ... }, ... ]
+   * Returns: { ok:true, data:{ created_count, failed_count, created, failed } }
+   */
+  createFFBatch: function(items) {
+    return this.callPost('create_ff_batch', { items: items });
+  },
+
   // ============================================================
   // 🏠 FF ITEMS
   // ============================================================

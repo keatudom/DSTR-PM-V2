@@ -371,6 +371,8 @@ function route(action, p) {
     // 🏗️ PROJECTS — multi-project registry (Phase A) — ดู projects_patch.gs
     case 'get_projects': return getProjects_();
     case 'create_project': return createProject_(p);
+    case 'create_ff': return createFF_(p);              // Phase C-1 — wizard เพิ่ม FF 1 รายการ
+    case 'create_ff_batch': return createFFBatch_(p);   // Phase C-1 — wizard bulk add FF
     case '_phase_a_fix': return phaseAFix_();  // เก็บกวาดข้อมูล test smoke + seed bow-house (idempotent)
     case '_phase_b1_migrate': return phaseB1Migrate_();  // schema: เพิ่ม project_id + backfill bow-house (idempotent)
 

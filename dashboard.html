@@ -680,7 +680,37 @@ if (!Auth.requireAuth('admin')) {
   // จะถูก redirect
 }
 
-const project = CONFIG.PROJECTS['bow-house'];
+// Phase C: project metadata — initial fallback (sync), จะ overwrite ใน loadData ด้วยข้อมูลจาก API
+// state.projectId ถูก set โดย state.js (อ่าน ?project= URL)
+let project = CONFIG.PROJECTS[state.projectId] || CONFIG.PROJECTS['bow-house'] || {};
+
+/**
+ * โหลด metadata ของโปรเจกต์ปัจจุบันจาก 00_Projects (Phase A registry)
+ * แล้ว overwrite ตัวแปร project ที่ existing code ใช้อยู่
+ * Fallback: ใช้ CONFIG.PROJECTS เดิมถ้า API ล้มเหลว/ไม่เจอ
+ */
+async function refreshProjectMeta() {
+  try {
+    const res = await API.getProjects();
+    if (!res || !res.ok || !Array.isArray(res.data)) return;
+    const apiProj = res.data.find(p => p.project_id === state.projectId);
+    if (!apiProj) return;
+    // map API fields → frontend shape (existing code reads project.endDate ฯลฯ)
+    project = {
+      name: apiProj.name,
+      client: apiProj.client,
+      quoteNo: apiProj.quote_no,
+      startDate: apiProj.start_date,
+      endDate: apiProj.end_date,
+      totalDays: Number(apiProj.total_days) || 0,
+      totalValue: Number(apiProj.total_value) || 0,
+      contractor: apiProj.contractor,
+      status: apiProj.status
+    };
+  } catch (e) {
+    console.warn('[dashboard] refreshProjectMeta fail — ใช้ CONFIG fallback', e);
+  }
+}
 
 // 🆕 Extended state
 state.materials = [];
@@ -693,7 +723,11 @@ state.alerts = [];
 // ============================================================
 async function loadData() {
   try {
-    const data = await API.fetchAll();
+    // โหลด project metadata + ข้อมูลโปรเจกต์ parallel (project meta สำคัญสำหรับ header/KPI)
+    const [data, _] = await Promise.all([
+      API.fetchAll(),
+      refreshProjectMeta()
+    ]);
     if (!data || !data.ffs) {
       throw new Error('No data');
     }
