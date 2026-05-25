@@ -123,8 +123,37 @@ function createProject_(p) {
 }
 
 /**
+ * One-shot cleanup หลัง deploy Phase A:
+ *  1. ลบ row test smoke (name='Test Smoke' หรือ project_id ขึ้นต้น 'prj_' ที่ name='Test Smoke')
+ *  2. Seed bow-house ถ้ายังไม่มี
+ * เรียกได้หลายครั้ง (idempotent) — ใช้ผ่าน endpoint '_phase_a_fix'
+ */
+function phaseAFix_() {
+  const sh = getOrCreateProjectsSheet_();
+  const lastRow = sh.getLastRow();
+  let removed = 0;
+
+  if (lastRow >= 2) {
+    // ลบจากล่างขึ้นบน (กัน index ขยับ)
+    const data = sh.getRange(2, 1, lastRow - 1, PROJECTS_HEADERS_.length).getValues();
+    for (let i = data.length - 1; i >= 0; i--) {
+      const name = String(data[i][1] || '').trim();
+      if (name === 'Test Smoke') {
+        sh.deleteRow(i + 2);
+        removed++;
+      }
+    }
+  }
+
+  // Seed bow-house ถ้ายังไม่มี
+  seedBowHouse_();
+
+  return { removed_test_rows: removed, seeded: 'bow-house' };
+}
+
+/**
  * (Optional) seed โปรเจกต์ bow-house ที่ hardcode ใน frontend
- * รันครั้งเดียวจาก Apps Script editor — ไม่ผูกกับ HTTP endpoint
+ * Idempotent — ถ้ามี bow-house แล้วจะข้าม
  */
 function seedBowHouse_() {
   const sh = getOrCreateProjectsSheet_();
