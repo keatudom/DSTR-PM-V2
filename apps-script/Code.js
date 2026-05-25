@@ -265,14 +265,14 @@ function route(action, p) {
 
     case 'ping': return { pong: true, time: new Date().toISOString() };
 
-    case 'getAll': return getAll();
+    case 'getAll': return getAll(p.project_id || 'bow-house');
     case 'updateTask': return updateTask(p);
     case 'updatePayment': return updatePayment(p);
 
     case 'login': return login(p.password);
 
-    case 'get_ff_list': return getFFList();
-    case 'get_tasks': return getTasksAsObjects(p.ff_code);
+    case 'get_ff_list': return getFFList(p.project_id || 'bow-house');
+    case 'get_tasks': return getTasksAsObjects(p.ff_code, p.project_id || 'bow-house');
 
     case 'get_contractors': return getContractors(p.role);
     case 'create_contractor': return createContractor(p);
@@ -300,14 +300,14 @@ function route(action, p) {
     case 'get_suppliers': return getAllRows(SHEET.SUPPLIERS);
     case 'create_supplier': return createSupplier(p);
 
-    case 'get_materials': return getMaterials(p.mode, p.category);
+    case 'get_materials': return getMaterials(p.mode, p.category, p.project_id || 'bow-house');
     case 'get_material': return getMaterial(p.mat_id);
     case 'create_material': return createMaterial(p);
     case 'update_material': return updateMaterial(p);
     case 'deactivate_material': return deactivateMaterial(p);
     case 'delete_material': return deleteMaterial(p);
 
-    case 'get_transactions': return getTransactions(p.mat_id, p.type, p.ff_code);
+    case 'get_transactions': return getTransactions(p.mat_id, p.type, p.ff_code, p.project_id || 'bow-house');
     case 'receive_material': return receiveMaterial(p);
     case 'withdraw_material': return withdrawMaterial(p);
     case 'count_material': return countMaterial(p);
@@ -316,13 +316,13 @@ function route(action, p) {
     case 'confirm_material_log': return confirmMaterialLog(p.items);
     case 'check_stock_for_items': return checkStockForItems(p);
 
-    case 'get_boq': return getBOQ(p.ff_code);
+    case 'get_boq': return getBOQ(p.ff_code, p.project_id || 'bow-house');
     case 'create_boq': return createBOQ(p);
     case 'check_boq_status': return checkBoqStatus(p.ff_code);
 
     case 'get_ai_alerts': return getAiAlerts();
 
-    case 'get_daily_reports': return getAllRows(SHEET.DAILY);
+    case 'get_daily_reports': return _filterByProject_(getAllRows(SHEET.DAILY), p.project_id || 'bow-house');
     case 'get_daily_report': return getDailyReport(p);
     case 'create_daily': return createDaily(p);
     case 'auto_detect_daily': return autoDetectDaily(p);
@@ -513,19 +513,19 @@ function todayStr() {
  * รวมข้อมูลทุก sheet สำหรับ Dashboard เก่า
  * Map field names ให้ตรงกับที่ Dashboard ใช้ (camelCase)
  */
-function getAll() {
+function getAll(projectId) {
   return {
-    ffs: getFFList(),
-    tasks: getTasksAsObjects(),
-    payments: getPaymentsAsObjects(),
-    risks: getRisksAsObjects(),
-    contractors: getContractors(),
-    materials: getMaterials(),
+    ffs: getFFList(projectId),
+    tasks: getTasksAsObjects(null, projectId),
+    payments: getPaymentsAsObjects(projectId),
+    risks: getRisksAsObjects(projectId),
+    contractors: getContractors(),  // shared resource — ไม่กรอง
+    materials: getMaterials(null, null, projectId),
   };
 }
 
-function getFFList() {
-  const rows = getAllRows(SHEET.FF);
+function getFFList(projectId) {
+  const rows = _filterByProject_(getAllRows(SHEET.FF), projectId);
   return rows.map(r => ({
     code: r['FF Code'] || '',
     bfCode: r['BF Code'] || '',
@@ -540,8 +540,8 @@ function getFFList() {
   }));
 }
 
-function getTasksAsObjects(ffCode) {
-  const rows = getAllRows(SHEET.TASKS);
+function getTasksAsObjects(ffCode, projectId) {
+  const rows = _filterByProject_(getAllRows(SHEET.TASKS), projectId);
 
   // 📷 อ่าน 13_Task_Photos ครั้งเดียว → map {task_id: count} กัน N+1
   // ถ้า sheet ยังไม่มี/ว่าง ต้องไม่ throw (default count = 0)
@@ -582,8 +582,8 @@ function getTasksAsObjects(ffCode) {
   return ffCode ? mapped.filter(t => t.ffCode === ffCode) : mapped;
 }
 
-function getPaymentsAsObjects() {
-  const rows = getAllRows(SHEET.PAYMENTS);
+function getPaymentsAsObjects(projectId) {
+  const rows = _filterByProject_(getAllRows(SHEET.PAYMENTS), projectId);
   return rows
     .filter(r => {
       // กรอง summary rows (GRAND TOTAL, PAID, REMAINING) ออก
@@ -620,8 +620,8 @@ function getPaymentsAsObjects() {
     });
 }
 
-function getRisksAsObjects() {
-  const rows = getAllRows(SHEET.RISKS);
+function getRisksAsObjects(projectId) {
+  const rows = _filterByProject_(getAllRows(SHEET.RISKS), projectId);
   return rows.map(r => ({
     id: r['Risk ID'] || '',
     cat: r['Category'] || '',
@@ -750,9 +750,9 @@ function createSupplier(p) {
 // ============================================================
 // 📦 MATERIALS
 // ============================================================
-function getMaterials(mode, category) {
+function getMaterials(mode, category, projectId) {
   ensureMaterialColumns_();  // M2: การันตี header มี spec/size (idempotent)
-  let rows = getAllRows(SHEET.MATERIALS).filter(m =>
+  let rows = _filterByProject_(getAllRows(SHEET.MATERIALS), projectId).filter(m =>
     m.active === true || m.active === 'TRUE' || m.active === 'true');
   if (mode) rows = rows.filter(m => m.tracking_mode === mode);
   if (category) rows = rows.filter(m => m.category === category);
@@ -839,8 +839,8 @@ function deleteMaterial(p) {
 // ============================================================
 // 💰 MATERIAL TRANSACTIONS
 // ============================================================
-function getTransactions(mat_id, type, ff_code) {
-  let rows = getAllRows(SHEET.TRANSACTIONS);
+function getTransactions(mat_id, type, ff_code, projectId) {
+  let rows = _filterByProject_(getAllRows(SHEET.TRANSACTIONS), projectId);
   if (mat_id)  rows = rows.filter(t => t.material_id === mat_id);
   if (type)    rows = rows.filter(t => t.type === type);
   if (ff_code) rows = rows.filter(t => t.ff_code === ff_code);
@@ -1182,8 +1182,8 @@ function confirmMaterialLog(itemsJson) {
 // ============================================================
 // 📋 BOQ
 // ============================================================
-function getBOQ(ff_code) {
-  const rows = getAllRows(SHEET.BOQ);
+function getBOQ(ff_code, projectId) {
+  const rows = _filterByProject_(getAllRows(SHEET.BOQ), projectId);
   return ff_code ? rows.filter(b => b.ff_code === ff_code) : rows;
 }
 
