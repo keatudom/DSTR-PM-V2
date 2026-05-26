@@ -312,6 +312,23 @@ const API = {
     return this.callPost('create_ff_batch', { items: items });
   },
 
+  /**
+   * Phase D-1 — แก้ไข FF (Edit)
+   * ใช้ callRead เพื่ออ่าน response ตามบทเรียน callwrite-loses-post-body
+   * @param {object} data - { code (req), name?, zone?, price?, ... }
+   */
+  updateFF: function(data) {
+    return this.callRead('update_ff', data);
+  },
+
+  /**
+   * Phase D-1 — ลบ FF + tasks (cascade)
+   * @param {string} code - FF Code
+   */
+  deleteFF: function(code) {
+    return this.callRead('delete_ff', { code: code });
+  },
+
   // ============================================================
   // 🏠 FF ITEMS
   // ============================================================

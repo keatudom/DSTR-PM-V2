@@ -373,6 +373,8 @@ function route(action, p) {
     case 'create_project': return createProject_(p);
     case 'create_ff': return createFF_(p);              // Phase C-1 — wizard เพิ่ม FF 1 รายการ
     case 'create_ff_batch': return createFFBatch_(p);   // Phase C-1 — wizard bulk add FF
+    case 'update_ff': return updateFF_(p);              // Phase D-1 — edit FF
+    case 'delete_ff': return deleteFF_(p);              // Phase D-1 — delete FF + cascade tasks
     case '_phase_a_fix': return phaseAFix_();  // เก็บกวาดข้อมูล test smoke + seed bow-house (idempotent)
     case '_phase_b1_migrate': return phaseB1Migrate_();  // schema: เพิ่ม project_id + backfill bow-house (idempotent)
 

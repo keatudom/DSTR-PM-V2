@@ -554,6 +554,13 @@
   font-family: 'IBM Plex Mono', monospace; line-height: 1.6;
   max-height: 100px; overflow-y: auto;
 }
+/* Phase D-1: edit/delete icons in FF list row */
+.wp-edit, .wp-del {
+  font-size: 13px; padding: 2px 4px; cursor: pointer;
+  opacity: 0.55; transition: opacity 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+.wp-edit:hover, .wp-del:hover { opacity: 1; transform: scale(1.15); }
 </style>
 </head>
 <body>
@@ -1090,6 +1097,8 @@ function renderWeightList() {
       <div class="wp-prog"><div class="wp-prog-fill" style="width:${prog.pct}%;background:${color}"></div></div>
       <span class="wp-pct ${pctClass}">${prog.pct}%</span>
       <span class="wp-arrow" title="ดูรายละเอียด" onclick="event.stopPropagation();openFFDetail('${ff.code}')">→</span>
+      <span class="wp-edit" title="แก้ไข FF" onclick="event.stopPropagation();FFW.openEdit('${ff.code}')">✏️</span>
+      <span class="wp-del" title="ลบ FF + tasks" onclick="event.stopPropagation();FFW.confirmDelete('${ff.code}')">🗑️</span>
       <span class="wp-chev">▾</span>
     </div>`;
 
@@ -2420,6 +2429,129 @@ const FFW = {
 function openFFWizardModal(projectId, projectName) {
   return FFW.open(projectId, projectName);
 }
+
+// ============================================================
+// Phase D-1: Edit / Delete FF (จากใน FF list row)
+// ============================================================
+
+FFW.openEdit = function(ffCode) {
+  // หา FF จาก state.data
+  const ff = state.data && state.data.ffs && state.data.ffs.find(f => f.code === ffCode);
+  if (!ff) {
+    Modal.toast('ไม่พบ FF: ' + ffCode);
+    return;
+  }
+
+  const html = `
+    <div class="modal-title" style="text-align:left;font-size:17px;margin-bottom:4px">
+      แก้ไข FF
+    </div>
+    <div style="text-align:left;color:#6B7280;font-size:13px;margin-bottom:16px">
+      <code style="background:#E6F1FB;color:#0C447C;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${FFW._esc(ff.code)}</code>
+      <span style="font-size:11px;color:#9CA3AF;margin-left:8px">(เปลี่ยน code ไม่ได้ — ลบแล้วสร้างใหม่ถ้าจำเป็น)</span>
+    </div>
+    <div class="ffw-row">
+      <div>
+        <label class="ffw-lb">Zone</label>
+        <select id="ffeZone" class="ffw-input">
+          ${FFW._zoneOptions(ff.zone)}
+        </select>
+      </div>
+      <div>
+        <label class="ffw-lb">ราคา (บาท)</label>
+        <input id="ffePrice" class="ffw-input" type="number" min="0" value="${ff.price || 0}">
+      </div>
+    </div>
+    <div class="ffw-row">
+      <div style="grid-column:1 / span 2">
+        <label class="ffw-lb">ชื่อ FF</label>
+        <input id="ffeName" class="ffw-input" type="text" value="${FFW._esc(ff.name)}">
+      </div>
+    </div>
+    <div id="ffeErr" class="ffw-err" style="display:none"></div>
+    <div class="modal-btns" style="margin-top:18px">
+      <button type="button" class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button type="button" id="ffeSubmit" class="modal-btn modal-btn-primary"
+        onclick="FFW.submitEdit('${FFW._esc(ff.code)}')">บันทึก</button>
+    </div>
+  `;
+  Modal.show(html, 'ffw-modal');
+  setTimeout(() => {
+    const el = document.getElementById('ffeName');
+    if (el) el.focus();
+  }, 100);
+};
+
+FFW.submitEdit = async function(ffCode) {
+  const name = document.getElementById('ffeName').value.trim();
+  if (!name) {
+    const err = document.getElementById('ffeErr');
+    err.textContent = 'ชื่อ FF ต้องไม่ว่าง';
+    err.style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('ffeSubmit');
+  btn.disabled = true;
+  btn.textContent = 'กำลังบันทึก...';
+
+  try {
+    const res = await API.updateFF({
+      code: ffCode,
+      name: name,
+      zone: document.getElementById('ffeZone').value,
+      price: parseFloat(document.getElementById('ffePrice').value) || 0
+    });
+    if (!res || !res.ok) {
+      const err = document.getElementById('ffeErr');
+      err.textContent = '❌ ' + ((res && res.error) || 'แก้ไขไม่สำเร็จ');
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'บันทึก';
+      return;
+    }
+    Modal.close();
+    Modal.toast('แก้ไข ' + ffCode + ' สำเร็จ');
+    setTimeout(() => loadData(), 400);
+  } catch (e) {
+    const err = document.getElementById('ffeErr');
+    err.textContent = '❌ ' + e.message;
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'บันทึก';
+  }
+};
+
+FFW.confirmDelete = async function(ffCode) {
+  const ff = state.data && state.data.ffs && state.data.ffs.find(f => f.code === ffCode);
+  const taskCount = state.data && state.data.tasks
+    ? state.data.tasks.filter(t => t.ffCode === ffCode).length : 0;
+
+  const ok = await Modal.confirm({
+    icon: '🗑️',
+    iconClass: 'warn',
+    title: 'ลบ FF: ' + ffCode + '?',
+    desc: (ff ? ff.name + ' — ' : '') + 'จะลบ task ที่ผูกอยู่ทั้งหมด ' + taskCount + ' รายการด้วย',
+    info: 'การลบนี้ย้อนกลับไม่ได้ — ข้อมูล stock/รูปอื่นไม่ถูกแตะ',
+    confirmText: 'ลบ FF + ' + taskCount + ' tasks',
+    cancelText: 'ยกเลิก',
+    confirmClass: 'modal-btn-warn'
+  });
+  if (!ok) return;
+
+  try {
+    const res = await API.deleteFF(ffCode);
+    if (!res || !res.ok) {
+      Modal.toast('❌ ลบไม่สำเร็จ: ' + ((res && res.error) || 'unknown'));
+      return;
+    }
+    const d = res.data || {};
+    Modal.toast('ลบ ' + ffCode + ' สำเร็จ' + (d.tasks_deleted ? ' (+ ' + d.tasks_deleted + ' tasks)' : ''));
+    setTimeout(() => loadData(), 400);
+  } catch (e) {
+    Modal.toast('❌ ' + e.message);
+  }
+};
 
 // START
 loadData();

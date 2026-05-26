@@ -47,6 +47,130 @@ function createFF_(p) {
   return row;
 }
 
+// ============================================================
+// Phase D-1: Edit/Delete FF
+// ============================================================
+
+/**
+ * helper: หา row index (1-based, รวม header) ใน sheet ที่ตรง FF Code + project scope
+ * @returns {number} row index หรือ -1 ถ้าไม่พบ
+ */
+function _findFFRowIndex_(sh, code, pid) {
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return -1;
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const codeCol = headers.indexOf('FF Code');
+  const pidCol = headers.indexOf('project_id');
+  if (codeCol === -1) return -1;
+  const data = sh.getRange(2, 1, lastRow - 1, sh.getLastColumn()).getValues();
+  for (let i = 0; i < data.length; i++) {
+    const c = String(data[i][codeCol] || '').trim();
+    if (c !== code) continue;
+    if (pidCol !== -1) {
+      const rpid = String(data[i][pidCol] || '').trim();
+      if (rpid !== pid && !(pid === 'bow-house' && rpid === '')) continue;
+    }
+    return i + 2;  // 1-based + skip header
+  }
+  return -1;
+}
+
+/**
+ * แก้ไข FF — ค้นหาด้วย FF Code + project_id (scope)
+ * ไม่อนุญาต rename code (cascade ซับซ้อน — ดอง phase ต่อไป)
+ * @param {object} p - { code (req), name?, zone?, price?, bf_code?, area?, scope_type?, status?, risk_level?, notes? }
+ */
+function updateFF_(p) {
+  p = p || {};
+  const code = String(p.code || '').trim();
+  if (!code) throw new Error('FF Code ต้องระบุ');
+
+  const pid = _getCurrentProjectId_() || 'bow-house';
+  const ss = SpreadsheetApp.openById(SHEETS_ID);
+  const sh = ss.getSheetByName(SHEET.FF);
+  if (!sh) throw new Error('Sheet not found: ' + SHEET.FF);
+
+  const rowIdx = _findFFRowIndex_(sh, code, pid);
+  if (rowIdx === -1) throw new Error('ไม่พบ FF ในโปรเจกต์: ' + code);
+
+  // map ฟิลด์ที่อนุญาตแก้
+  const fieldMap = {
+    name: 'Item Name',
+    item_name: 'Item Name',
+    zone: 'Zone',
+    price: 'Price (THB)',
+    bf_code: 'BF Code',
+    area: 'Area / Room',
+    scope_type: 'Scope Type',
+    status: 'Status',
+    risk_level: 'Risk Level',
+    notes: 'Notes'
+  };
+  const updates = {};
+  Object.keys(fieldMap).forEach(k => {
+    if (p[k] === undefined || p[k] === null) return;
+    let val = p[k];
+    if (k === 'price') val = parseFloat(val) || 0;
+    else val = String(val).trim();
+    updates[fieldMap[k]] = val;
+  });
+  if (Object.keys(updates).length === 0) {
+    throw new Error('ไม่มี field ใหม่ที่จะอัปเดต');
+  }
+
+  // เขียนกลับ — ใช้ existing helper updateRowByCol
+  updateRowByCol(SHEET.FF, 'FF Code', code, updates);
+
+  return { code: code, updated_fields: Object.keys(updates) };
+}
+
+/**
+ * ลบ FF + ลบ tasks ที่ผูกกับ FF นั้น (cascade) — scope ตาม project_id
+ * @param {object} p - { code (req) }
+ */
+function deleteFF_(p) {
+  p = p || {};
+  const code = String(p.code || '').trim();
+  if (!code) throw new Error('FF Code ต้องระบุ');
+
+  const pid = _getCurrentProjectId_() || 'bow-house';
+  const ss = SpreadsheetApp.openById(SHEETS_ID);
+
+  // ลบ tasks ก่อน (cascade) — เดินจากล่างขึ้นบนกัน index ขยับ
+  let tasksDeleted = 0;
+  const shTasks = ss.getSheetByName(SHEET.TASKS);
+  if (shTasks) {
+    const lastRow = shTasks.getLastRow();
+    if (lastRow >= 2) {
+      const headers = shTasks.getRange(1, 1, 1, shTasks.getLastColumn()).getValues()[0];
+      const codeCol = headers.indexOf('FF Code');
+      const pidCol = headers.indexOf('project_id');
+      if (codeCol !== -1) {
+        const data = shTasks.getRange(2, 1, lastRow - 1, shTasks.getLastColumn()).getValues();
+        for (let i = data.length - 1; i >= 0; i--) {
+          const c = String(data[i][codeCol] || '').trim();
+          if (c !== code) continue;
+          if (pidCol !== -1) {
+            const rpid = String(data[i][pidCol] || '').trim();
+            if (rpid !== pid && !(pid === 'bow-house' && rpid === '')) continue;
+          }
+          shTasks.deleteRow(i + 2);
+          tasksDeleted++;
+        }
+      }
+    }
+  }
+
+  // ลบ FF row
+  const shFF = ss.getSheetByName(SHEET.FF);
+  if (!shFF) throw new Error('Sheet not found: ' + SHEET.FF);
+  const ffRowIdx = _findFFRowIndex_(shFF, code, pid);
+  if (ffRowIdx === -1) throw new Error('ไม่พบ FF ที่จะลบ: ' + code);
+  shFF.deleteRow(ffRowIdx);
+
+  return { code: code, ff_deleted: 1, tasks_deleted: tasksDeleted };
+}
+
 /**
  * สร้าง task 1 รายการ — ใช้ภายใน batch
  * @param {object} p - { ff_code (req), zone, phase (1-4), name (req) }
