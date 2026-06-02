@@ -312,22 +312,30 @@
 .grade-D{background:#EA580C}
 .grade-F{background:#DC2626}
 .ev-total{font-size:11px;color:#6B7280;font-weight:600}
-/* Eval modal form */
-.ev-form{display:flex;flex-direction:column;gap:10px;text-align:left;max-height:62vh;overflow-y:auto;padding-right:4px}
-.ev-kpi-sec{border:1px solid #E5E7EB;border-radius:8px;overflow:hidden}
-.ev-kpi-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;background:#F3F4F6;cursor:pointer}
-.ev-kpi-hd-l{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#1F2937}
-.ev-kpi-wt{font-size:9px;font-weight:600;color:#6B7280;background:#fff;padding:2px 7px;border-radius:99px}
-.ev-kpi-avg{font-size:11px;font-weight:700;color:#1F3864;min-width:34px;text-align:right}
-.ev-kpi-body{padding:6px 11px 10px;display:none;flex-direction:column;gap:6px}
-.ev-kpi-body.open{display:flex}
-.ev-sub-row{display:grid;grid-template-columns:1fr 64px;gap:8px;align-items:center}
-.ev-sub-name{font-size:11px;color:#374151}
-.ev-sub-name small{display:block;color:#9CA3AF;font-size:9px}
-.ev-sub-row select{padding:6px;border:1px solid #D1D5DB;border-radius:6px;font-size:12px}
-.ev-total-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid #E5E7EB;padding:10px 2px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+/* Eval modal form — ให้คะแนน 8 หมวดด้วยปุ่มตัวเลข 1-10 */
+.ev-form{display:flex;flex-direction:column;gap:8px;text-align:left;max-height:60vh;overflow-y:auto;padding-right:4px}
+.ev-form-hint{font-size:11px;color:#6B7280;background:#F0F7FF;border:1px solid #DBEAFE;border-radius:8px;padding:8px 11px;line-height:1.5}
+.ev-kpi-row{padding:11px 0;border-bottom:1px solid #F3F4F6}
+.ev-kpi-row:last-of-type{border-bottom:none}
+.ev-kpi-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.ev-kpi-name{font-size:13px;font-weight:700;color:#1F2937}
+.ev-kpi-name .wt{font-size:9px;font-weight:600;color:#1F3864;background:#EEF2FF;padding:1px 7px;border-radius:99px;margin-left:6px}
+.ev-kpi-band{font-size:11px;font-weight:700;min-width:64px;text-align:right;color:#D1D5DB}
+.ev-kpi-hint{font-size:10px;color:#9CA3AF;margin:3px 0 8px;line-height:1.45}
+.ev-chips{display:flex;gap:4px}
+.ev-chip{flex:1;min-width:0;height:34px;border:1.5px solid #E5E7EB;border-radius:8px;background:#fff;font-size:13px;font-weight:700;color:#9CA3AF;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .08s,background .1s,color .1s,border-color .1s}
+.ev-chip:active{transform:scale(0.92)}
+.ev-chip.sel{color:#fff;border-color:transparent}
+.ev-chip.sel.b1{background:#DC2626}
+.ev-chip.sel.b2{background:#EA580C}
+.ev-chip.sel.b3{background:#F59E0B}
+.ev-chip.sel.b4{background:#3B82F6}
+.ev-chip.sel.b5{background:#10B981}
+.ev-band-b1{color:#DC2626}.ev-band-b2{color:#EA580C}.ev-band-b3{color:#F59E0B}.ev-band-b4{color:#3B82F6}.ev-band-b5{color:#10B981}
+.ev-total-bar{position:sticky;bottom:0;background:#fff;border-top:2px solid #E5E7EB;padding:11px 2px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px}
 .ev-total-bar .lbl{font-size:11px;color:#6B7280;font-weight:600}
-.ev-total-num{font-size:20px;font-weight:800;color:#1F3864}
+.ev-total-bar .lbl small{display:block;color:#9CA3AF;font-size:9px;font-weight:400}
+.ev-total-num{font-size:22px;font-weight:800;color:#1F3864}
 /* Ranking (team.html) */
 .ev-rank-card{background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px}
 .ev-rank-h{font-size:13px;font-weight:700;color:#1F2937;margin-bottom:10px;display:flex;align-items:center;gap:6px}
@@ -2407,18 +2415,18 @@ const EV = {
 };
 
 // คำนวณคะแนน KPI + Total แบบ live (ลอก logic _evalCompute_ ฝั่ง backend)
-EV._compute = function(subScores) {
+// EV.state.scores = { KPIkey: 1-10 }  (ให้คะแนนระดับหมวดโดยตรง)
+EV._bandClass = function(v) { v = Number(v)||0; return v>=9?'b5':v>=7?'b4':v>=5?'b3':v>=3?'b2':'b1'; };
+EV._bandLabel = function(v) { v = Number(v)||0; return v>=9?'ดีเยี่ยม':v>=7?'ดี':v>=5?'ปานกลาง':v>=3?'ต้องปรับปรุง':v>=1?'ไม่ยอมรับ':'–'; };
+
+EV._compute = function(scores) {
   const cfg = state.evalConfig;
   if (!cfg) return { kpi: {}, total: 0, weightUsed: 0 };
   const kpi = {};
   let total = 0, weightUsed = 0;
   cfg.kpis.forEach(def => {
-    const vals = def.subs
-      .map(s => Number(subScores[s.no]))
-      .filter(v => !isNaN(v) && v > 0);
-    let score = 0;
-    if (vals.length) score = vals.reduce((a,b) => a+b, 0) / vals.length;
-    kpi[def.key] = Math.round(score * 100) / 100;
+    const score = Number(scores[def.key]) || 0;
+    kpi[def.key] = score;
     if (score > 0) { total += score * def.weight; weightUsed += def.weight; }
   });
   const totalScore = weightUsed > 0 ? (total / weightUsed) * 10 : 0;
@@ -2430,44 +2438,45 @@ EV._formHtml = function(prefill) {
   const cfg = state.evalConfig;
   if (!cfg) return '<div style="padding:20px">⏳ กำลังโหลดเกณฑ์ประเมิน... ลองใหม่อีกครั้ง</div>';
 
-  const subScores = prefill.subScores || {};
+  // เริ่มจากคะแนนเดิม (โหมดแก้ไข) — ปัดเป็นจำนวนเต็มเพื่อ map กับปุ่ม
+  EV.state.scores = {};
+  if (prefill.kpi) {
+    cfg.kpis.forEach(def => {
+      const v = Math.round(Number(prefill.kpi[def.key]) || 0);
+      if (v > 0) EV.state.scores[def.key] = v;
+    });
+  }
+
   const teams = _evContractorTeams();
   const teamOpts = teams.map(t =>
     `<option value="${escapeHtmlAttr(t.id)}" ${prefill.teamId === t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`
   ).join('');
 
-  const scoreOpts = (sel) => {
-    let o = `<option value="">–</option>`;
-    for (let n = 10; n >= 1; n--) o += `<option value="${n}" ${Number(sel) === n ? 'selected' : ''}>${n}</option>`;
-    return o;
-  };
-
   let kpiHtml = '';
   cfg.kpis.forEach((def, idx) => {
-    const subsHtml = def.subs.map(s => `
-      <div class="ev-sub-row">
-        <div class="ev-sub-name">${escapeHtml(s.name)}<small>${escapeHtml(s.check)}</small></div>
-        <select data-sub="${escapeHtmlAttr(s.no)}" data-kpi="${escapeHtmlAttr(def.key)}" onchange="EV._refresh()">${scoreOpts(subScores[s.no])}</select>
-      </div>
-    `).join('');
+    const cur = EV.state.scores[def.key] || 0;
+    const hint = def.subs.map(s => s.name).join(' · ');
+    let chips = '';
+    for (let n = 1; n <= 10; n++) {
+      const sel = n === cur ? ' sel ' + EV._bandClass(n) : '';
+      chips += `<div class="ev-chip${sel}" onclick="EV._pick(${idx},'${def.key}',${n},this)">${n}</div>`;
+    }
+    const bandTxt = cur ? cur + ' · ' + EV._bandLabel(cur) : '–';
     kpiHtml += `
-      <div class="ev-kpi-sec">
-        <div class="ev-kpi-hd" onclick="EV._toggle(${idx})">
-          <div class="ev-kpi-hd-l">${escapeHtml(def.label)} <span class="ev-kpi-wt">${Math.round(def.weight*100)}%</span></div>
-          <div class="ev-kpi-avg" id="evAvg-${idx}">–</div>
+      <div class="ev-kpi-row">
+        <div class="ev-kpi-top">
+          <div class="ev-kpi-name">${escapeHtml(def.label)} <span class="wt">${Math.round(def.weight*100)}%</span></div>
+          <div class="ev-kpi-band ${cur ? 'ev-band-'+EV._bandClass(cur) : ''}" id="evBand-${idx}">${bandTxt}</div>
         </div>
-        <div class="ev-kpi-body${idx === 0 ? ' open' : ''}" id="evBody-${idx}">${subsHtml}</div>
+        <div class="ev-kpi-hint">📋 ${escapeHtml(hint)}</div>
+        <div class="ev-chips" id="evChips-${idx}">${chips}</div>
       </div>`;
   });
-
-  // เกณฑ์ band (อ้างอิง)
-  const bandHtml = cfg.bands.map(b =>
-    `<span class="ev-tag" title="${escapeHtmlAttr(b.desc)}">${b.range} ${b.level}</span>`
-  ).join(' ');
 
   return `
     <div class="modal-title">${prefill.id ? 'แก้ไขการประเมิน' : 'ประเมินผู้รับเหมา'}</div>
     <div class="ev-form">
+      <div class="ev-form-hint">ให้คะแนนแต่ละหมวด <b>1–10</b> (กดปุ่มตัวเลข) · ระบบคิดคะแนนรวมถ่วงน้ำหนัก + เกรดให้อัตโนมัติ · ข้อความใต้หมวด = สิ่งที่ควรพิจารณา · เกณฑ์: <b>9–10</b> ดีเยี่ยม · <b>7–8</b> ดี · <b>5–6</b> ปานกลาง · <b>3–4</b> ต้องปรับปรุง · <b>1–2</b> ไม่ยอมรับ</div>
       <div class="rm-row">
         <label>ผู้รับเหมา *</label>
         <select id="evTeam">${teamOpts || '<option value="">— ไม่มีทีม —</option>'}</select>
@@ -2476,7 +2485,6 @@ EV._formHtml = function(prefill) {
         <div class="rm-row"><label>วันที่ประเมิน</label><input type="date" id="evDate" value="${escapeHtmlAttr(prefill.evalDate || new Date().toISOString().slice(0,10))}"></div>
         <div class="rm-row"><label>ผู้ประเมิน</label><input type="text" id="evEvaluator" value="${escapeHtmlAttr(prefill.evaluator || '')}" placeholder="ชื่อผู้ให้คะแนน"></div>
       </div>
-      <div style="font-size:9px;color:#9CA3AF;display:flex;gap:5px;flex-wrap:wrap;align-items:center"><b style="color:#6B7280">เกณฑ์:</b>${bandHtml}</div>
       ${kpiHtml}
       <div class="rm-row">
         <label>หมายเหตุ</label>
@@ -2484,7 +2492,7 @@ EV._formHtml = function(prefill) {
       </div>
     </div>
     <div class="ev-total-bar">
-      <span class="lbl">คะแนนรวม (0–100)</span>
+      <span class="lbl">คะแนนรวม <small>(ถ่วงน้ำหนัก 0–100)</small></span>
       <div style="display:flex;align-items:center;gap:8px">
         <span class="ev-total-num" id="evTotalNum">0.0</span>
         <span id="evTotalGrade">${gradeBadge(0)}</span>
@@ -2498,31 +2506,24 @@ EV._formHtml = function(prefill) {
   `;
 };
 
-EV._toggle = function(idx) {
-  const b = document.getElementById('evBody-' + idx);
-  if (b) b.classList.toggle('open');
-};
-
-EV._collectSubs = function() {
-  const subs = {};
-  document.querySelectorAll('.ev-form select[data-sub]').forEach(sel => {
-    const v = Number(sel.value);
-    if (sel.value !== '' && !isNaN(v) && v > 0) subs[sel.getAttribute('data-sub')] = v;
-  });
-  return subs;
+// กดปุ่มคะแนนของหมวดหนึ่ง
+EV._pick = function(idx, key, val, chipEl) {
+  EV.state.scores[key] = val;
+  // ไฮไลต์ปุ่มในแถวนี้
+  const wrap = document.getElementById('evChips-' + idx);
+  if (wrap) {
+    const band = EV._bandClass(val);
+    wrap.querySelectorAll('.ev-chip').forEach(c => { c.className = 'ev-chip'; });
+    chipEl.className = 'ev-chip sel ' + band;
+  }
+  // อัปเดตป้ายระดับของหมวด
+  const bandEl = document.getElementById('evBand-' + idx);
+  if (bandEl) { bandEl.textContent = val + ' · ' + EV._bandLabel(val); bandEl.className = 'ev-kpi-band ev-band-' + EV._bandClass(val); }
+  EV._refresh();
 };
 
 EV._refresh = function() {
-  const cfg = state.evalConfig;
-  if (!cfg) return;
-  const subs = EV._collectSubs();
-  // อัปเดต avg ต่อ KPI
-  cfg.kpis.forEach((def, idx) => {
-    const vals = def.subs.map(s => Number(subs[s.no])).filter(v => !isNaN(v) && v > 0);
-    const el = document.getElementById('evAvg-' + idx);
-    if (el) el.textContent = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '–';
-  });
-  const c = EV._compute(subs);
+  const c = EV._compute(EV.state.scores || {});
   const numEl = document.getElementById('evTotalNum');
   const grEl = document.getElementById('evTotalGrade');
   if (numEl) numEl.textContent = c.total.toFixed(1);
@@ -2532,7 +2533,7 @@ EV._refresh = function() {
 EV.openCreate = function() {
   if (!state.evalConfig) { Modal.toast('⏳ กำลังโหลดเกณฑ์ — ลองอีกครั้ง'); API.getEvalConfig().then(r=>{ if(r.ok) state.evalConfig=r.data; }); return; }
   if (_evContractorTeams().length === 0) { Modal.toast('⚠️ ยังไม่มีผู้รับเหมา — เพิ่มทีมในหน้า Team ก่อน'); return; }
-  EV.state = { mode: 'create', editId: null };
+  EV.state = { mode: 'create', editId: null, scores: {} };
   Modal.show(EV._formHtml({}));
   setTimeout(EV._refresh, 50);
 };
@@ -2541,7 +2542,7 @@ EV.openEdit = function(evalId) {
   const e = (state.evals || []).find(x => x.id === evalId);
   if (!e) { Modal.toast('❌ ไม่พบการประเมิน'); return; }
   if (!state.evalConfig) { Modal.toast('⏳ กำลังโหลดเกณฑ์ — ลองอีกครั้ง'); return; }
-  EV.state = { mode: 'edit', editId: evalId };
+  EV.state = { mode: 'edit', editId: evalId, scores: {} };
   Modal.show(EV._formHtml(e));
   setTimeout(EV._refresh, 50);
 };
@@ -2550,8 +2551,8 @@ EV.submit = async function() {
   const teamSel = document.getElementById('evTeam');
   const teamId = teamSel ? teamSel.value : '';
   if (!teamId) { Modal.toast('⚠️ เลือกผู้รับเหมาก่อน'); return; }
-  const subs = EV._collectSubs();
-  if (Object.keys(subs).length === 0) { Modal.toast('⚠️ ให้คะแนนอย่างน้อย 1 หัวข้อ'); return; }
+  const scores = EV.state.scores || {};
+  if (Object.keys(scores).length === 0) { Modal.toast('⚠️ ให้คะแนนอย่างน้อย 1 หมวด'); return; }
   const teamName = teamSel.options[teamSel.selectedIndex] ? teamSel.options[teamSel.selectedIndex].text : '';
   const data = {
     team_id: teamId,
@@ -2559,7 +2560,7 @@ EV.submit = async function() {
     eval_date: document.getElementById('evDate').value,
     evaluator: document.getElementById('evEvaluator').value.trim(),
     remark: document.getElementById('evRemark').value.trim(),
-    sub_scores: JSON.stringify(subs)
+    kpi_scores: JSON.stringify(scores)
   };
   Modal.toast('⏳ กำลังบันทึก...');
   try {
