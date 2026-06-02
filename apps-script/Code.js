@@ -375,6 +375,25 @@ function route(action, p) {
     case 'create_ff_batch': return createFFBatch_(p);   // Phase C-1 — wizard bulk add FF
     case 'update_ff': return updateFF_(p);              // Phase D-1 — edit FF
     case 'delete_ff': return deleteFF_(p);              // Phase D-1 — delete FF + cascade tasks
+    case 'clone_project': return cloneProject_(p);      // Phase C-4 — clone FF + tasks จาก source (default bow-house)
+
+    // 📋 CONTRACTOR EVALUATION — ดู evaluations.gs
+    case 'get_eval_config':  return getEvalConfig_();
+    case 'get_evals':        return getEvals_(p);
+    case 'get_eval_summary': return getEvalSummary_(p);
+    case 'create_eval':      return createEval_(p);
+    case 'update_eval':      return updateEval_(p);
+    case 'delete_eval':      return deleteEval_(p);
+    case '_ensure_eval_sheets': return _ensureEvalSheets_();   // สร้างตู้ใหม่ (idempotent)
+    case '_seed_eval_rubric':   return seedEvalRubric_();      // seed เกณฑ์มาตรฐาน (idempotent)
+
+    // ⚠️ RISKS (Phase R-1/R-2/R-3) — ดู risks.gs
+    case 'create_risk': return createRisk_(p);
+    case 'update_risk': return updateRisk_(p);
+    case 'delete_risk': return deleteRisk_(p);
+    case 'clone_risks': return cloneRisks_(p);
+    case '_phase_r1_migrate':     return phaseR1Migrate_();      // schema upgrade + backfill (idempotent)
+    case '_seed_direk_template':  return seedDirekTemplate_();   // seed 13 risks ของดิเรกใน direk-template (idempotent)
     case '_phase_a_fix': return phaseAFix_();  // เก็บกวาดข้อมูล test smoke + seed bow-house (idempotent)
     case '_phase_b1_migrate': return phaseB1Migrate_();  // schema: เพิ่ม project_id + backfill bow-house (idempotent)
 
@@ -640,19 +659,31 @@ function getPaymentsAsObjects(projectId) {
 
 function getRisksAsObjects(projectId) {
   const rows = _filterByProject_(getAllRows(SHEET.RISKS), projectId);
-  return rows.map(r => ({
-    id: r['Risk ID'] || '',
-    cat: r['Category'] || '',
-    desc: r['Description'] || '',
-    affected: r['Affected FF'] || '',
-    sev: r['Severity'] || '',
-    likelihood: r['Likelihood'] || '',
-    impact: r['Impact'] || '',
-    mitigation: r['Mitigation Plan'] || '',
-    status: r['Status'] || '',
-    owner: r['Owner'] || '',
-    identified: formatDateValue(r['Date Identified']),
-  }));
+  return rows.map(r => {
+    // Phase R-1: คำนวณ score (ถ้า column ใหม่ว่าง — fallback จาก Severity)
+    const lScore = parseInt(r['Likelihood Score'] || 0, 10) || 0;
+    const iScore = parseInt(r['Impact Score'] || 0, 10) || 0;
+    let score = parseInt(r['Risk Score'] || 0, 10) || 0;
+    if (!score && lScore && iScore) score = lScore * iScore;
+    return {
+      id: r['Risk ID'] || '',
+      cat: r['Category'] || '',
+      desc: r['Description'] || '',
+      affected: r['Affected FF'] || '',
+      affectedParties: r['Affected Parties'] || '',
+      sev: r['Severity'] || '',
+      likelihood: r['Likelihood'] || '',
+      impact: r['Impact'] || '',
+      lScore: lScore,
+      iScore: iScore,
+      score: score,
+      causes: r['Causes'] || '',
+      mitigation: r['Mitigation Plan'] || '',
+      status: r['Status'] || '',
+      owner: r['Owner'] || '',
+      identified: formatDateValue(r['Date Identified']),
+    };
+  });
 }
 
 function formatDateValue(v) {

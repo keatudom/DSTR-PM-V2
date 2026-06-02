@@ -249,7 +249,8 @@
 
 /* Risk */
 .risk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
-.risk-c{padding:12px;border-radius:10px;background:#FAFBFC;border-left:3px solid #9CA3AF}
+.risk-c{padding:12px;border-radius:10px;background:#FAFBFC;border-left:3px solid #9CA3AF;cursor:pointer;transition:transform .12s,box-shadow .12s}
+.risk-c:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
 .risk-c.s-h{border-left-color:#DC2626;background:#FEF2F2}
 .risk-c.s-m{border-left-color:#F59E0B;background:#FFFBEB}
 .risk-c.s-l{border-left-color:#10B981;background:#F0FDF4}
@@ -257,6 +258,86 @@
 .risk-desc{font-size:12px;font-weight:500;color:#1F2937;margin:4px 0}
 .risk-meta{display:flex;gap:6px;font-size:9px;flex-wrap:wrap;margin-top:5px}
 .risk-tag{padding:2px 7px;border-radius:99px;background:#fff;color:#4B5563;font-weight:500}
+/* Phase R-2: heatmap + score badge */
+.risk-score-badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;color:#fff}
+.risk-score-badge.b-1{background:#10B981} /* 1-4 = low (green) */
+.risk-score-badge.b-2{background:#F59E0B} /* 5-9 = medium (yellow) */
+.risk-score-badge.b-3{background:#EA580C} /* 10-15 = high (orange) */
+.risk-score-badge.b-4{background:#DC2626} /* 16-25 = critical (red) */
+.risk-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.risk-actions{display:flex;gap:6px;flex-wrap:wrap}
+.risk-btn{padding:6px 12px;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
+.risk-btn-primary{background:#1F3864;color:#fff}
+.risk-btn-secondary{background:#E5E7EB;color:#374151}
+.risk-heatmap{display:grid;grid-template-columns:auto repeat(5,1fr);gap:3px;margin-bottom:14px;font-size:10px}
+.risk-hm-corner,.risk-hm-axis-l,.risk-hm-axis-b{display:flex;align-items:center;justify-content:center;color:#6B7280;font-weight:600;padding:4px}
+.risk-hm-axis-title{grid-column:1/-1;text-align:center;color:#374151;font-size:10px;font-weight:600;padding:2px}
+.risk-hm-cell{aspect-ratio:1.4/1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;color:#fff;font-weight:700;cursor:pointer;font-size:11px;transition:transform .1s}
+.risk-hm-cell:hover{transform:scale(1.05)}
+.risk-hm-cell.empty{background:#F3F4F6;color:#9CA3AF;font-weight:400}
+.risk-hm-cell .hm-score{font-size:9px;opacity:0.85}
+.risk-hm-cell .hm-count{font-size:14px}
+.risk-toprisks-h{font-size:11px;font-weight:600;color:#374151;margin:14px 0 8px}
+.risk-empty-msg{font-size:11px;color:#9CA3AF;padding:10px}
+/* Risk Modal form */
+.rm-form{display:flex;flex-direction:column;gap:10px;text-align:left}
+.rm-row{display:flex;flex-direction:column;gap:4px}
+.rm-row label{font-size:11px;color:#6B7280;font-weight:600}
+.rm-row input,.rm-row select,.rm-row textarea{padding:8px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;font-family:inherit}
+.rm-row textarea{min-height:60px;resize:vertical}
+.rm-scoring{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+.rm-affected{display:flex;flex-wrap:wrap;gap:8px;font-size:12px}
+.rm-affected label{display:flex;align-items:center;gap:4px;cursor:pointer;background:#F3F4F6;padding:6px 10px;border-radius:99px;font-weight:500;color:#374151}
+.rm-affected input[type=checkbox]{margin:0}
+
+/* ============================================================
+   Contractor Evaluation (ประเมินผู้รับเหมา)
+   ============================================================ */
+.ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.ev-c{padding:12px;border-radius:10px;background:#FAFBFC;border-left:3px solid #9CA3AF;cursor:pointer;transition:transform .12s,box-shadow .12s}
+.ev-c:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.ev-c-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ev-team{font-size:13px;font-weight:600;color:#1F2937}
+.ev-date{font-size:10px;color:#9CA3AF;margin-top:2px}
+.ev-meta{display:flex;gap:6px;font-size:9px;flex-wrap:wrap;margin-top:8px}
+.ev-tag{padding:2px 7px;border-radius:99px;background:#fff;color:#4B5563;font-weight:500}
+.ev-empty-msg{font-size:11px;color:#9CA3AF;padding:10px}
+.ev-toprisks-h{font-size:11px;font-weight:600;color:#374151;margin:14px 0 8px}
+/* grade badge — ใช้ร่วมได้ทั้ง dashboard + team */
+.grade-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 6px;border-radius:8px;font-size:14px;font-weight:800;color:#fff}
+.grade-badge.sm{min-width:22px;height:22px;font-size:11px;border-radius:6px}
+.grade-A{background:#10B981}
+.grade-B{background:#3B82F6}
+.grade-C{background:#F59E0B}
+.grade-D{background:#EA580C}
+.grade-F{background:#DC2626}
+.ev-total{font-size:11px;color:#6B7280;font-weight:600}
+/* Eval modal form */
+.ev-form{display:flex;flex-direction:column;gap:10px;text-align:left;max-height:62vh;overflow-y:auto;padding-right:4px}
+.ev-kpi-sec{border:1px solid #E5E7EB;border-radius:8px;overflow:hidden}
+.ev-kpi-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;background:#F3F4F6;cursor:pointer}
+.ev-kpi-hd-l{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#1F2937}
+.ev-kpi-wt{font-size:9px;font-weight:600;color:#6B7280;background:#fff;padding:2px 7px;border-radius:99px}
+.ev-kpi-avg{font-size:11px;font-weight:700;color:#1F3864;min-width:34px;text-align:right}
+.ev-kpi-body{padding:6px 11px 10px;display:none;flex-direction:column;gap:6px}
+.ev-kpi-body.open{display:flex}
+.ev-sub-row{display:grid;grid-template-columns:1fr 64px;gap:8px;align-items:center}
+.ev-sub-name{font-size:11px;color:#374151}
+.ev-sub-name small{display:block;color:#9CA3AF;font-size:9px}
+.ev-sub-row select{padding:6px;border:1px solid #D1D5DB;border-radius:6px;font-size:12px}
+.ev-total-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid #E5E7EB;padding:10px 2px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ev-total-bar .lbl{font-size:11px;color:#6B7280;font-weight:600}
+.ev-total-num{font-size:20px;font-weight:800;color:#1F3864}
+/* Ranking (team.html) */
+.ev-rank-card{background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px}
+.ev-rank-h{font-size:13px;font-weight:700;color:#1F2937;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ev-rank-row{display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid #F3F4F6}
+.ev-rank-row:last-child{border-bottom:none}
+.ev-rank-no{font-size:13px;font-weight:800;color:#9CA3AF;min-width:24px;text-align:center}
+.ev-rank-row.top .ev-rank-no{color:#D97706}
+.ev-rank-name{flex:1;font-size:12px;font-weight:600;color:#374151}
+.ev-rank-name small{display:block;font-size:9px;color:#9CA3AF;font-weight:400}
+.ev-rank-blacklist{font-size:9px;background:#FEE2E2;color:#B91C1C;padding:2px 7px;border-radius:99px;font-weight:700}
 
 /* ============================================================
    FAB (Floating Action Button)
@@ -688,8 +769,21 @@
 
     <!-- Risk -->
     <div class="card">
-      <div class="card-title">⚠ Risk Management</div>
+      <div class="risk-header">
+        <div class="card-title" style="margin:0">⚠ Risk Management</div>
+        <div class="risk-actions" id="riskHeaderActions"></div>
+      </div>
+      <div id="riskHeatmap"></div>
       <div class="risk-grid" id="riskList"></div>
+    </div>
+
+    <!-- Contractor Evaluation -->
+    <div class="card">
+      <div class="risk-header">
+        <div class="card-title" style="margin:0">📋 ประเมินผู้รับเหมา</div>
+        <div class="risk-actions" id="evHeaderActions"></div>
+      </div>
+      <div class="ev-grid" id="evList"></div>
     </div>
 
   </div>
@@ -795,6 +889,8 @@ state.materials = [];
 state.contractors = [];
 state.teams = [];
 state.alerts = [];
+state.evals = [];
+state.evalConfig = null;
 
 // ============================================================
 // MAIN LOAD
@@ -822,6 +918,19 @@ async function loadData() {
         state.teams = res.data;
         renderHubCards();
       }
+    }).catch(()=>{});
+
+    // โหลดการประเมินผู้รับเหมา (parallel) — 28_Contractor_Evaluations
+    API.getEvals().then(res => {
+      if (res.ok && Array.isArray(res.data)) {
+        state.evals = res.data;
+        renderEvals();
+      }
+    }).catch(()=>{});
+
+    // โหลด config KPI (parallel — ใช้ตอนเปิดฟอร์ม)
+    API.getEvalConfig().then(res => {
+      if (res.ok && res.data) state.evalConfig = res.data;
     }).catch(()=>{});
 
     // โหลด AI alerts (parallel)
@@ -904,6 +1013,7 @@ function renderAll() {
   renderNgwdGrid();
   renderTimeline();
   renderRisks();
+  renderEvals();
   renderHubCards();
 }
 
@@ -1112,6 +1222,14 @@ function renderWeightList() {
     // (1) ไม่มี FF เลยในโปรเจกต์ → empty state พร้อม CTA "+ เพิ่ม FF แรก"
     // (2) มี FF แต่ filter Zone นี้ไม่เจอ → แค่ informational message
     if (state.data.ffs.length === 0) {
+      const projNameSafe = (project && project.name) ? String(project.name).replace(/'/g,"\\'") : 'โครงการนี้';
+      const isBowHouse = state.projectId === 'bow-house';
+      // ปุ่ม Clone โผล่เฉพาะถ้าไม่ใช่ bow-house เอง (กัน clone เข้าตัวเอง)
+      const cloneBtn = isBowHouse ? '' : `
+            <button class="modal-btn modal-btn-cancel" style="display:inline-block;padding:12px 22px;margin-left:8px"
+              onclick="confirmCloneFromTemplate('${state.projectId}','${projNameSafe}')">
+              📋 ใช้ template Bow House
+            </button>`;
       html = `
         <div style="text-align:center;padding:32px 16px">
           <div style="font-size:36px;margin-bottom:10px">📋</div>
@@ -1122,10 +1240,13 @@ function renderWeightList() {
             เริ่มต้นจากการเพิ่มรายการเฟอร์นิเจอร์ (FF)<br>
             ราย Zone, ราคา, และงานย่อยจะติดตามได้หลังจากนี้
           </div>
-          <button class="modal-btn modal-btn-primary" style="display:inline-block;padding:12px 22px"
-            onclick="openFFWizardModal('${state.projectId}', '${(project && project.name) ? String(project.name).replace(/'/g,"\\'") : 'โครงการนี้'}')">
-            + เพิ่ม FF แรก
-          </button>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+            <button class="modal-btn modal-btn-primary" style="display:inline-block;padding:12px 22px"
+              onclick="openFFWizardModal('${state.projectId}', '${projNameSafe}')">
+              + เพิ่ม FF แรก
+            </button>
+            ${cloneBtn}
+          </div>
         </div>
       `;
     } else {
@@ -1891,32 +2012,589 @@ function renderTimeline() {
 }
 
 // ============================================================
-// RISKS (เดิม)
+// RISKS — Phase R-2: heatmap 5x5 + top risks list + CRUD
 // ============================================================
+
+// score 1-25 → band 1=low(1-4) 2=med(5-9) 3=high(10-15) 4=critical(16-25)
+function riskBand(score) {
+  const s = Number(score) || 0;
+  if (s >= 16) return 4;
+  if (s >= 10) return 3;
+  if (s >= 5) return 2;
+  if (s >= 1) return 1;
+  return 0;
+}
+function riskBandLabel(b) {
+  return ['—','ต่ำ','กลาง','สูง','สูงมาก'][b] || '—';
+}
+
+function renderRiskHeatmap() {
+  const risks = state.data.risks || [];
+  // นับ risks ในแต่ละ (L, I) cell — เฉพาะที่ Status != Closed
+  const grid = {};
+  risks.forEach(r => {
+    if ((r.status || '').toLowerCase() === 'closed') return;
+    const L = parseInt(r.lScore, 10) || 0;
+    const I = parseInt(r.iScore, 10) || 0;
+    if (L < 1 || L > 5 || I < 1 || I > 5) return;
+    const key = L + ',' + I;
+    grid[key] = (grid[key] || 0) + 1;
+  });
+
+  // วาง grid 5x5 — แถวบน = L=5 (Likelihood สูง), แถวล่าง = L=1
+  // คอลัมน์ซ้าย = I=1, คอลัมน์ขวา = I=5
+  let html = '<div class="risk-hm-axis-title">เปอร์เซ็นต์โอกาส × ความรุนแรง</div>';
+  html += '<div class="risk-heatmap">';
+  html += '<div class="risk-hm-corner"></div>';
+  for (let i = 1; i <= 5; i++) html += `<div class="risk-hm-axis-b">I=${i}</div>`;
+
+  for (let L = 5; L >= 1; L--) {
+    html += `<div class="risk-hm-axis-l">L=${L}</div>`;
+    for (let I = 1; I <= 5; I++) {
+      const score = L * I;
+      const band = riskBand(score);
+      const count = grid[L + ',' + I] || 0;
+      const cls = count > 0 ? `b-${band}` : 'empty';
+      const bg = count > 0 ? '' : '';
+      html += `<div class="risk-hm-cell ${count > 0 ? '' : 'empty'}"
+        ${count > 0 ? `style="background:${['','#10B981','#F59E0B','#EA580C','#DC2626'][band]}"` : ''}
+        title="L=${L} × I=${I} = ${score} (${count > 0 ? count + ' risk(s)' : 'ไม่มี'})">
+        <div class="hm-count">${count > 0 ? count : ''}</div>
+        <div class="hm-score">${score}</div>
+      </div>`;
+    }
+  }
+  html += '</div>';
+  document.getElementById('riskHeatmap').innerHTML = html;
+}
+
 function renderRisks() {
-  if (!state.data.risks || state.data.risks.length === 0) {
-    document.getElementById('riskList').innerHTML = '<div style="font-size:11px;color:#9CA3AF;padding:10px">ไม่มีข้อมูลความเสี่ยง</div>';
+  const risks = state.data.risks || [];
+  const heatmapEl = document.getElementById('riskHeatmap');
+  const listEl = document.getElementById('riskList');
+  const actionsEl = document.getElementById('riskHeaderActions');
+
+  // Header actions: ปุ่ม + Risk เสมอ + (ถ้าว่าง) Clone template
+  let actions = '<button class="risk-btn risk-btn-primary" onclick="RM.openCreate()">+ เพิ่ม Risk</button>';
+  if (risks.length === 0 && state.projectId !== 'direk-template') {
+    actions += '<button class="risk-btn risk-btn-secondary" onclick="confirmCloneRisksFromDirek()">📋 ใช้ template ดิเรก</button>';
+  }
+  actionsEl.innerHTML = actions;
+
+  if (risks.length === 0) {
+    heatmapEl.innerHTML = '';
+    listEl.innerHTML = '<div class="risk-empty-msg">ยังไม่มีความเสี่ยงในโครงการนี้ — กด <b>+ เพิ่ม Risk</b> หรือใช้ template ของคุณดิเรก 13 รายการ</div>';
     return;
   }
-  let html = '';
-  state.data.risks.forEach(r => {
-    const sev = (r.sev || '').toLowerCase();
-    let cls = '';
-    if (sev.includes('high') || sev.includes('สูง')) cls = 's-h';
-    else if (sev.includes('medium') || sev.includes('กลาง')) cls = 's-m';
-    else cls = 's-l';
-    html += `<div class="risk-c ${cls}">
-      <div class="risk-cat">${r.cat || 'ทั่วไป'}</div>
-      <div class="risk-desc">${r.desc || ''}</div>
+
+  // Heatmap
+  renderRiskHeatmap();
+
+  // Top risks list — sort by score desc, then status (Open ก่อน)
+  const sorted = risks.slice().sort((a, b) => {
+    const sb = Number(b.score) || 0, sa = Number(a.score) || 0;
+    if (sb !== sa) return sb - sa;
+    const ca = (a.status || '').toLowerCase() === 'closed' ? 1 : 0;
+    const cb = (b.status || '').toLowerCase() === 'closed' ? 1 : 0;
+    return ca - cb;
+  });
+
+  let html = '<div class="risk-toprisks-h">รายการ Risk (เรียงตามความรุนแรง)</div>';
+  html += '<div class="risk-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">';
+  sorted.forEach(r => {
+    const score = Number(r.score) || (Number(r.lScore || 0) * Number(r.iScore || 0));
+    const band = riskBand(score);
+    const cls = band >= 4 ? 's-h' : (band >= 3 ? 's-m' : 's-l');
+    const isClosed = (r.status || '').toLowerCase() === 'closed';
+    html += `<div class="risk-c ${cls}" style="${isClosed ? 'opacity:0.5;' : ''}" onclick="RM.openEdit('${escapeHtmlAttr(r.id)}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+        <div class="risk-cat">${escapeHtml(r.cat || 'ทั่วไป')}</div>
+        ${score ? `<span class="risk-score-badge b-${band}">${score} (${riskBandLabel(band)})</span>` : ''}
+      </div>
+      <div class="risk-desc">${escapeHtml(r.desc || '')}</div>
       <div class="risk-meta">
-        ${r.sev ? `<span class="risk-tag">⚠ ${r.sev}</span>` : ''}
-        ${r.owner ? `<span class="risk-tag">👤 ${r.owner}</span>` : ''}
-        ${r.status ? `<span class="risk-tag">${r.status}</span>` : ''}
+        ${r.lScore && r.iScore ? `<span class="risk-tag">L${r.lScore}×I${r.iScore}</span>` : ''}
+        ${r.owner ? `<span class="risk-tag">👤 ${escapeHtml(r.owner)}</span>` : ''}
+        ${r.status ? `<span class="risk-tag">${escapeHtml(r.status)}</span>` : ''}
+        ${r.affectedParties ? `<span class="risk-tag">🎯 ${escapeHtml(r.affectedParties)}</span>` : ''}
       </div>
     </div>`;
   });
-  document.getElementById('riskList').innerHTML = html;
+  html += '</div>';
+  listEl.innerHTML = html;
 }
+
+// helpers (ถ้ายังไม่มีในไฟล์)
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escapeHtmlAttr(s) { return escapeHtml(s).replace(/`/g, '&#96;'); }
+
+// ============================================================
+// Risk Modal (RM) — เพิ่ม/แก้ risk + form L×I scoring
+// ============================================================
+const RM = {
+  state: { mode: 'create', editId: null, l: 3, i: 3 }
+};
+
+RM.affectedOptions = ['พนักงาน', 'องค์กร', 'ลูกค้า', 'โครงการ'];
+RM.statusOptions = ['Open', 'Mitigated', 'Closed'];
+
+RM._labelL = function(n) {
+  return ['—','1: น้อยที่สุด','2: น้อย','3: ปานกลาง','4: มาก','5: มากที่สุด'][n] || '—';
+};
+RM._labelI = function(n) {
+  return ['—','1: น้อยมาก','2: น้อย','3: ปานกลาง','4: สูง','5: รุนแรง'][n] || '—';
+};
+
+RM._renderScoreBadge = function(l, i) {
+  const s = (Number(l) || 0) * (Number(i) || 0);
+  const b = riskBand(s);
+  return `<span class="risk-score-badge b-${b}" style="font-size:14px;padding:6px 14px">${s} (${riskBandLabel(b)})</span>`;
+};
+
+RM._formHtml = function(prefill) {
+  prefill = prefill || {};
+  const L = prefill.lScore || 3;
+  const I = prefill.iScore || 3;
+  const affectedSet = new Set((prefill.affectedParties || '').split(',').map(s => s.trim()).filter(Boolean));
+  const affectedChecks = RM.affectedOptions.map(opt => `
+    <label><input type="checkbox" name="rm-affected" value="${escapeHtmlAttr(opt)}" ${affectedSet.has(opt) ? 'checked' : ''}>${opt}</label>
+  `).join('');
+  const statusOpts = RM.statusOptions.map(s => `
+    <option value="${s}" ${(prefill.status || 'Open') === s ? 'selected' : ''}>${s}</option>
+  `).join('');
+  const lOpts = [1,2,3,4,5].map(n => `<option value="${n}" ${n === L ? 'selected' : ''}>${RM._labelL(n)}</option>`).join('');
+  const iOpts = [1,2,3,4,5].map(n => `<option value="${n}" ${n === I ? 'selected' : ''}>${RM._labelI(n)}</option>`).join('');
+
+  return `
+    <div class="modal-icon info">⚠️</div>
+    <div class="modal-title">${prefill.id ? 'แก้ไข Risk' : 'เพิ่ม Risk ใหม่'}</div>
+    <div class="rm-form">
+      <div class="rm-row">
+        <label>คำอธิบาย Risk *</label>
+        <input type="text" id="rmDesc" value="${escapeHtmlAttr(prefill.desc || '')}" placeholder="เช่น พนักงานติดตั้งล่าช้า">
+      </div>
+      <div class="rm-row">
+        <label>หมวด (Category)</label>
+        <input type="text" id="rmCat" value="${escapeHtmlAttr(prefill.cat || '')}" placeholder="เช่น Schedule, HR, Safety">
+      </div>
+      <div class="rm-scoring">
+        <div class="rm-row">
+          <label>โอกาสเกิด (Likelihood)</label>
+          <select id="rmL" onchange="RM._refreshScore()">${lOpts}</select>
+        </div>
+        <div class="rm-row">
+          <label>ผลกระทบ (Impact)</label>
+          <select id="rmI" onchange="RM._refreshScore()">${iOpts}</select>
+        </div>
+        <div class="rm-row">
+          <label>Risk Score</label>
+          <div id="rmScoreBadge">${RM._renderScoreBadge(L, I)}</div>
+        </div>
+      </div>
+      <div class="rm-row">
+        <label>ผู้ที่ได้รับผลกระทบ</label>
+        <div class="rm-affected">${affectedChecks}</div>
+      </div>
+      <div class="rm-row">
+        <label>สาเหตุ (Causes)</label>
+        <textarea id="rmCauses" placeholder="เช่น Vendor list ไม่ครบ, พนักงานขาดประสบการณ์">${escapeHtml(prefill.causes || '')}</textarea>
+      </div>
+      <div class="rm-row">
+        <label>แผนจัดการ (Mitigation Plan)</label>
+        <textarea id="rmMit" placeholder="เช่น จัดทำ Vendor list, อบรม, ตรวจสอบ">${escapeHtml(prefill.mitigation || '')}</textarea>
+      </div>
+      <div class="rm-row">
+        <label>ผู้รับผิดชอบ (Owner)</label>
+        <input type="text" id="rmOwner" value="${escapeHtmlAttr(prefill.owner || '')}" placeholder="ชื่อคน หรือ ตำแหน่ง">
+      </div>
+      <div class="rm-row">
+        <label>สถานะ</label>
+        <select id="rmStatus">${statusOpts}</select>
+      </div>
+    </div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      ${prefill.id ? `<button class="modal-btn modal-btn-warn" onclick="RM.confirmDelete()">🗑️ ลบ</button>` : ''}
+      <button class="modal-btn modal-btn-primary" onclick="RM.submit()">${prefill.id ? 'บันทึก' : 'เพิ่ม'}</button>
+    </div>
+  `;
+};
+
+RM._refreshScore = function() {
+  const L = parseInt(document.getElementById('rmL').value, 10);
+  const I = parseInt(document.getElementById('rmI').value, 10);
+  document.getElementById('rmScoreBadge').innerHTML = RM._renderScoreBadge(L, I);
+};
+
+RM.openCreate = function() {
+  RM.state = { mode: 'create', editId: null };
+  Modal.show(RM._formHtml({ lScore: 3, iScore: 3 }));
+};
+
+RM.openEdit = function(riskId) {
+  const r = (state.data.risks || []).find(x => x.id === riskId);
+  if (!r) { Modal.toast('❌ ไม่พบ risk: ' + riskId); return; }
+  RM.state = { mode: 'edit', editId: riskId };
+  Modal.show(RM._formHtml(r));
+};
+
+RM._collect = function() {
+  const affected = [];
+  document.querySelectorAll('input[name="rm-affected"]:checked').forEach(el => affected.push(el.value));
+  return {
+    description: document.getElementById('rmDesc').value.trim(),
+    category: document.getElementById('rmCat').value.trim(),
+    likelihood_score: parseInt(document.getElementById('rmL').value, 10),
+    impact_score: parseInt(document.getElementById('rmI').value, 10),
+    affected_parties: affected.join(', '),
+    causes: document.getElementById('rmCauses').value.trim(),
+    mitigation: document.getElementById('rmMit').value.trim(),
+    owner: document.getElementById('rmOwner').value.trim(),
+    status: document.getElementById('rmStatus').value
+  };
+};
+
+RM.submit = async function() {
+  const data = RM._collect();
+  if (!data.description) { Modal.toast('⚠️ กรอกคำอธิบาย Risk ก่อน'); return; }
+  Modal.toast('⏳ กำลังบันทึก...');
+  try {
+    let res;
+    if (RM.state.mode === 'edit') {
+      data.id = RM.state.editId;
+      res = await API.updateRisk(data);
+    } else {
+      res = await API.createRisk(data);
+    }
+    if (!res || !res.ok) {
+      Modal.toast('❌ ' + ((res && res.error) || 'unknown error'));
+      return;
+    }
+    Modal.close();
+    Modal.toast('✅ บันทึกแล้ว');
+    setTimeout(() => loadData(), 400);
+  } catch (e) {
+    Modal.toast('❌ ' + e.message);
+  }
+};
+
+RM.confirmDelete = async function() {
+  const ok = await Modal.confirm({
+    icon: '🗑️',
+    iconClass: 'warn',
+    title: 'ลบ Risk?',
+    desc: 'จะลบ risk ' + RM.state.editId + ' ออกถาวร',
+    confirmText: 'ลบ',
+    cancelText: 'ยกเลิก',
+    confirmClass: 'modal-btn-warn'
+  });
+  if (!ok) return;
+  try {
+    const res = await API.deleteRisk(RM.state.editId);
+    if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'ลบไม่สำเร็จ')); return; }
+    Modal.toast('✅ ลบแล้ว');
+    setTimeout(() => loadData(), 400);
+  } catch (e) {
+    Modal.toast('❌ ' + e.message);
+  }
+};
+
+// Clone risks template ของดิเรกเข้ามาในโปรเจกต์ปัจจุบัน
+async function confirmCloneRisksFromDirek() {
+  const ok = await Modal.confirm({
+    icon: '📋',
+    iconClass: 'info',
+    title: 'ใช้ template ความเสี่ยง?',
+    desc: 'จะคัดลอก 13 risks ของคุณดิเรก (อุตสาหกรรม interior) เข้ามาในโปรเจกต์นี้',
+    info: 'แก้ไข/ลบทีหลังได้ — ทุกรายการจะเริ่มที่สถานะ Open',
+    confirmText: 'คัดลอก',
+    cancelText: 'ยกเลิก',
+    confirmClass: 'modal-btn-primary'
+  });
+  if (!ok) return;
+
+  Modal.toast('⏳ กำลังคัดลอก...');
+  try {
+    const res = await API.cloneRisksFromTemplate(state.projectId, 'direk-template');
+    if (!res || !res.ok) {
+      Modal.toast('❌ ' + ((res && res.error) || 'unknown'));
+      return;
+    }
+    const d = res.data || {};
+    Modal.toast('✅ คัดลอก ' + (d.risks_cloned || 0) + ' risks');
+    setTimeout(() => loadData(), 600);
+  } catch (e) {
+    Modal.toast('❌ ' + e.message);
+  }
+}
+
+// ============================================================
+// 📋 CONTRACTOR EVALUATION (EV) — ประเมินผู้รับเหมา KPI 100 คะแนน
+// ============================================================
+function gradeFromTotal(t) {
+  t = Number(t) || 0;
+  if (t >= 90) return 'A';
+  if (t >= 80) return 'B';
+  if (t >= 70) return 'C';
+  if (t >= 60) return 'D';
+  return 'F';
+}
+function gradeBadge(total, sm) {
+  const g = gradeFromTotal(total);
+  return `<span class="grade-badge grade-${g}${sm ? ' sm' : ''}">${g}</span>`;
+}
+
+// รายชื่อทีมผู้รับเหมา (master 21_Teams) — fallback contractors
+function _evContractorTeams() {
+  const teams = (state.teams || []).filter(t =>
+    !t.category || t.category === 'contractor');
+  if (teams.length) return teams.map(t => ({ id: t.team_id, name: t.name }));
+  return (state.contractors || []).map(c => ({ id: c.id, name: c.name }));
+}
+
+function renderEvals() {
+  const listEl = document.getElementById('evList');
+  const actionsEl = document.getElementById('evHeaderActions');
+  if (!listEl || !actionsEl) return;
+  const evals = state.evals || [];
+
+  actionsEl.innerHTML =
+    '<button class="risk-btn risk-btn-primary" onclick="EV.openCreate()">+ ประเมิน</button>';
+
+  if (evals.length === 0) {
+    listEl.innerHTML = '<div class="ev-empty-msg">ยังไม่มีการประเมินในโครงการนี้ — กด <b>+ ประเมิน</b> เพื่อให้คะแนนผู้รับเหมา (8 หมวด KPI)</div>';
+    return;
+  }
+
+  const sorted = evals.slice().sort((a, b) =>
+    String(b.evalDate).localeCompare(String(a.evalDate)));
+
+  let html = '<div class="ev-toprisks-h">ผลการประเมิน (ล่าสุดก่อน)</div>';
+  html += '<div class="ev-grid">';
+  sorted.forEach(e => {
+    const g = gradeFromTotal(e.total);
+    html += `<div class="ev-c" style="border-left-color:${_evGradeColor(g)}" onclick="EV.openEdit('${escapeHtmlAttr(e.id)}')">
+      <div class="ev-c-head">
+        <div>
+          <div class="ev-team">${escapeHtml(e.teamName || e.teamId)}</div>
+          <div class="ev-date">${escapeHtml(e.evalDate || '')}${e.evaluator ? ' · ' + escapeHtml(e.evaluator) : ''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="ev-total">${(Number(e.total)||0).toFixed(1)}</span>
+          ${gradeBadge(e.total)}
+        </div>
+      </div>
+      <div class="ev-meta">
+        <span class="ev-tag">${escapeHtml(e.status || '')}</span>
+        ${e.remark ? `<span class="ev-tag">📝 ${escapeHtml(String(e.remark).slice(0,30))}</span>` : ''}
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  listEl.innerHTML = html;
+}
+
+function _evGradeColor(g) {
+  return { A:'#10B981', B:'#3B82F6', C:'#F59E0B', D:'#EA580C', F:'#DC2626' }[g] || '#9CA3AF';
+}
+
+const EV = {
+  state: { mode: 'create', editId: null }
+};
+
+// คำนวณคะแนน KPI + Total แบบ live (ลอก logic _evalCompute_ ฝั่ง backend)
+EV._compute = function(subScores) {
+  const cfg = state.evalConfig;
+  if (!cfg) return { kpi: {}, total: 0, weightUsed: 0 };
+  const kpi = {};
+  let total = 0, weightUsed = 0;
+  cfg.kpis.forEach(def => {
+    const vals = def.subs
+      .map(s => Number(subScores[s.no]))
+      .filter(v => !isNaN(v) && v > 0);
+    let score = 0;
+    if (vals.length) score = vals.reduce((a,b) => a+b, 0) / vals.length;
+    kpi[def.key] = Math.round(score * 100) / 100;
+    if (score > 0) { total += score * def.weight; weightUsed += def.weight; }
+  });
+  const totalScore = weightUsed > 0 ? (total / weightUsed) * 10 : 0;
+  return { kpi, total: Math.round(totalScore * 100) / 100, weightUsed };
+};
+
+EV._formHtml = function(prefill) {
+  prefill = prefill || {};
+  const cfg = state.evalConfig;
+  if (!cfg) return '<div style="padding:20px">⏳ กำลังโหลดเกณฑ์ประเมิน... ลองใหม่อีกครั้ง</div>';
+
+  const subScores = prefill.subScores || {};
+  const teams = _evContractorTeams();
+  const teamOpts = teams.map(t =>
+    `<option value="${escapeHtmlAttr(t.id)}" ${prefill.teamId === t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`
+  ).join('');
+
+  const scoreOpts = (sel) => {
+    let o = `<option value="">–</option>`;
+    for (let n = 10; n >= 1; n--) o += `<option value="${n}" ${Number(sel) === n ? 'selected' : ''}>${n}</option>`;
+    return o;
+  };
+
+  let kpiHtml = '';
+  cfg.kpis.forEach((def, idx) => {
+    const subsHtml = def.subs.map(s => `
+      <div class="ev-sub-row">
+        <div class="ev-sub-name">${escapeHtml(s.name)}<small>${escapeHtml(s.check)}</small></div>
+        <select data-sub="${escapeHtmlAttr(s.no)}" data-kpi="${escapeHtmlAttr(def.key)}" onchange="EV._refresh()">${scoreOpts(subScores[s.no])}</select>
+      </div>
+    `).join('');
+    kpiHtml += `
+      <div class="ev-kpi-sec">
+        <div class="ev-kpi-hd" onclick="EV._toggle(${idx})">
+          <div class="ev-kpi-hd-l">${escapeHtml(def.label)} <span class="ev-kpi-wt">${Math.round(def.weight*100)}%</span></div>
+          <div class="ev-kpi-avg" id="evAvg-${idx}">–</div>
+        </div>
+        <div class="ev-kpi-body${idx === 0 ? ' open' : ''}" id="evBody-${idx}">${subsHtml}</div>
+      </div>`;
+  });
+
+  // เกณฑ์ band (อ้างอิง)
+  const bandHtml = cfg.bands.map(b =>
+    `<span class="ev-tag" title="${escapeHtmlAttr(b.desc)}">${b.range} ${b.level}</span>`
+  ).join(' ');
+
+  return `
+    <div class="modal-title">${prefill.id ? 'แก้ไขการประเมิน' : 'ประเมินผู้รับเหมา'}</div>
+    <div class="ev-form">
+      <div class="rm-row">
+        <label>ผู้รับเหมา *</label>
+        <select id="evTeam">${teamOpts || '<option value="">— ไม่มีทีม —</option>'}</select>
+      </div>
+      <div class="rm-scoring" style="grid-template-columns:1fr 1fr">
+        <div class="rm-row"><label>วันที่ประเมิน</label><input type="date" id="evDate" value="${escapeHtmlAttr(prefill.evalDate || new Date().toISOString().slice(0,10))}"></div>
+        <div class="rm-row"><label>ผู้ประเมิน</label><input type="text" id="evEvaluator" value="${escapeHtmlAttr(prefill.evaluator || '')}" placeholder="ชื่อผู้ให้คะแนน"></div>
+      </div>
+      <div style="font-size:9px;color:#9CA3AF;display:flex;gap:5px;flex-wrap:wrap;align-items:center"><b style="color:#6B7280">เกณฑ์:</b>${bandHtml}</div>
+      ${kpiHtml}
+      <div class="rm-row">
+        <label>หมายเหตุ</label>
+        <textarea id="evRemark" placeholder="สรุป/ข้อสังเกตเพิ่มเติม">${escapeHtml(prefill.remark || '')}</textarea>
+      </div>
+    </div>
+    <div class="ev-total-bar">
+      <span class="lbl">คะแนนรวม (0–100)</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="ev-total-num" id="evTotalNum">0.0</span>
+        <span id="evTotalGrade">${gradeBadge(0)}</span>
+      </div>
+    </div>
+    <div class="modal-btns" style="margin-top:6px">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      ${prefill.id ? `<button class="modal-btn modal-btn-warn" onclick="EV.confirmDelete()">🗑️ ลบ</button>` : ''}
+      <button class="modal-btn modal-btn-primary" onclick="EV.submit()">${prefill.id ? 'บันทึก' : 'บันทึกผล'}</button>
+    </div>
+  `;
+};
+
+EV._toggle = function(idx) {
+  const b = document.getElementById('evBody-' + idx);
+  if (b) b.classList.toggle('open');
+};
+
+EV._collectSubs = function() {
+  const subs = {};
+  document.querySelectorAll('.ev-form select[data-sub]').forEach(sel => {
+    const v = Number(sel.value);
+    if (sel.value !== '' && !isNaN(v) && v > 0) subs[sel.getAttribute('data-sub')] = v;
+  });
+  return subs;
+};
+
+EV._refresh = function() {
+  const cfg = state.evalConfig;
+  if (!cfg) return;
+  const subs = EV._collectSubs();
+  // อัปเดต avg ต่อ KPI
+  cfg.kpis.forEach((def, idx) => {
+    const vals = def.subs.map(s => Number(subs[s.no])).filter(v => !isNaN(v) && v > 0);
+    const el = document.getElementById('evAvg-' + idx);
+    if (el) el.textContent = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '–';
+  });
+  const c = EV._compute(subs);
+  const numEl = document.getElementById('evTotalNum');
+  const grEl = document.getElementById('evTotalGrade');
+  if (numEl) numEl.textContent = c.total.toFixed(1);
+  if (grEl) grEl.innerHTML = gradeBadge(c.total);
+};
+
+EV.openCreate = function() {
+  if (!state.evalConfig) { Modal.toast('⏳ กำลังโหลดเกณฑ์ — ลองอีกครั้ง'); API.getEvalConfig().then(r=>{ if(r.ok) state.evalConfig=r.data; }); return; }
+  if (_evContractorTeams().length === 0) { Modal.toast('⚠️ ยังไม่มีผู้รับเหมา — เพิ่มทีมในหน้า Team ก่อน'); return; }
+  EV.state = { mode: 'create', editId: null };
+  Modal.show(EV._formHtml({}));
+  setTimeout(EV._refresh, 50);
+};
+
+EV.openEdit = function(evalId) {
+  const e = (state.evals || []).find(x => x.id === evalId);
+  if (!e) { Modal.toast('❌ ไม่พบการประเมิน'); return; }
+  if (!state.evalConfig) { Modal.toast('⏳ กำลังโหลดเกณฑ์ — ลองอีกครั้ง'); return; }
+  EV.state = { mode: 'edit', editId: evalId };
+  Modal.show(EV._formHtml(e));
+  setTimeout(EV._refresh, 50);
+};
+
+EV.submit = async function() {
+  const teamSel = document.getElementById('evTeam');
+  const teamId = teamSel ? teamSel.value : '';
+  if (!teamId) { Modal.toast('⚠️ เลือกผู้รับเหมาก่อน'); return; }
+  const subs = EV._collectSubs();
+  if (Object.keys(subs).length === 0) { Modal.toast('⚠️ ให้คะแนนอย่างน้อย 1 หัวข้อ'); return; }
+  const teamName = teamSel.options[teamSel.selectedIndex] ? teamSel.options[teamSel.selectedIndex].text : '';
+  const data = {
+    team_id: teamId,
+    team_name: teamName,
+    eval_date: document.getElementById('evDate').value,
+    evaluator: document.getElementById('evEvaluator').value.trim(),
+    remark: document.getElementById('evRemark').value.trim(),
+    sub_scores: JSON.stringify(subs)
+  };
+  Modal.toast('⏳ กำลังบันทึก...');
+  try {
+    let res;
+    if (EV.state.mode === 'edit') {
+      data.id = EV.state.editId;
+      res = await API.updateEval(data);
+    } else {
+      res = await API.createEval(data);
+    }
+    if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'error')); return; }
+    Modal.close();
+    Modal.toast('✅ บันทึกผลแล้ว');
+    setTimeout(() => loadData(), 400);
+  } catch (e) {
+    Modal.toast('❌ ' + e.message);
+  }
+};
+
+EV.confirmDelete = async function() {
+  const ok = await Modal.confirm({
+    icon: '🗑️', iconClass: 'warn', title: 'ลบการประเมิน?',
+    desc: 'จะลบผลประเมิน ' + EV.state.editId + ' ออกถาวร',
+    confirmText: 'ลบ', cancelText: 'ยกเลิก', confirmClass: 'modal-btn-warn'
+  });
+  if (!ok) return;
+  try {
+    const res = await API.deleteEval(EV.state.editId);
+    if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'ลบไม่สำเร็จ')); return; }
+    Modal.toast('✅ ลบแล้ว');
+    setTimeout(() => loadData(), 400);
+  } catch (e) {
+    Modal.toast('❌ ' + e.message);
+  }
+};
 
 // ============================================================
 // 🔍 FF DETAIL OVERLAY (ขั้น C)
@@ -2552,6 +3230,37 @@ FFW.confirmDelete = async function(ffCode) {
     Modal.toast('❌ ' + e.message);
   }
 };
+
+// ============================================================
+// Phase C-4: Clone template — copy FF + tasks จาก bow-house
+// ============================================================
+async function confirmCloneFromTemplate(targetProjectId, projectName) {
+  const ok = await Modal.confirm({
+    icon: '📋',
+    iconClass: 'info',
+    title: 'ใช้ template จาก Bow House?',
+    desc: 'จะคัดลอก FF ทั้งหมด (15 รายการ) และ tasks ของแต่ละ FF มาที่ "' + projectName + '"',
+    info: 'ทุกรายการจะเริ่มที่สถานะ "Not Started" — ลบ/แก้ไขทีหลังได้',
+    confirmText: 'คัดลอก',
+    cancelText: 'ยกเลิก',
+    confirmClass: 'modal-btn-primary'
+  });
+  if (!ok) return;
+
+  Modal.toast('⏳ กำลังคัดลอก...');
+  try {
+    const res = await API.cloneFromTemplate(targetProjectId, 'bow-house', true);
+    if (!res || !res.ok) {
+      Modal.toast('❌ คัดลอกไม่สำเร็จ: ' + ((res && res.error) || 'unknown'));
+      return;
+    }
+    const d = res.data || {};
+    Modal.toast('✅ คัดลอก FF ' + (d.ff_cloned || 0) + ' รายการ + tasks ' + (d.tasks_cloned || 0) + ' รายการ');
+    setTimeout(() => loadData(), 600);
+  } catch (e) {
+    Modal.toast('❌ ' + e.message);
+  }
+}
 
 // START
 loadData();

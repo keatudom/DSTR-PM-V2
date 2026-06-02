@@ -132,6 +132,26 @@
 .ps-btn-out { background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA; }
 .ps-btn-out:hover { background:#FEE2E2; }
 .ps-chip-on { font-size:10px; padding:3px 9px; border-radius:99px; font-weight:600; background:#E1F5EE; color:#0F6E56; flex-shrink:0; }
+/* Contractor evaluation — grade badge + ranking */
+.grade-badge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;padding:0 6px;border-radius:7px;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
+.grade-badge.sm{min-width:22px;height:22px;font-size:11px;border-radius:6px}
+.grade-A{background:#10B981}
+.grade-B{background:#3B82F6}
+.grade-C{background:#F59E0B}
+.grade-D{background:#EA580C}
+.grade-F{background:#DC2626}
+.ev-score-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:#6B7280;font-weight:600}
+.ev-rank-card{background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px}
+.ev-rank-h{font-size:13px;font-weight:700;color:#1F2937;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.ev-rank-sub{font-size:10px;color:#9CA3AF;margin-bottom:10px}
+.ev-rank-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid #F3F4F6}
+.ev-rank-row:last-child{border-bottom:none}
+.ev-rank-no{font-size:13px;font-weight:800;color:#9CA3AF;min-width:22px;text-align:center}
+.ev-rank-row.top .ev-rank-no{color:#D97706}
+.ev-rank-name{flex:1;font-size:12px;font-weight:600;color:#374151}
+.ev-rank-name small{display:block;font-size:9px;color:#9CA3AF;font-weight:400}
+.ev-rank-score{font-size:12px;font-weight:700;color:#1F3864}
+.ev-rank-blacklist{font-size:9px;background:#FEE2E2;color:#B91C1C;padding:2px 7px;border-radius:99px;font-weight:700}
 </style>
 </head>
 <body>
@@ -190,6 +210,8 @@ const tmState = {
   projectStaff: [],        // staff ที่ assign ใน Bow House (27_Project_Staff)
   contractFiles: [],
   paymentSlips: [],
+  evalSummary: {},        // team_id -> {avg,grade,count,...} (ข้ามโครงการ)
+  evalRanking: [],        // เรียงคะแนนมาก→น้อย
   isAdmin: true,
   collapsed: {},
   // Phase B-3: อ่านจาก state.projectId (set โดย state.js IIFE จาก ?project= URL)
@@ -221,6 +243,16 @@ async function loadAll() {
       const psRes = await API.getProjectStaff(tmState.projectId);
       tmState.projectStaff = (psRes && psRes.ok && Array.isArray(psRes.data)) ? psRes.data : [];
     } catch (e) { tmState.projectStaff = []; }
+
+    // โหลดสรุปคะแนนประเมินผู้รับเหมา (ข้ามโครงการ) — 28_Contractor_Evaluations
+    try {
+      const evRes = await API.getEvalSummary();
+      if (evRes && evRes.ok && Array.isArray(evRes.data)) {
+        tmState.evalRanking = evRes.data;
+        tmState.evalSummary = {};
+        evRes.data.forEach(s => { tmState.evalSummary[s.teamId] = s; });
+      }
+    } catch (e) { tmState.evalRanking = []; tmState.evalSummary = {}; }
 
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
@@ -261,7 +293,7 @@ function renderContractors() {
     return;
   }
 
-  let html = '';
+  let html = renderEvalRanking();
   teams.forEach(team => {
     html += renderTeamCard(team);
   });
@@ -270,6 +302,35 @@ function renderContractors() {
     html += '<button class="tm-add-team" onclick="openAddTeam()">+ เพิ่มทีม / ผู้รับเหมา</button>';
   }
   el.innerHTML = html;
+}
+
+// 🏆 Ranking ผู้รับเหมา (ข้ามทุกโครงการ) + Blacklist alert
+function renderEvalRanking() {
+  const ranking = (tmState.evalRanking || []).filter(r => r.count > 0);
+  if (ranking.length === 0) return '';
+  let rows = '';
+  ranking.forEach(r => {
+    const isBlacklist = r.grade === 'F';
+    rows += `
+      <div class="ev-rank-row ${r.rank <= 3 ? 'top' : ''}">
+        <span class="ev-rank-no">${r.rank <= 3 ? ['🥇','🥈','🥉'][r.rank-1] : r.rank}</span>
+        <div class="ev-rank-name">${escapeHtml(r.teamName)}<small>ประเมิน ${r.count} ครั้ง${r.lastDate ? ' · ล่าสุด ' + escapeHtml(r.lastDate) : ''}</small></div>
+        ${isBlacklist ? '<span class="ev-rank-blacklist">🚩 Blacklist</span>' : ''}
+        <span class="ev-rank-score">${(Number(r.avg)||0).toFixed(1)}</span>
+        ${evGradeBadge(r.grade, true)}
+      </div>`;
+  });
+  return `
+    <div class="ev-rank-card">
+      <div class="ev-rank-h">🏆 อันดับผู้รับเหมา (คะแนนเฉลี่ยรวมทุกโครงการ)</div>
+      <div class="ev-rank-sub">เกรด A ≥90 · B ≥80 · C ≥70 · D ≥60 · F &lt;60 (Blacklist)</div>
+      ${rows}
+    </div>`;
+}
+
+function evGradeBadge(grade, sm) {
+  const g = grade || '–';
+  return `<span class="grade-badge grade-${g}${sm ? ' sm' : ''}">${g}</span>`;
 }
 
 function renderTeamCard(team) {
@@ -309,6 +370,11 @@ function renderTeamCard(team) {
           <div class="tm-card-name">${escapeHtml(team.name)}</div>
           <div class="tm-card-sub">หัวหน้า: ${escapeHtml(team.lead_name || '-')}</div>
         </div>
+        ${(function(){
+          const s = tmState.evalSummary[team.team_id];
+          if (!s || !s.count) return '';
+          return `<span class="ev-score-pill" title="คะแนนเฉลี่ย ${(Number(s.avg)||0).toFixed(1)} จาก ${s.count} ครั้ง">${(Number(s.avg)||0).toFixed(0)}${evGradeBadge(s.grade, true)}</span>`;
+        })()}
         <span class="tm-badge tm-badge-active">ทำงานอยู่</span>
         ${tmState.isAdmin ? `<span class="tm-chev" onclick="toggleCollapse('${team.team_id}')">${collapsed ? '▸' : '▾'}</span>` : ''}
       </div>

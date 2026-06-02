@@ -329,6 +329,102 @@ const API = {
     return this.callRead('delete_ff', { code: code });
   },
 
+  /**
+   * Phase C-4 — Clone โปรเจกต์จาก template (default: bow-house)
+   * คัดลอก FF + tasks จาก source ไป target — reset status เป็น 'Not Started'
+   * ใช้ callRead (JSONP GET) — payload เล็ก แค่ project IDs
+   * @param {string} targetProjectId - โปรเจกต์ปลายทาง (ต้องมีอยู่ใน 00_Projects + ยังไม่มี FF)
+   * @param {string} [sourceProjectId='bow-house'] - โปรเจกต์ต้นแบบ
+   * @param {boolean} [includeTasks=true] - คัดลอก tasks ของแต่ละ FF ด้วยหรือไม่
+   * Returns: { ok:true, data:{ source, target, ff_cloned, tasks_cloned } }
+   */
+  cloneFromTemplate: function(targetProjectId, sourceProjectId, includeTasks) {
+    return this.callRead('clone_project', {
+      target_project_id: targetProjectId,
+      source_project_id: sourceProjectId || 'bow-house',
+      include_tasks: (includeTasks === false) ? 'false' : 'true'
+    });
+  },
+
+  // ============================================================
+  // ⚠️ RISKS (Phase R-1/R-2/R-3) — risk register + matrix
+  // ============================================================
+
+  /**
+   * เพิ่ม risk 1 รายการ
+   * @param {object} data - { description, likelihood_score (1-5), impact_score (1-5),
+   *                          category, affected_parties, causes, mitigation, owner, status }
+   */
+  createRisk: function(data) {
+    return this.callRead('create_risk', data);
+  },
+
+  /**
+   * แก้ไข risk
+   * @param {object} data - { id (req), description?, likelihood_score?, impact_score?, ... }
+   */
+  updateRisk: function(data) {
+    return this.callRead('update_risk', data);
+  },
+
+  /**
+   * ลบ risk
+   * @param {string} riskId
+   */
+  deleteRisk: function(riskId) {
+    return this.callRead('delete_risk', { id: riskId });
+  },
+
+  /**
+   * Clone risks จาก template (default: direk-template) ไป project ปัจจุบัน
+   * @param {string} targetProjectId
+   * @param {string} [sourceProjectId='direk-template']
+   */
+  cloneRisksFromTemplate: function(targetProjectId, sourceProjectId) {
+    return this.callRead('clone_risks', {
+      target_project_id: targetProjectId,
+      source_project_id: sourceProjectId || 'direk-template'
+    });
+  },
+
+  // ============================================================
+  // 📋 CONTRACTOR EVALUATION — ประเมินผู้รับเหมา (KPI 100 คะแนน)
+  // ============================================================
+
+  /** ดึง config KPI/น้ำหนัก/เกณฑ์ สำหรับสร้างฟอร์ม */
+  getEvalConfig: function() {
+    return this.callRead('get_eval_config');
+  },
+
+  /** ดึงรายการประเมินของโปรเจกต์ปัจจุบัน (auto-inject project_id) */
+  getEvals: function(teamId) {
+    return this.callRead('get_evals', { team_id: teamId || '' });
+  },
+
+  /** สรุปคะแนนเฉลี่ย/เกรด/Ranking ต่อทีม (ข้ามโครงการ — สำหรับ team.html) */
+  getEvalSummary: function() {
+    return this.callRead('get_eval_summary', { project_id: '' });
+  },
+
+  /**
+   * บันทึกการประเมิน 1 ครั้ง
+   * @param {object} data - { team_id (req), team_name?, eval_date?, evaluator?, remark?,
+   *                          sub_scores (JSON string {'1.1':8,...}), kpi_scores? }
+   */
+  createEval: function(data) {
+    return this.callRead('create_eval', data);
+  },
+
+  /** แก้ไขการประเมิน */
+  updateEval: function(data) {
+    return this.callRead('update_eval', data);
+  },
+
+  /** ลบการประเมิน */
+  deleteEval: function(evalId) {
+    return this.callRead('delete_eval', { id: evalId });
+  },
+
   // ============================================================
   // 🏠 FF ITEMS
   // ============================================================

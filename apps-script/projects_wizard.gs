@@ -275,3 +275,124 @@ function createFFBatch_(p) {
     task_errors: taskErrors
   };
 }
+
+// ============================================================
+// Phase C-4: Clone from template (bow-house) — โปรเจกต์ใหม่ใช้ template เดิม
+// ============================================================
+
+/**
+ * batch append หลาย row พร้อม stamp project_id (เร็วกว่า appendRow ทีละ row)
+ * @param {string} sheetName
+ * @param {Array<object>} objs
+ * @param {string} pid - project_id ที่จะ stamp (ถ้า sheet มี column และ obj ยังไม่ set)
+ * @returns {number} จำนวน row ที่เขียน
+ */
+function _batchAppendRows_(sheetName, objs, pid) {
+  if (!objs || !objs.length) return 0;
+  const sh = getSheet(sheetName);
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const hasPid = headers.indexOf('project_id') !== -1;
+
+  const rows = objs.map(function(obj) {
+    if (pid && hasPid && (obj.project_id === undefined || obj.project_id === null || obj.project_id === '')) {
+      obj.project_id = pid;
+    }
+    return headers.map(function(h) {
+      return (h && obj[h] !== undefined) ? obj[h] : '';
+    });
+  });
+
+  if (rows.length > 0) {
+    sh.getRange(sh.getLastRow() + 1, 1, rows.length, headers.length).setValues(rows);
+  }
+  return rows.length;
+}
+
+/**
+ * Clone โปรเจกต์ — copy FF + tasks จาก source (default: bow-house) ไป target
+ * - target ต้องมีอยู่ใน 00_Projects และยังไม่มี FF (กัน clone ทับซ้ำ)
+ * - reset status ทุก row → 'Not Started' (project ใหม่ = ยังไม่เริ่ม)
+ * - Task ID re-issue ใหม่ทั้งหมด (กัน collision)
+ * - ไม่ copy: Start/End/Done Date, Person In Charge (เริ่มใหม่ของแต่ละ project)
+ *
+ * @param {object} p - { target_project_id (req — fallback: p.project_id), source_project_id ('bow-house' default), include_tasks (true default) }
+ * @returns {object} { source, target, ff_cloned, tasks_cloned }
+ */
+function cloneProject_(p) {
+  p = p || {};
+  const target = String(p.target_project_id || p.project_id || '').trim();
+  const source = String(p.source_project_id || 'bow-house').trim();
+  const includeTasks = !(p.include_tasks === false || p.include_tasks === 'false' || p.include_tasks === '0');
+
+  if (!target) throw new Error('target_project_id ต้องระบุ');
+  if (target === source) throw new Error('target และ source ต้องไม่ใช่อันเดียวกัน');
+
+  // Validate target มีอยู่ใน 00_Projects
+  const projects = getProjects_();
+  const targetProject = projects.find(function(pj) { return pj.project_id === target; });
+  if (!targetProject) throw new Error('ไม่พบโปรเจกต์ target: ' + target);
+
+  // กัน clone ซ้ำ — target ยังไม่มี FF
+  const existingFF = _filterByProject_(getAllRows(SHEET.FF), target);
+  if (existingFF.length > 0) {
+    throw new Error('โปรเจกต์ปลายทางมี FF อยู่แล้ว ' + existingFF.length + ' รายการ — ยกเลิก clone');
+  }
+
+  // อ่าน source FF
+  const sourceFFs = _filterByProject_(getAllRows(SHEET.FF), source);
+  if (sourceFFs.length === 0) {
+    throw new Error('โปรเจกต์ต้นแบบไม่มี FF: ' + source);
+  }
+
+  // เตรียม FF rows (reset status + ตัด project_id ของ source ทิ้ง — appendRow จะ stamp ใหม่)
+  const ffFields = ['FF Code', 'BF Code', 'Item Name', 'Area / Room', 'Zone',
+                    'Price (THB)', 'Scope Type', 'Status', 'Risk Level', 'Notes'];
+  const ffRowsToInsert = sourceFFs.map(function(ff) {
+    const row = {};
+    ffFields.forEach(function(f) {
+      if (ff[f] !== undefined && ff[f] !== null) row[f] = ff[f];
+    });
+    row['Status'] = 'Not Started';  // reset
+    return row;
+  });
+
+  // เตรียม Task rows (re-issue Task ID + reset status/dates)
+  let taskRowsToInsert = [];
+  if (includeTasks) {
+    const sourceTasks = _filterByProject_(getAllRows(SHEET.TASKS), source);
+    // pre-compute max Task ID number เพื่อเลี่ยง O(N²) generateId
+    const allTasks = getAllRows(SHEET.TASKS);
+    let maxNum = 0;
+    allTasks.forEach(function(t) {
+      const m = String(t['Task ID'] || '').match(/(\d+)$/);
+      if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10));
+    });
+    taskRowsToInsert = sourceTasks.map(function(t) {
+      maxNum++;
+      return {
+        'Task ID':    'T' + String(maxNum).padStart(3, '0'),
+        'FF Code':    t['FF Code'] || '',
+        'Zone':       t['Zone'] || '',
+        'Phase':      t['Phase'] || '',
+        'Task Name':  t['Task Name'] || '',
+        'Status':     'Not Started',
+        'Start Date': '',
+        'End Date':   '',
+        'Done Date':  '',
+        'Person In Charge': '',
+        'Notes':      t['Notes'] || ''
+      };
+    });
+  }
+
+  // เขียนเป็น batch (เร็วกว่า appendRow loop)
+  const ffCloned = _batchAppendRows_(SHEET.FF, ffRowsToInsert, target);
+  const tasksCloned = _batchAppendRows_(SHEET.TASKS, taskRowsToInsert, target);
+
+  return {
+    source: source,
+    target: target,
+    ff_cloned: ffCloned,
+    tasks_cloned: tasksCloned
+  };
+}
