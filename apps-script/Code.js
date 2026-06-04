@@ -387,6 +387,9 @@ function route(action, p) {
     case '_ensure_eval_sheets': return _ensureEvalSheets_();   // สร้างตู้ใหม่ (idempotent)
     case '_seed_eval_rubric':   return seedEvalRubric_();      // seed เกณฑ์มาตรฐาน (idempotent)
 
+    // 💰 INVENTORY VALUE SUMMARY — สรุปมูลค่าคงคลัง (รับ/ใช้/เหลือ เป็นบาท)
+    case 'get_inventory_summary': return getInventorySummary_(p);
+
     // ⚠️ RISKS (Phase R-1/R-2/R-3) — ดู risks.gs
     case 'create_risk': return createRisk_(p);
     case 'update_risk': return updateRisk_(p);
@@ -793,6 +796,66 @@ function createSupplier(p) {
   };
   appendRow(SHEET.SUPPLIERS, row);
   return row;
+}
+
+
+// ============================================================
+// 💰 INVENTORY VALUE SUMMARY (ปรับจากระบบ inventory ของ PM)
+// สรุปมูลค่าคงคลังเป็นเงินบาท: รับเข้า / จ่ายออก / คงเหลือ — รวม + แยกหมวด
+// ใช้ข้อมูลที่มีอยู่: total_value ใน 12_Material_Transactions + stock×price ใน 11_Materials
+// ============================================================
+function getInventorySummary_(p) {
+  const projectId = (p && p.project_id) || _getCurrentProjectId_() || 'bow-house';
+  const materials = _filterByProject_(getAllRows(SHEET.MATERIALS), projectId)
+    .filter(function(m) { return m.active === true || m.active === 'TRUE' || m.active === 'true'; });
+  const txns = _filterByProject_(getAllRows(SHEET.TRANSACTIONS), projectId);
+
+  const matById = {};
+  materials.forEach(function(m) { matById[String(m.id)] = m; });
+
+  const cats = {};
+  function ensure(c) {
+    const k = (c && String(c).trim()) ? String(c).trim() : 'ไม่ระบุหมวด';
+    if (!cats[k]) cats[k] = { category: k, received: 0, issued: 0, balance: 0 };
+    return cats[k];
+  }
+
+  // คงเหลือ = current_stock × default_price (มูลค่าสต๊อกจริงตอนนี้)
+  materials.forEach(function(m) {
+    const val = Number(m.current_stock || 0) * Number(m.default_price || 0);
+    ensure(m.category).balance += val;
+  });
+
+  // รับเข้า/จ่ายออก = ผลรวม total_value จาก transaction
+  txns.forEach(function(t) {
+    const m = matById[String(t.material_id)];
+    const cat = m ? m.category : 'ไม่ระบุหมวด';
+    const val = Number(t.total_value || 0);
+    if (t.type === 'รับ') ensure(cat).received += val;
+    else if (t.type === 'เบิก') ensure(cat).issued += val;
+  });
+
+  const round2 = function(n) { return Math.round(Number(n || 0) * 100) / 100; };
+  const byCat = Object.keys(cats).map(function(k) { return cats[k]; })
+    .filter(function(c) { return c.received || c.issued || c.balance; })
+    .sort(function(a, b) { return b.received - a.received; });
+  byCat.forEach(function(c) { c.received = round2(c.received); c.issued = round2(c.issued); c.balance = round2(c.balance); });
+
+  const totals = byCat.reduce(function(acc, c) {
+    return { received: acc.received + c.received, issued: acc.issued + c.issued, balance: acc.balance + c.balance };
+  }, { received: 0, issued: 0, balance: 0 });
+  totals.received = round2(totals.received);
+  totals.issued = round2(totals.issued);
+  totals.balance = round2(totals.balance);
+
+  // meta: ให้ frontend แยกแยะ "ไม่มีวัสดุ" กับ "มีวัสดุแต่ยังไม่ใส่ราคา"
+  const priced = materials.filter(function(m) { return Number(m.default_price || 0) > 0; }).length;
+
+  return {
+    totals: totals,
+    by_category: byCat,
+    meta: { materials: materials.length, priced: priced, transactions: txns.length }
+  };
 }
 
 

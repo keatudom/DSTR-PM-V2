@@ -425,6 +425,11 @@ const API = {
     return this.callRead('delete_eval', { id: evalId });
   },
 
+  /** สรุปมูลค่าคงคลัง (รับ/ใช้/เหลือ เป็นบาท รวม+แยกหมวด) ของโปรเจกต์ปัจจุบัน */
+  getInventorySummary: function() {
+    return this.callRead('get_inventory_summary');
+  },
+
   // ============================================================
   // 🏠 FF ITEMS
   // ============================================================

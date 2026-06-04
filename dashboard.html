@@ -379,6 +379,25 @@
 .ev-rank-name{flex:1;font-size:12px;font-weight:600;color:#374151}
 .ev-rank-name small{display:block;font-size:9px;color:#9CA3AF;font-weight:400}
 .ev-rank-blacklist{font-size:9px;background:#FEE2E2;color:#B91C1C;padding:2px 7px;border-radius:99px;font-weight:700}
+/* Inventory value summary (ปรับจากระบบ PM) */
+.inv-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.inv-card{border-radius:10px;padding:12px 8px;text-align:center;color:#fff}
+.inv-card.received{background:#3B82F6}
+.inv-card.issued{background:#F59E0B}
+.inv-card.balance{background:#10B981}
+.inv-card .lbl{font-size:10px;font-weight:600;opacity:.95}
+.inv-card .val{font-size:18px;font-weight:800;margin-top:3px;line-height:1.1}
+.inv-card .unit{font-size:9px;opacity:.85}
+.inv-warn{font-size:11px;border-radius:8px;padding:9px 11px;margin-bottom:12px;line-height:1.55}
+.inv-warn.bad{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C}
+.inv-warn.ok{background:#F0FDF4;border:1px solid #BBF7D0;color:#15803D}
+.inv-cat-row{display:grid;grid-template-columns:1fr 64px 64px 64px;gap:6px;align-items:center;padding:7px 4px;border-bottom:1px solid #F3F4F6;font-size:11px}
+.inv-cat-row.head{font-weight:700;color:#6B7280;border-bottom:2px solid #E5E7EB;font-size:10px}
+.inv-cat-name{color:#374151;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inv-cat-row .r{color:#2563EB;font-weight:600;text-align:right}
+.inv-cat-row .i{color:#D97706;font-weight:600;text-align:right}
+.inv-cat-row .b{color:#059669;font-weight:600;text-align:right}
+.inv-empty{font-size:11px;color:#9CA3AF;padding:10px}
 
 /* ============================================================
    FAB (Floating Action Button)
@@ -766,6 +785,12 @@
       <div class="gauge-row" id="gaugeRow"></div>
     </div>
 
+    <!-- Inventory value summary (ปรับจากระบบ inventory ของ PM) -->
+    <div class="card">
+      <div class="card-title">💰 มูลค่าวัสดุคงคลัง</div>
+      <div id="invSummary"><div class="inv-empty">กำลังโหลด...</div></div>
+    </div>
+
     <!-- Weight Progress List (รวมกับ Checklist) -->
     <div class="card">
       <div class="card-title">
@@ -932,6 +957,7 @@ state.teams = [];
 state.alerts = [];
 state.evals = [];
 state.evalConfig = null;
+state.inventory = null;
 
 // ============================================================
 // MAIN LOAD
@@ -959,6 +985,11 @@ async function loadData() {
         state.teams = res.data;
         renderHubCards();
       }
+    }).catch(()=>{});
+
+    // โหลดสรุปมูลค่าคงคลัง (parallel)
+    API.getInventorySummary().then(res => {
+      if (res.ok && res.data) { state.inventory = res.data; renderInventory(); }
     }).catch(()=>{});
 
     // โหลดการประเมินผู้รับเหมา (parallel) — 28_Contractor_Evaluations
@@ -1055,7 +1086,61 @@ function renderAll() {
   renderTimeline();
   renderRisks();
   renderEvals();
+  renderInventory();
   renderHubCards();
+}
+
+// ============================================================
+// 💰 INVENTORY VALUE SUMMARY (ปรับจากระบบ inventory ของ PM)
+// ============================================================
+function renderInventory() {
+  const el = document.getElementById('invSummary');
+  if (!el) return;
+  const inv = state.inventory;
+  if (!inv) { el.innerHTML = '<div class="inv-empty">กำลังโหลด...</div>'; return; }
+  const t = inv.totals || { received: 0, issued: 0, balance: 0 };
+  const meta = inv.meta || { materials: 0, priced: 0, transactions: 0 };
+  if (!t.received && !t.issued && !t.balance) {
+    if (meta.materials > 0) {
+      // มีวัสดุแต่ราคา = 0 → บอกให้ใส่ราคา
+      el.innerHTML = `<div class="inv-warn bad" style="margin:0">💡 มีวัสดุ <b>${meta.materials}</b> รายการ แต่ยังไม่ได้ใส่ <b>ราคาต่อหน่วย</b> — ระบบจึงคิดมูลค่าเป็นเงินไม่ได้<br>ใส่ราคาในหน้า <b>Materials</b> (แก้ไขวัสดุ → ราคา) แล้วมูลค่า ซื้อ/ใช้/เหลือ จะคำนวณให้อัตโนมัติ</div>`;
+    } else {
+      el.innerHTML = '<div class="inv-empty">ยังไม่มีวัสดุในโครงการนี้ — เพิ่มวัสดุในหน้า Materials</div>';
+    }
+    return;
+  }
+
+  let html = `<div class="inv-cards">
+    <div class="inv-card received"><div class="lbl">ซื้อเข้ามา</div><div class="val">${fmt(t.received)}</div><div class="unit">บาท</div></div>
+    <div class="inv-card issued"><div class="lbl">เบิกใช้ไป</div><div class="val">${fmt(t.issued)}</div><div class="unit">บาท</div></div>
+    <div class="inv-card balance"><div class="lbl">ค้างสต๊อก</div><div class="val">${fmt(t.balance)}</div><div class="unit">บาท</div></div>
+  </div>`;
+
+  // เตือนต้นทุนวัสดุ vs ความคืบหน้างาน
+  if (t.received > 0) {
+    const workPct = calcProjectProgress();
+    const usedPct = Math.round(t.issued / t.received * 100);
+    const gap = usedPct - workPct;
+    if (gap > 20) {
+      html += `<div class="inv-warn bad">⚠️ ใช้วัสดุไปแล้ว <b>${usedPct}%</b> ของที่ซื้อมา แต่งานเสร็จ <b>${workPct}%</b> — ใช้วัสดุเร็วกว่างานมาก ควรเช็คความเปลือง / ของหาย / ซื้อตุนเกิน</div>`;
+    } else {
+      html += `<div class="inv-warn ok">✓ ใช้วัสดุ <b>${usedPct}%</b> · งานเสร็จ <b>${workPct}%</b> — อัตราการใช้วัสดุสมดุลกับงาน</div>`;
+    }
+  }
+
+  const cats = inv.by_category || [];
+  if (cats.length) {
+    html += `<div class="inv-cat-row head"><div>หมวดวัสดุ</div><div class="r">ซื้อ</div><div class="i">ใช้</div><div class="b">เหลือ</div></div>`;
+    cats.forEach(c => {
+      html += `<div class="inv-cat-row">
+        <div class="inv-cat-name" title="${escapeHtmlAttr(c.category)}">${escapeHtml(c.category)}</div>
+        <div class="r">${fmt(c.received)}</div>
+        <div class="i">${fmt(c.issued)}</div>
+        <div class="b">${fmt(c.balance)}</div>
+      </div>`;
+    });
+  }
+  el.innerHTML = html;
 }
 
 // ============================================================
