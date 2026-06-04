@@ -354,6 +354,17 @@
 .rm-chip-row > span{font-size:11px;color:#6B7280;font-weight:600}
 .rm-chips{display:flex;gap:5px}
 .ev-band-b1{color:#DC2626}.ev-band-b2{color:#EA580C}.ev-band-b3{color:#F59E0B}.ev-band-b4{color:#3B82F6}.ev-band-b5{color:#10B981}
+/* checklist mode — ติ๊ก ผ่าน/ปัญหา/ข้าม ต่อข้อ */
+.ev-kpi-stat{font-size:11px;font-weight:700;min-width:78px;text-align:right;color:#9CA3AF}
+.ev-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px dashed #F0F0F0}
+.ev-item:last-child{border-bottom:none}
+.ev-item-name{font-size:12px;color:#374151;line-height:1.35;flex:1}
+.ev-seg{display:flex;gap:4px;flex-shrink:0}
+.ev-seg-btn{min-width:38px;height:30px;border:1px solid #E5E7EB;background:#fff;border-radius:6px;font-size:11px;font-weight:600;color:#9CA3AF;cursor:pointer;transition:transform .08s}
+.ev-seg-btn:active{transform:scale(0.9)}
+.ev-seg-btn.on-pass{background:#10B981;color:#fff;border-color:transparent}
+.ev-seg-btn.on-fail{background:#DC2626;color:#fff;border-color:transparent}
+.ev-seg-btn.on-skip{background:#9CA3AF;color:#fff;border-color:transparent}
 .ev-total-bar{position:sticky;bottom:0;background:#fff;border-top:2px solid #E5E7EB;padding:11px 2px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px}
 .ev-total-bar .lbl{font-size:11px;color:#6B7280;font-weight:600}
 .ev-total-bar .lbl small{display:block;color:#9CA3AF;font-size:9px;font-weight:400}
@@ -2465,23 +2476,45 @@ const EV = {
   state: { mode: 'create', editId: null }
 };
 
-// คำนวณคะแนน KPI + Total แบบ live (ลอก logic _evalCompute_ ฝั่ง backend)
-// EV.state.scores = { KPIkey: 1-10 }  (ให้คะแนนระดับหมวดโดยตรง)
-EV._bandClass = function(v) { v = Number(v)||0; return v>=9?'b5':v>=7?'b4':v>=5?'b3':v>=3?'b2':'b1'; };
-EV._bandLabel = function(v) { v = Number(v)||0; return v>=9?'ดีเยี่ยม':v>=7?'ดี':v>=5?'ปานกลาง':v>=3?'ต้องปรับปรุง':v>=1?'ไม่ยอมรับ':'–'; };
+// โหมดเช็กลิสต์: EV.state.items = { itemId: 'pass'|'fail'|'skip' }
+// คะแนนหมวด = ผ่าน / (ผ่าน+ปัญหา) × 10 · ข้ามไม่นับ · รวมถ่วงน้ำหนัก
 
-EV._compute = function(scores) {
+// สถิติของหมวดหนึ่ง จาก items ปัจจุบัน
+EV._kpiStat = function(def) {
+  let pass = 0, fail = 0;
+  def.subs.forEach(s => {
+    const st = EV.state.items[s.no];
+    if (st === 'pass') pass++;
+    else if (st === 'fail') fail++;
+  });
+  const evaluated = pass + fail;
+  const score = evaluated > 0 ? (pass / evaluated) * 10 : null;  // null = ข้ามทั้งหมด
+  return { pass, fail, evaluated, score };
+};
+
+EV._compute = function() {
   const cfg = state.evalConfig;
-  if (!cfg) return { kpi: {}, total: 0, weightUsed: 0 };
-  const kpi = {};
+  if (!cfg) return { kpiScores: {}, total: 0, weightUsed: 0 };
+  const kpiScores = {};
   let total = 0, weightUsed = 0;
   cfg.kpis.forEach(def => {
-    const score = Number(scores[def.key]) || 0;
-    kpi[def.key] = score;
-    if (score > 0) { total += score * def.weight; weightUsed += def.weight; }
+    const st = EV._kpiStat(def);
+    if (st.score !== null) {
+      kpiScores[def.key] = Math.round(st.score * 100) / 100;
+      total += st.score * def.weight;
+      weightUsed += def.weight;
+    }
   });
   const totalScore = weightUsed > 0 ? (total / weightUsed) * 10 : 0;
-  return { kpi, total: Math.round(totalScore * 100) / 100, weightUsed };
+  return { kpiScores, total: Math.round(totalScore * 100) / 100, weightUsed };
+};
+
+// สี/ข้อความป้ายสถิติหมวด
+EV._statHtml = function(st) {
+  if (st.score === null) return '<span style="color:#9CA3AF">ข้าม</span>';
+  const sc = st.score;
+  const color = sc >= 7 ? '#10B981' : (sc >= 5 ? '#F59E0B' : '#DC2626');
+  return `<span style="color:${color}">ผ่าน ${st.pass}/${st.evaluated} · ${sc.toFixed(1)}</span>`;
 };
 
 EV._formHtml = function(prefill) {
@@ -2489,45 +2522,54 @@ EV._formHtml = function(prefill) {
   const cfg = state.evalConfig;
   if (!cfg) return '<div style="padding:20px">⏳ กำลังโหลดเกณฑ์ประเมิน... ลองใหม่อีกครั้ง</div>';
 
-  // เริ่มจากคะแนนเดิม (โหมดแก้ไข) — ปัดเป็นจำนวนเต็มเพื่อ map กับปุ่ม
-  EV.state.scores = {};
-  if (prefill.kpi) {
-    cfg.kpis.forEach(def => {
-      const v = Math.round(Number(prefill.kpi[def.key]) || 0);
-      if (v > 0) EV.state.scores[def.key] = v;
-    });
-  }
+  // ตั้งสถานะเริ่มต้นของแต่ละข้อ
+  EV.state.items = {};
+  const prefMap = prefill.subScores || {};  // โหมดแก้ไข: { itemId: 'pass'|'fail' }
+  cfg.kpis.forEach(def => def.subs.forEach(s => {
+    if (prefill.id) {
+      // แก้ไข: ข้อที่เคยบันทึก = ค่าเดิม, ข้อที่ไม่มี = เคยข้าม
+      EV.state.items[s.no] = (prefMap[s.no] === 'pass' || prefMap[s.no] === 'fail') ? prefMap[s.no] : 'skip';
+    } else {
+      EV.state.items[s.no] = 'pass';  // สร้างใหม่: ตั้งต้น "ผ่าน" ทุกข้อ แล้วผู้ประเมินกดเฉพาะข้อที่มีปัญหา
+    }
+  }));
 
   const teams = _evContractorTeams();
   const teamOpts = teams.map(t =>
     `<option value="${escapeHtmlAttr(t.id)}" ${prefill.teamId === t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`
   ).join('');
 
+  const segBtn = (itemId, idx, st, label, val) =>
+    `<button type="button" class="ev-seg-btn${st === val ? ' on-' + val : ''}" data-v="${val}" onclick="EV._pick('${itemId}',${idx},'${val}',this)">${label}</button>`;
+
   let kpiHtml = '';
   cfg.kpis.forEach((def, idx) => {
-    const cur = EV.state.scores[def.key] || 0;
-    const hint = def.subs.map(s => s.name).join(' · ');
-    let chips = '';
-    for (let n = 1; n <= 10; n++) {
-      const sel = n === cur ? ' sel ' + EV._bandClass(n) : '';
-      chips += `<div class="ev-chip${sel}" onclick="EV._pick(${idx},'${def.key}',${n},this)">${n}</div>`;
-    }
-    const bandTxt = cur ? cur + ' · ' + EV._bandLabel(cur) : '–';
+    let items = '';
+    def.subs.forEach(s => {
+      const st = EV.state.items[s.no];
+      items += `<div class="ev-item">
+        <div class="ev-item-name">${escapeHtml(s.name)}</div>
+        <div class="ev-seg" data-item="${escapeHtmlAttr(s.no)}">
+          ${segBtn(s.no, idx, st, 'ผ่าน', 'pass')}
+          ${segBtn(s.no, idx, st, 'ปัญหา', 'fail')}
+          ${segBtn(s.no, idx, st, 'ข้าม', 'skip')}
+        </div>
+      </div>`;
+    });
     kpiHtml += `
       <div class="ev-kpi-row">
         <div class="ev-kpi-top">
           <div class="ev-kpi-name">${escapeHtml(def.label)} <span class="wt">${Math.round(def.weight*100)}%</span></div>
-          <div class="ev-kpi-band ${cur ? 'ev-band-'+EV._bandClass(cur) : ''}" id="evBand-${idx}">${bandTxt}</div>
+          <div class="ev-kpi-stat" id="evStat-${idx}">${EV._statHtml(EV._kpiStat(def))}</div>
         </div>
-        <div class="ev-kpi-hint">📋 ${escapeHtml(hint)}</div>
-        <div class="ev-chips" id="evChips-${idx}">${chips}</div>
+        ${items}
       </div>`;
   });
 
   return `
     <div class="modal-title">${prefill.id ? 'แก้ไขการประเมิน' : 'ประเมินผู้รับเหมา'}</div>
     <div class="ev-form">
-      <div class="ev-form-hint">ให้คะแนนแต่ละหมวด <b>1–10</b> (กดปุ่มตัวเลข) · ระบบคิดคะแนนรวมถ่วงน้ำหนัก + เกรดให้อัตโนมัติ · ข้อความใต้หมวด = สิ่งที่ควรพิจารณา · เกณฑ์: <b>9–10</b> ดีเยี่ยม · <b>7–8</b> ดี · <b>5–6</b> ปานกลาง · <b>3–4</b> ต้องปรับปรุง · <b>1–2</b> ไม่ยอมรับ</div>
+      <div class="ev-form-hint">ติ๊กแต่ละข้อตามจริงหน้างาน: <b style="color:#10B981">ผ่าน</b> = ทำได้ดี · <b style="color:#DC2626">ปัญหา</b> = มีข้อบกพร่อง · <b style="color:#9CA3AF">ข้าม</b> = ไม่เกี่ยวข้องงวดนี้ (ไม่นับคะแนน) · ระบบคิด % และเกรดจากที่ติ๊กให้อัตโนมัติ · ตั้งต้น "ผ่าน" ทุกข้อ — กดเฉพาะข้อที่มีปัญหา</div>
       <div class="rm-row">
         <label>ผู้รับเหมา *</label>
         <select id="evTeam">${teamOpts || '<option value="">— ไม่มีทีม —</option>'}</select>
@@ -2557,24 +2599,22 @@ EV._formHtml = function(prefill) {
   `;
 };
 
-// กดปุ่มคะแนนของหมวดหนึ่ง
-EV._pick = function(idx, key, val, chipEl) {
-  EV.state.scores[key] = val;
-  // ไฮไลต์ปุ่มในแถวนี้
-  const wrap = document.getElementById('evChips-' + idx);
-  if (wrap) {
-    const band = EV._bandClass(val);
-    wrap.querySelectorAll('.ev-chip').forEach(c => { c.className = 'ev-chip'; });
-    chipEl.className = 'ev-chip sel ' + band;
-  }
-  // อัปเดตป้ายระดับของหมวด
-  const bandEl = document.getElementById('evBand-' + idx);
-  if (bandEl) { bandEl.textContent = val + ' · ' + EV._bandLabel(val); bandEl.className = 'ev-kpi-band ev-band-' + EV._bandClass(val); }
+// ติ๊ก ผ่าน/ปัญหา/ข้าม ของข้อหนึ่ง
+EV._pick = function(itemId, idx, val, btn) {
+  EV.state.items[itemId] = val;
+  // ไฮไลต์ปุ่มในข้อนี้
+  const seg = btn.parentNode;
+  seg.querySelectorAll('.ev-seg-btn').forEach(b => { b.className = 'ev-seg-btn'; });
+  btn.className = 'ev-seg-btn on-' + val;
+  // อัปเดตสถิติของหมวดนี้
+  const def = state.evalConfig.kpis[idx];
+  const statEl = document.getElementById('evStat-' + idx);
+  if (statEl && def) statEl.innerHTML = EV._statHtml(EV._kpiStat(def));
   EV._refresh();
 };
 
 EV._refresh = function() {
-  const c = EV._compute(EV.state.scores || {});
+  const c = EV._compute();
   const numEl = document.getElementById('evTotalNum');
   const grEl = document.getElementById('evTotalGrade');
   if (numEl) numEl.textContent = c.total.toFixed(1);
@@ -2584,7 +2624,7 @@ EV._refresh = function() {
 EV.openCreate = function() {
   if (!state.evalConfig) { Modal.toast('⏳ กำลังโหลดเกณฑ์ — ลองอีกครั้ง'); API.getEvalConfig().then(r=>{ if(r.ok) state.evalConfig=r.data; }); return; }
   if (_evContractorTeams().length === 0) { Modal.toast('⚠️ ยังไม่มีผู้รับเหมา — เพิ่มทีมในหน้า Team ก่อน'); return; }
-  EV.state = { mode: 'create', editId: null, scores: {} };
+  EV.state = { mode: 'create', editId: null, items: {} };
   Modal.show(EV._formHtml({}));
   setTimeout(EV._refresh, 50);
 };
@@ -2593,7 +2633,7 @@ EV.openEdit = function(evalId) {
   const e = (state.evals || []).find(x => x.id === evalId);
   if (!e) { Modal.toast('❌ ไม่พบการประเมิน'); return; }
   if (!state.evalConfig) { Modal.toast('⏳ กำลังโหลดเกณฑ์ — ลองอีกครั้ง'); return; }
-  EV.state = { mode: 'edit', editId: evalId, scores: {} };
+  EV.state = { mode: 'edit', editId: evalId, items: {} };
   Modal.show(EV._formHtml(e));
   setTimeout(EV._refresh, 50);
 };
@@ -2602,8 +2642,13 @@ EV.submit = async function() {
   const teamSel = document.getElementById('evTeam');
   const teamId = teamSel ? teamSel.value : '';
   if (!teamId) { Modal.toast('⚠️ เลือกผู้รับเหมาก่อน'); return; }
-  const scores = EV.state.scores || {};
-  if (Object.keys(scores).length === 0) { Modal.toast('⚠️ ให้คะแนนอย่างน้อย 1 หมวด'); return; }
+  const c = EV._compute();
+  if (c.weightUsed <= 0) { Modal.toast('⚠️ ต้องประเมินอย่างน้อย 1 หมวด (อย่าข้ามทุกข้อ)'); return; }
+  // ผลติ๊กรายข้อ — เก็บเฉพาะ ผ่าน/ปัญหา (ข้าม = ไม่เก็บ)
+  const itemResults = {};
+  Object.keys(EV.state.items).forEach(k => {
+    if (EV.state.items[k] === 'pass' || EV.state.items[k] === 'fail') itemResults[k] = EV.state.items[k];
+  });
   const teamName = teamSel.options[teamSel.selectedIndex] ? teamSel.options[teamSel.selectedIndex].text : '';
   const data = {
     team_id: teamId,
@@ -2611,7 +2656,8 @@ EV.submit = async function() {
     eval_date: document.getElementById('evDate').value,
     evaluator: document.getElementById('evEvaluator').value.trim(),
     remark: document.getElementById('evRemark').value.trim(),
-    kpi_scores: JSON.stringify(scores)
+    kpi_scores: JSON.stringify(c.kpiScores),
+    item_results: JSON.stringify(itemResults)
   };
   Modal.toast('⏳ กำลังบันทึก...');
   try {

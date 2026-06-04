@@ -36,54 +36,52 @@ const EVAL_RUBRIC_COLUMNS_ = ['KPI', 'Weight %', 'Sub No', 'Sub-criteria', 'What
 // ============================================================
 const EVAL_KPIS_ = [
   { key: 'Manpower',   label: 'กำลังคน',            weight: 0.10, subs: [
-    { no: '1.1', name: 'จำนวนคนตามแผน Manpower Plan',      check: 'นับ Headcount เทียบ Plan แต่ละวัน' },
-    { no: '1.2', name: 'ความตรงต่อเวลาในการเข้างาน',       check: 'เช็คเวลา Time-in เทียบเวลามาตรฐาน 07:30/08:00' },
-    { no: '1.3', name: 'ความต่อเนื่อง (ขาดงาน/ลาออก)',     check: 'นับวันขาด/ลา/ลาออกในงวด' },
-    { no: '1.4', name: 'หัวหน้าควบคุมงาน (Foreman) ประจำ', check: 'Foreman อยู่ครบทุกวันทำงาน' },
-    { no: '1.5', name: 'ทักษะ/ความสามารถของช่าง',          check: 'ระดับฝีมือ การใช้เครื่องมือ ความเข้าใจ Drawing' }
+    { no: '1.1', name: 'คนเข้างานครบตามแผน',                check: '' },
+    { no: '1.2', name: 'ช่างมาตรงเวลา ไม่สายประจำ',          check: '' },
+    { no: '1.3', name: 'ไม่ขาด/หยุดงานกะทันหันโดยไม่แจ้ง',   check: '' },
+    { no: '1.4', name: 'มีหัวหน้าคุมงานประจำทุกวัน',         check: '' }
   ]},
   { key: 'Progress',   label: 'ความคืบหน้า',        weight: 0.15, subs: [
-    { no: '2.1', name: '% งานเทียบ S-Curve Plan',   check: 'คำนวณ Actual vs Plan %' },
-    { no: '2.2', name: 'การส่งงานตาม Milestone',     check: 'Milestone ส่งครบ/ตรงเวลา' },
-    { no: '2.3', name: 'Look-Ahead Plan (2-week)',  check: 'ส่งแผน 2 สัปดาห์ล่วงหน้าทุกสัปดาห์' },
-    { no: '2.4', name: 'Recovery Plan เมื่อล่าช้า',  check: 'มีแผนเร่งงานเป็นลายลักษณ์อักษร' }
+    { no: '2.1', name: 'งานคืบหน้าตามแผน ไม่ล่าช้า',     check: '' },
+    { no: '2.2', name: 'ส่งงานตามงวด/Milestone ครบ',     check: '' },
+    { no: '2.3', name: 'วางแผนคิวงานล่วงหน้า',            check: '' },
+    { no: '2.4', name: 'เมื่อช้า มีแผนเร่งงานชัดเจน',     check: '' }
   ]},
   { key: 'Quality',    label: 'คุณภาพงาน',          weight: 0.20, subs: [
-    { no: '3.1', name: 'ตรงตาม Shop Drawing/Spec',  check: 'ตรวจชิ้นงานเทียบแบบและสเปก' },
-    { no: '3.2', name: 'ความประณีต (Finishing)',     check: 'ผิวงาน รอยต่อ การลบมุม' },
-    { no: '3.3', name: 'อัตราการ Rework',            check: 'นับงานที่ต้องแก้/รื้อทำใหม่' },
-    { no: '3.4', name: 'วัสดุที่ใช้ตามที่อนุมัติ',    check: 'เทียบกับ Material Approval' }
+    { no: '3.1', name: 'งานตรงตามแบบ/สเปก',          check: '' },
+    { no: '3.2', name: 'เก็บงานละเอียด เรียบร้อย',    check: '' },
+    { no: '3.3', name: 'ไม่ต้องรื้อแก้ (rework) บ่อย', check: '' },
+    { no: '3.4', name: 'ใช้วัสดุตามที่อนุมัติ',       check: '' }
   ]},
   { key: 'First Pass', label: 'ตรวจผ่านครั้งแรก',    weight: 0.15, subs: [
-    { no: '4.1', name: 'ผ่านการตรวจครั้งแรก (Pass Rate)', check: 'นับ inspection ที่ผ่านครั้งแรก / ทั้งหมด' },
-    { no: '4.2', name: 'จำนวน Defect ต่อจุดตรวจ',         check: 'นับ defect รายการ' },
-    { no: '4.3', name: 'การ Self-check ก่อนเรียกตรวจ',    check: 'มีใบ Self-check แนบ' },
-    { no: '4.4', name: 'เวลาในการแก้ไข Defect',           check: 'นับชั่วโมง/วันจากแจ้งถึงปิด' }
+    { no: '4.1', name: 'งานผ่านตรวจครั้งแรก ไม่ต้องตรวจซ้ำหลายรอบ', check: '' },
+    { no: '4.2', name: 'จุดบกพร่อง (defect) น้อย',                 check: '' },
+    { no: '4.3', name: 'ตรวจงานตัวเองก่อนเรียกตรวจ',               check: '' },
+    { no: '4.4', name: 'แก้จุดบกพร่องเร็ว',                        check: '' }
   ]},
   { key: 'Delivery',   label: 'ส่งมอบตรงเวลา',       weight: 0.15, subs: [
-    { no: '5.1', name: 'ส่งมอบงานตามกำหนด',           check: 'เทียบวันจริงกับ Contract Date' },
-    { no: '5.2', name: 'แจ้งล่วงหน้าหากล่าช้า',       check: 'แจ้งเป็นลายลักษณ์อักษร ≥7 วันล่วงหน้า' },
-    { no: '5.3', name: 'ส่ง As-built / เอกสารส่งมอบ', check: 'เอกสารครบตาม Closeout List' },
-    { no: '5.4', name: 'การปิด Punch List',           check: 'ปิดครบภายในระยะเวลาที่กำหนด' }
+    { no: '5.1', name: 'ส่งมอบงานตรงเวลา',           check: '' },
+    { no: '5.2', name: 'ถ้าช้า แจ้งล่วงหน้า',        check: '' },
+    { no: '5.3', name: 'ส่งเอกสาร/แบบส่งมอบครบ',      check: '' },
+    { no: '5.4', name: 'ปิดงานค้าง (punch list) ครบ', check: '' }
   ]},
   { key: 'Response',   label: 'การตอบสนอง',          weight: 0.05, subs: [
-    { no: '6.1', name: 'Response Time (เวลาตอบกลับ)', check: 'นับเวลาตั้งแต่ส่งคำถามถึงตอบกลับ' },
-    { no: '6.2', name: 'Initial Fix Time',           check: 'นับเวลาตั้งแต่รับเรื่องถึงเริ่มแก้' },
-    { no: '6.3', name: 'การเข้าประชุมตามนัด',         check: 'เข้าครบทุกครั้งที่เชิญ' },
-    { no: '6.4', name: 'การส่งรายงาน Daily/Weekly',   check: 'ส่งครบทุกงวด ตรงเวลา' }
+    { no: '6.1', name: 'ตอบกลับเร็วเมื่อมีเรื่องแจ้ง', check: '' },
+    { no: '6.2', name: 'เข้าประชุม/ตามนัดครบ',         check: '' },
+    { no: '6.3', name: 'ส่งรายงานความคืบหน้าตามรอบ',   check: '' }
   ]},
   { key: 'Discipline', label: 'วินัย/ความปลอดภัย',   weight: 0.10, subs: [
-    { no: '7.1', name: 'เข้า-ออกงานตรงเวลา (Time-in/out)', check: 'เช็คชื่อทุกวัน ดูเวลาเข้า-ออก' },
-    { no: '7.2', name: 'อัตราการขาดงาน (Absenteeism)',     check: 'นับวันที่ขาดต่อจำนวนคนต่อเดือน' },
-    { no: '7.3', name: 'การสวมใส่ PPE ครบถ้วน',            check: 'หมวก/เสื้อสะท้อนแสง/รองเท้านิรภัย/แว่น/ถุงมือ' },
-    { no: '7.4', name: 'ความสะอาดเรียบร้อยของพื้นที่งาน',  check: 'เก็บกวาดทุกวัน วัสดุจัดเก็บเป็นระเบียบ' },
-    { no: '7.5', name: 'การปฏิบัติตามกฎไซต์',              check: 'ไม่สูบบุหรี่ ไม่ดื่มแอลกอฮอล์ ไม่เล่นการพนัน' }
+    { no: '7.1', name: 'เข้า-ออกงานตรงเวลา',                check: '' },
+    { no: '7.2', name: 'ไม่หยุดงานพร่ำเพรื่อ',              check: '' },
+    { no: '7.3', name: 'ใส่อุปกรณ์เซฟตี้ (PPE) ครบ',        check: '' },
+    { no: '7.4', name: 'เก็บพื้นที่งานสะอาดเรียบร้อย',      check: '' },
+    { no: '7.5', name: 'ปฏิบัติตามกฎไซต์ (ไม่ดื่ม/สูบในเขตห้าม)', check: '' }
   ]},
   { key: 'Finance',    label: 'วินัยการเงิน',        weight: 0.10, subs: [
-    { no: '8.1', name: 'ขอเบิกเงินตามงวด (ไม่ล่วงหน้า)',   check: 'นับจำนวนครั้งที่ขอเบิกก่อนกำหนด/งวด' },
-    { no: '8.2', name: 'ความถูกต้องของเอกสาร Invoice/BOQ', check: 'ตรวจเอกสารตาม Checklist' },
-    { no: '8.3', name: 'การจ่ายค่าจ้างคนงานตรงเวลา',       check: 'คนงานได้รับเงินตามรอบ ไม่มาร้องเรียน' },
-    { no: '8.4', name: 'ไม่มีหนี้สิน/ปัญหาการเงินที่กระทบงาน', check: 'เช็คจาก behavior, การหายตัว, ขอเลื่อนงาน' }
+    { no: '8.1', name: 'เบิกเงินตามงวดงานจริง ไม่เบิกล่วงหน้าก่อนขึ้นชิ้นงาน', check: '' },
+    { no: '8.2', name: 'เอกสารเบิก/บิลถูกต้องครบ',                          check: '' },
+    { no: '8.3', name: 'จ่ายค่าแรงคนงานตรงเวลา ไม่มีร้องเรียน',             check: '' },
+    { no: '8.4', name: 'ทำตามสัญญา ไม่ทิ้งงาน/ขอเลื่อนพร่ำเพรื่อ',          check: '' }
   ]}
 ];
 
@@ -226,6 +224,32 @@ function _evalCompute_(subScores, kpiScores) {
   return { kpi: kpi, total: Math.round(totalScore * 100) / 100, weightUsed: weightUsed };
 }
 
+/**
+ * คิดคะแนนจาก kpi_scores ที่ frontend ส่งมา (โหมดเช็กลิสต์)
+ * - key ที่ "มี" ใน kpiScores = หมวดที่ประเมินแล้ว → นับน้ำหนักเสมอ แม้คะแนน = 0
+ *   (ต่างจาก _evalCompute_ ที่ตัดคะแนน 0 ทิ้ง — โหมดเช็กลิสต์ 0 = ตกทุกข้อ ต้องนับ)
+ * - key ที่ "ไม่มี" = หมวดที่ข้ามทั้งหมด → ไม่นับน้ำหนัก
+ * @param {object} kpiScores - { Manpower: 7.5, ... } (0-10, 0 ถือว่า valid)
+ */
+function _evalComputeFromKpi_(kpiScores) {
+  kpiScores = kpiScores || {};
+  const kpi = {};
+  let total = 0, weightUsed = 0;
+  EVAL_KPIS_.forEach(function(def) {
+    const raw = kpiScores[def.key];
+    if (raw !== undefined && raw !== null && raw !== '' && !isNaN(Number(raw))) {
+      const s = Math.max(0, Math.min(10, Number(raw)));
+      kpi[def.key] = Math.round(s * 100) / 100;
+      total += s * def.weight;
+      weightUsed += def.weight;
+    } else {
+      kpi[def.key] = 0;
+    }
+  });
+  const totalScore = weightUsed > 0 ? (total / weightUsed) * 10 : 0;
+  return { kpi: kpi, total: Math.round(totalScore * 100) / 100, weightUsed: weightUsed };
+}
+
 // ============================================================
 // 📤 Config endpoint — ส่ง KPI/น้ำหนัก/เกณฑ์ ให้ frontend สร้างฟอร์ม
 // ============================================================
@@ -335,10 +359,20 @@ function createEval_(p) {
   const teamId = String(p.team_id || '').trim();
   if (!teamId) throw new Error('team_id ต้องระบุ (เลือกผู้รับเหมาก่อน)');
 
-  const subScores = _evalParseSubScores_(p.sub_scores);
+  // โหมดเช็กลิสต์: frontend คิดคะแนนหมวด (kpi_scores) + ส่งผลติ๊กรายข้อ (item_results) มาเก็บ
+  // โหมดเก่า (sub_scores 1-10): ยัง backward-compatible
   const kpiScores = _evalParseSubScores_(p.kpi_scores);
-  const computed = _evalCompute_(subScores, kpiScores);
-  if (computed.weightUsed <= 0) throw new Error('ต้องให้คะแนนอย่างน้อย 1 หมวด');
+  const itemResults = _evalParseSubScores_(p.item_results);
+  let computed, auditStore;
+  if (Object.keys(kpiScores).length > 0) {
+    computed = _evalComputeFromKpi_(kpiScores);
+    auditStore = Object.keys(itemResults).length > 0 ? itemResults : kpiScores;
+  } else {
+    const subScores = _evalParseSubScores_(p.sub_scores);
+    computed = _evalCompute_(subScores, {});
+    auditStore = subScores;
+  }
+  if (computed.weightUsed <= 0) throw new Error('ต้องประเมินอย่างน้อย 1 หมวด');
 
   // หาชื่อทีมจาก 21_Teams (fallback = ที่ frontend ส่งมา / team_id)
   let teamName = String(p.team_name || '').trim();
@@ -361,7 +395,7 @@ function createEval_(p) {
     'Grade':       _evalGradeFromTotal_(computed.total),
     'Status':      _evalStatusFromTotal_(computed.total),
     'Remark':      String(p.remark || '').trim(),
-    'Sub Scores':  JSON.stringify(subScores),
+    'Sub Scores':  JSON.stringify(auditStore),
     'created_at':  nowStr()
   };
   EVAL_KPIS_.forEach(function(def) { row[def.key] = computed.kpi[def.key]; });
@@ -394,16 +428,24 @@ function updateEval_(p) {
   if (p.remark !== undefined)    updates['Remark']    = String(p.remark).trim();
 
   // ถ้าส่งคะแนนใหม่มา → recompute ทุกอย่าง
-  if (p.sub_scores !== undefined || p.kpi_scores !== undefined) {
-    const subScores = _evalParseSubScores_(p.sub_scores);
+  if (p.sub_scores !== undefined || p.kpi_scores !== undefined || p.item_results !== undefined) {
     const kpiScores = _evalParseSubScores_(p.kpi_scores);
-    const computed = _evalCompute_(subScores, kpiScores);
-    if (computed.weightUsed <= 0) throw new Error('ต้องให้คะแนนอย่างน้อย 1 หมวด');
+    const itemResults = _evalParseSubScores_(p.item_results);
+    let computed, auditStore;
+    if (Object.keys(kpiScores).length > 0) {
+      computed = _evalComputeFromKpi_(kpiScores);
+      auditStore = Object.keys(itemResults).length > 0 ? itemResults : kpiScores;
+    } else {
+      const subScores = _evalParseSubScores_(p.sub_scores);
+      computed = _evalCompute_(subScores, {});
+      auditStore = subScores;
+    }
+    if (computed.weightUsed <= 0) throw new Error('ต้องประเมินอย่างน้อย 1 หมวด');
     EVAL_KPIS_.forEach(function(def) { updates[def.key] = computed.kpi[def.key]; });
     updates['Total Score'] = computed.total;
     updates['Grade']       = _evalGradeFromTotal_(computed.total);
     updates['Status']      = _evalStatusFromTotal_(computed.total);
-    updates['Sub Scores']  = JSON.stringify(subScores);
+    updates['Sub Scores']  = JSON.stringify(auditStore);
   }
 
   if (Object.keys(updates).length === 0) throw new Error('ไม่มี field ใหม่ที่จะอัปเดต');
