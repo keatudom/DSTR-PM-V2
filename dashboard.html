@@ -398,6 +398,18 @@
 .inv-cat-row .i{color:#D97706;font-weight:600;text-align:right}
 .inv-cat-row .b{color:#059669;font-weight:600;text-align:right}
 .inv-empty{font-size:11px;color:#9CA3AF;padding:10px}
+.inv-setprice-btn{font-size:11px;font-weight:600;background:#1F3864;color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer}
+/* Price editor (ตั้งราคาวัสดุ) */
+.pe-form{max-height:60vh;overflow-y:auto;text-align:left;padding-right:4px}
+.pe-cat{font-size:11px;font-weight:700;color:#1F3864;background:#EEF2FF;padding:6px 10px;border-radius:6px;margin:12px 0 4px}
+.pe-row{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #F3F4F6}
+.pe-name{flex:1;font-size:12px;color:#374151;line-height:1.3}
+.pe-name small{display:block;color:#9CA3AF;font-size:9px}
+.pe-input-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex-shrink:0}
+.pe-row input{width:92px;padding:6px 8px;border:1px solid #D1D5DB;border-radius:6px;font-size:12px;text-align:right;font-family:inherit}
+.pe-row input.pm{border-color:#F59E0B;background:#FFFBEB}
+.pe-pm-badge{font-size:8px;color:#D97706;font-weight:700}
+.pe-bar{position:sticky;bottom:0;background:#fff;border-top:2px solid #E5E7EB;padding:9px 2px;font-size:11px;color:#6B7280}
 
 /* ============================================================
    FAB (Floating Action Button)
@@ -1102,15 +1114,17 @@ function renderInventory() {
   const meta = inv.meta || { materials: 0, priced: 0, transactions: 0 };
   if (!t.received && !t.issued && !t.balance) {
     if (meta.materials > 0) {
-      // มีวัสดุแต่ราคา = 0 → บอกให้ใส่ราคา
-      el.innerHTML = `<div class="inv-warn bad" style="margin:0">💡 มีวัสดุ <b>${meta.materials}</b> รายการ แต่ยังไม่ได้ใส่ <b>ราคาต่อหน่วย</b> — ระบบจึงคิดมูลค่าเป็นเงินไม่ได้<br>ใส่ราคาในหน้า <b>Materials</b> (แก้ไขวัสดุ → ราคา) แล้วมูลค่า ซื้อ/ใช้/เหลือ จะคำนวณให้อัตโนมัติ</div>`;
+      // มีวัสดุแต่ราคา = 0 → บอกให้ใส่ราคา + ปุ่มเปิดเครื่องมือตั้งราคา
+      el.innerHTML = `<div class="inv-warn bad" style="margin:0 0 10px">💡 มีวัสดุ <b>${meta.materials}</b> รายการ แต่ยังไม่ได้ใส่ <b>ราคาต่อหน่วย</b> — ระบบจึงคิดมูลค่าเป็นเงินไม่ได้<br>กดปุ่มด้านล่างเพื่อตั้งราคา (มีราคาจาก Sheet ของ PM เติมไว้ให้แล้ว — แค่ตรวจแล้วบันทึก)</div>
+        <button class="inv-setprice-btn" onclick="PE.open()">✏️ ตั้งราคาวัสดุ (เติมจาก PM ให้แล้ว)</button>`;
     } else {
       el.innerHTML = '<div class="inv-empty">ยังไม่มีวัสดุในโครงการนี้ — เพิ่มวัสดุในหน้า Materials</div>';
     }
     return;
   }
 
-  let html = `<div class="inv-cards">
+  let html = `<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="inv-setprice-btn" onclick="PE.open()">✏️ แก้ราคาวัสดุ</button></div>
+  <div class="inv-cards">
     <div class="inv-card received"><div class="lbl">ซื้อเข้ามา</div><div class="val">${fmt(t.received)}</div><div class="unit">บาท</div></div>
     <div class="inv-card issued"><div class="lbl">เบิกใช้ไป</div><div class="val">${fmt(t.issued)}</div><div class="unit">บาท</div></div>
     <div class="inv-card balance"><div class="lbl">ค้างสต๊อก</div><div class="val">${fmt(t.balance)}</div><div class="unit">บาท</div></div>
@@ -1142,6 +1156,82 @@ function renderInventory() {
   }
   el.innerHTML = html;
 }
+
+// ============================================================
+// ✏️ PRICE EDITOR (PE) — ตั้งราคาวัสดุหลายตัว + เติมราคาจาก Sheet ของ PM
+// PM_SUGGEST: ราคาที่จับคู่จาก inventory sheet ของ PM (one-time import aid)
+//   ใช้เติมช่องเฉพาะวัสดุที่ยังราคา = 0 — ผู้ใช้ตรวจ/แก้ในจอก่อนบันทึก
+// ============================================================
+const PE = {
+  PM_SUGGEST: {
+    M001:410, M002:580, M071:705, M004:1400, M005:90, M006:90, M007:18, M008:15,
+    M009:360, M010:327, M011:12, M013:12, M015:79, M016:135, M017:170,
+    M018:300, M019:350, M020:250, M021:250, M022:450, M023:280, M024:495, M025:30,
+    M026:2600, M027:580, M028:2020, M030:1250, M031:1330, M032:10, M034:910,
+    M035:135, M036:45, M037:25, M038:10, M040:10, M041:15, M048:15,
+    M042:1250, M043:1250, M044:1205, M045:1205, M047:2380, M051:1000, M054:60,
+    M055:660, M057:1250, M058:1250, M059:715, M060:370, M062:980, M064:24,
+    M065:800, M066:35, M067:39.8, M068:60, M069:440, M070:440, M072:60, M073:60, M074:71.1
+  }
+};
+
+PE.open = function() {
+  const mats = (state.materials || []).slice();
+  if (!mats.length) { Modal.toast('⚠️ ยังไม่มีวัสดุ'); return; }
+  // จัดกลุ่มตามหมวด
+  const groups = {};
+  mats.forEach(m => { const c = m.category || 'ไม่ระบุหมวด'; (groups[c] = groups[c] || []).push(m); });
+
+  let pmCount = 0;
+  let body = '';
+  Object.keys(groups).sort().forEach(cat => {
+    body += `<div class="pe-cat">${escapeHtml(cat)}</div>`;
+    groups[cat].forEach(m => {
+      const cur = Number(m.default_price || 0);
+      const suggest = PE.PM_SUGGEST[m.id];
+      let val = '', cls = '', badge = '';
+      if (cur > 0) { val = cur; }
+      else if (suggest !== undefined) { val = suggest; cls = 'pm'; badge = '<span class="pe-pm-badge">💡 จาก PM</span>'; pmCount++; }
+      body += `<div class="pe-row">
+        <div class="pe-name">${escapeHtml(m.name)}<small>${escapeHtml(m.unit || '')}</small></div>
+        <div class="pe-input-wrap">
+          <input type="number" min="0" step="any" data-mid="${escapeHtmlAttr(m.id)}" value="${val}" placeholder="0" class="${cls}">
+          ${badge}
+        </div>
+      </div>`;
+    });
+  });
+
+  const html = `
+    <div class="modal-title">✏️ ตั้งราคาวัสดุ (ต่อหน่วย)</div>
+    <div class="ev-form-hint">ใส่ราคาต่อหน่วยของแต่ละวัสดุ (บาท) · ช่องสีเหลือง <b>💡 จาก PM</b> = เติมจาก Sheet ของ PM ให้แล้ว <b>ตรวจก่อนบันทึก</b> · ราคานี้จะใช้คิดมูลค่าคงคลัง + ติดกับวัสดุทุกครั้งที่รับ/เบิก</div>
+    <div class="pe-form">${body}</div>
+    <div class="pe-bar">${pmCount > 0 ? '💡 เติมจาก PM ' + pmCount + ' รายการ — ตรวจแล้วกดบันทึก' : 'ใส่/แก้ราคาแล้วกดบันทึก'}</div>
+    <div class="modal-btns" style="margin-top:6px">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="PE.save()">บันทึกราคา</button>
+    </div>`;
+  Modal.show(html);
+};
+
+PE.save = async function() {
+  const map = {};
+  document.querySelectorAll('.pe-form input[data-mid]').forEach(inp => {
+    const v = Number(inp.value);
+    if (inp.value !== '' && !isNaN(v) && v >= 0) map[inp.getAttribute('data-mid')] = v;
+  });
+  if (Object.keys(map).length === 0) { Modal.toast('⚠️ ยังไม่ได้ใส่ราคา'); return; }
+  Modal.toast('⏳ กำลังบันทึกราคา...');
+  try {
+    const res = await API.updateMaterialPrices(map);
+    if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'error')); return; }
+    Modal.close();
+    Modal.toast('✅ บันทึกราคา ' + ((res.data && res.data.updated) || 0) + ' รายการ');
+    setTimeout(() => loadData(), 500);
+  } catch (e) {
+    Modal.toast('❌ ' + e.message);
+  }
+};
 
 // ============================================================
 // 🆕 AI ALERTS BANNER

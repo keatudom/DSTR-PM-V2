@@ -389,6 +389,7 @@ function route(action, p) {
 
     // 💰 INVENTORY VALUE SUMMARY — สรุปมูลค่าคงคลัง (รับ/ใช้/เหลือ เป็นบาท)
     case 'get_inventory_summary': return getInventorySummary_(p);
+    case 'update_material_prices': return updateMaterialPrices_(p);  // ตั้งราคาหลายตัวพร้อมกัน
 
     // ⚠️ RISKS (Phase R-1/R-2/R-3) — ดู risks.gs
     case 'create_risk': return createRisk_(p);
@@ -796,6 +797,26 @@ function createSupplier(p) {
   };
   appendRow(SHEET.SUPPLIERS, row);
   return row;
+}
+
+
+/**
+ * ตั้งราคาวัสดุหลายตัวพร้อมกัน (bulk) — ใช้กับเครื่องมือตั้งราคา + backfill จาก PM
+ * @param {object} p - { prices: JSON string {mat_id: price, ...} }
+ * @returns {object} { updated: n }
+ */
+function updateMaterialPrices_(p) {
+  p = p || {};
+  let map = p.prices;
+  if (typeof map === 'string') { try { map = JSON.parse(map); } catch (e) { map = {}; } }
+  map = map || {};
+  let n = 0;
+  Object.keys(map).forEach(function(id) {
+    const v = Number(map[id]);
+    if (isNaN(v) || v < 0) return;
+    try { updateRowByCol(SHEET.MATERIALS, 'id', id, { default_price: v }); n++; } catch (e) {}
+  });
+  return { updated: n };
 }
 
 

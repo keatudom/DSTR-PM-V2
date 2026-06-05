@@ -430,6 +430,11 @@ const API = {
     return this.callRead('get_inventory_summary');
   },
 
+  /** ตั้งราคาวัสดุหลายตัวพร้อมกัน — priceMap = {mat_id: price} */
+  updateMaterialPrices: function(priceMap) {
+    return this.callRead('update_material_prices', { prices: JSON.stringify(priceMap || {}) });
+  },
+
   // ============================================================
   // 🏠 FF ITEMS
   // ============================================================
