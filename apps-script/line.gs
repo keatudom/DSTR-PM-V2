@@ -116,6 +116,12 @@ function lineWebhook_(body) {
 // ============================================================
 // 📊 DAILY DIGEST — สรุปกิจกรรมวันนี้เข้ากลุ่ม (เรียกจาก time trigger)
 // ============================================================
+// 👉 ฟังก์ชัน "สาธารณะ" (ไม่มีขีดล่าง) สำหรับเลือกในหน้า Triggers / ปุ่ม Run
+//    (Apps Script ซ่อนฟังก์ชันที่ลงท้าย _ จาก dropdown ของ trigger)
+function runDailyDigest() {
+  return lineDailyDigest_();
+}
+
 function lineDailyDigest_() {
   var gid = _readSecret_('LINE_GROUP_ID', '');
   if (!gid) return { ok: false, reason: 'no group' };
