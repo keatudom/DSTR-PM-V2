@@ -332,7 +332,19 @@ function _authorize_(action, p) {
 // ============================================================
 // ใช้ 24_Staff เป็น user store: email + auth_role + name + active
 function getUsers_() {
+  // อ่าน assignment ทั้งหมดครั้งเดียว แล้ว group ตาม staff_id (กันอ่านซ้ำต่อคน)
+  var byStaff = {};
+  try {
+    getAllRows(SHEET.PROJECT_STAFF).forEach(function (a) {
+      if (a.active === false || a.active === 'FALSE') return;
+      var sid = String(a.staff_id);
+      if (!byStaff[sid]) byStaff[sid] = [];
+      byStaff[sid].push({ assignment_id: a.assignment_id, project_id: String(a.project_id) });
+    });
+  } catch (e) {}
+
   return getAllRows(SHEET.STAFF).map(function (s) {
+    var assigns = byStaff[String(s.staff_id)] || [];
     return {
       staff_id: s.staff_id,
       name: s.name || '',
@@ -341,7 +353,8 @@ function getUsers_() {
       auth_role: s.auth_role || '',       // บทบาทสิทธิ์
       phone: s.phone || '',
       active: !(s.active === false || s.active === 'FALSE'),
-      projects: _userProjectIds_(s.staff_id)
+      projects: assigns.map(function (a) { return a.project_id; }),
+      assignments: assigns               // [{assignment_id, project_id}] — ไว้ถอดออกจากโครงการ
     };
   });
 }
@@ -371,7 +384,7 @@ function upsertUser_(p) {
     if (p.name !== undefined) updates.name = p.name;
     if (p.phone !== undefined) updates.phone = p.phone;
     if (p.role !== undefined) updates.role = p.role;
-    if (p.active !== undefined) updates.active = !!p.active;
+    if (p.active !== undefined) updates.active = !(p.active === false || p.active === 'false' || p.active === 'FALSE' || p.active === 0 || p.active === '0');
     updateRowByCol(SHEET.STAFF, 'staff_id', existing.staff_id, updates);
     return { ok: true, staff_id: existing.staff_id, updated: true };
   }

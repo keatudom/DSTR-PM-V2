@@ -297,6 +297,33 @@ const API = {
   },
 
   // ============================================================
+  // 🔐 PHASE G — AUTH / USER MANAGEMENT (owner only)
+  // ============================================================
+
+  /** ใครกำลัง login อยู่ + บทบาท (จาก token) */
+  getMe: function() {
+    return this.callRead('get_me');
+  },
+
+  /** รายชื่อผู้ใช้ทั้งหมด + บทบาท + โครงการ (owner only) */
+  getUsers: function() {
+    return this.callRead('get_users');
+  },
+
+  /**
+   * เพิ่ม/แก้ผู้ใช้ (owner only)
+   * @param {object} data - { email (req), name, auth_role, phone?, role?, active?, staff_id? }
+   */
+  upsertUser: function(data) {
+    return this.callRead('upsert_user', data);
+  },
+
+  /** เปลี่ยนบทบาทสิทธิ์ (owner only) — { staff_id|email, auth_role } */
+  setUserRole: function(staffId, authRole) {
+    return this.callRead('set_user_role', { staff_id: staffId, auth_role: authRole });
+  },
+
+  // ============================================================
   // 🏗️ PROJECTS (00_Projects — multi-project registry)
   // ============================================================
 

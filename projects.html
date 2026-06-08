@@ -37,7 +37,10 @@
         <span class="user-tag" id="userTag">ADMIN</span>
       </div>
     </div>
-    <button class="user-logout" onclick="Auth.logout()">ออกจากระบบ →</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <a id="manageUsersLink" href="users.html" style="display:none;font-size:12.5px;font-weight:600;color:#1F3864;text-decoration:none;padding:7px 13px;border-radius:99px;background:#EEF2FF;border:1px solid #C7D2FE">👥 จัดการผู้ใช้</a>
+      <button class="user-logout" onclick="Auth.logout()">ออกจากระบบ →</button>
+    </div>
   </div>
 
   <div class="hero">
@@ -83,21 +86,32 @@ function esc(s) {
 }
 
 // อัปเดต User Bar
+// Phase G: รองรับบทบาทใหม่ (owner/pm/foreman/contractor) + legacy (admin/client)
 function updateUserBar() {
-  if (role === 'admin') {
-    document.getElementById('userAvatar').textContent = 'A';
-    document.getElementById('userAvatar').className = 'user-avatar';
-    document.getElementById('userName').textContent = 'Admin (ทีมงาน)';
-    document.getElementById('userTag').textContent = 'ADMIN';
-    document.getElementById('userTag').className = 'user-tag';
-  } else {
-    document.getElementById('userAvatar').textContent = 'C';
-    document.getElementById('userAvatar').className = 'user-avatar client';
-    document.getElementById('userName').textContent = 'Client (ลูกค้า)';
-    document.getElementById('userTag').textContent = 'CLIENT';
-    document.getElementById('userTag').className = 'user-tag client';
-    document.getElementById('addBtn').style.display = 'none';
-  }
+  var user = (typeof Auth.getUser === 'function') ? Auth.getUser() : null;
+  var roleLabels = {
+    owner: 'เจ้าของงาน', pm: 'PM', foreman: 'หน้างาน',
+    contractor: 'ผู้รับเหมา', admin: 'แอดมิน', client: 'ลูกค้า'
+  };
+  var isClient = (role === 'client');
+  var isOwner = (role === 'owner' || role === 'admin'); // admin เดิม = owner-equivalent
+
+  // ชื่อ: ใช้ชื่อจริงจาก Google login ถ้ามี, ไม่งั้น fallback ตามบทบาท
+  var displayName = (user && user.name) ? user.name
+    : (isClient ? 'Client (ลูกค้า)' : 'ทีมงาน');
+  document.getElementById('userName').textContent = displayName;
+
+  document.getElementById('userTag').textContent = (roleLabels[role] || role || '').toUpperCase();
+  document.getElementById('userTag').className = 'user-tag' + (isClient ? ' client' : '');
+
+  document.getElementById('userAvatar').textContent = (displayName[0] || '?').toUpperCase();
+  document.getElementById('userAvatar').className = 'user-avatar' + (isClient ? ' client' : '');
+
+  // ลูกค้า: ซ่อนปุ่มสร้างโปรเจกต์
+  if (isClient) document.getElementById('addBtn').style.display = 'none';
+
+  // owner เท่านั้น: เห็นลิงก์จัดการผู้ใช้
+  if (isOwner) document.getElementById('manageUsersLink').style.display = 'inline-block';
 }
 
 /**
