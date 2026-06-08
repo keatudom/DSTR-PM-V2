@@ -125,6 +125,13 @@ function handle(e, method) {
     }
     const payload = Object.assign({}, params, body);
 
+    // 💬 Phase H-3b: LINE webhook — body มี {destination, events:[...]} (รูปเฉพาะของ LINE)
+    // ตรวจก่อน routing ปกติ → จับ groupId/ownerUid + ตอบ 200 OK ให้ LINE
+    if (method === 'POST' && body && body.destination && Array.isArray(body.events)) {
+      try { lineWebhook_(body); } catch (e) {}
+      return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+    }
+
     // Phase B-4: stash project_id สำหรับ appendRow() auto-stamp
     // ใช้ default 'bow-house' = legacy compat (เหมือน Phase B-2)
     _setCurrentProjectId_(payload.project_id || 'bow-house');
@@ -378,6 +385,13 @@ function route(action, p) {
 
     // 🔔 PHASE H — NOTIFICATIONS — ดู notifications.gs
     case 'get_notifications': return getNotifications_(p);
+
+    // 💬 PHASE H-3b — LINE (owner only) — ดู line.gs
+    case '_set_line_config':      return setLineConfig_(p);
+    case '_line_status':          return lineStatus_();
+    case 'line_test':             return lineTest_(p);
+    case '_install_line_digest':  return installLineDigestTrigger_();
+    case '_run_line_digest':      return lineDailyDigest_();   // ยิงสรุปเย็นเองเพื่อทดสอบ
 
     // 👥 Project Staff — assign คนในบริษัทเข้าโปรเจค (27_Project_Staff)
     case 'get_all_staff': return getAllStaff();
@@ -1564,8 +1578,9 @@ function createDaily(p) {
     updated_at: nowStr(),
   };
   appendRow(SHEET.DAILY, row);
-  autoLog_('📝 รายงานประจำวัน (' + date + ') โดย ' + reporter,
-    { meta: { kind: 'daily', daily_id: id }, date: date });
+  const _dMsg = '📝 รายงานประจำวัน (' + date + ') โดย ' + reporter;
+  autoLog_(_dMsg, { meta: { kind: 'daily', daily_id: id }, date: date });
+  try { _lineNotifyImportant_(_dMsg); } catch (e) {}
   return row;
 }
 
@@ -4081,9 +4096,10 @@ function createContract(p) {
   appendRow(SHEET.CONTRACTS, row);
   // Phase H: auto-log (แยกฝั่งเจ้าบ้าน/ผู้รับเหมา)
   const _side = (party === 'client') ? 'สัญญาเจ้าบ้าน' : 'สัญญาผู้รับเหมา';
-  autoLog_('📄 เพิ่ม' + _side + ': ' + (row.title || row.contract_no || id) +
-    (row.value ? ' (' + Number(row.value).toLocaleString() + ' บาท)' : ''),
-    { meta: { kind: 'contract', contract_id: id, party: party } });
+  const _cMsg = '📄 เพิ่ม' + _side + ': ' + (row.title || row.contract_no || id) +
+    (row.value ? ' (' + Number(row.value).toLocaleString() + ' บาท)' : '');
+  autoLog_(_cMsg, { meta: { kind: 'contract', contract_id: id, party: party } });
+  try { _lineNotifyImportant_(_cMsg); _lineNotifyOwner_(_cMsg); } catch (e) {}
   return { ok: true, contract: row };
 }
 
@@ -4162,6 +4178,15 @@ function updateMilestone(p) {
         { paid_total: totalPaid });
     } catch (e) {}
   }
+
+  // Phase H-3b: งวดถูกมาร์คว่ารับ/จ่ายแล้ว → แจ้งเงิน (กลุ่ม + เจ้าของ)
+  try {
+    var _st = String(p.status || '').toLowerCase();
+    if ((_st === 'paid' || _st === 'done' || _st === 'completed') && Number(p.paid_amount || 0) > 0) {
+      var _mMsg = '💰 รับ/จ่ายเงินงวด ' + Number(p.paid_amount).toLocaleString() + ' บาท';
+      _lineNotifyImportant_(_mMsg); _lineNotifyOwner_(_mMsg);
+    }
+  } catch (e) {}
 
   return { ok: true, milestone_id: p.milestone_id };
 }
