@@ -225,7 +225,7 @@ async function loadAll() {
   try {
     // Determine role
     tmState.isAdmin = (typeof Auth.getRole === 'function')
-      ? Auth.getRole() === 'admin'
+      ? Auth.getRole() !== 'client'
       : true;
 
     const res = await API.callRead('get_teams_bundle');

@@ -190,7 +190,7 @@ async function loadProjects() {
     }
   });
 
-  if (role === 'admin') {
+  if (role !== 'client') {
     html += `
       <div class="proj-card empty" onclick="openCreateProjectModal()">
         <div class="proj-empty-icon">+</div>
@@ -221,7 +221,7 @@ function renderActiveCard(proj, ffData) {
   if (variance >= -5) { statusClass = 'onplan'; statusText = '● ตามแผน'; }
   else if (variance < -15) { statusClass = 'warn'; statusText = '⚠ ล่าช้า'; }
 
-  const targetPage = role === 'admin' ? 'dashboard.html' : 'client.html';
+  const targetPage = role !== 'client' ? 'dashboard.html' : 'client.html';
   const goUrl = targetPage + '?project=' + encodeURIComponent(proj.project_id);
 
   return `
@@ -262,7 +262,7 @@ function renderActiveCard(proj, ffData) {
 function renderPendingCard(proj) {
   const value = parseFloat(proj.total_value) || 0;
   const days = parseInt(proj.total_days, 10) || 0;
-  const targetPage = role === 'admin' ? 'dashboard.html' : 'client.html';
+  const targetPage = role !== 'client' ? 'dashboard.html' : 'client.html';
   const goUrl = targetPage + '?project=' + encodeURIComponent(proj.project_id);
   return `
     <div class="proj-card" onclick="window.location.href='${goUrl}'">

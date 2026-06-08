@@ -121,11 +121,25 @@ const Auth = {
       window.location.href = 'index.html';
       return false;
     }
-    if (requiredRole && session.role !== requiredRole) {
-      alert('คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
-      window.location.href = 'index.html';
-      return false;
+    if (requiredRole) {
+      // Phase G: 'admin' = หน้าฝั่งทีมงาน (internal) → อนุญาตทุกบทบาทยกเว้น client
+      //          (owner/pm/foreman/contractor/purchaser/admin เข้าได้)
+      //          'client' = หน้าลูกค้า → เฉพาะ client
+      const ok = (requiredRole === 'admin')
+        ? (session.role !== 'client')
+        : (session.role === requiredRole);
+      if (!ok) {
+        alert('คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
+        window.location.href = 'index.html';
+        return false;
+      }
     }
     return true;
+  },
+
+  // เป็นทีมงาน (ภายใน) ไหม — ทุกบทบาทยกเว้น client
+  isStaff() {
+    const s = this.getSession();
+    return !!(s && s.role && s.role !== 'client');
   }
 };
