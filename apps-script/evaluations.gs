@@ -401,6 +401,9 @@ function createEval_(p) {
   EVAL_KPIS_.forEach(function(def) { row[def.key] = computed.kpi[def.key]; });
 
   appendRow(EVAL_SHEET_, row);  // B-4 auto-stamps project_id
+  // Phase H: auto-log
+  try { autoLog_('📋 ประเมินผู้รับเหมา ' + teamName + ' — ' + computed.total + ' คะแนน (เกรด ' + row['Grade'] + ')',
+    { meta: { kind: 'eval', eval_id: id, team_id: teamId } }); } catch (e) {}
   return _evalRowToObj_(row);
 }
 

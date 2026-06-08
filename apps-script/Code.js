@@ -376,6 +376,9 @@ function route(action, p) {
     case 'get_today_stats': return getTodayStats(p);
     case 'get_daily_bundle': return getDailyBundle(p);
 
+    // 🔔 PHASE H — NOTIFICATIONS — ดู notifications.gs
+    case 'get_notifications': return getNotifications_(p);
+
     // 👥 Project Staff — assign คนในบริษัทเข้าโปรเจค (27_Project_Staff)
     case 'get_all_staff': return getAllStaff();
     case 'get_project_staff': return getProjectStaff(p.project_id);
@@ -1561,6 +1564,8 @@ function createDaily(p) {
     updated_at: nowStr(),
   };
   appendRow(SHEET.DAILY, row);
+  autoLog_('📝 รายงานประจำวัน (' + date + ') โดย ' + reporter,
+    { meta: { kind: 'daily', daily_id: id }, date: date });
   return row;
 }
 
@@ -2508,6 +2513,19 @@ function appendActivityLog_(opts) {
 
   const logId = nextLogId_();
 
+  // Phase H: ติดป้าย "ใครทำ" อัตโนมัติจาก token (actor context ที่ _authorize_ set ไว้)
+  // ครอบคลุมทุก event ในจุดเดียว (manual + auto + hooks) โดยไม่ต้องแก้ทุก call site
+  let _meta = (typeof opts.meta === 'object' && opts.meta) ? opts.meta : {};
+  try {
+    const _actor = _getCurrentActor_();
+    if (_actor && !_meta.actor) {
+      _meta.actor = _actor.name || '';
+      _meta.actor_id = _actor.sid || '';
+      _meta.actor_role = _actor.role || '';
+    }
+  } catch (e) {}
+  opts.meta = _meta;
+
   const row = [
     logId,
     date,
@@ -2548,6 +2566,7 @@ function autoLog_(text, opts) {
       tags_ctr: opts && opts.tags_ctr,
       tags_issue: opts && opts.tags_issue,
       tags_phase: opts && opts.tags_phase,
+      date: opts && opts.date,
       meta: opts && opts.meta
     });
   } catch (e) {
@@ -4060,6 +4079,11 @@ function createContract(p) {
     created_at: todayStr()
   };
   appendRow(SHEET.CONTRACTS, row);
+  // Phase H: auto-log (แยกฝั่งเจ้าบ้าน/ผู้รับเหมา)
+  const _side = (party === 'client') ? 'สัญญาเจ้าบ้าน' : 'สัญญาผู้รับเหมา';
+  autoLog_('📄 เพิ่ม' + _side + ': ' + (row.title || row.contract_no || id) +
+    (row.value ? ' (' + Number(row.value).toLocaleString() + ' บาท)' : ''),
+    { meta: { kind: 'contract', contract_id: id, party: party } });
   return { ok: true, contract: row };
 }
 
@@ -4099,6 +4123,9 @@ function createMilestone(p) {
     notes: p.notes || ''
   };
   appendRow(SHEET.MILESTONES, row);
+  autoLog_('🧾 เพิ่มงวด: ' + (row.name || ('งวด ' + row.seq)) +
+    (row.amount ? ' (' + Number(row.amount).toLocaleString() + ' บาท)' : ''),
+    { meta: { kind: 'milestone', milestone_id: id, contract_id: p.contract_id } });
   return { ok: true, milestone: row };
 }
 

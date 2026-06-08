@@ -210,7 +210,7 @@ var _ACTION_CAP_ = (function () {
     'get_inventory_summary', 'get_client_finance', 'get_contract_files',
     'suggest_task_from_log', 'parse_activity_text', 'parse_material_log',
     'scan_bill', 'detect_unknowns', 'login', 'login_google', 'get_me',
-    'check_stock_for_items'
+    'check_stock_for_items', 'get_notifications'
   ]);
 
   add('OPS', [

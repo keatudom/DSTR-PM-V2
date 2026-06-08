@@ -320,6 +320,9 @@ function createRisk_(p) {
     'Date Identified':  todayStr()
   };
   appendRow(SHEET.RISKS, row);  // B-4 auto-stamps project_id
+  // Phase H: auto-log
+  try { autoLog_('⚠️ เพิ่มความเสี่ยง: ' + desc + ' (ระดับ ' + row['Severity'] + ')',
+    { meta: { kind: 'risk', risk_id: id } }); } catch (e) {}
   return row;
 }
 

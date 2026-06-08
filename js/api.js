@@ -305,6 +305,11 @@ const API = {
     return this.callRead('get_me');
   },
 
+  /** 🔔 event ล่าสุดของโครงการ (สำหรับกระดิ่งแจ้งเตือน) */
+  getNotifications: function(limit) {
+    return this.callRead('get_notifications', { limit: limit || 40 });
+  },
+
   /** รายชื่อผู้ใช้ทั้งหมด + บทบาท + โครงการ (owner only) */
   getUsers: function() {
     return this.callRead('get_users');

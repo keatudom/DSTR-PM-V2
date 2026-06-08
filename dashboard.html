@@ -736,8 +736,45 @@
           <div class="dash-hdr-sub" id="projSub">คุณอสณบรีย อิสสระเสรี · QT-690400007</div>
           <div class="dash-pills" id="projPills"></div>
         </div>
-        <button class="back-btn" onclick="window.location.href='projects.html'">← กลับ</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="nf-bell" id="nfBell" onclick="NF.toggle()" title="การแจ้งเตือน">
+            🔔<span class="nf-badge" id="nfBadge" style="display:none">0</span>
+          </div>
+          <button class="back-btn" onclick="window.location.href='projects.html'">← กลับ</button>
+        </div>
       </div>
+    </div>
+
+    <!-- 🔔 Phase H — Notification panel -->
+    <style>
+      .nf-bell { position:relative; font-size:20px; cursor:pointer; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:#F3F4F6; border:1px solid #E5E7EB; user-select:none; }
+      .nf-bell:active { background:#E5E7EB; }
+      .nf-badge { position:absolute; top:-4px; right:-4px; min-width:18px; height:18px; padding:0 4px; box-sizing:border-box; background:#E24B4A; color:#fff; font-size:10px; font-weight:700; border-radius:99px; display:flex; align-items:center; justify-content:center; border:2px solid #fff; }
+      .nf-panel { position:fixed; top:0; right:0; width:min(360px,92vw); height:100%; background:#fff; box-shadow:-4px 0 24px rgba(0,0,0,0.18); z-index:1000; transform:translateX(100%); transition:transform .22s ease; display:flex; flex-direction:column; }
+      .nf-panel.open { transform:translateX(0); }
+      .nf-ov { position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:999; opacity:0; pointer-events:none; transition:opacity .22s; }
+      .nf-ov.open { opacity:1; pointer-events:auto; }
+      .nf-hd { display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid #EEF0F3; }
+      .nf-hd-t { font-size:16px; font-weight:700; color:#1F2937; }
+      .nf-hd-x { font-size:22px; color:#9CA3AF; cursor:pointer; line-height:1; }
+      .nf-list { flex:1; overflow-y:auto; padding:8px; }
+      .nf-item { display:flex; gap:10px; padding:11px 10px; border-radius:10px; }
+      .nf-item.unread { background:#F0F7FF; }
+      .nf-ic { font-size:18px; flex-shrink:0; width:26px; text-align:center; }
+      .nf-bd { flex:1; min-width:0; }
+      .nf-txt { font-size:13px; color:#1F2937; line-height:1.45; word-break:break-word; }
+      .nf-meta { font-size:11px; color:#9CA3AF; margin-top:2px; }
+      .nf-actor { font-weight:600; color:#1F3864; }
+      .nf-empty { text-align:center; color:#9CA3AF; font-size:13px; padding:40px 16px; }
+      .nf-dot { width:7px; height:7px; border-radius:50%; background:#3B82F6; flex-shrink:0; margin-top:6px; }
+    </style>
+    <div class="nf-ov" id="nfOverlay" onclick="NF.close()"></div>
+    <div class="nf-panel" id="nfPanel">
+      <div class="nf-hd">
+        <div class="nf-hd-t">🔔 การแจ้งเตือน</div>
+        <div class="nf-hd-x" onclick="NF.close()">×</div>
+      </div>
+      <div class="nf-list" id="nfList"><div class="nf-empty">กำลังโหลด...</div></div>
     </div>
 
     <!-- AI Alerts Banner -->
@@ -1050,6 +1087,9 @@ async function loadData() {
     API.getClientFinance().then(res => {
       if (res.ok && res.data) { state.clientFinance = res.data; renderClientFinance(); }
     }).catch(()=>{});
+
+    // Phase H: โหลดการแจ้งเตือน (parallel)
+    NF.load();
 
     // โหลดการประเมินผู้รับเหมา (parallel) — 28_Contractor_Evaluations
     API.getEvals().then(res => {
@@ -2631,6 +2671,108 @@ async function confirmCloneRisksFromDirek() {
     Modal.toast('❌ ' + e.message);
   }
 }
+
+// ============================================================
+// 🔔 NOTIFICATIONS (NF) — Phase H: กระดิ่งแจ้งเตือน "ใครทำอะไร"
+// ============================================================
+const NF = {
+  events: [],
+  _seenKey: function () { return 'nf_seen_' + (state.projectId || 'bow-house'); },
+  _lastSeen: function () { try { return localStorage.getItem(NF._seenKey()) || ''; } catch (e) { return ''; } },
+};
+
+NF.iconFor = function (ev) {
+  var k = ev.kind || '';
+  if (k === 'contract') return '📄';
+  if (k === 'milestone') return '🧾';
+  if (k === 'risk') return '⚠️';
+  if (k === 'eval') return '📋';
+  if (k === 'daily') return '📝';
+  // เดาจากข้อความ (auto-log เดิมที่ยังไม่มี kind)
+  var t = ev.text || '';
+  if (t.indexOf('เบิก') >= 0) return '📤';
+  if (t.indexOf('รับ') >= 0) return '📥';
+  if (t.indexOf('นับ') >= 0) return '📦';
+  if (t.indexOf('เสร็จ') >= 0 || t.indexOf('✓') >= 0) return '✅';
+  if (t.indexOf('หน้างาน') >= 0 || t.indexOf('เข้า') >= 0) return '👷';
+  return '🔔';
+};
+
+NF.relTime = function (iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d)) return '';
+  var diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'เมื่อสักครู่';
+  if (diff < 3600) return Math.floor(diff / 60) + ' นาทีที่แล้ว';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' ชม.ที่แล้ว';
+  if (diff < 604800) return Math.floor(diff / 86400) + ' วันที่แล้ว';
+  return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+};
+
+NF.unreadCount = function () {
+  var last = NF._lastSeen();
+  return NF.events.filter(function (e) { return e.timestamp > last; }).length;
+};
+
+NF.load = function () {
+  API.getNotifications(40).then(function (res) {
+    if (res && res.ok && res.data && Array.isArray(res.data.events)) {
+      NF.events = res.data.events;
+      NF.renderBadge();
+    }
+  }).catch(function () {});
+};
+
+NF.renderBadge = function () {
+  var n = NF.unreadCount();
+  var badge = document.getElementById('nfBadge');
+  if (!badge) return;
+  if (n > 0) { badge.textContent = n > 99 ? '99+' : n; badge.style.display = 'flex'; }
+  else { badge.style.display = 'none'; }
+};
+
+NF.toggle = function () {
+  var panel = document.getElementById('nfPanel');
+  if (panel.classList.contains('open')) NF.close(); else NF.open();
+};
+
+NF.open = function () {
+  NF.renderList();
+  document.getElementById('nfPanel').classList.add('open');
+  document.getElementById('nfOverlay').classList.add('open');
+  // mark read: เก็บ timestamp ล่าสุดไว้ → badge เคลียร์
+  if (NF.events.length) {
+    try { localStorage.setItem(NF._seenKey(), NF.events[0].timestamp); } catch (e) {}
+  }
+  NF.renderBadge();
+};
+
+NF.close = function () {
+  document.getElementById('nfPanel').classList.remove('open');
+  document.getElementById('nfOverlay').classList.remove('open');
+};
+
+NF.renderList = function () {
+  var el = document.getElementById('nfList');
+  if (!NF.events.length) {
+    el.innerHTML = '<div class="nf-empty">ยังไม่มีการแจ้งเตือน<br><span style="font-size:11px">เมื่อมีคนทำงาน/เบิกของ/ติ๊กงาน จะขึ้นที่นี่</span></div>';
+    return;
+  }
+  var last = NF._lastSeen();
+  el.innerHTML = NF.events.map(function (e) {
+    var unread = e.timestamp > last;
+    var who = e.actor ? '<span class="nf-actor">' + escapeHtml(e.actor) + '</span> · ' : '';
+    return '<div class="nf-item' + (unread ? ' unread' : '') + '">' +
+      '<div class="nf-ic">' + NF.iconFor(e) + '</div>' +
+      '<div class="nf-bd">' +
+        '<div class="nf-txt">' + escapeHtml(e.text || '') + '</div>' +
+        '<div class="nf-meta">' + who + NF.relTime(e.timestamp) + '</div>' +
+      '</div>' +
+      (unread ? '<div class="nf-dot"></div>' : '') +
+    '</div>';
+  }).join('');
+};
 
 // ============================================================
 // 💰 CLIENT FINANCE (CF) — Phase F: สัญญา + หลักฐานฝั่งเจ้าบ้าน (เงินเข้า)
