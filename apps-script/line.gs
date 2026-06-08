@@ -191,11 +191,14 @@ function lineTest_(p) {
   return { ok: _lineBroadcast_(text), mode: 'broadcast' };
 }
 
-// ติดตั้ง trigger สรุปเย็น (วันละครั้ง ~18:00) — idempotent
+// ติดตั้ง trigger สรุปเย็น (วันละครั้ง ~18:30) — idempotent
+// 👉 รันฟังก์ชันนี้จากหน้า Apps Script editor (ปุ่ม Run) ครั้งเดียว — จะขออนุญาต
+//    สิทธิ์ ScriptApp ให้เอง แล้วตั้ง trigger ~18:30 น. (เผื่อหน้างานบันทึกช่วงเย็น)
 function installLineDigestTrigger_() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (t.getHandlerFunction() === 'lineDailyDigest_') ScriptApp.deleteTrigger(t);
   });
-  ScriptApp.newTrigger('lineDailyDigest_').timeBased().everyDays(1).atHour(18).create();
-  return { ok: true, scheduled: 'ทุกวัน ~18:00 น.' };
+  ScriptApp.newTrigger('lineDailyDigest_').timeBased().everyDays(1)
+    .atHour(18).nearMinute(30).create();
+  return { ok: true, scheduled: 'ทุกวัน ~18:30 น.' };
 }
