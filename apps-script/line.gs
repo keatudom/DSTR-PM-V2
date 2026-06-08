@@ -93,15 +93,20 @@ function lineWebhook_(body) {
     var src = ev.source || {};
 
     if (src.type === 'group' && src.groupId) {
-      // ⭐ ตอบ "เชื่อมแล้ว" แค่ครั้งแรก (id ใหม่) — หลังจากนั้นเงียบสนิท ไม่ยุ่งกับแชท
+      // ข้อความที่พิมพ์ (ถ้าเป็น text)
+      var msgText = (ev.type === 'message' && ev.message && ev.message.type === 'text')
+        ? String(ev.message.text || '').trim() : '';
+      // คำสั่งบังคับผูกกลุ่ม — พิมพ์ในกลุ่มไหน ระบบผูกกลุ่มนั้นทันที (แม้ id เดิมจะมีอยู่)
+      var forceLink = (msgText === '/link' || msgText === 'เชื่อมกลุ่ม' || msgText === 'เชื่อมกลุ่มนี้');
       var curG = props.getProperty('LINE_GROUP_ID') || '';
-      if (curG !== src.groupId) {
+
+      if (curG !== src.groupId || forceLink) {
         props.setProperty('LINE_GROUP_ID', src.groupId);
         if (ev.replyToken) {
           _lineReply_(ev.replyToken, '✅ เชื่อมกลุ่มนี้กับระบบ DSTR แล้ว\nจะแจ้งเฉพาะ "เรื่องสำคัญ" + สรุปเย็นวันละครั้ง — ไม่กวนแชทปกติครับ');
         }
       }
-      // id เดิมแล้ว → ไม่ตอบอะไร (คนในกลุ่มพิมพ์ได้ตามสบาย)
+      // id เดิมแล้ว + ไม่ใช่คำสั่ง → เงียบ (คนในกลุ่มพิมพ์ได้ตามสบาย)
 
     } else if (src.type === 'user' && src.userId) {
       var curU = props.getProperty('LINE_OWNER_UID') || '';
@@ -262,6 +267,26 @@ function lineTest_(p) {
     return { ok: _linePush_(uid, '💼 ' + text) };
   }
   return { ok: _lineBroadcast_(text), mode: 'broadcast' };
+}
+
+// 🔧 ตรวจสอบการส่งเข้ากลุ่ม — คืน http code + คำตอบจริงจาก LINE (ไว้ debug)
+function lineDiag_() {
+  var token = _lineToken_();
+  var gid = _readSecret_('LINE_GROUP_ID', '');
+  if (!token) return { ok: false, reason: 'no token' };
+  if (!gid) return { ok: false, reason: 'no group id stored' };
+  var res = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', {
+    method: 'post', contentType: 'application/json',
+    headers: { 'Authorization': 'Bearer ' + token },
+    payload: JSON.stringify({ to: gid, messages: [{ type: 'text', text: '🔧 ทดสอบการเชื่อมต่อ DSTR — ถ้าเห็นข้อความนี้ = ส่งเข้ากลุ่มได้ปกติ' }] }),
+    muteHttpExceptions: true
+  });
+  return {
+    ok: res.getResponseCode() === 200,
+    http_code: res.getResponseCode(),
+    line_response: res.getContentText().slice(0, 400),
+    group_id_tail: '...' + gid.slice(-8)
+  };
 }
 
 // ติดตั้ง trigger สรุปเย็น (วันละครั้ง ~18:30) — idempotent
