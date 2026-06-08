@@ -134,17 +134,18 @@ function _thaiDate_(ymd) {
   return ymd;
 }
 
-function lineDailyDigest_() {
+function lineDailyDigest_(p) {
   var gid = _readSecret_('LINE_GROUP_ID', '');
   if (!gid) return { ok: false, reason: 'no group' };
 
-  var today = todayStr();
+  // ระบุวันที่ได้ (p.date = 'YYYY-MM-DD') — ไม่ส่ง = วันนี้ (ใช้ใน trigger)
+  var day = (p && p.date) ? String(p.date) : todayStr();
 
   // 1) activity วันนี้ — นับภาพรวม
   var rows = [];
   try {
     rows = getAllRows(SHEET.ACTIVITY).filter(function (r) {
-      return formatDateValue(r.date) === today || String(r.date) === today;
+      return formatDateValue(r.date) === day || String(r.date) === day;
     });
   } catch (e) {}
 
@@ -164,7 +165,7 @@ function lineDailyDigest_() {
   var reports = [];
   try {
     reports = getAllRows(SHEET.DAILY).filter(function (r) {
-      return formatDateValue(r.date) === today || String(r.date) === today;
+      return formatDateValue(r.date) === day || String(r.date) === day;
     });
   } catch (e) {}
 
@@ -194,7 +195,7 @@ function lineDailyDigest_() {
   } catch (e) { narrative = ''; }
 
   // 4) ประกอบข้อความ: หัว + บทความ AI + ภาพรวมตัวเลข + ลิงก์เว็บ
-  var lines = ['📊 สรุปประจำวัน ' + _thaiDate_(today)];
+  var lines = ['📊 สรุปประจำวัน ' + _thaiDate_(day)];
   if (narrative) { lines.push(''); lines.push(narrative); }
 
   var ov = [];
