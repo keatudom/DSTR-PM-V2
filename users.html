@@ -93,9 +93,13 @@ var UM = {
   users: [],
   projects: [],   // [{project_id, name}]
   ROLES: [
-    { v: 'owner', t: 'เจ้าของงาน' }, { v: 'pm', t: 'PM' },
-    { v: 'foreman', t: 'หน้างาน' }, { v: 'contractor', t: 'ผู้รับเหมา' },
-    { v: 'client', t: 'ลูกค้า' }
+    { v: 'owner',     t: '👑 เจ้าของกิจการ' },
+    { v: 'director',  t: '🗂️ ผู้ดูแลโครงการ' },
+    { v: 'pm',            t: '📋 ผู้จัดการโครงการ (PM)' },
+    { v: 'site_engineer', t: '📐 วิศวกรหน้างาน' },
+    { v: 'foreman',       t: '👷 โฟร์แมน (หัวหน้าช่าง)' },
+    { v: 'purchaser',     t: '🛒 ฝ่ายจัดซื้อ' },
+    { v: 'client',    t: '🏠 เจ้าบ้าน (ลูกค้า)' }
   ]
 };
 
@@ -121,7 +125,7 @@ UM.render = function () {
   if (!UM.users.length) { el.innerHTML = '<div class="um-empty">ยังไม่มีผู้ใช้</div>'; return; }
 
   // เรียง: owner ก่อน, ปิดใช้งานท้ายสุด
-  var order = { owner: 0, pm: 1, foreman: 2, contractor: 3, client: 4 };
+  var order = { owner: 0, director: 1, pm: 2, site_engineer: 3, foreman: 4, purchaser: 5, contractor: 6, client: 7 };
   var sorted = UM.users.slice().sort(function (a, b) {
     if (a.active !== b.active) return a.active ? -1 : 1;
     return (order[a.auth_role] != null ? order[a.auth_role] : 9) - (order[b.auth_role] != null ? order[b.auth_role] : 9);
@@ -153,7 +157,9 @@ UM.render = function () {
     }
 
     var avaLetter = ((u.name || u.email || '?')[0] || '?').toUpperCase();
-    var showProjects = (ar !== 'owner' && ar !== 'client'); // owner เห็นทุกโครงการอยู่แล้ว, client ไม่ผูกโครงการ
+    // ผูกโครงการเฉพาะบทบาทที่ทำงานแบบ scope รายโครงการ (PM/วิศวกรหน้างาน/โฟร์แมน)
+    // owner/ผู้ดูแล/จัดซื้อ = ทำข้ามโครงการอยู่แล้ว · client = ไม่ผูก
+    var showProjects = (ar === 'pm' || ar === 'site_engineer' || ar === 'foreman');
 
     return '<div class="um-card">' +
       '<div class="um-row">' +

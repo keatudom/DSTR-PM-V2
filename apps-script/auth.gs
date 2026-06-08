@@ -184,11 +184,15 @@ function getMe_(p) {
 // FINANCE = สัญญา/งวด/หลักฐานการเงิน
 // PRICING = ราคา/มูลค่า/ส่วนลด (เจ้าของงานเท่านั้น)
 // ADMIN   = จัดการผู้ใช้/สิทธิ์/สร้างโครงการ/migration (เจ้าของงานเท่านั้น)
+// PROCURE = จัดซื้อ/จัดการวัสดุ+ราคาซื้อ (ฝ่ายจัดซื้อ + ทีมที่แตะวัสดุ)
 var _ROLE_CAPS_ = {
-  owner:      { READ: 1, OPS: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1 },
-  pm:         { READ: 1, OPS: 1, MANAGE: 1, FINANCE: 1 },
-  foreman:    { READ: 1, OPS: 1 },
-  contractor: { READ: 1 },
+  owner:      { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1 }, // เจ้าของกิจการ
+  director:   { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1 },  // ผู้ดูแลโครงการ (ไม่เห็นราคา/กำไร, ไม่จัดการผู้ใช้) — คีย์ director กัน 'admin' ชน legacy
+  pm:            { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1 }, // ผู้จัดการโครงการ (scope เฉพาะที่รับผิดชอบ)
+  site_engineer: { READ: 1, OPS: 1, PROCURE: 1 },                        // วิศวกรหน้างาน (ทำงานหน้างาน + รับของ/นับ/จัดการวัสดุ)
+  foreman:       { READ: 1, OPS: 1 },                                    // โฟร์แมน/หัวหน้าช่าง (ติ๊ก/daily/เบิก/รูป — ไม่แตะคลัง)
+  purchaser:     { READ: 1, PROCURE: 1 },                                // ฝ่ายจัดซื้อ (วัสดุ+ราคาซื้อ, อื่นๆ ดูอย่างเดียว)
+  contractor: { READ: 1 },                                              // ผู้รับเหมา/ช่าง (เผื่ออนาคต)
   client:     {} // client ใช้ whitelist แยก (CLIENT_ALLOWED_ACTIONS)
 };
 
@@ -214,19 +218,23 @@ var _ACTION_CAP_ = (function () {
   ]);
 
   add('OPS', [
-    'updateTask', 'team_checkin', 'receive_material', 'withdraw_material',
-    'count_material', 'confirm_material_log', 'create_daily',
+    'updateTask', 'team_checkin', 'withdraw_material', 'create_daily',
     'auto_detect_daily', 'generate_daily_summary', 'generate_daily_summary_v2',
     'add_quick_log', 'add_photo', 'upload_photo', 'delete_photo',
     'delete_task_photo', 'add_activity_log', 'untick_task_from_log',
-    'save_ai_summary', 'confirm_task_tick', 'upload_log_photo',
-    'confirm_bill_items'
+    'save_ai_summary', 'confirm_task_tick', 'upload_log_photo'
+  ]);
+
+  // 🛒 PROCURE — จัดซื้อ/จัดการวัสดุ + ราคาซื้อ + รับของ + นับสต๊อก
+  add('PROCURE', [
+    'create_material', 'update_material', 'deactivate_material',
+    'delete_material', 'update_material_prices', 'receive_material',
+    'count_material', 'confirm_material_log', 'confirm_bill_items'
   ]);
 
   add('MANAGE', [
     'create_ff', 'create_ff_batch', 'update_ff', 'delete_ff', 'clone_project',
-    'create_material', 'update_material', 'deactivate_material',
-    'delete_material', 'create_boq', 'create_team', 'update_team',
+    'create_boq', 'create_team', 'update_team',
     'create_supplier', 'create_contractor', 'create_risk', 'update_risk',
     'delete_risk', 'clone_risks', 'create_eval', 'update_eval', 'delete_eval',
     'delete_daily', 'delete_activity_log'
@@ -238,7 +246,7 @@ var _ACTION_CAP_ = (function () {
     'upload_contract_file', 'delete_contract_file'
   ]);
 
-  add('PRICING', ['update_material_prices', 'create_project']);
+  add('PRICING', ['create_project']); // มูลค่า/ราคาขายโครงการ — เจ้าของเท่านั้น
 
   add('ADMIN', [
     'create_staff', 'update_staff', 'assign_project_staff',
@@ -254,8 +262,12 @@ var _ACTION_CAP_ = (function () {
   return m;
 })();
 
-// scope: write caps เหล่านี้ต้องเช็คว่า user อยู่ในโครงการนั้น (owner ข้าม)
+// scope: write caps เหล่านี้ต้องเช็คว่า user อยู่ในโครงการนั้น
 var _SCOPED_CAPS_ = { OPS: 1, MANAGE: 1, FINANCE: 1 };
+
+// บทบาทที่ทำงาน "ข้ามทุกโครงการ" — ไม่ต้องผูกรายโครงการ → ข้าม project scope
+// (owner/ผู้ดูแลโครงการ/ฝ่ายจัดซื้อ ดูแลภาพรวมทั้งบริษัท · admin = legacy รหัสผ่าน)
+var _CROSS_PROJECT_ROLES_ = { owner: 1, director: 1, purchaser: 1, admin: 1 };
 
 function _userProjectIds_(staffId) {
   if (!staffId) return [];
@@ -313,8 +325,9 @@ function _authorize_(action, p) {
     throw new Error('ไม่มีสิทธิ์: บทบาท "' + role + '" ทำ ' + action + ' ไม่ได้');
   }
 
-  // project scope สำหรับ write — pm/foreman/contractor ทำได้เฉพาะโครงการที่ถูก assign
-  if (_SCOPED_CAPS_[cap]) {
+  // project scope สำหรับ write — pm/วิศวกรหน้างาน/foreman ทำได้เฉพาะโครงการที่ถูก assign
+  // (ข้ามให้บทบาทข้ามโครงการ: owner/director/purchaser)
+  if (_SCOPED_CAPS_[cap] && !_CROSS_PROJECT_ROLES_[role]) {
     var pid = String((p && p.project_id) || '');
     if (pid) {
       var allowed = _userProjectIds_(payload.sid);
@@ -360,7 +373,7 @@ function getUsers_() {
   });
 }
 
-var _VALID_AUTH_ROLES_ = { owner: 1, pm: 1, foreman: 1, contractor: 1, client: 1 };
+var _VALID_AUTH_ROLES_ = { owner: 1, director: 1, pm: 1, site_engineer: 1, foreman: 1, purchaser: 1, contractor: 1, client: 1 };
 
 // upsert_user — เพิ่ม/แก้ผู้ใช้ (อีเมล + บทบาทสิทธิ์)
 // param: { staff_id?, name, email, auth_role, phone?, role?, active? }

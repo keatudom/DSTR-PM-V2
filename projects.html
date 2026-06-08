@@ -90,8 +90,10 @@ function esc(s) {
 function updateUserBar() {
   var user = (typeof Auth.getUser === 'function') ? Auth.getUser() : null;
   var roleLabels = {
-    owner: 'เจ้าของงาน', pm: 'PM', foreman: 'หน้างาน',
-    contractor: 'ผู้รับเหมา', admin: 'แอดมิน', client: 'ลูกค้า'
+    owner: 'เจ้าของกิจการ', director: 'ผู้ดูแลโครงการ', pm: 'PM',
+    site_engineer: 'วิศวกรหน้างาน', foreman: 'โฟร์แมน',
+    purchaser: 'ฝ่ายจัดซื้อ', contractor: 'ผู้รับเหมา',
+    admin: 'แอดมิน (รหัสผ่าน)', client: 'ลูกค้า'
   };
   var isClient = (role === 'client');
   var isOwner = (role === 'owner' || role === 'admin'); // admin เดิม = owner-equivalent
