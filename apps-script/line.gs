@@ -93,20 +93,26 @@ function lineWebhook_(body) {
     var src = ev.source || {};
 
     if (src.type === 'group' && src.groupId) {
-      // ข้อความที่พิมพ์ (ถ้าเป็น text)
       var msgText = (ev.type === 'message' && ev.message && ev.message.type === 'text')
         ? String(ev.message.text || '').trim() : '';
-      // คำสั่งบังคับผูกกลุ่ม — พิมพ์ในกลุ่มไหน ระบบผูกกลุ่มนั้นทันที (แม้ id เดิมจะมีอยู่)
-      var forceLink = (msgText === '/link' || msgText === 'เชื่อมกลุ่ม' || msgText === 'เชื่อมกลุ่มนี้');
-      var curG = props.getProperty('LINE_GROUP_ID') || '';
+      var mt = msgText.toLowerCase();
+      var gMain = props.getProperty('LINE_GROUP_ID') || '';
+      var gOps = props.getProperty('LINE_GROUP_OPS_ID') || '';
 
-      if (curG !== src.groupId || forceLink) {
+      if (mt === '/link ops' || mt === '/linkops' || msgText === 'เชื่อมกลุ่มหน้างาน') {
+        // กลุ่มหน้างาน — สรุปทุก ~3 ชม.
+        props.setProperty('LINE_GROUP_OPS_ID', src.groupId);
+        if (ev.replyToken) _lineReply_(ev.replyToken, '✅ เชื่อม "กลุ่มหน้างาน" แล้ว\nจะสรุปกิจกรรมหน้างานทุก ~3 ชม. ที่นี่ (รายงาน/ติ๊กงาน/เบิกของ)');
+      } else if (mt === '/link' || msgText === 'เชื่อมกลุ่ม' || msgText === 'เชื่อมกลุ่มนี้') {
+        // กลุ่มหลัก — เรื่องสำคัญ + สรุปเย็น
         props.setProperty('LINE_GROUP_ID', src.groupId);
-        if (ev.replyToken) {
-          _lineReply_(ev.replyToken, '✅ เชื่อมกลุ่มนี้กับระบบ DSTR แล้ว\nจะแจ้งเฉพาะ "เรื่องสำคัญ" + สรุปเย็นวันละครั้ง — ไม่กวนแชทปกติครับ');
-        }
+        if (ev.replyToken) _lineReply_(ev.replyToken, '✅ เชื่อม "กลุ่มหลัก" แล้ว\nจะแจ้งเรื่องสำคัญ + สรุปเย็นที่นี่');
+      } else if (ev.type === 'join' && src.groupId !== gMain && src.groupId !== gOps) {
+        // บอทเพิ่งถูกเชิญเข้ากลุ่มใหม่ → บอกวิธี (ไม่ผูกอัตโนมัติ กันทับกลุ่มเดิม)
+        if (ev.replyToken) _lineReply_(ev.replyToken,
+          '👋 สวัสดีครับ ตั้งกลุ่มนี้เป็น:\n• กลุ่มหลัก (เรื่องสำคัญ+สรุปเย็น) → พิมพ์  /link\n• กลุ่มหน้างาน (สรุปทุก 3 ชม.) → พิมพ์  /link ops');
       }
-      // id เดิมแล้ว + ไม่ใช่คำสั่ง → เงียบ (คนในกลุ่มพิมพ์ได้ตามสบาย)
+      // อื่นๆ → เงียบ
 
     } else if (src.type === 'user' && src.userId) {
       var curU = props.getProperty('LINE_OWNER_UID') || '';
@@ -248,6 +254,7 @@ function lineStatus_() {
   return {
     has_token: !!_lineToken_(),
     group_linked: !!_readSecret_('LINE_GROUP_ID', ''),
+    ops_group_linked: !!_readSecret_('LINE_GROUP_OPS_ID', ''),
     owner_linked: !!_readSecret_('LINE_OWNER_UID', '')
   };
 }
@@ -267,6 +274,48 @@ function lineTest_(p) {
     return { ok: _linePush_(uid, '💼 ' + text) };
   }
   return { ok: _lineBroadcast_(text), mode: 'broadcast' };
+}
+
+// ============================================================
+// 🕒 OPS DIGEST — สรุปกิจกรรมหน้างานทุก ~3 ชม. → กลุ่มหน้างาน
+// ============================================================
+function lineOpsDigest_() {
+  var gops = _readSecret_('LINE_GROUP_OPS_ID', '');
+  if (!gops) return { ok: false, reason: 'no ops group' };
+
+  var since = new Date().getTime() - (3 * 60 * 60 * 1000); // 3 ชม.ล่าสุด
+  var rows = [];
+  try {
+    rows = getAllRows(SHEET.ACTIVITY).filter(function (r) {
+      var ts = r.timestamp;
+      var t = (ts instanceof Date) ? ts.getTime() : Date.parse(String(ts || ''));
+      return t && t >= since;
+    });
+  } catch (e) {}
+  if (!rows.length) return { ok: true, skipped: 'no activity in last 3h' }; // เงียบถ้าไม่มีอะไร
+
+  var lines = ['🕒 อัปเดตหน้างาน (3 ชม.ล่าสุด)'];
+  rows.slice(-25).forEach(function (r) {
+    lines.push('• ' + String(r.text || '').replace(/^[📤🔧\s]+/, '').trim());
+  });
+  if (rows.length > 25) lines.push('… และอีก ' + (rows.length - 25) + ' รายการ');
+  lines.push('');
+  lines.push('🔗 ดูเต็ม: ' + LINE_WEB_BASE + '/dashboard.html');
+
+  _linePush_(gops, lines.join('\n'));
+  return { ok: true, total: rows.length };
+}
+
+// public wrapper (ไม่มีขีดล่าง) สำหรับเลือกใน Triggers / Run
+function runOpsDigest() { return lineOpsDigest_(); }
+
+// ติดตั้ง trigger ทุก 3 ชม. (run จาก editor — UI ไม่มีตัวเลือก "ทุก 3 ชม.")
+function installOpsDigestTrigger_() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'runOpsDigest') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('runOpsDigest').timeBased().everyHours(3).create();
+  return { ok: true, scheduled: 'ทุก 3 ชม.' };
 }
 
 // 🔧 ตรวจสอบการส่งเข้ากลุ่ม — คืน http code + คำตอบจริงจาก LINE (ไว้ debug)

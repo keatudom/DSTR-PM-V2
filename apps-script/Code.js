@@ -391,7 +391,8 @@ function route(action, p) {
     case '_line_status':          return lineStatus_();
     case 'line_test':             return lineTest_(p);
     case '_install_line_digest':  return installLineDigestTrigger_();
-    case '_run_line_digest':      return lineDailyDigest_(p);  // ยิงสรุปเอง (ระบุ date ได้)
+    case '_run_line_digest':      return lineDailyDigest_(p);  // ยิงสรุปเย็นเอง (ระบุ date ได้)
+    case '_run_ops_digest':       return lineOpsDigest_();      // ยิงสรุปหน้างาน 3 ชม. เอง (ทดสอบ)
     case '_line_diag':            return lineDiag_();           // ตรวจการส่งเข้ากลุ่ม (debug)
 
     // 👥 Project Staff — assign คนในบริษัทเข้าโปรเจค (27_Project_Staff)
