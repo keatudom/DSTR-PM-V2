@@ -88,16 +88,27 @@ function lineWebhook_(body) {
   for (var i = 0; i < events.length; i++) {
     var ev = events[i] || {};
     var src = ev.source || {};
+
     if (src.type === 'group' && src.groupId) {
-      props.setProperty('LINE_GROUP_ID', src.groupId);
-      if (ev.replyToken) {
-        _lineReply_(ev.replyToken, '✅ เชื่อมกลุ่มนี้กับระบบ DSTR แล้ว\nจะแจ้งเตือนเรื่องสำคัญ + สรุปเย็นที่นี่');
+      // ⭐ ตอบ "เชื่อมแล้ว" แค่ครั้งแรก (id ใหม่) — หลังจากนั้นเงียบสนิท ไม่ยุ่งกับแชท
+      var curG = props.getProperty('LINE_GROUP_ID') || '';
+      if (curG !== src.groupId) {
+        props.setProperty('LINE_GROUP_ID', src.groupId);
+        if (ev.replyToken) {
+          _lineReply_(ev.replyToken, '✅ เชื่อมกลุ่มนี้กับระบบ DSTR แล้ว\nจะแจ้งเฉพาะ "เรื่องสำคัญ" + สรุปเย็นวันละครั้ง — ไม่กวนแชทปกติครับ');
+        }
       }
+      // id เดิมแล้ว → ไม่ตอบอะไร (คนในกลุ่มพิมพ์ได้ตามสบาย)
+
     } else if (src.type === 'user' && src.userId) {
-      props.setProperty('LINE_OWNER_UID', src.userId);
-      if (ev.replyToken) {
-        _lineReply_(ev.replyToken, '✅ เชื่อมบัญชีแล้ว\nจะส่งแจ้งเตือนส่วนตัว (เงิน/สัญญา) ให้ที่นี่');
+      var curU = props.getProperty('LINE_OWNER_UID') || '';
+      if (curU !== src.userId) {
+        props.setProperty('LINE_OWNER_UID', src.userId);
+        if (ev.replyToken) {
+          _lineReply_(ev.replyToken, '✅ เชื่อมบัญชีแล้ว\nจะส่งแจ้งเตือนส่วนตัว (เงิน/สัญญา) ให้ที่นี่');
+        }
       }
+      // id เดิมแล้ว → เงียบ
     }
   }
 }
