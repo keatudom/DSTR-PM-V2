@@ -302,6 +302,10 @@ function route(action, p) {
     case 'upload_payment_slip': return uploadPaymentSlip(p);
     case 'delete_payment_slip': return deletePaymentSlip(p);
 
+    // 💰 PHASE F — CLIENT FINANCE (สัญญา/หลักฐานฝั่งเจ้าบ้าน) — ดู client_finance.gs
+    case 'get_client_finance': return getClientFinance_(p);
+    case '_phase_f_migrate':   return phaseFMigrate_();  // เพิ่ม column party + backfill 'contractor' (idempotent)
+
     case 'get_suppliers': return getAllRows(SHEET.SUPPLIERS);
     case 'create_supplier': return createSupplier(p);
 
@@ -1395,8 +1399,9 @@ function getAiAlerts() {
 }
 
 function getFrequentWithdrawalAlerts() {
-  const materials = getMaterials();
-  const txns = getAllRows(SHEET.TRANSACTIONS).filter(t => t.type === 'เบิก');
+  const _pid = _getCurrentProjectId_() || 'bow-house';  // Phase E: scope ตามโครงการ
+  const materials = getMaterials(null, null, _pid);
+  const txns = _filterByProject_(getAllRows(SHEET.TRANSACTIONS), _pid).filter(t => t.type === 'เบิก');
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -1423,7 +1428,7 @@ function getFrequentWithdrawalAlerts() {
 }
 
 function getStaleStatusAlerts() {
-  const materials = getMaterials('STATUS');
+  const materials = getMaterials('STATUS', null, _getCurrentProjectId_() || 'bow-house');
   const today = new Date();
   const alerts = [];
   materials.forEach(m => {
@@ -1446,7 +1451,7 @@ function getStaleStatusAlerts() {
 }
 
 function getLowStockAlerts() {
-  const materials = getMaterials('COUNT');
+  const materials = getMaterials('COUNT', null, _getCurrentProjectId_() || 'bow-house');
   const alerts = [];
   materials.forEach(m => {
     const stock = Number(m.current_stock || 0);
@@ -1554,7 +1559,8 @@ function createDaily(p) {
  */
 function getDailyReport(p) {
   ensureDailySheet_();
-  const rows = getAllRows(SHEET.DAILY);
+  // Phase E: scope ตามโครงการ
+  const rows = _filterByProject_(getAllRows(SHEET.DAILY), _getCurrentProjectId_() || 'bow-house');
   if (p.id) return rows.find(r => r.id === p.id) || null;
   if (p.date) {
     if (p.reporter_name) {
@@ -2715,8 +2721,17 @@ function getActivityFeed(p) {
   const data = sheet.getDataRange().getValues();
   const out = [];
 
+  // Phase E: scope ตามโครงการ (17_Activity_Logs มี column project_id จาก B-1)
+  const _pid = _getCurrentProjectId_() || 'bow-house';
+  const _pidCol = data.length ? data[0].indexOf('project_id') : -1;
+
   for (let i = data.length - 1; i >= 1; i--) {
     const r = data[i];
+    // กรองโครงการ — bow-house รวม row ที่ project_id ว่าง (legacy)
+    if (_pidCol !== -1) {
+      const rpid = String(r[_pidCol] || '').trim();
+      if (!(rpid === _pid || (_pid === 'bow-house' && rpid === ''))) continue;
+    }
     // Normalize date value — could be Date object, string, or other format
     let rowDate = r[1];
     if (rowDate instanceof Date) {
@@ -2968,14 +2983,15 @@ function untickTaskFromLog(p) {
  */
 function getTodayStats(p) {
   const date = p.date || todayStr();
+  const _pid = _getCurrentProjectId_() || 'bow-house';  // Phase E: scope ตามโครงการ
 
-  // Activity count
+  // Activity count (getActivityFeed scope เองแล้ว)
   const feed = getActivityFeed({ date: date, limit: 500 });
   const manualCount = feed.filter(l => l.type === 'manual').length;
   const autoCount = feed.filter(l => l.type === 'auto').length;
 
   // Tasks done today (ใช้ formatDateValue กัน Done Date เป็น Date object)
-  const tasks = getAllRows(SHEET.TASKS).filter(t =>
+  const tasks = _filterByProject_(getAllRows(SHEET.TASKS), _pid).filter(t =>
     formatDateValue(t['Done Date']) === date && t['Status'] === 'Done'
   );
 
@@ -2983,7 +2999,7 @@ function getTodayStats(p) {
   let txCount = 0, recvCount = 0, wdrCount = 0;
   let todayTxns = [];
   try {
-    const txns = getAllRows(SHEET.TRANSACTIONS);
+    const txns = _filterByProject_(getAllRows(SHEET.TRANSACTIONS), _pid);
     todayTxns = txns.filter(t =>
       formatDateValue(t.date) === date
     );
@@ -3007,8 +3023,13 @@ function getTodayStats(p) {
     const aSheet = findSheet_(SpreadsheetApp.openById(SHEETS_ID), SHEET.ACTIVITY);
     if (aSheet) {
       const aData = aSheet.getDataRange().getValues();
+      const _aPidCol = aData.length ? aData[0].indexOf('project_id') : -1;
       for (let i = 1; i < aData.length; i++) {
         const r = aData[i];
+        if (_aPidCol !== -1) {
+          const rpid = String(r[_aPidCol] || '').trim();
+          if (!(rpid === _pid || (_pid === 'bow-house' && rpid === ''))) continue;
+        }
         if (r[3] !== 'auto' || r[4] !== 'team_checkin') continue;
         if (formatDateValue(r[1]) !== date) continue;
         let m = {};
@@ -3258,7 +3279,7 @@ function getDailyBundle(p) {
 
   if (!skipRefs) {
     try { bundle.contractors = getAllRows(SHEET.CONTRACTORS); } catch(e) { bundle.contractors = []; }
-    try { bundle.ffs = getFFList(); } catch(e) { bundle.ffs = []; }
+    try { bundle.ffs = getFFList(_getCurrentProjectId_() || 'bow-house'); } catch(e) { bundle.ffs = []; }  // Phase E: scope
     try { bundle.teams = getTeams({}); } catch(e) { bundle.teams = []; }
   }
 
@@ -3770,7 +3791,13 @@ function getTeamsBundle(p) {
       notes: t.notes || ''
     }));
 
-  const contracts = getAllRows(SHEET.CONTRACTS).map(c => ({
+  // Phase E: กรองสัญญา/งวด/สลิป/ไฟล์ ตามโครงการปัจจุบัน (กันข้อมูลปนข้ามโครงการ)
+  // ทีม + พนักงาน = shared resource (ผู้รับเหมาเจ้าเดียวทำได้หลายโครงการ) → ไม่กรอง
+  const _pid = _getCurrentProjectId_() || 'bow-house';
+  // Phase F: ตัดสัญญาเจ้าบ้าน (party='client') ออกจากฝั่งผู้รับเหมา — แสดงแยกการ์ดใน dashboard
+  const contracts = _filterByProject_(getAllRows(SHEET.CONTRACTS), _pid)
+    .filter(c => String(c.party || 'contractor').toLowerCase() !== 'client')
+    .map(c => ({
     contract_id: c.contract_id,
     team_id: c.team_id,
     contract_no: c.contract_no || '',
@@ -3786,32 +3813,40 @@ function getTeamsBundle(p) {
     notes: c.notes || ''
   }));
 
-  const milestones = getAllRows(SHEET.MILESTONES).map(m => ({
-    milestone_id: m.milestone_id,
-    contract_id: m.contract_id,
-    seq: Number(m.seq || 0),
-    name: m.name || '',
-    condition: m.condition || '',
-    pct: Number(m.pct || 0),
-    amount: Number(m.amount || 0),
-    status: m.status || 'pending',
-    paid_amount: Number(m.paid_amount || 0),
-    paid_date: formatDateValue(m.paid_date),
-    evidence_status: m.evidence_status || 'none',
-    notes: m.notes || ''
-  }));
+  // งวด/สลิป/ไฟล์ scope ผ่าน contract_id ของสัญญาที่กรองแล้ว (เชื่อถือได้กว่า stamp รายตัว)
+  const _contractIds = {};
+  contracts.forEach(c => { _contractIds[String(c.contract_id)] = true; });
 
-  // Payment slips (all)
+  const milestones = getAllRows(SHEET.MILESTONES)
+    .filter(m => _contractIds[String(m.contract_id)])
+    .map(m => ({
+      milestone_id: m.milestone_id,
+      contract_id: m.contract_id,
+      seq: Number(m.seq || 0),
+      name: m.name || '',
+      condition: m.condition || '',
+      pct: Number(m.pct || 0),
+      amount: Number(m.amount || 0),
+      status: m.status || 'pending',
+      paid_amount: Number(m.paid_amount || 0),
+      paid_date: formatDateValue(m.paid_date),
+      evidence_status: m.evidence_status || 'none',
+      notes: m.notes || ''
+    }));
+
+  // Payment slips (scope by contract)
   let paymentSlips = [];
   try {
-    paymentSlips = getAllRows(SHEET.PAYMENT_SLIPS).map(s => ({
-      slip_id: s.slip_id,
-      milestone_id: s.milestone_id,
-      contract_id: s.contract_id,
-      url: s.url,
-      name: s.name || '',
-      file_type: s.file_type || 'file'
-    }));
+    paymentSlips = getAllRows(SHEET.PAYMENT_SLIPS)
+      .filter(s => _contractIds[String(s.contract_id)])
+      .map(s => ({
+        slip_id: s.slip_id,
+        milestone_id: s.milestone_id,
+        contract_id: s.contract_id,
+        url: s.url,
+        name: s.name || '',
+        file_type: s.file_type || 'file'
+      }));
   } catch (e) {}
 
   const staff = getAllRows(SHEET.STAFF)
@@ -3824,16 +3859,18 @@ function getTeamsBundle(p) {
       notes: s.notes || ''
     }));
 
-  // Contract files (all)
+  // Contract files (scope by contract)
   let contractFiles = [];
   try {
-    contractFiles = getAllRows(SHEET.CONTRACT_FILES).map(f => ({
-      file_id: f.file_id,
-      contract_id: f.contract_id,
-      url: f.url,
-      name: f.name || '',
-      file_type: f.file_type || 'file'
-    }));
+    contractFiles = getAllRows(SHEET.CONTRACT_FILES)
+      .filter(f => _contractIds[String(f.contract_id)])
+      .map(f => ({
+        file_id: f.file_id,
+        contract_id: f.contract_id,
+        url: f.url,
+        name: f.name || '',
+        file_type: f.file_type || 'file'
+      }));
   } catch (e) {}
 
   return { teams: teams, contracts: contracts, milestones: milestones,
@@ -3991,11 +4028,13 @@ function updateTeam(p) {
  * create_contract — เพิ่มสัญญา (หลัก หรือ งานเพิ่ม)
  */
 function createContract(p) {
-  if (!p.team_id) throw new Error('team_id required');
+  // Phase F: สัญญาเจ้าบ้าน (party='client') ไม่ผูกกับ team_id (คู่สัญญา = เจ้าของโครงการ)
+  const party = (p.party === 'client') ? 'client' : 'contractor';
+  if (party !== 'client' && !p.team_id) throw new Error('team_id required');
   const id = generateId('CT', SHEET.CONTRACTS, 'contract_id');
   const row = {
     contract_id: id,
-    team_id: p.team_id,
+    team_id: p.team_id || '',
     contract_no: p.contract_no || '',
     type: p.type || 'main',
     title: p.title || '',
@@ -4006,6 +4045,7 @@ function createContract(p) {
     file_link: p.file_link || '',
     parent_id: p.parent_id || '',
     status: p.status || 'active',
+    party: party,
     notes: p.notes || '',
     created_at: todayStr()
   };
@@ -4738,6 +4778,14 @@ function clientGetMilestones(p) {
  * ❌ ห้าม: supplier_payments, internal_cost, margin, receipt no. ภายใน
  */
 function clientGetPayments(p) {
+  // Phase F: ถ้าโปรเจคนี้มี "สัญญาเจ้าบ้าน" (party='client') → ใช้ระบบใหม่
+  // ซึ่งแนบหลักฐาน (evidence) ต่องวดได้ — โปร่งใสให้เจ้าบ้านเห็น
+  // ไม่มีสัญญาเจ้าบ้าน → fallback ไประบบเดิม (04_Payments) ตามเดิม 100%
+  try {
+    const fromContract = _clientMilestonesForView_(_getCurrentProjectId_() || 'bow-house');
+    if (fromContract) return fromContract;
+  } catch (e) {}
+
   let rows;
   try {
     rows = getAllRows(SHEET.PAYMENTS);
@@ -4789,6 +4837,7 @@ function clientGetPayments(p) {
       paid_date: paidDate,
       status: status,
       condition: String(r['Notes'] || ''), // condition/เงื่อนไขปลดงวด ถ้าทีมใส่ใน Notes
+      evidence: [], // legacy 04_Payments ไม่มีไฟล์แนบ (ระบบใหม่ party='client' เท่านั้นที่มี)
     };
   });
 

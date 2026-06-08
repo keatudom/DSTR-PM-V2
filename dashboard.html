@@ -831,6 +831,48 @@
       <div class="ngwd-grid" id="ngwdGrid"></div>
     </div>
 
+    <!-- 💰 Phase F — Client Finance (สัญญาเจ้าบ้าน / เงินเข้า) -->
+    <style>
+      .cf-card { border-left: 4px solid #12936b; }
+      .cf-head { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+      .cf-tag-in { font-size:11px; font-weight:700; color:#0d6e4f; background:#d9f5e9; border:1px solid #9fe3c6; padding:1px 8px; border-radius:999px; vertical-align:middle; margin-left:4px; }
+      .cf-btn { font-size:12px; font-weight:600; padding:6px 12px; border-radius:8px; border:none; cursor:pointer; }
+      .cf-btn-primary { background:#12936b; color:#fff; }
+      .cf-btn-secondary { background:#e8f6f0; color:#0d6e4f; border:1px solid #b6e6d2; }
+      .cf-empty { font-size:12px; color:#6B7280; padding:14px; text-align:center; line-height:1.6; background:#f6fbf9; border:1px dashed #b6e6d2; border-radius:10px; }
+      .cf-summary { background:#f6fbf9; border:1px solid #d9f0e7; border-radius:10px; padding:12px; margin-bottom:12px; }
+      .cf-sum-title { font-size:14px; font-weight:700; color:#0f5132; margin-bottom:4px; }
+      .cf-sum-row { display:flex; justify-content:space-between; font-size:12px; color:#374151; margin-top:3px; }
+      .cf-sum-amt { font-weight:700; color:#0d6e4f; }
+      .cf-bar { height:8px; background:#e5e7eb; border-radius:6px; overflow:hidden; margin-top:8px; }
+      .cf-bar-fill { height:100%; background:#12936b; }
+      .cf-file-row { display:flex; align-items:center; gap:6px; font-size:12px; margin-top:8px; }
+      .cf-file-name { color:#1d4ed8; cursor:pointer; text-decoration:underline; word-break:break-all; }
+      .cf-file-del { color:#ef4444; cursor:pointer; font-weight:700; margin-left:auto; }
+      .cf-ms { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; margin-bottom:8px; }
+      .cf-ms-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+      .cf-ms-name { font-size:13px; font-weight:600; color:#1f2937; cursor:pointer; }
+      .cf-ms-cond { font-size:11px; color:#6B7280; margin-top:2px; }
+      .cf-ms-amt { font-size:13px; font-weight:700; color:#111827; white-space:nowrap; }
+      .cf-badge { font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; white-space:nowrap; }
+      .cf-badge-paid { background:#d9f5e9; color:#0d6e4f; }
+      .cf-badge-pending { background:#fef3c7; color:#92400e; }
+      .cf-slip-wrap { margin-top:8px; padding-top:8px; border-top:1px dashed #e5e7eb; }
+      .cf-slip-row { display:flex; align-items:center; gap:6px; font-size:12px; margin-top:4px; }
+      .cf-slip-name { color:#1d4ed8; cursor:pointer; text-decoration:underline; }
+      .cf-slip-del { color:#ef4444; cursor:pointer; font-weight:700; margin-left:auto; }
+      .cf-slip-btn { font-size:11px; color:#0d6e4f; background:#e8f6f0; border:1px solid #b6e6d2; border-radius:8px; padding:4px 10px; cursor:pointer; margin-top:6px; }
+      .cf-input { width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px; font-size:13px; margin-bottom:8px; }
+      .cf-lbl { font-size:12px; font-weight:600; color:#374151; margin-bottom:3px; display:block; }
+    </style>
+    <div class="card cf-card">
+      <div class="cf-head">
+        <div class="card-title" style="margin:0">💰 สัญญาเจ้าบ้าน<span class="cf-tag-in">เงินเข้า</span></div>
+        <div class="cf-actions" id="cfHeaderActions"></div>
+      </div>
+      <div id="cfBody"></div>
+    </div>
+
     <!-- Timeline -->
     <div class="card">
       <div class="card-title">📅 Timeline (เม.ย. – ส.ค. 2569)</div>
@@ -1004,6 +1046,11 @@ async function loadData() {
       if (res.ok && res.data) { state.inventory = res.data; renderInventory(); }
     }).catch(()=>{});
 
+    // Phase F: โหลดสัญญาเจ้าบ้าน + งวด + หลักฐาน (parallel)
+    API.getClientFinance().then(res => {
+      if (res.ok && res.data) { state.clientFinance = res.data; renderClientFinance(); }
+    }).catch(()=>{});
+
     // โหลดการประเมินผู้รับเหมา (parallel) — 28_Contractor_Evaluations
     API.getEvals().then(res => {
       if (res.ok && Array.isArray(res.data)) {
@@ -1099,6 +1146,7 @@ function renderAll() {
   renderRisks();
   renderEvals();
   renderInventory();
+  renderClientFinance();
   renderHubCards();
 }
 
@@ -2149,6 +2197,13 @@ function renderTimeline() {
   let stOnTrack=0, stLate=0, stDone=0, stUpcoming=0;
   const sortedFFs = state.data.ffs.slice().sort((a,b) => parseInt(a.code.replace("F-","")) - parseInt(b.code.replace("F-","")));
 
+  // Phase E: โครงการที่ยังไม่มีแผน Gantt (FF code ไม่อยู่ใน CONFIG.GANTT_PLAN) → ข้อความสุภาพ แทนตารางว่าง
+  const hasAnyPlan = sortedFFs.some(ff => (plan[ff.code] || []).length > 0);
+  if (!hasAnyPlan) {
+    container.innerHTML = '<div style="font-size:12px;color:#9CA3AF;padding:18px;text-align:center;line-height:1.6">📅 ยังไม่ได้ตั้งแผน Timeline สำหรับโครงการนี้<br><span style="font-size:10px">(ความคืบหน้า % ตามแผน + พยากรณ์วันเสร็จ จะใช้ได้เมื่อมีการตั้งแผน Gantt — รองรับทุกโครงการในเฟสถัดไป)</span></div>';
+    return;
+  }
+
   let html = '<div class="tl">';
   html += '<div></div>';
   months.forEach(m => { html += `<div class="tl-h tl-h-m" style="grid-column:span 4">${m}</div>`; });
@@ -2576,6 +2631,389 @@ async function confirmCloneRisksFromDirek() {
     Modal.toast('❌ ' + e.message);
   }
 }
+
+// ============================================================
+// 💰 CLIENT FINANCE (CF) — Phase F: สัญญา + หลักฐานฝั่งเจ้าบ้าน (เงินเข้า)
+// ============================================================
+function cfBaht(n) {
+  n = Number(n) || 0;
+  return n.toLocaleString('th-TH', { maximumFractionDigits: 0 }) + ' บาท';
+}
+function cfOpenLink(url) {
+  if (url) window.open(url, '_blank', 'noopener');
+}
+
+function renderClientFinance() {
+  const body = document.getElementById('cfBody');
+  const actions = document.getElementById('cfHeaderActions');
+  if (!body || !actions) return;
+
+  const cf = state.clientFinance || {};
+  const contracts = cf.contracts || [];
+  const milestones = cf.milestones || [];
+  const slips = cf.payment_slips || [];
+  const files = cf.contract_files || [];
+
+  // ยังไม่มีสัญญาเจ้าบ้าน → empty state + ปุ่มสร้าง
+  if (!contracts.length) {
+    actions.innerHTML = '<button class="cf-btn cf-btn-primary" onclick="CF.openCreateContract()">+ สร้างสัญญาเจ้าบ้าน</button>';
+    body.innerHTML = '<div class="cf-empty">ยังไม่มีสัญญากับเจ้าบ้านในโครงการนี้<br>กด <b>+ สร้างสัญญาเจ้าบ้าน</b> เพื่อเก็บไฟล์สัญญา งวดการชำระ และแนบหลักฐานการรับเงิน</div>';
+    return;
+  }
+
+  // ใช้สัญญาหลักตัวแรก (ปกติเจ้าบ้าน 1 สัญญา/โครงการ)
+  const c = contracts[0];
+  const cMilestones = milestones.filter(m => String(m.contract_id) === String(c.contract_id));
+  const paidTotal = cMilestones.reduce((s, m) => s + Number(m.paid_amount || 0), 0);
+  const pct = c.value > 0 ? Math.round((paidTotal / c.value) * 100) : 0;
+  const cFiles = files.filter(f => String(f.contract_id) === String(c.contract_id));
+
+  actions.innerHTML =
+    '<button class="cf-btn cf-btn-secondary" onclick="CF.openAddMilestone(\'' + escapeHtmlAttr(c.contract_id) + '\')">+ เพิ่มงวด</button>' +
+    '<button class="cf-btn cf-btn-secondary" onclick="CF.openEditContract(\'' + escapeHtmlAttr(c.contract_id) + '\')">✏️ แก้สัญญา</button>';
+
+  // ── สรุปสัญญา ──
+  let filesHtml = '';
+  cFiles.forEach(f => {
+    const ic = f.file_type === 'pdf' ? '📄' : '🖼️';
+    filesHtml += '<div class="cf-file-row"><span>' + ic + '</span>' +
+      '<span class="cf-file-name" onclick="cfOpenLink(\'' + escapeHtmlAttr(f.url) + '\')">' + escapeHtml(f.name) + '</span>' +
+      '<span class="cf-file-del" onclick="CF.deleteContractFile(\'' + escapeHtmlAttr(f.file_id) + '\')">✕</span></div>';
+  });
+
+  let html = '<div class="cf-summary">' +
+    '<div class="cf-sum-title">' + escapeHtml(c.title || 'สัญญาก่อสร้าง') + (c.contract_no ? ' <span style="font-weight:400;color:#6B7280">(' + escapeHtml(c.contract_no) + ')</span>' : '') + '</div>' +
+    '<div class="cf-sum-row"><span>มูลค่าสัญญา</span><span class="cf-sum-amt">' + cfBaht(c.value) + '</span></div>' +
+    '<div class="cf-sum-row"><span>รับแล้ว</span><span class="cf-sum-amt">' + cfBaht(paidTotal) + ' (' + pct + '%)</span></div>' +
+    '<div class="cf-bar"><div class="cf-bar-fill" style="width:' + Math.min(pct, 100) + '%"></div></div>' +
+    '<div style="margin-top:6px">' + filesHtml +
+      '<button class="cf-slip-btn" onclick="CF.openUploadContractFile(\'' + escapeHtmlAttr(c.contract_id) + '\')">📄 แนบไฟล์สัญญา</button>' +
+    '</div>' +
+  '</div>';
+
+  // ── งวดการชำระ ──
+  if (!cMilestones.length) {
+    html += '<div class="cf-empty">ยังไม่มีงวดการชำระ — กด <b>+ เพิ่มงวด</b></div>';
+  } else {
+    cMilestones.forEach(m => {
+      const isPaid = ['paid', 'done', 'completed'].indexOf(String(m.status || '').toLowerCase()) >= 0 || !!m.paid_date;
+      const badge = isPaid
+        ? '<span class="cf-badge cf-badge-paid">✓ รับแล้ว</span>'
+        : '<span class="cf-badge cf-badge-pending">⏳ รอเก็บ</span>';
+      const mSlips = slips.filter(s => String(s.milestone_id) === String(m.milestone_id));
+      let slipHtml = '';
+      mSlips.forEach(s => {
+        const ic = s.file_type === 'pdf' ? '📄' : '🖼️';
+        slipHtml += '<div class="cf-slip-row"><span>' + ic + '</span>' +
+          '<span class="cf-slip-name" onclick="cfOpenLink(\'' + escapeHtmlAttr(s.url) + '\')">' + escapeHtml(s.name) + '</span>' +
+          '<span class="cf-slip-del" onclick="CF.deleteSlip(\'' + escapeHtmlAttr(s.slip_id) + '\')">✕</span></div>';
+      });
+      html += '<div class="cf-ms">' +
+        '<div class="cf-ms-head">' +
+          '<div style="flex:1">' +
+            '<div class="cf-ms-name" onclick="CF.openMilestone(\'' + escapeHtmlAttr(m.milestone_id) + '\')">งวด ' + (m.seq || '') + ' · ' + escapeHtml(m.name || '') + ' ✏️</div>' +
+            (m.condition ? '<div class="cf-ms-cond">เงื่อนไข: ' + escapeHtml(m.condition) + '</div>' : '') +
+            (isPaid && m.paid_date ? '<div class="cf-ms-cond">รับเมื่อ ' + escapeHtml(m.paid_date) + '</div>' : '') +
+          '</div>' +
+          '<div style="text-align:right">' +
+            '<div class="cf-ms-amt">' + cfBaht(m.amount) + '</div>' +
+            '<div style="margin-top:4px">' + badge + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="cf-slip-wrap">' +
+          (slipHtml || '<div style="font-size:11px;color:#9CA3AF">ยังไม่มีหลักฐานการรับเงิน</div>') +
+          '<button class="cf-slip-btn" onclick="CF.openUploadSlip(\'' + escapeHtmlAttr(m.milestone_id) + '\',\'' + escapeHtmlAttr(c.contract_id) + '\')">📎 แนบสลิป/ใบเสร็จ</button>' +
+        '</div>' +
+      '</div>';
+    });
+  }
+
+  body.innerHTML = html;
+}
+
+const CF = {};
+
+// อ่านไฟล์ → base64 (ใช้ร่วมกับ slip + contract file)
+CF._fileToBase64 = function(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+// ── สร้าง/แก้ สัญญาเจ้าบ้าน ──
+CF.openCreateContract = function() {
+  Modal.show(
+    '<div class="modal-title">💰 สร้างสัญญาเจ้าบ้าน</div>' +
+    '<div style="font-size:12px;color:#6B7280;margin-bottom:10px">สัญญาก่อสร้างระหว่างบริษัทกับเจ้าของบ้าน (ฝั่งเงินเข้า)</div>' +
+    '<label class="cf-lbl">ชื่อสัญญา *</label>' +
+    '<input class="cf-input" id="cfTitle" placeholder="เช่น สัญญาก่อสร้างบ้าน Bow House">' +
+    '<label class="cf-lbl">เลขที่สัญญา</label>' +
+    '<input class="cf-input" id="cfNo" placeholder="(ถ้ามี)">' +
+    '<label class="cf-lbl">มูลค่าสัญญา (บาท) *</label>' +
+    '<input class="cf-input" id="cfValue" type="number" inputmode="numeric" placeholder="เช่น 5000000">' +
+    '<label class="cf-lbl">วันลงนาม</label>' +
+    '<input class="cf-input" id="cfSignDate" type="date">' +
+    '<label class="cf-lbl">หมายเหตุ</label>' +
+    '<input class="cf-input" id="cfNotes" placeholder="(ถ้ามี)">' +
+    '<div class="modal-btns">' +
+      '<button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>' +
+      '<button class="modal-btn modal-btn-primary" onclick="CF.submitContract()">บันทึก</button>' +
+    '</div>'
+  );
+};
+
+CF.submitContract = async function() {
+  const title = document.getElementById('cfTitle').value.trim();
+  const value = Number(document.getElementById('cfValue').value || 0);
+  if (!title) { Modal.toast('⚠️ กรอกชื่อสัญญาก่อน'); return; }
+  if (!value) { Modal.toast('⚠️ กรอกมูลค่าสัญญาก่อน'); return; }
+  Modal.toast('⏳ กำลังบันทึก...');
+  try {
+    const res = await API.createClientContract({
+      title: title,
+      contract_no: document.getElementById('cfNo').value.trim(),
+      value: value,
+      sign_date: document.getElementById('cfSignDate').value || '',
+      notes: document.getElementById('cfNotes').value.trim()
+    });
+    if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'unknown')); return; }
+    Modal.close();
+    Modal.toast('✅ สร้างสัญญาแล้ว');
+    setTimeout(() => loadData(), 500);
+  } catch (e) { Modal.toast('❌ ' + e.message); }
+};
+
+CF.openEditContract = function(cid) {
+  const c = ((state.clientFinance || {}).contracts || []).find(x => String(x.contract_id) === String(cid));
+  if (!c) { Modal.toast('❌ ไม่พบสัญญา'); return; }
+  Modal.show(
+    '<div class="modal-title">✏️ แก้สัญญาเจ้าบ้าน</div>' +
+    '<label class="cf-lbl">ชื่อสัญญา *</label>' +
+    '<input class="cf-input" id="cfTitle" value="' + escapeHtmlAttr(c.title) + '">' +
+    '<label class="cf-lbl">เลขที่สัญญา</label>' +
+    '<input class="cf-input" id="cfNo" value="' + escapeHtmlAttr(c.contract_no) + '">' +
+    '<label class="cf-lbl">มูลค่าสัญญา (บาท) *</label>' +
+    '<input class="cf-input" id="cfValue" type="number" inputmode="numeric" value="' + Number(c.value || 0) + '">' +
+    '<label class="cf-lbl">วันลงนาม</label>' +
+    '<input class="cf-input" id="cfSignDate" type="date" value="' + escapeHtmlAttr(c.sign_date) + '">' +
+    '<label class="cf-lbl">หมายเหตุ</label>' +
+    '<input class="cf-input" id="cfNotes" value="' + escapeHtmlAttr(c.notes) + '">' +
+    '<div class="modal-btns">' +
+      '<button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>' +
+      '<button class="modal-btn modal-btn-primary" onclick="CF.submitEditContract(\'' + escapeHtmlAttr(cid) + '\')">บันทึก</button>' +
+    '</div>'
+  );
+};
+
+CF.submitEditContract = async function(cid) {
+  const title = document.getElementById('cfTitle').value.trim();
+  const value = Number(document.getElementById('cfValue').value || 0);
+  if (!title || !value) { Modal.toast('⚠️ กรอกชื่อ + มูลค่าสัญญา'); return; }
+  Modal.toast('⏳ กำลังบันทึก...');
+  try {
+    const res = await API.updateContract({
+      contract_id: cid, title: title, value: value,
+      contract_no: document.getElementById('cfNo').value.trim(),
+      sign_date: document.getElementById('cfSignDate').value || '',
+      notes: document.getElementById('cfNotes').value.trim()
+    });
+    if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'unknown')); return; }
+    Modal.close();
+    Modal.toast('✅ บันทึกแล้ว');
+    setTimeout(() => loadData(), 500);
+  } catch (e) { Modal.toast('❌ ' + e.message); }
+};
+
+// ── เพิ่ม/แก้ งวด ──
+CF.openAddMilestone = function(cid) {
+  const cf = state.clientFinance || {};
+  const existing = (cf.milestones || []).filter(m => String(m.contract_id) === String(cid));
+  const nextSeq = existing.length + 1;
+  Modal.show(
+    '<div class="modal-title">+ เพิ่มงวดการชำระ</div>' +
+    '<label class="cf-lbl">ลำดับงวด</label>' +
+    '<input class="cf-input" id="cfMsSeq" type="number" value="' + nextSeq + '">' +
+    '<label class="cf-lbl">ชื่องวด *</label>' +
+    '<input class="cf-input" id="cfMsName" placeholder="เช่น มัดจำเซ็นสัญญา / เทพื้น">' +
+    '<label class="cf-lbl">เงื่อนไขการจ่าย</label>' +
+    '<input class="cf-input" id="cfMsCond" placeholder="เช่น เมื่อเซ็นสัญญา">' +
+    '<label class="cf-lbl">จำนวนเงิน (บาท) *</label>' +
+    '<input class="cf-input" id="cfMsAmount" type="number" inputmode="numeric" placeholder="เช่น 1500000">' +
+    '<div class="modal-btns">' +
+      '<button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>' +
+      '<button class="modal-btn modal-btn-primary" onclick="CF.submitMilestone(\'' + escapeHtmlAttr(cid) + '\')">บันทึก</button>' +
+    '</div>'
+  );
+};
+
+CF.submitMilestone = async function(cid) {
+  const name = document.getElementById('cfMsName').value.trim();
+  const amount = Number(document.getElementById('cfMsAmount').value || 0);
+  if (!name || !amount) { Modal.toast('⚠️ กรอกชื่องวด + จำนวนเงิน'); return; }
+  Modal.toast('⏳ กำลังบันทึก...');
+  try {
+    const res = await API.createMilestone({
+      contract_id: cid,
+      seq: Number(document.getElementById('cfMsSeq').value || 0),
+      name: name,
+      condition: document.getElementById('cfMsCond').value.trim(),
+      amount: amount,
+      status: 'pending'
+    });
+    if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'unknown')); return; }
+    Modal.close();
+    Modal.toast('✅ เพิ่มงวดแล้ว');
+    setTimeout(() => loadData(), 500);
+  } catch (e) { Modal.toast('❌ ' + e.message); }
+};
+
+CF.openMilestone = function(mid) {
+  const m = ((state.clientFinance || {}).milestones || []).find(x => String(x.milestone_id) === String(mid));
+  if (!m) { Modal.toast('❌ ไม่พบงวด'); return; }
+  const isPaid = ['paid', 'done', 'completed'].indexOf(String(m.status || '').toLowerCase()) >= 0 || !!m.paid_date;
+  Modal.show(
+    '<div class="modal-title">✏️ งวด ' + (m.seq || '') + ' · ' + escapeHtml(m.name || '') + '</div>' +
+    '<label class="cf-lbl">ชื่องวด</label>' +
+    '<input class="cf-input" id="cfMsName" value="' + escapeHtmlAttr(m.name) + '">' +
+    '<label class="cf-lbl">เงื่อนไขการจ่าย</label>' +
+    '<input class="cf-input" id="cfMsCond" value="' + escapeHtmlAttr(m.condition) + '">' +
+    '<label class="cf-lbl">จำนวนเงิน (บาท)</label>' +
+    '<input class="cf-input" id="cfMsAmount" type="number" value="' + Number(m.amount || 0) + '">' +
+    '<label class="cf-lbl">สถานะ</label>' +
+    '<select class="cf-input" id="cfMsStatus">' +
+      '<option value="pending"' + (!isPaid ? ' selected' : '') + '>⏳ รอเก็บเงิน</option>' +
+      '<option value="paid"' + (isPaid ? ' selected' : '') + '>✓ รับเงินแล้ว</option>' +
+    '</select>' +
+    '<div class="modal-btns">' +
+      '<button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>' +
+      '<button class="modal-btn modal-btn-primary" onclick="CF.submitEditMilestone(\'' + escapeHtmlAttr(mid) + '\',\'' + escapeHtmlAttr(m.contract_id) + '\')">บันทึก</button>' +
+    '</div>'
+  );
+};
+
+CF.submitEditMilestone = async function(mid, cid) {
+  const status = document.getElementById('cfMsStatus').value;
+  const amount = Number(document.getElementById('cfMsAmount').value || 0);
+  const isPaid = status === 'paid';
+  Modal.toast('⏳ กำลังบันทึก...');
+  try {
+    const res = await API.updateMilestone({
+      milestone_id: mid,
+      contract_id: cid,
+      name: document.getElementById('cfMsName').value.trim(),
+      condition: document.getElementById('cfMsCond').value.trim(),
+      amount: amount,
+      status: status,
+      paid_amount: isPaid ? amount : 0,
+      paid_date: isPaid ? new Date().toISOString().slice(0, 10) : ''
+    });
+    if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'unknown')); return; }
+    Modal.close();
+    Modal.toast('✅ บันทึกงวดแล้ว');
+    setTimeout(() => loadData(), 500);
+  } catch (e) { Modal.toast('❌ ' + e.message); }
+};
+
+// ── แนบหลักฐาน (สลิป/ใบเสร็จ) ──
+CF.openUploadSlip = function(mid, cid) {
+  Modal.show(
+    '<div class="modal-title">📎 แนบสลิป/ใบเสร็จ</div>' +
+    '<div style="font-size:12px;color:#6B7280;margin-bottom:10px">หลักฐานการรับเงินจากเจ้าบ้าน (รูป/PDF)</div>' +
+    '<label class="cf-lbl">เลือกไฟล์</label>' +
+    '<input type="file" class="cf-input" id="cfSlipFile" accept="image/*,application/pdf" style="padding:6px">' +
+    '<label class="cf-lbl">ชื่อ/คำอธิบาย</label>' +
+    '<input class="cf-input" id="cfSlipName" placeholder="เช่น สลิปโอน งวด 1">' +
+    '<div class="modal-btns">' +
+      '<button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>' +
+      '<button class="modal-btn modal-btn-primary" id="cfSlipBtn" onclick="CF.doUploadSlip(\'' + escapeHtmlAttr(mid) + '\',\'' + escapeHtmlAttr(cid) + '\')">อัปโหลด</button>' +
+    '</div>'
+  );
+};
+
+CF.doUploadSlip = async function(mid, cid) {
+  const input = document.getElementById('cfSlipFile');
+  const file = input.files && input.files[0];
+  if (!file) { Modal.toast('⚠️ เลือกไฟล์ก่อน'); return; }
+  if (file.size > 10 * 1024 * 1024) { Modal.toast('❌ ไฟล์ใหญ่เกิน 10MB'); return; }
+  const name = document.getElementById('cfSlipName').value.trim() || file.name.replace(/\.[^.]+$/, '');
+  const btn = document.getElementById('cfSlipBtn');
+  btn.disabled = true; btn.textContent = 'กำลังอัปโหลด...';
+  try {
+    const base64 = await CF._fileToBase64(file);
+    const res = await API.uploadPaymentSlip({
+      milestone_id: mid, contract_id: cid, file_base64: base64, file_name: name
+    });
+    if (!res || !res.ok) throw new Error((res && res.error) || 'อัปโหลดไม่สำเร็จ');
+    Modal.close();
+    Modal.toast('✅ แนบหลักฐานแล้ว');
+    setTimeout(() => loadData(), 600);
+  } catch (e) {
+    Modal.toast('❌ ' + e.message);
+    btn.disabled = false; btn.textContent = 'อัปโหลด';
+  }
+};
+
+CF.deleteSlip = async function(slipId) {
+  const ok = await Modal.confirm({ icon: '🗑️', iconClass: 'warn', title: 'ลบหลักฐานนี้?', confirmText: 'ลบ', cancelText: 'ยกเลิก', confirmClass: 'modal-btn-warn' });
+  if (!ok) return;
+  try {
+    const res = await API.deletePaymentSlip(slipId);
+    if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'ลบไม่สำเร็จ')); return; }
+    Modal.toast('✅ ลบแล้ว');
+    setTimeout(() => loadData(), 500);
+  } catch (e) { Modal.toast('❌ ' + e.message); }
+};
+
+// ── ไฟล์สัญญา ──
+CF.openUploadContractFile = function(cid) {
+  Modal.show(
+    '<div class="modal-title">📄 แนบไฟล์สัญญา</div>' +
+    '<div style="font-size:12px;color:#6B7280;margin-bottom:10px">ไฟล์สัญญาที่เซ็นกับเจ้าบ้าน (PDF/รูป)</div>' +
+    '<label class="cf-lbl">เลือกไฟล์</label>' +
+    '<input type="file" class="cf-input" id="cfCFile" accept="image/*,application/pdf" style="padding:6px">' +
+    '<label class="cf-lbl">ชื่อ/คำอธิบาย</label>' +
+    '<input class="cf-input" id="cfCFileName" placeholder="เช่น สัญญาก่อสร้าง ฉบับเซ็น">' +
+    '<div class="modal-btns">' +
+      '<button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>' +
+      '<button class="modal-btn modal-btn-primary" id="cfCFileBtn" onclick="CF.doUploadContractFile(\'' + escapeHtmlAttr(cid) + '\')">อัปโหลด</button>' +
+    '</div>'
+  );
+};
+
+CF.doUploadContractFile = async function(cid) {
+  const input = document.getElementById('cfCFile');
+  const file = input.files && input.files[0];
+  if (!file) { Modal.toast('⚠️ เลือกไฟล์ก่อน'); return; }
+  if (file.size > 10 * 1024 * 1024) { Modal.toast('❌ ไฟล์ใหญ่เกิน 10MB'); return; }
+  const name = document.getElementById('cfCFileName').value.trim() || file.name.replace(/\.[^.]+$/, '');
+  const btn = document.getElementById('cfCFileBtn');
+  btn.disabled = true; btn.textContent = 'กำลังอัปโหลด...';
+  try {
+    const base64 = await CF._fileToBase64(file);
+    const res = await API.uploadContractFile({ contract_id: cid, file_base64: base64, file_name: name });
+    if (!res || !res.ok) throw new Error((res && res.error) || 'อัปโหลดไม่สำเร็จ');
+    Modal.close();
+    Modal.toast('✅ แนบไฟล์สัญญาแล้ว');
+    setTimeout(() => loadData(), 600);
+  } catch (e) {
+    Modal.toast('❌ ' + e.message);
+    btn.disabled = false; btn.textContent = 'อัปโหลด';
+  }
+};
+
+CF.deleteContractFile = async function(fileId) {
+  const ok = await Modal.confirm({ icon: '🗑️', iconClass: 'warn', title: 'ลบไฟล์สัญญานี้?', confirmText: 'ลบ', cancelText: 'ยกเลิก', confirmClass: 'modal-btn-warn' });
+  if (!ok) return;
+  try {
+    const res = await API.deleteContractFile(fileId);
+    if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'ลบไม่สำเร็จ')); return; }
+    Modal.toast('✅ ลบแล้ว');
+    setTimeout(() => loadData(), 500);
+  } catch (e) { Modal.toast('❌ ' + e.message); }
+};
 
 // ============================================================
 // 📋 CONTRACTOR EVALUATION (EV) — ประเมินผู้รับเหมา KPI 100 คะแนน

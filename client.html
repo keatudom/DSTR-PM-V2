@@ -531,6 +531,24 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   padding-top: 6px;
   border-top: 1px dashed #F3F0E6;
 }
+.cl-pay-evidence {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #F3F0E6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cl-pay-ev-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0d6e4f;
+  background: #e8f6f0;
+  border: 1px solid #b6e6d2;
+  border-radius: 8px;
+  padding: 4px 10px;
+  text-decoration: none;
+}
 
 /* ============================================================
    SECTION 5 — CONTACT PM
@@ -1591,6 +1609,17 @@ function renderPayments() {
       }
     }
 
+    // หลักฐานการชำระ (โปร่งใส) — เจ้าบ้านกดดูสลิป/ใบเสร็จได้ถ้า PM แนบไว้
+    let evHtml = '';
+    const ev = Array.isArray(p.evidence) ? p.evidence : [];
+    if (ev.length) {
+      evHtml = '<div class="cl-pay-evidence">' + ev.map(function(e) {
+        const ic = e.file_type === 'pdf' ? '📄' : '🧾';
+        return '<a class="cl-pay-ev-link" href="' + escapeHtml(e.url) +
+          '" target="_blank" rel="noopener">' + ic + ' ' + escapeHtml(e.name || 'ดูหลักฐาน') + '</a>';
+      }).join('') + '</div>';
+    }
+
     return `
       <div class="cl-pay ${cls}">
         <div class="cl-pay-head">
@@ -1602,6 +1631,7 @@ function renderPayments() {
         </div>
         <div class="cl-pay-amount">${formatBaht(p.amount)}</div>
         ${metaHtml}
+        ${evHtml}
       </div>
     `;
   }).join('');

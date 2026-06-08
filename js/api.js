@@ -430,6 +430,73 @@ const API = {
     return this.callRead('get_inventory_summary');
   },
 
+  // ============================================================
+  // 💰 CLIENT FINANCE (Phase F) — สัญญา + หลักฐานฝั่งเจ้าบ้าน (เงินเข้า)
+  // ============================================================
+  // reuse โครงสร้างสัญญาผู้รับเหมา แต่ party='client' → แยกเป็นเงินเข้า
+  // mutation ใช้ callRead (JSONP GET) ตามบทเรียน callwrite-loses-post-body
+  // upload ใช้ callPost (file_base64) — endpoint เดียวกับฝั่งผู้รับเหมา
+
+  /** ดึงสัญญาเจ้าบ้าน + งวด + สลิป + ไฟล์สัญญา ของโปรเจกต์ปัจจุบัน */
+  getClientFinance: function() {
+    return this.callRead('get_client_finance');
+  },
+
+  /**
+   * สร้างสัญญาเจ้าบ้าน (party='client' — ไม่ต้องมี team_id)
+   * @param {object} data - { title, value, sign_date?, contract_no?, tax_pct?, notes? }
+   */
+  createClientContract: function(data) {
+    return this.callRead('create_contract', Object.assign({ party: 'client' }, data));
+  },
+
+  /** แก้ไขสัญญา (เจ้าบ้าน/ผู้รับเหมาใช้ร่วมกัน) */
+  updateContract: function(data) {
+    return this.callRead('update_contract', data);
+  },
+
+  /**
+   * เพิ่มงวดการชำระ (ผูก contract_id)
+   * @param {object} data - { contract_id (req), seq, name, condition?, pct?, amount?, status? }
+   */
+  createMilestone: function(data) {
+    return this.callRead('create_milestone', data);
+  },
+
+  /**
+   * อัปเดตงวด (สถานะ/จำนวนที่รับ/วันที่)
+   * @param {object} data - { milestone_id (req), contract_id?, status?, paid_amount?, paid_date?, ... }
+   */
+  updateMilestone: function(data) {
+    return this.callRead('update_milestone', data);
+  },
+
+  /**
+   * แนบสลิป/หลักฐานการรับเงิน (รูป/PDF) — reuse endpoint ฝั่งผู้รับเหมา
+   * @param {object} data - { milestone_id (req), contract_id, file_base64, file_name }
+   */
+  uploadPaymentSlip: function(data) {
+    return this.callPost('upload_payment_slip', data);
+  },
+
+  /** ลบสลิป/หลักฐาน */
+  deletePaymentSlip: function(slipId) {
+    return this.callRead('delete_payment_slip', { slip_id: slipId });
+  },
+
+  /**
+   * อัปโหลดไฟล์สัญญา (PDF/รูป) — reuse endpoint ฝั่งผู้รับเหมา
+   * @param {object} data - { contract_id (req), file_base64, file_name }
+   */
+  uploadContractFile: function(data) {
+    return this.callPost('upload_contract_file', data);
+  },
+
+  /** ลบไฟล์สัญญา */
+  deleteContractFile: function(fileId) {
+    return this.callRead('delete_contract_file', { file_id: fileId });
+  },
+
   /** ตั้งราคาวัสดุหลายตัวพร้อมกัน — priceMap = {mat_id: price} */
   updateMaterialPrices: function(priceMap) {
     return this.callRead('update_material_prices', { prices: JSON.stringify(priceMap || {}) });
