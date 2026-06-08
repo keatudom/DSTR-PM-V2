@@ -129,9 +129,11 @@ UM.render = function () {
 
   el.innerHTML = sorted.map(function (u) {
     var ar = u.auth_role || '';
-    var roleOpts = UM.ROLES.map(function (r) {
-      return '<option value="' + r.v + '"' + (r.v === ar ? ' selected' : '') + '>' + r.t + '</option>';
-    }).join('');
+    // ถ้ายังไม่กำหนดบทบาท → ใส่ placeholder กัน dropdown default ไปเป็น "เจ้าของงาน"
+    var roleOpts = (ar ? '' : '<option value="" selected>— ยังไม่กำหนด —</option>') +
+      UM.ROLES.map(function (r) {
+        return '<option value="' + r.v + '"' + (r.v === ar ? ' selected' : '') + '>' + r.t + '</option>';
+      }).join('');
 
     // chips โครงการ
     var chips = (u.assignments || []).map(function (a) {
@@ -218,6 +220,7 @@ UM.submitAdd = async function () {
 };
 
 UM.changeRole = async function (staffId, newRole) {
+  if (!newRole) return; // เลือก placeholder "— ยังไม่กำหนด —" → ไม่ทำอะไร
   Modal.toast('⏳ กำลังเปลี่ยนบทบาท...');
   try {
     var res = await API.setUserRole(staffId, newRole);
