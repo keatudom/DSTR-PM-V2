@@ -90,13 +90,13 @@ function esc(s) {
 function updateUserBar() {
   var user = (typeof Auth.getUser === 'function') ? Auth.getUser() : null;
   var roleLabels = {
-    owner: 'เจ้าของกิจการ', director: 'ผู้ดูแลโครงการ', pm: 'PM',
+    creator: 'ผู้สร้างระบบ', owner: 'เจ้าของกิจการ', director: 'ผู้ดูแลโครงการ', pm: 'PM',
     site_engineer: 'วิศวกรหน้างาน', foreman: 'โฟร์แมน',
     purchaser: 'ฝ่ายจัดซื้อ', contractor: 'ผู้รับเหมา',
     admin: 'แอดมิน (รหัสผ่าน)', client: 'ลูกค้า'
   };
   var isClient = (role === 'client');
-  var isOwner = (role === 'owner' || role === 'admin'); // admin เดิม = owner-equivalent
+  var isOwner = (role === 'creator' || role === 'owner' || role === 'admin'); // creator/owner + admin(legacy) จัดการผู้ใช้ได้
 
   // ชื่อ: ใช้ชื่อจริงจาก Google login ถ้ามี, ไม่งั้น fallback ตามบทบาท
   var displayName = (user && user.name) ? user.name

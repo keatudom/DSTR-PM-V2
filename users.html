@@ -73,12 +73,12 @@
 <script src="js/auth.js"></script>
 <script src="js/modal.js"></script>
 <script>
-// ── Gate: owner เท่านั้น ──
+// ── Gate: ผู้สร้าง/เจ้าของกิจการ เท่านั้น ──
 if (!Auth.requireAuth()) { /* redirect ไป index.html */ }
 (function () {
   var role = Auth.getRole();
-  if (role !== 'owner' && role !== 'admin') {
-    alert('หน้านี้สำหรับเจ้าของงานเท่านั้น');
+  if (role !== 'creator' && role !== 'owner' && role !== 'admin') {
+    alert('หน้านี้สำหรับผู้สร้าง/เจ้าของกิจการเท่านั้น');
     window.location.href = 'projects.html';
   }
 })();
@@ -125,7 +125,7 @@ UM.render = function () {
   if (!UM.users.length) { el.innerHTML = '<div class="um-empty">ยังไม่มีผู้ใช้</div>'; return; }
 
   // เรียง: owner ก่อน, ปิดใช้งานท้ายสุด
-  var order = { owner: 0, director: 1, pm: 2, site_engineer: 3, foreman: 4, purchaser: 5, contractor: 6, client: 7 };
+  var order = { creator: -1, owner: 0, director: 1, pm: 2, site_engineer: 3, foreman: 4, purchaser: 5, contractor: 6, client: 7 };
   var sorted = UM.users.slice().sort(function (a, b) {
     if (a.active !== b.active) return a.active ? -1 : 1;
     return (order[a.auth_role] != null ? order[a.auth_role] : 9) - (order[b.auth_role] != null ? order[b.auth_role] : 9);
@@ -161,6 +161,13 @@ UM.render = function () {
     // owner/ผู้ดูแล/จัดซื้อ = ทำข้ามโครงการอยู่แล้ว · client = ไม่ผูก
     var showProjects = (ar === 'pm' || ar === 'site_engineer' || ar === 'foreman');
 
+    // 🔒 ผู้สร้างระบบ (creator) — ล็อก: แสดงป้าย เปลี่ยนบทบาท/ปิดบัญชีไม่ได้
+    var ctrlHtml = (ar === 'creator')
+      ? '<span style="font-size:12.5px;font-weight:700;color:#1F3864;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:99px;padding:5px 13px">🔒 ผู้สร้างระบบ (Super Admin)</span>'
+      : ('<select class="um-select" onchange="UM.changeRole(\'' + esc(u.staff_id) + '\', this.value)">' + roleOpts + '</select>' +
+         '<button class="um-toggle" onclick="UM.toggleActive(\'' + esc(u.staff_id) + '\',' + (u.active ? 'false' : 'true') + ')">' +
+         (u.active ? '🟢 เปิดใช้งาน' : '⚪ ปิดอยู่') + '</button>');
+
     return '<div class="um-card">' +
       '<div class="um-row">' +
         '<div class="um-ava' + (u.active ? '' : ' off') + '">' + esc(avaLetter) + '</div>' +
@@ -168,11 +175,7 @@ UM.render = function () {
           '<div class="um-name' + (u.active ? '' : ' off') + '">' + esc(u.name || '(ไม่มีชื่อ)') +
             (u.role ? ' <span style="font-size:11px;color:#9CA3AF;font-weight:400">· ' + esc(u.role) + '</span>' : '') + '</div>' +
           '<div class="um-email">' + esc(u.email || '— ยังไม่มีอีเมล (login ไม่ได้)') + '</div>' +
-          '<div class="um-ctrl">' +
-            '<select class="um-select" onchange="UM.changeRole(\'' + esc(u.staff_id) + '\', this.value)">' + roleOpts + '</select>' +
-            '<button class="um-toggle" onclick="UM.toggleActive(\'' + esc(u.staff_id) + '\',' + (u.active ? 'false' : 'true') + ')">' +
-              (u.active ? '🟢 เปิดใช้งาน' : '⚪ ปิดอยู่') + '</button>' +
-          '</div>' +
+          '<div class="um-ctrl">' + ctrlHtml + '</div>' +
           (showProjects ?
             '<div class="um-projects"><div class="um-plabel">โครงการที่เข้าถึงได้</div>' +
               (chips || '<span style="font-size:11.5px;color:#9CA3AF">ยังไม่ผูกโครงการ</span> ') + addProj +

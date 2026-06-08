@@ -186,6 +186,7 @@ function getMe_(p) {
 // ADMIN   = จัดการผู้ใช้/สิทธิ์/สร้างโครงการ/migration (เจ้าของงานเท่านั้น)
 // PROCURE = จัดซื้อ/จัดการวัสดุ+ราคาซื้อ (ฝ่ายจัดซื้อ + ทีมที่แตะวัสดุ)
 var _ROLE_CAPS_ = {
+  creator:    { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1 }, // ผู้สร้างระบบ (super admin — ล็อก ไม่อยู่ใน dropdown)
   owner:      { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1 }, // เจ้าของกิจการ
   director:   { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1 },  // ผู้ดูแลโครงการ (ไม่เห็นราคา/กำไร, ไม่จัดการผู้ใช้) — คีย์ director กัน 'admin' ชน legacy
   pm:            { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1 }, // ผู้จัดการโครงการ (scope เฉพาะที่รับผิดชอบ)
@@ -267,7 +268,7 @@ var _SCOPED_CAPS_ = { OPS: 1, MANAGE: 1, FINANCE: 1 };
 
 // บทบาทที่ทำงาน "ข้ามทุกโครงการ" — ไม่ต้องผูกรายโครงการ → ข้าม project scope
 // (owner/ผู้ดูแลโครงการ/ฝ่ายจัดซื้อ ดูแลภาพรวมทั้งบริษัท · admin = legacy รหัสผ่าน)
-var _CROSS_PROJECT_ROLES_ = { owner: 1, director: 1, purchaser: 1, admin: 1 };
+var _CROSS_PROJECT_ROLES_ = { creator: 1, owner: 1, director: 1, purchaser: 1, admin: 1 };
 
 function _userProjectIds_(staffId) {
   if (!staffId) return [];
@@ -301,8 +302,8 @@ function _authorize_(action, p) {
 
   var role = payload.role || 'foreman';
 
-  // owner = ทำได้ทุกอย่าง
-  if (role === 'owner') return true;
+  // ผู้สร้างระบบ (creator) + เจ้าของกิจการ (owner) = ทำได้ทุกอย่าง
+  if (role === 'creator' || role === 'owner') return true;
 
   // client = whitelist เดิม
   if (role === 'client') {
@@ -373,7 +374,7 @@ function getUsers_() {
   });
 }
 
-var _VALID_AUTH_ROLES_ = { owner: 1, director: 1, pm: 1, site_engineer: 1, foreman: 1, purchaser: 1, contractor: 1, client: 1 };
+var _VALID_AUTH_ROLES_ = { creator: 1, owner: 1, director: 1, pm: 1, site_engineer: 1, foreman: 1, purchaser: 1, contractor: 1, client: 1 };
 
 // upsert_user — เพิ่ม/แก้ผู้ใช้ (อีเมล + บทบาทสิทธิ์)
 // param: { staff_id?, name, email, auth_role, phone?, role?, active? }
@@ -382,8 +383,10 @@ function upsertUser_(p) {
   var email = String(p.email).toLowerCase().trim();
   var authRole = String(p.auth_role || '').toLowerCase().trim();
   if (authRole && !_VALID_AUTH_ROLES_[authRole]) {
-    throw new Error('auth_role ไม่ถูกต้อง: ' + authRole + ' (owner|pm|foreman|contractor|client)');
+    throw new Error('auth_role ไม่ถูกต้อง: ' + authRole);
   }
+  // 🔒 ผู้สร้าง (creator) ล็อก — ตั้งผ่านหน้านี้ไม่ได้
+  if (authRole === 'creator') throw new Error('ไม่อนุญาตให้ตั้งบทบาท "ผู้สร้าง" ผ่านหน้าจัดการผู้ใช้');
   ensureColumn_(SHEET.STAFF, 'email');
   ensureColumn_(SHEET.STAFF, 'auth_role');
 
@@ -391,6 +394,11 @@ function upsertUser_(p) {
   var existing = null;
   if (p.staff_id) existing = _findStaffById_(p.staff_id);
   if (!existing) existing = _findStaffByEmail_(email);
+
+  // 🔒 บัญชีผู้สร้างถูกล็อก — แก้ไขผ่านหน้านี้ไม่ได้
+  if (existing && String(existing.auth_role || '').toLowerCase() === 'creator') {
+    throw new Error('บัญชี "ผู้สร้าง" ถูกล็อก — แก้ไขผ่านหน้านี้ไม่ได้');
+  }
 
   if (existing) {
     var updates = { email: email };
@@ -432,9 +440,14 @@ function setUserRole_(p) {
   if (!p.staff_id && !p.email) throw new Error('staff_id หรือ email required');
   var authRole = String(p.auth_role || '').toLowerCase().trim();
   if (!_VALID_AUTH_ROLES_[authRole]) throw new Error('auth_role ไม่ถูกต้อง');
+  if (authRole === 'creator') throw new Error('ตั้งบทบาท "ผู้สร้าง" ผ่านหน้านี้ไม่ได้ (ล็อกไว้)');
   ensureColumn_(SHEET.STAFF, 'auth_role');
   var staff = p.staff_id ? _findStaffById_(p.staff_id) : _findStaffByEmail_(p.email);
   if (!staff) throw new Error('ไม่พบผู้ใช้');
+  // 🔒 บัญชีผู้สร้างถูกล็อก
+  if (String(staff.auth_role || '').toLowerCase() === 'creator') {
+    throw new Error('บัญชี "ผู้สร้าง" ถูกล็อก — เปลี่ยนบทบาทไม่ได้');
+  }
   updateRowByCol(SHEET.STAFF, 'staff_id', staff.staff_id, { auth_role: authRole });
   return { ok: true, staff_id: staff.staff_id, auth_role: authRole };
 }
@@ -447,19 +460,19 @@ function phaseGMigrate_() {
   ensureColumn_(SHEET.STAFF, 'auth_role');
   _getAuthSecret_(); // สร้าง secret ถ้ายังไม่มี
 
-  // seed เจ้าของงานเป็น owner (ให้ login ทดสอบได้ทันที)
-  var owner = _findStaffByEmail_(OWNER_SEED_EMAIL);
-  if (owner) {
-    updateRowByCol(SHEET.STAFF, 'staff_id', owner.staff_id, { auth_role: 'owner' });
+  // seed ผู้สร้างระบบ (creator — super admin, ล็อก)
+  var creator = _findStaffByEmail_(OWNER_SEED_EMAIL);
+  if (creator) {
+    updateRowByCol(SHEET.STAFF, 'staff_id', creator.staff_id, { auth_role: 'creator' });
   } else {
     var id = generateId('ST', SHEET.STAFF, 'staff_id');
     appendRow(SHEET.STAFF, {
-      staff_id: id, name: 'เจ้าของงาน', email: OWNER_SEED_EMAIL,
-      role: 'Owner', auth_role: 'owner', phone: '', active: true,
+      staff_id: id, name: 'ผู้สร้างระบบ', email: OWNER_SEED_EMAIL,
+      role: 'Creator', auth_role: 'creator', phone: '', active: true,
       notes: 'seed by Phase G', created_at: todayStr()
     });
   }
-  return { ok: true, seeded_owner: OWNER_SEED_EMAIL };
+  return { ok: true, seeded_creator: OWNER_SEED_EMAIL };
 }
 
 // self-test การ์ดผ่าน (issue→verify roundtrip) — ไม่ปล่อย token ออก
