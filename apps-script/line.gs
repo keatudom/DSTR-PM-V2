@@ -15,6 +15,9 @@
 // verify ลายเซ็น LINE ไม่ได้ (ยอมรับได้สำหรับ use case นี้ — แค่จับ id + push)
 // ============================================================
 
+// เว็บ (GitHub Pages) — สำหรับแปะลิงก์ใน digest ให้กดดูต่อ
+var LINE_WEB_BASE = 'https://keatudom.github.io/DSTR-PM-V2';
+
 function _lineToken_() { return _readSecret_('LINE_TOKEN', ''); }
 
 function _linePush_(to, text) {
@@ -122,20 +125,30 @@ function runDailyDigest() {
   return lineDailyDigest_();
 }
 
+function _thaiDate_(ymd) {
+  try {
+    var m = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    var p = String(ymd).split('-');
+    if (p.length === 3) return parseInt(p[2],10) + ' ' + m[parseInt(p[1],10)-1] + ' ' + (parseInt(p[0],10)+543);
+  } catch (e) {}
+  return ymd;
+}
+
 function lineDailyDigest_() {
   var gid = _readSecret_('LINE_GROUP_ID', '');
   if (!gid) return { ok: false, reason: 'no group' };
 
   var today = todayStr();
+
+  // 1) activity วันนี้ — นับภาพรวม
   var rows = [];
   try {
     rows = getAllRows(SHEET.ACTIVITY).filter(function (r) {
       return formatDateValue(r.date) === today || String(r.date) === today;
     });
   } catch (e) {}
-  if (!rows.length) return { ok: true, skipped: 'no activity today' };
 
-  var c = { task: 0, withdraw: 0, receive: 0, count: 0, daily: 0, contract: 0, risk: 0, other: 0 };
+  var c = { task: 0, withdraw: 0, receive: 0, count: 0, daily: 0, contract: 0, risk: 0 };
   rows.forEach(function (r) {
     var t = String(r.text || '');
     if (t.indexOf('เสร็จ') >= 0 || t.indexOf('✓') >= 0) c.task++;
@@ -145,19 +158,61 @@ function lineDailyDigest_() {
     else if (t.indexOf('รายงาน') >= 0) c.daily++;
     else if (t.indexOf('สัญญา') >= 0 || t.indexOf('งวด') >= 0) c.contract++;
     else if (t.indexOf('เสี่ยง') >= 0) c.risk++;
-    else c.other++;
   });
 
-  var lines = ['📊 สรุปวันนี้ (' + today + ')'];
-  if (c.task) lines.push('✅ ติ๊กงานเสร็จ ' + c.task);
-  if (c.withdraw || c.receive) lines.push('📦 เบิกของ ' + c.withdraw + ' · รับของ ' + c.receive);
-  if (c.contract) lines.push('🧾 สัญญา/งวด ' + c.contract);
-  if (c.daily) lines.push('📝 รายงานประจำวัน ' + c.daily);
-  if (c.risk) lines.push('⚠️ ความเสี่ยง ' + c.risk);
-  lines.push('— รวม ' + rows.length + ' รายการ · ดูละเอียดในแอป 🔔');
+  // 2) รายงานประจำวันวันนี้ — เนื้อหาให้ AI เขียนบทความ
+  var reports = [];
+  try {
+    reports = getAllRows(SHEET.DAILY).filter(function (r) {
+      return formatDateValue(r.date) === today || String(r.date) === today;
+    });
+  } catch (e) {}
+
+  // 3) AI เขียน "บทความสรุป" จาก daily report + activity (มี fallback ถ้า AI ล่ม)
+  var narrative = '';
+  try {
+    if (reports.length || rows.length) {
+      var material = '';
+      reports.forEach(function (r) {
+        material += '- ผู้รายงาน ' + (r.reporter_name || '-') +
+          ' | อากาศ ' + (r.weather || '-') + ' | คนงาน ' + (r.workers_count || 0) + '\n' +
+          '  งานที่ทำ: ' + (r.tasks_done || r.summary_text || '-') +
+          (r.issues ? '\n  ปัญหา: ' + r.issues : '') + '\n';
+      });
+      var actLines = rows.slice(0, 20).map(function (r) { return '- ' + String(r.text || ''); }).join('\n');
+
+      var prompt =
+        'คุณคือผู้ช่วยเขียนสรุปงานก่อสร้าง/เฟอร์นิเจอร์บิ้วอินประจำวัน ' +
+        'เขียนเป็น "บทความสั้น" 3-5 ประโยค ภาษาไทยกระชับ เป็นกันเอง อ่านลื่น เหมาะส่งในกลุ่ม LINE ทีม ' +
+        'สรุปจากข้อมูลจริงด้านล่างเท่านั้น ห้ามแต่งเติมเกินข้อมูล ถ้าข้อมูลน้อยให้เขียนสั้นๆ ' +
+        'เขียนเฉพาะเนื้อบทความ ห้ามมีหัวข้อ/bullet/คำทักทาย/อิโมจิเยอะ\n\n' +
+        '[รายงานประจำวันหน้างาน]\n' + (material || '(ไม่มีรายงานวันนี้)') + '\n\n' +
+        '[กิจกรรมในระบบวันนี้]\n' + (actLines || '(ไม่มี)') + '\n\nบทความสรุป:';
+
+      narrative = String(callGemini(prompt) || '').trim();
+    }
+  } catch (e) { narrative = ''; }
+
+  // 4) ประกอบข้อความ: หัว + บทความ AI + ภาพรวมตัวเลข + ลิงก์เว็บ
+  var lines = ['📊 สรุปประจำวัน ' + _thaiDate_(today)];
+  if (narrative) { lines.push(''); lines.push(narrative); }
+
+  var ov = [];
+  if (c.task) ov.push('✅ ติ๊กงาน ' + c.task);
+  if (c.withdraw || c.receive) ov.push('📦 เบิก ' + c.withdraw + '/รับ ' + c.receive);
+  if (c.contract) ov.push('🧾 สัญญา/งวด ' + c.contract);
+  if (c.daily) ov.push('📝 รายงาน ' + c.daily);
+  if (c.risk) ov.push('⚠️ เสี่ยง ' + c.risk);
+  lines.push('');
+  lines.push('— ภาพรวม —');
+  lines.push(ov.length ? ov.join(' · ') : 'วันนี้ยังไม่มีกิจกรรมบันทึก');
+  lines.push('รวม ' + rows.length + ' รายการ');
+
+  lines.push('');
+  lines.push('🔗 ดูรายงานเต็ม: ' + LINE_WEB_BASE + '/daily.html');
 
   _linePush_(gid, lines.join('\n'));
-  return { ok: true, total: rows.length };
+  return { ok: true, total: rows.length, has_narrative: !!narrative, reports: reports.length };
 }
 
 // ============================================================
