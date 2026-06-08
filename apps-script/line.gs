@@ -279,11 +279,12 @@ function lineTest_(p) {
 // ============================================================
 // 🕒 OPS DIGEST — สรุปกิจกรรมหน้างานทุก ~3 ชม. → กลุ่มหน้างาน
 // ============================================================
-function lineOpsDigest_() {
+function lineOpsDigest_(p) {
   var gops = _readSecret_('LINE_GROUP_OPS_ID', '');
   if (!gops) return { ok: false, reason: 'no ops group' };
 
-  var since = new Date().getTime() - (3 * 60 * 60 * 1000); // 3 ชม.ล่าสุด
+  var hours = Number((p && p.hours) || 3); // default 3 ชม. (test ระบุกว้างขึ้นได้)
+  var since = new Date().getTime() - (hours * 60 * 60 * 1000);
   var rows = [];
   try {
     rows = getAllRows(SHEET.ACTIVITY).filter(function (r) {
@@ -292,9 +293,9 @@ function lineOpsDigest_() {
       return t && t >= since;
     });
   } catch (e) {}
-  if (!rows.length) return { ok: true, skipped: 'no activity in last 3h' }; // เงียบถ้าไม่มีอะไร
+  if (!rows.length) return { ok: true, skipped: 'no activity in last ' + hours + 'h' }; // เงียบถ้าไม่มีอะไร
 
-  var lines = ['🕒 อัปเดตหน้างาน (3 ชม.ล่าสุด)'];
+  var lines = ['🕒 อัปเดตหน้างาน (' + hours + ' ชม.ล่าสุด)'];
   rows.slice(-25).forEach(function (r) {
     lines.push('• ' + String(r.text || '').replace(/^[📤🔧\s]+/, '').trim());
   });
