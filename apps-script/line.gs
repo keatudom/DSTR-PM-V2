@@ -208,6 +208,17 @@ function lineDailyDigest_() {
   lines.push(ov.length ? ov.join(' · ') : 'วันนี้ยังไม่มีกิจกรรมบันทึก');
   lines.push('รวม ' + rows.length + ' รายการ');
 
+  // รายการเบิกวัสดุวันนี้ (ใครเบิกอะไร) — ดึงจาก activity log
+  var withdrawals = rows
+    .filter(function (r) { return String(r.text || '').indexOf('เบิก') >= 0; })
+    .map(function (r) { return String(r.text || '').replace(/^[📤🔧\s]+/, '').trim(); });
+  if (withdrawals.length) {
+    lines.push('');
+    lines.push('— 📤 เบิกวัสดุวันนี้ (' + withdrawals.length + ') —');
+    withdrawals.slice(0, 15).forEach(function (w) { lines.push('• ' + w); });
+    if (withdrawals.length > 15) lines.push('… และอีก ' + (withdrawals.length - 15) + ' รายการ');
+  }
+
   lines.push('');
   lines.push('🔗 ดูรายงานเต็ม: ' + LINE_WEB_BASE + '/daily.html');
 
