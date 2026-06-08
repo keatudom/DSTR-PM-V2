@@ -262,9 +262,9 @@ function _requireRole_(action, role) {
 // 🗺️ ROUTER
 // ============================================================
 function route(action, p) {
-  // Role gate (Client View MVP) — ต้องอยู่ก่อน switch
-  // p.role ส่งจาก frontend (admin หรือ client) — ถ้าไม่ส่ง = legacy admin compat
-  _requireRole_(action, p && p.role);
+  // 🔐 Phase G: บังคับสิทธิ์ที่ server — มี token=เช็คบทบาท/โครงการ, ไม่มี token=พฤติกรรมเดิม
+  // (_authorize_ เรียก _requireRole_ ให้เองเมื่อไม่มี token — migration-safe)
+  _authorize_(action, p);
 
   switch (action) {
 
@@ -275,6 +275,16 @@ function route(action, p) {
     case 'updatePayment': return updatePayment(p);
 
     case 'login': return login(p.password);
+
+    // 🔐 PHASE G — AUTH (Sign in with Google + per-person identity) — ดู auth.gs
+    case 'login_google': return loginGoogle_(p);
+    case 'get_me':       return getMe_(p);
+    case 'get_users':    return getUsers_();
+    case 'upsert_user':  return upsertUser_(p);
+    case 'set_user_role': return setUserRole_(p);
+    case '_phase_g_migrate':  return phaseGMigrate_();   // เพิ่ม col email/auth_role + seed owner (idempotent)
+    case '_init_auth_secret': return initAuthSecret_();  // สร้าง AUTH_SECRET ล่วงหน้า (idempotent)
+    case '_auth_selftest':    return authSelfTest_();    // ตรวจ token crypto roundtrip
 
     case 'get_ff_list': return getFFList(p.project_id || 'bow-house');
     case 'get_tasks': return getTasksAsObjects(p.ff_code, p.project_id || 'bow-house');

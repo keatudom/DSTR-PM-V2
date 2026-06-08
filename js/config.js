@@ -13,6 +13,9 @@ const CONFIG = {
   // รหัสผ่าน — ย้ายไปตรวจที่ Apps Script แล้ว (ปลอดภัยขึ้น)
   // ไม่เก็บรหัสจริงในไฟล์นี้อีกต่อไป
 
+  // Phase G: Sign in with Google — Client ID (ข้อมูลสาธารณะ ไม่ใช่ secret)
+  GOOGLE_CLIENT_ID: '1007106153160-bih4m06f6qdrche186s7ng4u85ghs6t0.apps.googleusercontent.com',
+
   // ข้อมูลโปรเจกต์
   PROJECTS: {
     'bow-house': {

@@ -29,12 +29,31 @@ const API = {
   },
 
   /**
+   * Phase G: แนบ auth_token (บัตรผ่าน) ทุก call ถ้า login ด้วย Google ไว้
+   * อ่านจาก localStorage ตรงๆ (ไม่ผูกกับลำดับโหลด Auth)
+   * - ไม่มี token → ไม่แนบ → backend ใช้พฤติกรรมเดิม (migration-safe)
+   * - caller ส่ง auth_token เอง → เคารพของ caller
+   */
+  _injectAuth: function(params) {
+    params = params || {};
+    if (params.auth_token) return params;
+    try {
+      var raw = localStorage.getItem(CONFIG.SESSION_KEY);
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && s.token) params.auth_token = s.token;
+      }
+    } catch (e) {}
+    return params;
+  },
+
+  /**
    * อ่านข้อมูลด้วย JSONP (bypass CORS)
    * @param {string} action - ชื่อ action ที่ Apps Script รู้จัก
    * @param {object} params - query parameters
    */
   callRead(action, params) {
-    params = this._injectProjectId(params);
+    params = this._injectAuth(this._injectProjectId(params));
     return new Promise(function(resolve, reject) {
       var cbName = 'jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
       var script = document.createElement('script');
@@ -80,7 +99,7 @@ const API = {
    * หมายเหตุ: no-cors mode = ไม่สามารถอ่าน response ได้ คืน {ok: true} เสมอ
    */
   callWrite: function(action, data) {
-    data = this._injectProjectId(data);
+    data = this._injectAuth(this._injectProjectId(data));
     return fetch(CONFIG.APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -103,7 +122,7 @@ const API = {
    *    fetch + redirect ของ Apps Script ทำให้ POST กลายเป็น GET → body หาย
    */
   callPost: function(action, data) {
-    data = this._injectProjectId(data);
+    data = this._injectAuth(this._injectProjectId(data));
     return fetch(CONFIG.APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -140,7 +159,7 @@ const API = {
   callUpload: function(action, data) {
     var self = this;
     return new Promise(function(resolve, reject) {
-      data = self._injectProjectId(data);
+      data = self._injectAuth(self._injectProjectId(data));
 
       var uid = 'up_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
       var iframe = document.createElement('iframe');
