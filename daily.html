@@ -2868,9 +2868,12 @@ function openSummaryFromReport() {
 // =========================
 async function deleteLog(logId) {
   if (!confirm('ลบบันทึกนี้?')) return;
+  Modal.toast('กำลังลบ...');
   try {
-    const res = await API.callWrite('delete_activity_log', { log_id: logId });
-    if (!res.ok) throw new Error(res.error || 'Delete failed');
+    // callRead (JSONP GET) — ส่ง log_id ผ่าน URL ถึง backend จริง + อ่านผลได้
+    // (callWrite no-cors POST: body หายตอน redirect + res.ok=true เสมอ = ลบไม่จริง)
+    const res = await API.callRead('delete_activity_log', { log_id: logId });
+    if (!res || !res.ok) throw new Error((res && res.error) || 'ลบไม่สำเร็จ');
     Modal.toast('✓ ลบแล้ว');
     setTimeout(() => refresh(), 800);
   } catch (err) {
@@ -2882,11 +2885,11 @@ async function untickTask(logId, taskId) {
   if (!confirm('ยกเลิกการติ๊ก task นี้?\n\nTask จะกลับเป็น "ยังไม่เสร็จ" และ log นี้จะถูกลบ')) return;
   Modal.toast('กำลังยกเลิก...');
   try {
-    const res = await API.callWrite('untick_task_from_log', {
+    const res = await API.callRead('untick_task_from_log', {
       log_id: logId,
       task_id: taskId
     });
-    if (!res.ok) throw new Error(res.error || 'Untick failed');
+    if (!res || !res.ok) throw new Error((res && res.error) || 'ยกเลิกไม่สำเร็จ');
     Modal.toast('✓ ยกเลิกการติ๊กแล้ว — task กลับเป็นไม่เสร็จ');
     setTimeout(() => refresh(), 1200);
   } catch (err) {

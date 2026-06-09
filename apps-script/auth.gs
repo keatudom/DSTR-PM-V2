@@ -223,7 +223,8 @@ var _ACTION_CAP_ = (function () {
     'auto_detect_daily', 'generate_daily_summary', 'generate_daily_summary_v2',
     'add_quick_log', 'add_photo', 'upload_photo', 'delete_photo',
     'delete_task_photo', 'add_activity_log', 'untick_task_from_log',
-    'save_ai_summary', 'confirm_task_tick', 'upload_log_photo'
+    'save_ai_summary', 'confirm_task_tick', 'upload_log_photo',
+    'delete_activity_log'  // ลบ log ที่บันทึกผิดในรายงานหน้างาน — หน้างานทำได้
   ]);
 
   // 🛒 PROCURE — จัดซื้อ/จัดการวัสดุ + ราคาซื้อ + รับของ + นับสต๊อก
@@ -238,7 +239,7 @@ var _ACTION_CAP_ = (function () {
     'create_boq', 'create_team', 'update_team',
     'create_supplier', 'create_contractor', 'create_risk', 'update_risk',
     'delete_risk', 'clone_risks', 'create_eval', 'update_eval', 'delete_eval',
-    'delete_daily', 'delete_activity_log'
+    'delete_daily'
   ]);
 
   add('FINANCE', [
