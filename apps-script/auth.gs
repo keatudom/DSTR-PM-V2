@@ -257,7 +257,8 @@ var _ACTION_CAP_ = (function () {
     '_seed_direk_template', '_phase_f_migrate', '_phase_g_migrate',
     '_init_auth_secret', '_ensure_eval_sheets', '_seed_eval_rubric',
     '_auth_selftest', '_set_line_config', '_line_status', 'line_test',
-    '_install_line_digest', '_run_line_digest', '_run_ops_digest', '_line_diag'
+    '_install_line_digest', '_run_line_digest', '_run_ops_digest',
+    '_run_weekly_digest', '_line_diag'
   ]);
 
   return m;

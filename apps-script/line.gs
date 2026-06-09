@@ -108,10 +108,15 @@ function lineWebhook_(body) {
       } else if (!isRedeliv && (cmd === '/รายงาน3ชม' || cmd === '/รายงาน3ชั่วโมง' || cmd === '/รายงานหน้างาน' || mt === '/ops')) {
         // 🕒 เรียกสรุป 3 ชม.ล่าสุดเอง → กลุ่มที่พิมพ์คำสั่ง
         lineOpsDigest_({ to: src.groupId, hours: 3 });
+      } else if (!isRedeliv && (cmd === '/รายงานสัปดาห์นี้' || cmd === '/รายงานสัปดาห์' || cmd === '/รายงานอาทิตย์นี้' || mt === '/weekly')) {
+        // 📅 เรียกสรุปสัปดาห์ (7 วันล่าสุด) เอง
+        if (ev.replyToken) _lineReply_(ev.replyToken, '⏳ กำลังสร้างรายงานสัปดาห์…');
+        lineWeeklyDigest_({ to: src.groupId });
       } else if (cmd === '/help' || cmd === '/คำสั่ง' || cmd === '/ช่วยเหลือ' || mt === '/help') {
         if (ev.replyToken) _lineReply_(ev.replyToken,
           '📋 คำสั่ง DSTR\n' +
           '📊 /รายงานประจำวัน — สรุปวันนี้ (บทความ AI)\n' +
+          '📅 /รายงานสัปดาห์นี้ — ภาพรวม 7 วัน (บทความ AI)\n' +
           '🕒 /รายงาน 3 ชั่วโมง — กิจกรรม 3 ชม.ล่าสุด\n' +
           '🔗 /link — ตั้งเป็นกลุ่มหลัก\n' +
           '🔗 /link ops — ตั้งเป็นกลุ่มหน้างาน');
@@ -291,6 +296,84 @@ function lineTest_(p) {
   }
   return { ok: _lineBroadcast_(text), mode: 'broadcast' };
 }
+
+// ============================================================
+// 📅 WEEKLY DIGEST — สรุปภาพรวม 7 วันล่าสุด (บทความ AI)
+// ============================================================
+function lineWeeklyDigest_(p) {
+  var gid = (p && p.to) || _readSecret_('LINE_GROUP_ID', '');
+  if (!gid) return { ok: false, reason: 'no group' };
+
+  var sinceMs = new Date().getTime() - (7 * 86400000);
+  var sinceStr = new Date(sinceMs).toISOString().slice(0, 10);
+
+  var rows = [];
+  try {
+    rows = getAllRows(SHEET.ACTIVITY).filter(function (r) {
+      var ts = r.timestamp;
+      var t = (ts instanceof Date) ? ts.getTime() : Date.parse(String(ts || ''));
+      return t && t >= sinceMs;
+    });
+  } catch (e) {}
+
+  var c = { task: 0, withdraw: 0, receive: 0, daily: 0, contract: 0, risk: 0 };
+  rows.forEach(function (r) {
+    var t = String(r.text || '');
+    if (t.indexOf('เสร็จ') >= 0 || t.indexOf('✓') >= 0) c.task++;
+    else if (t.indexOf('เบิก') >= 0) c.withdraw++;
+    else if (t.indexOf('รับ') >= 0 && t.indexOf('รับเงิน') < 0) c.receive++;
+    else if (t.indexOf('รายงาน') >= 0) c.daily++;
+    else if (t.indexOf('สัญญา') >= 0 || t.indexOf('งวด') >= 0) c.contract++;
+    else if (t.indexOf('เสี่ยง') >= 0) c.risk++;
+  });
+
+  var reports = [];
+  try {
+    reports = getAllRows(SHEET.DAILY).filter(function (r) {
+      var d = formatDateValue(r.date) || String(r.date || '');
+      return d >= sinceStr;
+    });
+  } catch (e) {}
+
+  var narrative = '';
+  try {
+    if (reports.length || rows.length) {
+      var material = '';
+      reports.forEach(function (r) {
+        material += '- ' + (formatDateValue(r.date) || '') + ' โดย ' + (r.reporter_name || '-') + ': ' +
+          (r.tasks_done || r.summary_text || '-') + (r.issues ? ' | ปัญหา: ' + r.issues : '') + '\n';
+      });
+      var prompt =
+        'คุณคือผู้ช่วยเขียนสรุป "ภาพรวมรายสัปดาห์" ของงานก่อสร้าง/บิ้วอิน เขียนเป็นบทความ 4-6 ประโยค ' +
+        'ภาษาไทยกระชับ เป็นกันเอง สรุปความคืบหน้า งานเด่น และปัญหาของสัปดาห์ จากข้อมูลจริงด้านล่างเท่านั้น ' +
+        'ห้ามแต่งเติม เขียนเฉพาะเนื้อบทความ ไม่ต้องมีหัวข้อ/bullet\n\n' +
+        '[รายงานประจำวันในสัปดาห์]\n' + (material || '(ไม่มี)') + '\n\n' +
+        '[สรุปกิจกรรม] ติ๊กงานเสร็จ ' + c.task + ' · เบิกของ ' + c.withdraw + ' · รับของ ' + c.receive +
+        ' · สัญญา/งวด ' + c.contract + ' · ความเสี่ยง ' + c.risk + '\n\nบทความสรุปสัปดาห์:';
+      narrative = String(callGemini(prompt) || '').trim();
+    }
+  } catch (e) { narrative = ''; }
+
+  var lines = ['📅 สรุปรายสัปดาห์ (' + _thaiDate_(sinceStr) + ' – ' + _thaiDate_(todayStr()) + ')'];
+  if (narrative) { lines.push(''); lines.push(narrative); }
+  var ov = [];
+  if (c.task) ov.push('✅ ติ๊กงาน ' + c.task);
+  if (c.withdraw || c.receive) ov.push('📦 เบิก ' + c.withdraw + '/รับ ' + c.receive);
+  if (c.contract) ov.push('🧾 สัญญา/งวด ' + c.contract);
+  if (c.daily) ov.push('📝 รายงาน ' + c.daily);
+  if (c.risk) ov.push('⚠️ เสี่ยง ' + c.risk);
+  lines.push('');
+  lines.push('— ภาพรวมสัปดาห์ —');
+  lines.push(ov.length ? ov.join(' · ') : 'สัปดาห์นี้ยังไม่มีกิจกรรมบันทึก');
+  lines.push('รวม ' + rows.length + ' รายการ');
+  lines.push('');
+  lines.push('🔗 ดูรายละเอียด: ' + LINE_WEB_BASE + '/dashboard.html');
+
+  _linePush_(gid, lines.join('\n'));
+  return { ok: true, total: rows.length, has_narrative: !!narrative, reports: reports.length };
+}
+
+function runWeeklyDigest() { return lineWeeklyDigest_(); }
 
 // ============================================================
 // 🕒 OPS DIGEST — สรุปกิจกรรมหน้างานทุก ~3 ชม. → กลุ่มหน้างาน
