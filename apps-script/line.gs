@@ -155,15 +155,15 @@ function lineWebhook_(body) {
 //    (Apps Script ซ่อนฟังก์ชันที่ลงท้าย _ จาก dropdown ของ trigger)
 // เรียก Gemini เขียนบทความ + retry (กัน 503 overloaded / 429 ชั่วคราวของ Google)
 function _aiNarrative_(prompt) {
-  for (var i = 0; i < 3; i++) {
+  for (var i = 0; i < 5; i++) {  // ลองสูงสุด 5 ครั้ง (เงียบหลังบ้าน)
     try {
       var t = String(callGemini(prompt) || '').trim();
       if (t) return t;
     } catch (e) {
       var msg = String((e && e.message) || e);
       // 5xx/overload/429 = ชั่วคราว ลองใหม่ · error อื่น = เลิก
-      if (i < 2 && /(50\d|429|overload|server error|rate|unavailable)/i.test(msg)) {
-        Utilities.sleep(1500 * (i + 1)); // 1.5s แล้ว 3s
+      if (i < 4 && /(50\d|429|overload|server error|rate|unavailable)/i.test(msg)) {
+        Utilities.sleep(Math.min(1500 * (i + 1), 4000)); // 1.5→3→4→4 วิ
         continue;
       }
       return '';
