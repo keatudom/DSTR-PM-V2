@@ -248,6 +248,7 @@ function lineDailyDigest_(p) {
   // 4) ประกอบข้อความ: หัว + บทความ AI + ภาพรวมตัวเลข + ลิงก์เว็บ
   var lines = ['📊 สรุปประจำวัน ' + _thaiDate_(day)];
   if (narrative) { lines.push(''); lines.push(narrative); }
+  else if (rows.length) { lines.push(''); lines.push('⚠️ (AI สรุปไม่พร้อมชั่วคราว — แสดงเฉพาะตัวเลข)'); }
 
   var ov = [];
   if (c.task) ov.push('✅ ติ๊กงาน ' + c.task);
@@ -375,6 +376,7 @@ function lineWeeklyDigest_(p) {
 
   var lines = ['📅 สรุปรายสัปดาห์ (' + _thaiDate_(sinceStr) + ' – ' + _thaiDate_(todayStr()) + ')'];
   if (narrative) { lines.push(''); lines.push(narrative); }
+  else if (rows.length) { lines.push(''); lines.push('⚠️ (AI สรุปไม่พร้อมชั่วคราว — แสดงเฉพาะตัวเลข)'); }
   var ov = [];
   if (c.task) ov.push('✅ ติ๊กงาน ' + c.task);
   if (c.withdraw || c.receive) ov.push('📦 เบิก ' + c.withdraw + '/รับ ' + c.receive);
