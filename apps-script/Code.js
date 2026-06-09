@@ -395,6 +395,7 @@ function route(action, p) {
     case '_run_ops_digest':       return lineOpsDigest_(p);     // ยิงสรุปหน้างานเอง (ระบุ hours ได้)
     case '_run_weekly_digest':    return lineWeeklyDigest_(p);  // ยิงสรุปสัปดาห์เอง (ทดสอบ)
     case '_line_diag':            return lineDiag_();           // ตรวจการส่งเข้ากลุ่ม (debug)
+    case '_gemini_test':          return geminiTest_();         // ตรวจ AI ตอบได้ไหม (debug)
 
     // 👥 Project Staff — assign คนในบริษัทเข้าโปรเจค (27_Project_Staff)
     case 'get_all_staff': return getAllStaff();

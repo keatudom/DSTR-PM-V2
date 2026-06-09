@@ -153,6 +153,25 @@ function lineWebhook_(body) {
 // ============================================================
 // 👉 ฟังก์ชัน "สาธารณะ" (ไม่มีขีดล่าง) สำหรับเลือกในหน้า Triggers / ปุ่ม Run
 //    (Apps Script ซ่อนฟังก์ชันที่ลงท้าย _ จาก dropdown ของ trigger)
+// เรียก Gemini เขียนบทความ + retry (กัน 503 overloaded / 429 ชั่วคราวของ Google)
+function _aiNarrative_(prompt) {
+  for (var i = 0; i < 3; i++) {
+    try {
+      var t = String(callGemini(prompt) || '').trim();
+      if (t) return t;
+    } catch (e) {
+      var msg = String((e && e.message) || e);
+      // 5xx/overload/429 = ชั่วคราว ลองใหม่ · error อื่น = เลิก
+      if (i < 2 && /(50\d|429|overload|server error|rate|unavailable)/i.test(msg)) {
+        Utilities.sleep(1500 * (i + 1)); // 1.5s แล้ว 3s
+        continue;
+      }
+      return '';
+    }
+  }
+  return '';
+}
+
 function runDailyDigest() {
   return lineDailyDigest_();
 }
@@ -222,7 +241,7 @@ function lineDailyDigest_(p) {
         '[รายงานประจำวันหน้างาน]\n' + (material || '(ไม่มีรายงานวันนี้)') + '\n\n' +
         '[กิจกรรมในระบบวันนี้]\n' + (actLines || '(ไม่มี)') + '\n\nบทความสรุป:';
 
-      narrative = String(callGemini(prompt) || '').trim();
+      narrative = _aiNarrative_(prompt);
     }
   } catch (e) { narrative = ''; }
 
@@ -350,7 +369,7 @@ function lineWeeklyDigest_(p) {
         '[รายงานประจำวันในสัปดาห์]\n' + (material || '(ไม่มี)') + '\n\n' +
         '[สรุปกิจกรรม] ติ๊กงานเสร็จ ' + c.task + ' · เบิกของ ' + c.withdraw + ' · รับของ ' + c.receive +
         ' · สัญญา/งวด ' + c.contract + ' · ความเสี่ยง ' + c.risk + '\n\nบทความสรุปสัปดาห์:';
-      narrative = String(callGemini(prompt) || '').trim();
+      narrative = _aiNarrative_(prompt);
     }
   } catch (e) { narrative = ''; }
 
@@ -420,6 +439,16 @@ function installOpsDigestTrigger_() {
   });
   ScriptApp.newTrigger('runOpsDigest').timeBased().everyHours(3).create();
   return { ok: true, scheduled: 'ทุก 3 ชม.' };
+}
+
+// 🔧 ตรวจ Gemini (AI) ว่าตอบได้ไหม + error จริง (ไว้ debug บทความหาย)
+function geminiTest_() {
+  try {
+    var t = callGemini('ตอบกลับคำว่า ok สั้นๆ');
+    return { ok: true, text: String(t || '').slice(0, 120) };
+  } catch (e) {
+    return { ok: false, error: String((e && e.message) || e) };
+  }
 }
 
 // 🔧 ตรวจสอบการส่งเข้ากลุ่ม — คืน http code + คำตอบจริงจาก LINE (ไว้ debug)
