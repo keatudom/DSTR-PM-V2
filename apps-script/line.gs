@@ -96,10 +96,26 @@ function lineWebhook_(body) {
       var msgText = (ev.type === 'message' && ev.message && ev.message.type === 'text')
         ? String(ev.message.text || '').trim() : '';
       var mt = msgText.toLowerCase();
+      var cmd = msgText.replace(/\s+/g, '');  // normalize ลบช่องว่าง เช่น "/รายงาน 3 ชั่วโมง"
+      var isRedeliv = !!(ev.deliveryContext && ev.deliveryContext.isRedelivery); // กัน LINE ส่งซ้ำ → รายงานซ้ำ
       var gMain = props.getProperty('LINE_GROUP_ID') || '';
       var gOps = props.getProperty('LINE_GROUP_OPS_ID') || '';
 
-      if (mt === '/link ops' || mt === '/linkops' || msgText === 'เชื่อมกลุ่มหน้างาน') {
+      if (!isRedeliv && (cmd === '/รายงานประจำวัน' || cmd === '/รายงานวันนี้' || mt === '/daily')) {
+        // 📊 เรียกสรุปประจำวันเอง → กลุ่มที่พิมพ์คำสั่ง
+        if (ev.replyToken) _lineReply_(ev.replyToken, '⏳ กำลังสร้างรายงานประจำวัน…');
+        lineDailyDigest_({ to: src.groupId });
+      } else if (!isRedeliv && (cmd === '/รายงาน3ชม' || cmd === '/รายงาน3ชั่วโมง' || cmd === '/รายงานหน้างาน' || mt === '/ops')) {
+        // 🕒 เรียกสรุป 3 ชม.ล่าสุดเอง → กลุ่มที่พิมพ์คำสั่ง
+        lineOpsDigest_({ to: src.groupId, hours: 3 });
+      } else if (cmd === '/help' || cmd === '/คำสั่ง' || cmd === '/ช่วยเหลือ' || mt === '/help') {
+        if (ev.replyToken) _lineReply_(ev.replyToken,
+          '📋 คำสั่ง DSTR\n' +
+          '📊 /รายงานประจำวัน — สรุปวันนี้ (บทความ AI)\n' +
+          '🕒 /รายงาน 3 ชั่วโมง — กิจกรรม 3 ชม.ล่าสุด\n' +
+          '🔗 /link — ตั้งเป็นกลุ่มหลัก\n' +
+          '🔗 /link ops — ตั้งเป็นกลุ่มหน้างาน');
+      } else if (mt === '/link ops' || mt === '/linkops' || msgText === 'เชื่อมกลุ่มหน้างาน') {
         // กลุ่มหน้างาน — สรุปทุก ~3 ชม.
         props.setProperty('LINE_GROUP_OPS_ID', src.groupId);
         if (ev.replyToken) _lineReply_(ev.replyToken, '✅ เชื่อม "กลุ่มหน้างาน" แล้ว\nจะสรุปกิจกรรมหน้างานทุก ~3 ชม. ที่นี่ (รายงาน/ติ๊กงาน/เบิกของ)');
@@ -146,7 +162,7 @@ function _thaiDate_(ymd) {
 }
 
 function lineDailyDigest_(p) {
-  var gid = _readSecret_('LINE_GROUP_ID', '');
+  var gid = (p && p.to) || _readSecret_('LINE_GROUP_ID', ''); // p.to = สั่งเองในกลุ่มไหน
   if (!gid) return { ok: false, reason: 'no group' };
 
   // ระบุวันที่ได้ (p.date = 'YYYY-MM-DD') — ไม่ส่ง = วันนี้ (ใช้ใน trigger)
@@ -280,7 +296,7 @@ function lineTest_(p) {
 // 🕒 OPS DIGEST — สรุปกิจกรรมหน้างานทุก ~3 ชม. → กลุ่มหน้างาน
 // ============================================================
 function lineOpsDigest_(p) {
-  var gops = _readSecret_('LINE_GROUP_OPS_ID', '');
+  var gops = (p && p.to) || _readSecret_('LINE_GROUP_OPS_ID', ''); // p.to = สั่งเองในกลุ่มไหน
   if (!gops) return { ok: false, reason: 'no ops group' };
 
   var hours = Number((p && p.hours) || 3); // default 3 ชม. (test ระบุกว้างขึ้นได้)
@@ -293,7 +309,11 @@ function lineOpsDigest_(p) {
       return t && t >= since;
     });
   } catch (e) {}
-  if (!rows.length) return { ok: true, skipped: 'no activity in last ' + hours + 'h' }; // เงียบถ้าไม่มีอะไร
+  if (!rows.length) {
+    // สั่งเอง (p.to) → ตอบให้รู้ว่าไม่มีกิจกรรม · trigger อัตโนมัติ → เงียบ
+    if (p && p.to) { _linePush_(gops, '🕒 ช่วง ' + hours + ' ชม.ล่าสุด ยังไม่มีกิจกรรมบันทึก'); return { ok: true, empty: true }; }
+    return { ok: true, skipped: 'no activity in last ' + hours + 'h' };
+  }
 
   var lines = ['🕒 อัปเดตหน้างาน (' + hours + ' ชม.ล่าสุด)'];
   rows.slice(-25).forEach(function (r) {
