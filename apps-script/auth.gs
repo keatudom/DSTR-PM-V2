@@ -258,7 +258,7 @@ var _ACTION_CAP_ = (function () {
     '_init_auth_secret', '_ensure_eval_sheets', '_seed_eval_rubric',
     '_auth_selftest', '_set_line_config', '_line_status', 'line_test',
     '_install_line_digest', '_run_line_digest', '_run_ops_digest',
-    '_run_weekly_digest', '_line_diag'
+    '_run_weekly_digest', '_line_diag', '_gemini_test', '_seed_craft_teams'
   ]);
 
   return m;

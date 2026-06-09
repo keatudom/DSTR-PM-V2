@@ -305,6 +305,7 @@ function route(action, p) {
     case 'get_teams': return getTeams(p);
     case 'team_checkin': return teamCheckin(p);
     case 'create_team': return createTeam(p);
+    case '_seed_craft_teams': return seedCraftTeams_();  // เพิ่มประเภทช่างบิ้วอิน (idempotent)
     case 'update_team': return updateTeam(p);
     case 'create_contract': return createContract(p);
     case 'update_contract': return updateContract(p);
