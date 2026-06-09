@@ -987,7 +987,9 @@ if (!Auth.requireAuth('admin')) {
 
 // Phase C: project metadata — initial fallback (sync), จะ overwrite ใน loadData ด้วยข้อมูลจาก API
 // state.projectId ถูก set โดย state.js (อ่าน ?project= URL)
-let project = CONFIG.PROJECTS[state.projectId] || CONFIG.PROJECTS['bow-house'] || {};
+// ⚠️ ห้าม fallback เป็น bow-house — โครงการอื่นจะได้ค่า (มูลค่า/วันที่/ลูกค้า) ของบ้านคุณโบว์
+// โครงการที่ไม่อยู่ใน CONFIG → {} แล้วให้ refreshProjectMeta เติมจาก API (00_Projects)
+let project = CONFIG.PROJECTS[state.projectId] || {};
 
 /**
  * โหลด metadata ของโปรเจกต์ปัจจุบันจาก 00_Projects (Phase A registry)
@@ -1020,10 +1022,13 @@ async function refreshProjectMeta() {
 }
 
 function _updateProjectHeaderUI() {
-  if (!project) return;
+  // ชื่อ: ใช้ของโครงการ → ถ้าไม่มี (โครงการใหม่/ยังไม่โหลด) ใช้ project_id แทน
+  // ห้ามปล่อยให้ค้างเป็น "Kun Beau House" ที่ hardcode ใน HTML
+  const dispName = (project && project.name) ? project.name
+    : (state.projectId === 'bow-house' ? 'Kun Beau House' : (state.projectId || 'โครงการ'));
   const nameEl = document.getElementById('projName');
-  if (nameEl && project.name) nameEl.textContent = project.name + ' · Dashboard';
-  if (project.name) document.title = project.name + ' · Admin Dashboard';
+  if (nameEl) nameEl.textContent = dispName + ' · Dashboard';
+  document.title = dispName + ' · Admin Dashboard';
 
   // projSub = "ลูกค้า · QT-xxx" — ถ้าไม่มีข้อมูล (โครงการใหม่) ให้ซ่อน
   const subEl = document.getElementById('projSub');
