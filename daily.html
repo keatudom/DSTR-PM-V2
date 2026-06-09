@@ -628,9 +628,11 @@ async function loadAll() {
     renderRoleHeader();
 
     // Use cached contractors + ffs + teams if available
-    const cachedCtrs = localStorage.getItem('dstr_contractors');
-    const cachedFFs = localStorage.getItem('dstr_ffs');
-    const cachedTeams = localStorage.getItem('dstr_teams');
+    // ⚠️ cache แยกตามโครงการ (เดิม key รวมทุกโครงการ → ทีม/FF ข้ามโครงการปนกัน + ค้างหลังกรอง)
+    const _cpid = (typeof state !== 'undefined' && state.projectId) ? state.projectId : 'bow-house';
+    const cachedCtrs = localStorage.getItem('dstr_contractors_' + _cpid);
+    const cachedFFs = localStorage.getItem('dstr_ffs_' + _cpid);
+    const cachedTeams = localStorage.getItem('dstr_teams_' + _cpid);
     const cacheTime = parseInt(localStorage.getItem('dstr_cache_time') || '0');
     const cacheValid = (Date.now() - cacheTime) < 3600000; // 1 hour
 
@@ -655,16 +657,16 @@ async function loadAll() {
 
     if (b.contractors) {
       drState.contractors = b.contractors;
-      localStorage.setItem('dstr_contractors', JSON.stringify(b.contractors));
+      localStorage.setItem('dstr_contractors_' + _cpid, JSON.stringify(b.contractors));
     }
     if (b.ffs) {
       drState.ffs = b.ffs;
-      localStorage.setItem('dstr_ffs', JSON.stringify(b.ffs));
+      localStorage.setItem('dstr_ffs_' + _cpid, JSON.stringify(b.ffs));
       localStorage.setItem('dstr_cache_time', String(Date.now()));
     }
     if (b.teams) {
       drState.teams = b.teams;
-      localStorage.setItem('dstr_teams', JSON.stringify(b.teams));
+      localStorage.setItem('dstr_teams_' + _cpid, JSON.stringify(b.teams));
     }
 
     drState.stats = b.stats;
