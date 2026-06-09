@@ -190,8 +190,8 @@ var _ROLE_CAPS_ = {
   owner:      { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1 }, // เจ้าของกิจการ
   director:   { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1 },  // ผู้ดูแลโครงการ (ไม่เห็นราคา/กำไร, ไม่จัดการผู้ใช้) — คีย์ director กัน 'admin' ชน legacy
   pm:            { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1 }, // ผู้จัดการโครงการ (scope เฉพาะที่รับผิดชอบ)
-  site_engineer: { READ: 1, OPS: 1, PROCURE: 1 },                        // วิศวกรหน้างาน (ทำงานหน้างาน + รับของ/นับ/จัดการวัสดุ)
-  foreman:       { READ: 1, OPS: 1 },                                    // โฟร์แมน/หัวหน้าช่าง (ติ๊ก/daily/เบิก/รูป — ไม่แตะคลัง)
+  site_engineer: { READ: 1, OPS: 1, PROCURE: 1 },                        // วิศวกรหน้างาน (ทำงานหน้างาน + จัดการวัสดุ)
+  foreman:       { READ: 1, OPS: 1, PROCURE: 1 },                        // โฟร์แมน (คุมวัสดุหน้างานเต็มที่ — รับ/นับ/สร้าง/แก้/ราคา)
   purchaser:     { READ: 1, PROCURE: 1 },                                // ฝ่ายจัดซื้อ (วัสดุ+ราคาซื้อ, อื่นๆ ดูอย่างเดียว)
   contractor: { READ: 1 },                                              // ผู้รับเหมา/ช่าง (เผื่ออนาคต)
   client:     {} // client ใช้ whitelist แยก (CLIENT_ALLOWED_ACTIONS)
@@ -266,7 +266,8 @@ var _ACTION_CAP_ = (function () {
 })();
 
 // scope: write caps เหล่านี้ต้องเช็คว่า user อยู่ในโครงการนั้น
-var _SCOPED_CAPS_ = { OPS: 1, MANAGE: 1, FINANCE: 1 };
+// (PROCURE ก็ scope — foreman/วิศวกรคุมวัสดุเฉพาะโครงการตัวเอง · purchaser ข้ามได้ผ่าน _CROSS_PROJECT_ROLES_)
+var _SCOPED_CAPS_ = { OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1 };
 
 // บทบาทที่ทำงาน "ข้ามทุกโครงการ" — ไม่ต้องผูกรายโครงการ → ข้าม project scope
 // (owner/ผู้ดูแลโครงการ/ฝ่ายจัดซื้อ ดูแลภาพรวมทั้งบริษัท · admin = legacy รหัสผ่าน)
