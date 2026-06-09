@@ -21,6 +21,8 @@
   .um-name { font-size:14px; font-weight:600; color:#1F2937; }
   .um-name.off { color:#9CA3AF; text-decoration:line-through; }
   .um-email { font-size:12px; color:#6B7280; word-break:break-all; }
+  .um-editlink { color:#1F3864; cursor:pointer; font-weight:600; white-space:nowrap; }
+  .um-addemail { display:inline-block; margin-top:3px; color:#1F3864; cursor:pointer; font-weight:600; font-size:12px; background:#EEF2FF; border:1px solid #C7D2FE; border-radius:7px; padding:3px 9px; }
   .um-ctrl { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:4px; }
   .um-select { font-size:12.5px; padding:6px 8px; border:1px solid #D1D5DB; border-radius:7px; background:#fff; color:#1F2937; }
   .um-roleb { font-size:11px; font-weight:700; padding:2px 9px; border-radius:99px; }
@@ -168,13 +170,24 @@ UM.render = function () {
          '<button class="um-toggle" onclick="UM.toggleActive(\'' + esc(u.staff_id) + '\',' + (u.active ? 'false' : 'true') + ')">' +
          (u.active ? '🟢 เปิดใช้งาน' : '⚪ ปิดอยู่') + '</button>');
 
+    // อีเมล — กดเพิ่ม/แก้ได้เลย (creator ล็อก = แสดงเฉยๆ)
+    var emailHtml;
+    if (ar === 'creator') {
+      emailHtml = esc(u.email || '');
+    } else if (u.email) {
+      emailHtml = esc(u.email) +
+        ' <span class="um-editlink" onclick="UM.openEdit(\'' + esc(u.staff_id) + '\')">✏️ แก้</span>';
+    } else {
+      emailHtml = '<span class="um-addemail" onclick="UM.openEdit(\'' + esc(u.staff_id) + '\')">➕ เพิ่มอีเมล Google (ให้ login ได้)</span>';
+    }
+
     return '<div class="um-card">' +
       '<div class="um-row">' +
         '<div class="um-ava' + (u.active ? '' : ' off') + '">' + esc(avaLetter) + '</div>' +
         '<div class="um-main">' +
           '<div class="um-name' + (u.active ? '' : ' off') + '">' + esc(u.name || '(ไม่มีชื่อ)') +
             (u.role ? ' <span style="font-size:11px;color:#9CA3AF;font-weight:400">· ' + esc(u.role) + '</span>' : '') + '</div>' +
-          '<div class="um-email">' + esc(u.email || '— ยังไม่มีอีเมล (login ไม่ได้)') + '</div>' +
+          '<div class="um-email">' + emailHtml + '</div>' +
           '<div class="um-ctrl">' + ctrlHtml + '</div>' +
           (showProjects ?
             '<div class="um-projects"><div class="um-plabel">โครงการที่เข้าถึงได้</div>' +
@@ -224,6 +237,48 @@ UM.submitAdd = async function () {
     if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'error')); return; }
     Modal.close();
     Modal.toast('✅ เพิ่มผู้ใช้แล้ว');
+    UM.load();
+  } catch (e) { Modal.toast('❌ ' + e.message); }
+};
+
+// ── แก้ไขผู้ใช้เดิม / เพิ่มอีเมลให้คนที่มีอยู่แล้ว (แบบ Google: อีเมล+บทบาทในที่เดียว) ──
+UM.openEdit = function (staffId) {
+  var u = UM.users.find(function (x) { return String(x.staff_id) === String(staffId); });
+  if (!u) { Modal.toast('❌ ไม่พบผู้ใช้'); return; }
+  if ((u.auth_role || '') === 'creator') { Modal.toast('🔒 บัญชีผู้สร้างถูกล็อก'); return; }
+  var ar = u.auth_role || '';
+  var roleOpts = (ar ? '' : '<option value="" selected>— เลือกบทบาท —</option>') +
+    UM.ROLES.map(function (r) {
+      return '<option value="' + r.v + '"' + (r.v === ar ? ' selected' : '') + '>' + r.t + '</option>';
+    }).join('');
+  Modal.show(
+    '<div class="modal-title">✏️ ' + esc(u.name || 'ผู้ใช้') + '</div>' +
+    '<div style="font-size:12px;color:#6B7280;margin-bottom:10px">ใส่อีเมล Google + เลือกบทบาท → คนนี้จะ login ด้วย Google ได้ทันที</div>' +
+    '<label class="um-lbl">ชื่อ</label>' +
+    '<input class="um-input" id="umEdName" value="' + esc(u.name) + '">' +
+    '<label class="um-lbl">อีเมล Google *</label>' +
+    '<input class="um-input" id="umEdEmail" type="email" value="' + esc(u.email) + '" placeholder="name@gmail.com">' +
+    '<label class="um-lbl">บทบาท *</label>' +
+    '<select class="um-input" id="umEdRole">' + roleOpts + '</select>' +
+    '<div class="modal-btns">' +
+      '<button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>' +
+      '<button class="modal-btn modal-btn-primary" onclick="UM.submitEdit(\'' + esc(staffId) + '\')">บันทึก</button>' +
+    '</div>'
+  );
+};
+
+UM.submitEdit = async function (staffId) {
+  var email = document.getElementById('umEdEmail').value.trim().toLowerCase();
+  var name = document.getElementById('umEdName').value.trim();
+  var arole = document.getElementById('umEdRole').value;
+  if (!email || email.indexOf('@') === -1) { Modal.toast('⚠️ ใส่อีเมลให้ถูกต้อง'); return; }
+  if (!arole) { Modal.toast('⚠️ เลือกบทบาทก่อน'); return; }
+  Modal.toast('⏳ กำลังบันทึก...');
+  try {
+    var res = await API.upsertUser({ staff_id: staffId, email: email, name: name, auth_role: arole });
+    if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'error')); return; }
+    Modal.close();
+    Modal.toast('✅ บันทึกแล้ว — ' + name + ' login ด้วย Google ได้แล้ว');
     UM.load();
   } catch (e) { Modal.toast('❌ ' + e.message); }
 };
