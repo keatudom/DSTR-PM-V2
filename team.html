@@ -244,6 +244,17 @@ async function loadAll() {
       tmState.projectStaff = (psRes && psRes.ok && Array.isArray(psRes.data)) ? psRes.data : [];
     } catch (e) { tmState.projectStaff = []; }
 
+    // โหลดทีม/ช่างในโครงการนี้ (29_Project_Teams) + รวมทีมที่มีสัญญา
+    try {
+      const ptRes = await API.callRead('get_project_teams', { project_id: tmState.projectId });
+      tmState.projectTeams = (ptRes && ptRes.ok && Array.isArray(ptRes.data)) ? ptRes.data : [];
+    } catch (e) { tmState.projectTeams = []; }
+    tmState.projTeamSet = {}; // team_id → assignment_id (ผูกตรง) | true (ผ่านสัญญา)
+    tmState.projectTeams.forEach(a => { tmState.projTeamSet[String(a.team_id)] = a.assignment_id; });
+    tmState.contracts.forEach(c => {
+      if (c.team_id && !tmState.projTeamSet[String(c.team_id)]) tmState.projTeamSet[String(c.team_id)] = true;
+    });
+
     // โหลดสรุปคะแนนประเมินผู้รับเหมา (ข้ามโครงการ) — 28_Contractor_Evaluations
     try {
       const evRes = await API.getEvalSummary();
@@ -280,26 +291,26 @@ function renderTab() {
 // =========================
 function renderContractors() {
   const el = document.getElementById('tabContent');
-  const teams = tmState.teams.filter(t => t.category === 'contractor');
-
-  if (teams.length === 0) {
-    el.innerHTML = `
-      <div class="tm-empty">
-        <div class="tm-empty-ic">🔨</div>
-        ยังไม่มีทีมผู้รับเหมา
-      </div>
-      ${tmState.isAdmin ? '<button class="tm-add-team" onclick="openAddTeam()">+ เพิ่มทีม / ผู้รับเหมา</button>' : ''}
-    `;
-    return;
-  }
+  // แสดงเฉพาะ "ช่างในโครงการนี้" (ผูกไว้ ∪ มีสัญญา) — กันรกจากคลังช่างทั้งหมด
+  const teams = tmState.teams.filter(t =>
+    t.category === 'contractor' && tmState.projTeamSet[String(t.team_id)]);
 
   let html = renderEvalRanking();
-  teams.forEach(team => {
-    html += renderTeamCard(team);
-  });
+
+  if (teams.length === 0) {
+    html += `
+      <div class="tm-empty">
+        <div class="tm-empty-ic">🔨</div>
+        ยังไม่มีช่างในโครงการนี้<br>
+        <span style="font-size:12px;color:#9CA3AF">กด "เพิ่มช่างเข้าโครงการ" เพื่อเลือกจากคลังช่าง</span>
+      </div>`;
+  } else {
+    teams.forEach(team => { html += renderTeamCard(team); });
+  }
 
   if (tmState.isAdmin) {
-    html += '<button class="tm-add-team" onclick="openAddTeam()">+ เพิ่มทีม / ผู้รับเหมา</button>';
+    html += '<button class="tm-add-team" onclick="openAddTeamToProject()">+ เพิ่มช่างเข้าโครงการ</button>';
+    html += '<button class="tm-add-team" style="background:#fff;color:#1F3864;border:1px solid #C7D2FE" onclick="openAddTeam()">+ สร้างช่างใหม่ (คลังช่าง)</button>';
   }
   el.innerHTML = html;
 }
@@ -376,6 +387,7 @@ function renderTeamCard(team) {
           return `<span class="ev-score-pill" title="คะแนนเฉลี่ย ${(Number(s.avg)||0).toFixed(1)} จาก ${s.count} ครั้ง">${(Number(s.avg)||0).toFixed(0)}${evGradeBadge(s.grade, true)}</span>`;
         })()}
         <span class="tm-badge tm-badge-active">ทำงานอยู่</span>
+        ${tmState.isAdmin ? `<span class="tm-chev" onclick="openEditTeam('${team.team_id}')" title="แก้ไข/ลบช่าง" style="cursor:pointer">✏️</span>` : ''}
         ${tmState.isAdmin ? `<span class="tm-chev" onclick="toggleCollapse('${team.team_id}')">${collapsed ? '▸' : '▾'}</span>` : ''}
       </div>
       ${bodyHtml}
@@ -674,19 +686,120 @@ async function saveTeam() {
   Modal.close();
   Modal.toast('กำลังบันทึก...');
   try {
-    const res = await API.callWrite('create_team', {
+    // callRead (อ่านผล + ได้ team_id กลับ) — callWrite no-cors ไม่ได้ผลจริง
+    const res = await API.callRead('create_team', {
       name: name,
       type: document.getElementById('ntType').value,
       phone: document.getElementById('ntPhone').value.trim(),
       lead_name: document.getElementById('ntLead').value.trim(),
       category: 'contractor'
     });
-    if (!res.ok) throw new Error(res.error || 'บันทึกไม่สำเร็จ');
-    Modal.toast('✓ เพิ่มทีมแล้ว');
-    setTimeout(() => loadAll(), 1200);
+    if (!res || !res.ok) throw new Error((res && res.error) || 'บันทึกไม่สำเร็จ');
+    // ช่างใหม่ → ผูกเข้าโครงการปัจจุบันให้เลย (โชว์ + ติ๊กใน daily ได้ทันที)
+    const newId = res.data && res.data.team && res.data.team.team_id;
+    if (newId) { try { await API.callRead('assign_project_team', { project_id: tmState.projectId, team_id: newId }); } catch (e) {} }
+    Modal.toast('✓ เพิ่มช่างแล้ว');
+    setTimeout(() => loadAll(), 1000);
   } catch (err) {
     Modal.toast('❌ ' + err.message);
   }
+}
+
+// ── เพิ่มช่างจากคลังเข้าโครงการ ──
+function openAddTeamToProject() {
+  const pool = tmState.teams.filter(t => t.category === 'contractor' && !tmState.projTeamSet[String(t.team_id)]);
+  if (!pool.length) { Modal.toast('ช่างในคลังถูกเพิ่มหมดแล้ว — สร้างช่างใหม่ได้'); return; }
+  const opts = pool.map(t =>
+    `<label style="display:flex;align-items:center;gap:8px;padding:9px 6px;border-bottom:1px solid #F1F1F1;cursor:pointer">
+       <input type="checkbox" value="${t.team_id}" class="apt-cb">
+       <span>${escapeHtml(t.name)}${t.type ? ' <small style="color:#9CA3AF">· ' + escapeHtml(t.type) + '</small>' : ''}</span>
+     </label>`).join('');
+  Modal.show(`
+    <div class="modal-title">+ เพิ่มช่างเข้าโครงการ</div>
+    <div class="tm-note">เลือกช่างจากคลัง → ใช้ในโครงการนี้ (ติ๊กได้ใน Daily report)</div>
+    <div style="max-height:46vh;overflow-y:auto;margin:8px 0">${opts}</div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="doAssignTeamsToProject()">เพิ่มที่เลือก</button>
+    </div>
+  `, 'pay-modal');
+}
+
+async function doAssignTeamsToProject() {
+  const ids = Array.from(document.querySelectorAll('.apt-cb:checked')).map(c => c.value);
+  if (!ids.length) { Modal.toast('เลือกช่างก่อน'); return; }
+  Modal.close(); Modal.toast('กำลังเพิ่ม...');
+  try {
+    for (const id of ids) {
+      await API.callRead('assign_project_team', { project_id: tmState.projectId, team_id: id });
+    }
+    Modal.toast('✓ เพิ่มช่างเข้าโครงการแล้ว');
+    setTimeout(() => loadAll(), 1000);
+  } catch (e) { Modal.toast('❌ ' + e.message); }
+}
+
+// ── แก้ไข / เอาออก / ลบ ช่าง ──
+function openEditTeam(teamId) {
+  const t = tmState.teams.find(x => String(x.team_id) === String(teamId));
+  if (!t) { Modal.toast('ไม่พบช่าง'); return; }
+  const viaContract = tmState.projTeamSet[String(teamId)] === true; // อยู่เพราะมีสัญญา
+  Modal.show(`
+    <div class="modal-title">✏️ แก้ไขช่าง</div>
+    <div class="tm-field"><label class="tm-field-label">ชื่อ</label>
+      <input type="text" class="tm-input" id="etName" value="${escapeHtml(t.name)}"></div>
+    <div class="tm-field"><label class="tm-field-label">ประเภทช่าง</label>
+      <input type="text" class="tm-input" id="etType" value="${escapeHtml(t.type || '')}"></div>
+    <div class="tm-field"><label class="tm-field-label">หัวหน้า</label>
+      <input type="text" class="tm-input" id="etLead" value="${escapeHtml(t.lead_name || '')}"></div>
+    <div class="tm-field"><label class="tm-field-label">เบอร์โทร</label>
+      <input type="text" class="tm-input" id="etPhone" value="${escapeHtml(t.phone || '')}"></div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="submitEditTeam('${teamId}')">บันทึก</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      ${viaContract ? '' : `<button class="tm-btn" style="flex:1;background:#FEF3C7;color:#92400E;border:none" onclick="removeTeamFromProject('${teamId}')">เอาออกจากโครงการ</button>`}
+      <button class="tm-btn" style="flex:1;background:#FEE2E2;color:#991B1B;border:none" onclick="confirmDeleteTeam('${teamId}')">🗑️ ลบถาวร</button>
+    </div>
+  `, 'pay-modal');
+}
+
+async function submitEditTeam(teamId) {
+  const name = document.getElementById('etName').value.trim();
+  if (!name) { Modal.toast('ใส่ชื่อก่อน'); return; }
+  Modal.close(); Modal.toast('กำลังบันทึก...');
+  try {
+    const res = await API.callRead('update_team', {
+      team_id: teamId, name: name,
+      type: document.getElementById('etType').value.trim(),
+      lead_name: document.getElementById('etLead').value.trim(),
+      phone: document.getElementById('etPhone').value.trim()
+    });
+    if (!res || !res.ok) throw new Error((res && res.error) || 'บันทึกไม่สำเร็จ');
+    Modal.toast('✓ บันทึกแล้ว'); setTimeout(() => loadAll(), 900);
+  } catch (e) { Modal.toast('❌ ' + e.message); }
+}
+
+async function removeTeamFromProject(teamId) {
+  const assignId = tmState.projTeamSet[String(teamId)];
+  if (!assignId || assignId === true) { Modal.toast('ช่างนี้อยู่เพราะมีสัญญา — ลบสัญญาก่อน'); return; }
+  if (!confirm('เอาช่างนี้ออกจากโครงการ? (ยังอยู่ในคลังช่าง)')) return;
+  Modal.close(); Modal.toast('กำลังเอาออก...');
+  try {
+    const res = await API.callRead('unassign_project_team', { assignment_id: assignId });
+    if (!res || !res.ok) throw new Error((res && res.error) || 'ไม่สำเร็จ');
+    Modal.toast('✓ เอาออกจากโครงการแล้ว'); setTimeout(() => loadAll(), 900);
+  } catch (e) { Modal.toast('❌ ' + e.message); }
+}
+
+async function confirmDeleteTeam(teamId) {
+  if (!confirm('ลบช่างนี้ถาวร? (หายจากคลังช่างทุกโครงการ)')) return;
+  Modal.close(); Modal.toast('กำลังลบ...');
+  try {
+    const res = await API.callRead('delete_team', { team_id: teamId });
+    if (!res || !res.ok) throw new Error((res && res.error) || 'ลบไม่สำเร็จ');
+    Modal.toast('✓ ลบช่างแล้ว'); setTimeout(() => loadAll(), 900);
+  } catch (e) { Modal.toast('❌ ' + e.message); }
 }
 
 // =========================

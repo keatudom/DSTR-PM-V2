@@ -210,7 +210,7 @@ var _ACTION_CAP_ = (function () {
     'get_photos', 'get_material_photos', 'get_task_photos',
     'get_transaction_photos', 'get_activity_feed', 'get_material_transactions',
     'get_saved_summary', 'get_today_stats', 'get_daily_bundle',
-    'get_all_staff', 'get_project_staff', 'get_projects',
+    'get_all_staff', 'get_project_staff', 'get_project_teams', 'get_projects',
     'get_eval_config', 'get_evals', 'get_eval_summary',
     'get_inventory_summary', 'get_client_finance', 'get_contract_files',
     'suggest_task_from_log', 'parse_activity_text', 'parse_material_log',
@@ -239,7 +239,7 @@ var _ACTION_CAP_ = (function () {
     'create_boq', 'create_team', 'update_team',
     'create_supplier', 'create_contractor', 'create_risk', 'update_risk',
     'delete_risk', 'clone_risks', 'create_eval', 'update_eval', 'delete_eval',
-    'delete_daily'
+    'delete_daily', 'delete_team', 'assign_project_team', 'unassign_project_team'
   ]);
 
   add('FINANCE', [

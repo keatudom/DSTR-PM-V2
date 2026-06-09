@@ -307,6 +307,12 @@ function route(action, p) {
     case 'create_team': return createTeam(p);
     case '_seed_craft_teams': return seedCraftTeams_();  // เพิ่มประเภทช่างบิ้วอิน (idempotent)
     case 'update_team': return updateTeam(p);
+    case 'delete_team': return deleteTeam_(p);                       // ลบทีม (soft) — ดู project_teams.gs
+
+    // 👷 PROJECT TEAMS — ผูกทีม/ช่างเข้าโครงการ (กรอง daily)
+    case 'get_project_teams':     return getProjectTeams_(p);
+    case 'assign_project_team':   return assignProjectTeam_(p);
+    case 'unassign_project_team': return unassignProjectTeam_(p);
     case 'create_contract': return createContract(p);
     case 'update_contract': return updateContract(p);
     case 'update_milestone': return updateMilestone(p);
@@ -3329,7 +3335,7 @@ function getDailyBundle(p) {
   if (!skipRefs) {
     try { bundle.contractors = getAllRows(SHEET.CONTRACTORS); } catch(e) { bundle.contractors = []; }
     try { bundle.ffs = getFFList(_getCurrentProjectId_() || 'bow-house'); } catch(e) { bundle.ffs = []; }  // Phase E: scope
-    try { bundle.teams = getTeams({}); } catch(e) { bundle.teams = []; }
+    try { bundle.teams = getTeams({ project_id: _getCurrentProjectId_() }); } catch(e) { bundle.teams = []; }
   }
 
   return bundle;
@@ -3933,15 +3939,31 @@ function getTeamsBundle(p) {
  */
 function getTeams(p) {
   // คืน array ดิบ — route()/handle() จะ wrap เป็น {ok,data} ให้เอง
-  // (consistent กับ getTodayStats ฯลฯ ที่คืน payload ดิบ ไม่ wrap ซ้อน)
-  return getAllRows(SHEET.TEAMS)
-    .filter(t => t.active !== false && t.active !== 'FALSE')
-    .map(t => ({
-      team_id: t.team_id,
-      name: t.name,
-      type: t.type || '',
-      lead_name: t.lead_name || ''
-    }));
+  let teams = getAllRows(SHEET.TEAMS)
+    .filter(t => t.active !== false && t.active !== 'FALSE');
+
+  // กรองเฉพาะทีมในโครงการ = ผูกไว้ (29_Project_Teams) ∪ ทีมที่มีสัญญาในโครงการ
+  // ยังไม่มีทีมในโครงการเลย → คืนทั้งหมด (กัน daily ว่างใช้ไม่ได้)
+  const pid = (p && p.project_id) || _getCurrentProjectId_();
+  if (pid) {
+    const set = {};
+    _projectTeamIds_(pid).forEach(id => { set[String(id)] = 1; });
+    try {
+      _filterByProject_(getAllRows(SHEET.CONTRACTS), pid)
+        .filter(c => String(c.party || '') !== 'client')
+        .forEach(c => { if (c.team_id) set[String(c.team_id)] = 1; });
+    } catch (e) {}
+    if (Object.keys(set).length) {
+      teams = teams.filter(t => set[String(t.team_id)]);
+    }
+  }
+
+  return teams.map(t => ({
+    team_id: t.team_id,
+    name: t.name,
+    type: t.type || '',
+    lead_name: t.lead_name || ''
+  }));
 }
 
 /**
