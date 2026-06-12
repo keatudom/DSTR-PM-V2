@@ -418,6 +418,9 @@ function route(action, p) {
     case 'update_ff': return updateFF_(p);              // Phase D-1 — edit FF
     case 'delete_ff': return deleteFF_(p);              // Phase D-1 — delete FF + cascade tasks
     case 'clone_project': return cloneProject_(p);      // Phase C-4 — clone FF + tasks จาก source (default bow-house)
+    case 'update_project': return updateProject_(p);    // แก้ meta โครงการ (total_value/end_date ฯลฯ)
+    case 'create_payment': return createPayment_(p);    // เพิ่มงวดเบิก (สัญญางานเพิ่ม)
+    case '_task_weights_backfill': return taskWeightsBackfill_(p); // ใส่ weight รายงาน task (idempotent)
 
     // 📋 CONTRACTOR EVALUATION — ดู evaluations.gs
     case 'get_eval_config':  return getEvalConfig_();
@@ -660,6 +663,9 @@ function getTasksAsObjects(ffCode, projectId) {
       personInCharge: r['Person In Charge'] || '',
       notes: r['Notes'] || '',
       photoCount: photoCountMap[String(r['Task ID'] || '')] || 0,
+      // น้ำหนักความเหนื่อยของงาน (โครง/ลามิเนต/พ่นสี หนัก · จุกจิก/อุปกรณ์เสริม เบา)
+      // row เก่าที่ยังไม่มีค่า = 1 (เท่ากันทุก task = พฤติกรรม task_count เดิม)
+      weight: Number(r['Weight'] || 1) || 1,
     };
   });
   return ffCode ? mapped.filter(t => t.ffCode === ffCode) : mapped;
@@ -681,9 +687,12 @@ function getPaymentsAsObjects(projectId) {
     })
     .map(r => {
       // Normalize milestone: "งวด 1 - มัดจำ" → "งวด 1"
+      // เฉพาะที่ "ขึ้นต้น" ด้วย งวด เท่านั้น — งวดของสัญญางานเพิ่ม
+      // (เช่น "ตู้ใหม่ F-21/22 · งวด 1 - มัดจำ") ต้องคงชื่อเต็มไว้เป็นกลุ่มแยก
+      // ไม่ให้ถูกยุบรวมกับ 4 งวดของสัญญาหลัก
       const rawMilestone = String(r['Milestone'] || '');
       let milestone = rawMilestone;
-      const match = rawMilestone.match(/งวด\s*[1234]/);
+      const match = rawMilestone.match(/^งวด\s*[1234]/);
       if (match) milestone = match[0].replace(/\s+/g, ' ').trim();
 
       return {
@@ -701,6 +710,73 @@ function getPaymentsAsObjects(projectId) {
         notes: r['Notes'] || '',
       };
     });
+}
+
+/**
+ * create_payment — เพิ่มงวดเบิกใน 04_Payments (ใช้กับงวดของสัญญางานเพิ่ม)
+ * Milestone ของสัญญาเพิ่มต้องมี prefix ชื่อสัญญา (ไม่ขึ้นต้นด้วย "งวด")
+ * เพื่อให้ getPaymentsAsObjects แยกกลุ่มจาก 4 งวดสัญญาหลัก
+ */
+function createPayment_(p) {
+  if (!p.milestone) throw new Error('milestone required');
+  if (p.amount === undefined) throw new Error('amount required');
+  const id = String(p.payment_id || '').trim() ||
+    generateId('PAY-', SHEET.PAYMENTS, 'Payment ID');
+  if (findRowByCol(SHEET.PAYMENTS, 'Payment ID', id)) {
+    throw new Error('Payment ID ซ้ำ: ' + id);
+  }
+  const row = {
+    'Payment ID':   id,
+    'Milestone':    String(p.milestone),
+    'Sub-Item':     p.sub || '',
+    'Zone':         p.zone || '',
+    '% of Total':   (p.pct !== undefined && p.pct !== '') ? Number(p.pct) : '',
+    'Amount (THB)': Number(p.amount || 0),
+    'Due Date':     p.due_date || '',
+    'Status':       p.status || 'Pending',
+    'Paid Date':    p.paid_date || '',
+    'Receipt No.':  p.receipt || '',
+    'Notes':        p.notes || ''
+  };
+  appendRow(SHEET.PAYMENTS, row);
+  autoLog_('🧾 เพิ่มงวดเบิก: ' + row['Milestone'] +
+    ' (' + Number(row['Amount (THB)']).toLocaleString() + ' บาท)',
+    { meta: { kind: 'payment', payment_id: id } });
+  return { ok: true, payment_id: id };
+}
+
+/**
+ * _task_weights_backfill — ใส่ weight รายงาน task ทีเดียวทั้งตาราง
+ * p.weights = JSON object { taskId: weight } (string จาก GET หรือ object จาก POST)
+ * idempotent: รันซ้ำได้ — task ที่ไม่อยู่ใน map คงค่าเดิม
+ */
+function taskWeightsBackfill_(p) {
+  let weights = p && p.weights;
+  if (typeof weights === 'string') {
+    try { weights = JSON.parse(weights); } catch (e) {
+      throw new Error('weights ต้องเป็น JSON object {taskId: weight}');
+    }
+  }
+  if (!weights || typeof weights !== 'object') throw new Error('weights required');
+
+  ensureColumn_(SHEET.TASKS, 'Weight');
+  const sh = getSheet(SHEET.TASKS);
+  const data = sh.getDataRange().getValues();
+  const headers = data[0];
+  const idIdx = headers.indexOf('Task ID');
+  const wIdx = headers.indexOf('Weight');
+  if (idIdx === -1 || wIdx === -1) throw new Error('Task ID/Weight column not found');
+
+  let updated = 0;
+  const col = [];
+  for (let i = 1; i < data.length; i++) {
+    const tid = String(data[i][idIdx] || '');
+    let v = data[i][wIdx];
+    if (weights[tid] !== undefined) { v = Number(weights[tid]) || 1; updated++; }
+    col.push([(v === undefined || v === null) ? '' : v]);
+  }
+  if (col.length) sh.getRange(2, wIdx + 1, col.length, 1).setValues(col);
+  return { ok: true, updated: updated, rows: col.length };
 }
 
 function getRisksAsObjects(projectId) {

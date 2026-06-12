@@ -77,6 +77,37 @@ function getProjects_() {
 }
 
 /**
+ * update_project — แก้ meta โครงการใน 00_Projects (total_value/end_date/status ฯลฯ)
+ * แก้เฉพาะ field ที่ส่งมา — field อื่นคงเดิม · ห้ามแก้ project_id
+ */
+function updateProject_(p) {
+  p = p || {};
+  if (!p.project_id) throw new Error('project_id required');
+  const sh = getOrCreateProjectsSheet_();
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) throw new Error('ไม่มีโครงการในระบบ');
+
+  const ids = sh.getRange(2, 1, lastRow - 1, 1).getValues();
+  let rowIdx = -1;
+  for (let i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]).trim() === String(p.project_id).trim()) { rowIdx = i + 2; break; }
+  }
+  if (rowIdx === -1) throw new Error('ไม่พบโครงการ: ' + p.project_id);
+
+  const editable = ['name', 'client', 'quote_no', 'start_date', 'end_date',
+                    'total_days', 'total_value', 'contractor', 'status'];
+  let updated = 0;
+  editable.forEach(function(f) {
+    if (p[f] === undefined) return;
+    const colIdx = PROJECTS_HEADERS_.indexOf(f);
+    if (colIdx === -1) return;
+    sh.getRange(rowIdx, colIdx + 1).setValue(p[f]);
+    updated++;
+  });
+  return { ok: true, project_id: p.project_id, updated: updated };
+}
+
+/**
  * สร้างโปรเจกต์ใหม่ — append row + auto-gen project_id
  * Return: { project_id, project } (raw) — handle() wrap เป็น {ok:true, data:{...}} เอง
  * Throw ถ้า invalid — handle() จับเป็น {ok:false, error}

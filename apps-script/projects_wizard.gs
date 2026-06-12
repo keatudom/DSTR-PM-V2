@@ -185,6 +185,9 @@ function createTask_(p) {
   const phaseNum = parseInt(p.phase, 10);
   const phaseStr = (phaseNum >= 1 && phaseNum <= 4) ? ('งวด ' + phaseNum) : '';
 
+  // weight = น้ำหนักความเหนื่อย (ใช้คำนวณ % คืบหน้า) — ต้องมี column ก่อน append
+  ensureColumn_(SHEET.TASKS, 'Weight');
+
   const id = generateId('T', SHEET.TASKS, 'Task ID');
   const row = {
     'Task ID':    id,
@@ -198,6 +201,7 @@ function createTask_(p) {
     'Done Date':  '',
     'Person In Charge': '',
     'Notes':      '',
+    'Weight':     Number(p.weight) || 1,
   };
   appendRow(SHEET.TASKS, row);  // Phase B-4 auto-stamps project_id
   return row;
@@ -242,7 +246,8 @@ function createFFBatch_(p) {
               ff_code: ffCode,
               zone: zone,
               phase: t.phase,
-              name: t.name
+              name: t.name,
+              weight: t.weight
             });
             taskCountThisFF++;
             tasksCreated++;

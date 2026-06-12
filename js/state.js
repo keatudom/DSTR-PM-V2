@@ -101,19 +101,24 @@ function buildWeights() {
     // FF Weight = ราคา / ราคารวม
     const ffWeight = (ff.price || 0) / totalValue;
 
-    // Phase Weight = task ใน phase / task ทั้งหมดของ FF (task_count mode)
+    // Phase Weight = ผลรวม "weight ความเหนื่อย" รายงาน task ใน phase / weight รวมของ FF
+    // (เดิมนับจำนวน task → งานจุกจิกที่มี task เยอะกินน้ำหนักเกินจริง
+    //  ตอนนี้ task มีคอลัมน์ Weight 1-5: โครง/ลามิเนต/พ่นสี=หนัก · คิ้ว/ฟิตติ้ง/เก็บงาน=เบา
+    //  task เก่าที่ไม่มีค่า = 1 → เท่ากับพฤติกรรมนับจำนวนเดิม)
     const ffTasks = tasks.filter(t => t.ffCode === ff.code);
     const totalTaskCount = ffTasks.length;
+    const tw = t => Number(t.weight) || 1;
+    const totalWeight = ffTasks.reduce((s, t) => s + tw(t), 0);
 
     const phaseWeights = { p1: 0, p2: 0, p3: 0, p4: 0 };
-    if (totalTaskCount > 0) {
+    if (totalWeight > 0) {
       ['p1','p2','p3','p4'].forEach(p => {
-        const count = ffTasks.filter(t => t.phase === p).length;
-        phaseWeights[p] = count / totalTaskCount;
+        const wsum = ffTasks.filter(t => t.phase === p).reduce((s, t) => s + tw(t), 0);
+        phaseWeights[p] = wsum / totalWeight;
       });
     }
 
-    state.weights[ff.code] = { ffWeight, phaseWeights, totalTasks: totalTaskCount };
+    state.weights[ff.code] = { ffWeight, phaseWeights, totalTasks: totalTaskCount, totalWeight };
   });
 }
 
@@ -126,12 +131,14 @@ function calcFFProgressWeighted(ffCode) {
   if (ffTasks.length === 0) return { pct: 0, done: 0, total: 0 };
 
   let weightedSum = 0;
+  const tw = t => Number(t.weight) || 1;
   ['p1','p2','p3','p4'].forEach(p => {
     const phaseTasks = ffTasks.filter(t => t.phase === p);
     if (phaseTasks.length === 0) return;
-    const done = phaseTasks.filter(t => t.status === 'Done').length;
-    const phaseProgress = done / phaseTasks.length;
-    weightedSum += w.phaseWeights[p] * phaseProgress;
+    const phaseTotal = phaseTasks.reduce((s, t) => s + tw(t), 0);
+    if (phaseTotal === 0) return;
+    const doneW = phaseTasks.filter(t => t.status === 'Done').reduce((s, t) => s + tw(t), 0);
+    weightedSum += w.phaseWeights[p] * (doneW / phaseTotal);
   });
 
   const done = ffTasks.filter(t => t.status === 'Done').length;

@@ -852,6 +852,7 @@
         <button class="zt" onclick="setZone('Zone 2',this)">Zone 2</button>
         <button class="zt" onclick="setZone('Zone 3',this)">Zone 3</button>
         <button class="zt" onclick="setZone('Zone 4',this)">Zone 4</button>
+        <button class="zt" onclick="setZone('Zone 5',this)">Zone 5 · ชั้น 2</button>
       </div>
       <div class="sort-row" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
         <span style="font-size:10px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">เรียงตาม:</span>
@@ -866,6 +867,11 @@
     <div class="card">
       <div class="card-title">💰 สรุปงวดงานและการเบิก</div>
       <div class="ngwd-grid" id="ngwdGrid"></div>
+      <!-- งวดเบิกของสัญญางานเพิ่ม (แยกจาก 4 งวดสัญญาหลัก) -->
+      <div id="ngwdExtraWrap" style="display:none">
+        <div style="font-size:12px;font-weight:700;color:#92400E;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:6px 12px;margin:14px 0 10px">🆕 งวดเบิกสัญญางานเพิ่ม — เบิกแยกจากสัญญาหลัก</div>
+        <div class="ngwd-grid" id="ngwdGridExtra"></div>
+      </div>
     </div>
 
     <!-- 💰 Phase F — Client Finance (สัญญาเจ้าบ้าน / เงินเข้า) -->
@@ -2074,23 +2080,74 @@ function renderNgwdGrid() {
     </div>`;
   });
   document.getElementById('ngwdGrid').innerHTML = html;
+
+  // ── งวดเบิกของสัญญางานเพิ่ม ──
+  // milestone ที่ไม่ใช่ "งวด 1..4" เป๊ะๆ = งวดของสัญญาเพิ่ม (เช่น "ตู้ใหม่ F-21/22 · งวด 1 - มัดจำ")
+  // backend คง key เต็มไว้ → จัดกลุ่มแยก ไม่ปนกับ 4 งวดสัญญาหลัก
+  const mainKeys = milestones.map(m => m.key);
+  const extraKeys = [];
+  state.data.payments.forEach(p => {
+    if (mainKeys.indexOf(p.milestone) === -1 && extraKeys.indexOf(p.milestone) === -1) {
+      extraKeys.push(p.milestone);
+    }
+  });
+
+  let extraHtml = '';
+  extraKeys.forEach(key => {
+    const items = state.data.payments.filter(p => p.milestone === key);
+    const total = items.reduce((s,i) => s+i.amount, 0);
+    const allPaid = items.length > 0 && items.every(i => i.status === 'Paid');
+    const readyCount = items.filter(i => i.status !== 'Paid' && i.status !== 'Invoiced' && isPaymentReady(i, key)).length;
+    const anyInvoiced = items.some(i => i.status === 'Invoiced');
+
+    let statusClass = 's-pending', statusText = 'รอดำเนินการ';
+    if (allPaid) { statusClass = 's-paid'; statusText = 'ชำระแล้ว ✓'; }
+    else if (anyInvoiced) { statusClass = 's-active'; statusText = 'รอชำระ'; }
+    else if (readyCount > 0) { statusClass = 's-active'; statusText = `พร้อมเบิก ${readyCount} รายการ`; }
+
+    // key = "<ชื่อสัญญา> · งวด N - <ชื่องวด>" → บรรทัดบน/ล่าง + สีตามเลขงวด
+    const parts = key.split(' - ');
+    const label = parts[0];
+    const subName = parts.slice(1).join(' - ');
+    const numMatch = key.match(/งวด\s*(\d)/);
+    const color = numMatch ? (CONFIG.PHASE_COLORS['p' + numMatch[1]] || '#1F3864') : '#1F3864';
+    const pctTxt = (items[0] && items[0].pct !== '' && items[0].pct !== undefined) ? items[0].pct + '%' : '';
+    const hasReady = readyCount > 0 && !allPaid;
+    const safeKey = key.replace(/'/g, "\\'");
+
+    extraHtml += `<div class="ngwd-c${hasReady?' has-ready':''}" onclick="showPaymentModal('${safeKey}')">
+      <div class="ngwd-t">${label}</div>
+      <div class="ngwd-a" style="color:${color}">${fmt(total)} ฿</div>
+      <div class="ngwd-p">${pctTxt}${pctTxt && subName ? ' · ' : ''}${subName}</div>
+      <span class="ngwd-s ${statusClass}">${statusText}</span>
+      <div class="ngwd-tap-hint">👆 กดเพื่อจัดการ</div>
+    </div>`;
+  });
+
+  const extraWrap = document.getElementById('ngwdExtraWrap');
+  if (extraWrap) {
+    extraWrap.style.display = extraKeys.length ? '' : 'none';
+    document.getElementById('ngwdGridExtra').innerHTML = extraHtml;
+  }
 }
 
 function isPaymentReady(payment, milestoneKey) {
   if (payment.status === 'Paid' || payment.status === 'Invoiced') return false;
-  if (milestoneKey === 'งวด 1') return false;
+  const numMatch = String(milestoneKey).match(/งวด\s*(\d)/);
+  const num = numMatch ? Number(numMatch[1]) : 0;
+  if (num === 1) return false;
 
-  const ffMatch = (payment.sub || '').match(/F-\d+/g) || [];
+  const ffMatch = (payment.sub || '').match(/F[A-Z]?-\d+/g) || [];
   if (ffMatch.length === 0) {
-    if (milestoneKey === 'งวด 4') {
+    if (num === 4) {
       const allTasks = state.data.tasks;
       return allTasks.length > 0 && allTasks.every(t => t.status === 'Done');
     }
     return false;
   }
   let upToPhase = 'p2';
-  if (milestoneKey === 'งวด 3') upToPhase = 'p3';
-  else if (milestoneKey === 'งวด 4') upToPhase = 'p4';
+  if (/ส่งมอบ/.test(String(milestoneKey)) || num === 4) upToPhase = 'p4';
+  else if (num === 3) upToPhase = 'p3';
   const phaseOrder = ['p1','p2','p3','p4'];
   const upToIdx = phaseOrder.indexOf(upToPhase);
   const requiredPhases = phaseOrder.slice(0, upToIdx + 1);
@@ -2104,13 +2161,17 @@ function isPaymentReady(payment, milestoneKey) {
 }
 
 function getPaymentProgress(payment, milestoneKey) {
-  if (milestoneKey === 'งวด 1') {
+  // อ่านเลขงวดจาก key (รองรับงวดสัญญาเพิ่ม เช่น "ตู้ใหม่ F-21/22 · งวด 2 - วัสดุ+โครง")
+  const numMatch = String(milestoneKey).match(/งวด\s*(\d)/);
+  const num = numMatch ? Number(numMatch[1]) : 0;
+  if (num === 1) {
     return { done: payment.status === 'Paid' ? 1 : 0, total: 1, pct: payment.status === 'Paid' ? 100 : 0 };
   }
-  const ffMatch = (payment.sub || '').match(/F-\d+/g) || [];
+  // รหัส FA-xx = ชิ้นงานปรับเพิ่ม/ลด (แยกจาก F-xx เดิม)
+  const ffMatch = (payment.sub || '').match(/F[A-Z]?-\d+/g) || [];
   let upToPhase = 'p2';
-  if (milestoneKey === 'งวด 3') upToPhase = 'p3';
-  else if (milestoneKey === 'งวด 4') upToPhase = 'p4';
+  if (/ส่งมอบ/.test(String(milestoneKey)) || num === 4) upToPhase = 'p4';
+  else if (num === 3) upToPhase = 'p3';
   const phaseOrder = ['p1','p2','p3','p4'];
   const upToIdx = phaseOrder.indexOf(upToPhase);
   const requiredPhases = phaseOrder.slice(0, upToIdx + 1);
