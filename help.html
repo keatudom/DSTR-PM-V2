@@ -34,11 +34,15 @@
 .hp-b-play { background:#1F3864; color:#fff; }
 .hp-b-soon { background:#F3F4F6; color:#9CA3AF; }
 
-.hp-ov { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:80; display:none; align-items:center; justify-content:center; flex-direction:column; padding:16px; }
+.hp-ov { position:fixed; inset:0; background:rgba(0,0,0,.9); z-index:80; display:none; align-items:center; justify-content:center; flex-direction:column; box-sizing:border-box;
+  padding: max(54px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom)); }
 .hp-ov.show { display:flex; }
-.hp-ov video { width:100%; max-width:430px; border-radius:12px; background:#000; }
-.hp-ov-t { color:#fff; font-size:14px; font-weight:600; margin-bottom:10px; text-align:center; }
-.hp-ov-x { color:#fff; background:rgba(255,255,255,.18); border:none; border-radius:99px; padding:10px 22px; font-size:14px; font-weight:600; font-family:inherit; margin-top:14px; cursor:pointer; }
+/* ล็อกความสูงวิดีโอให้พอดีจอ — เหลือที่ให้ปุ่มปิดเสมอ (รองรับ dvh กันแถบ browser มือถือ) */
+.hp-ov video { max-width:92vw; max-height:66vh; max-height:66dvh; width:auto; height:auto; border-radius:12px; background:#000; }
+.hp-ov-t { color:#fff; font-size:14px; font-weight:600; margin-bottom:10px; text-align:center; padding:0 44px; }
+.hp-ov-top { position:fixed; top:max(10px,env(safe-area-inset-top)); right:12px; width:44px; height:44px; border-radius:50%;
+  background:rgba(255,255,255,.22); color:#fff; border:none; font-size:19px; cursor:pointer; z-index:81; display:flex; align-items:center; justify-content:center; }
+.hp-ov-x { color:#fff; background:rgba(255,255,255,.2); border:none; border-radius:99px; padding:13px 32px; font-size:15px; font-weight:700; font-family:inherit; margin-top:16px; cursor:pointer; min-height:50px; }
 
 .bnav { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #E5E7EB; padding:6px 4px 8px; display:flex; justify-content:space-around; z-index:48; max-width:480px; margin:0 auto; }
 .bnav-i { display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 12px; color:#9CA3AF; cursor:pointer; min-width:54px; text-decoration:none; }
@@ -64,10 +68,11 @@
   </div>
 </div>
 
-<div class="hp-ov" id="hpOv">
+<div class="hp-ov" id="hpOv" onclick="ovBackdrop(event)">
+  <button class="hp-ov-top" onclick="closeVid()" aria-label="ปิด">✕</button>
   <div class="hp-ov-t" id="hpOvT"></div>
   <video id="hpVid" controls playsinline></video>
-  <button class="hp-ov-x" onclick="closeVid()">ปิด</button>
+  <button class="hp-ov-x" onclick="closeVid()">ปิดวิดีโอ</button>
 </div>
 
 <script src="js/config.js"></script>
@@ -142,6 +147,10 @@ function closeVid() {
   var v = document.getElementById('hpVid');
   v.pause(); v.removeAttribute('src'); v.load();
   document.getElementById('hpOv').classList.remove('show');
+}
+// แตะพื้นดำ (นอกตัววิดีโอ) = ปิด
+function ovBackdrop(e) {
+  if (e.target === document.getElementById('hpOv')) closeVid();
 }
 
 render();
