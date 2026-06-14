@@ -1,0 +1,13 @@
+.playwright-mcp/
+*.png
+!icons/*.png
+tutorial_sample.gif
+tutorial_preview.png
+PROD-*.png
+mockup-*.png
+live-*.png
+slice*-*.png
+*-ecosystem-map.png
+inarch-home.png
+workflow-render.png
+_*.py

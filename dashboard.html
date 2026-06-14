@@ -6,6 +6,11 @@
 <title>Kun Beau House · Admin Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/main.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F3864">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="DSTR">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <style>
 /* Dashboard-specific styles */
 .app { padding-bottom: 80px; } /* space for bottom nav */
@@ -782,6 +787,12 @@
 
     <!-- 🆕 QUICK HUB: เข้าหน้าใหม่ๆ -->
     <div class="hub-grid">
+      <div class="hub-card" onclick="window.location.href='checkin.html?project=bow-house'" style="border-color:#1F3864;background:#F8FAFF">
+        <div class="hub-card-icon">⏰</div>
+        <div class="hub-card-title">ลงเวลาหน้างาน</div>
+        <div class="hub-card-sub">เช็คอิน · ใบลงเวลา</div>
+        <div class="hub-card-arrow">→</div>
+      </div>
       <div class="hub-card" onclick="window.location.href='materials.html?project=bow-house'">
         <div class="hub-card-icon">📦</div>
         <div class="hub-card-title">Materials</div>
@@ -985,6 +996,7 @@
 <script src="js/api.js"></script>
 <script src="js/state.js"></script>
 <script src="js/modal.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}</script>
 <script>
 // ตรวจสอบสิทธิ์ Admin
 if (!Auth.requireAuth('admin')) {

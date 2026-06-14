@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ลงเวลาหน้างาน · DSTR</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F3864">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DSTR">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+.app { padding-bottom: 80px; max-width: 480px; margin: 0 auto; }
+.ci-hdr { background:#1F3864; color:#fff; padding:16px 16px 18px; border-radius:0 0 18px 18px; }
+.ci-hdr-h { font-size:18px; font-weight:700; display:flex; align-items:center; gap:7px; }
+.ci-hdr-date { font-size:12.5px; opacity:.85; margin-top:3px; }
+.ci-who { margin-top:11px; background:rgba(255,255,255,.12); border-radius:11px; padding:9px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.ci-who-n { font-size:13.5px; font-weight:600; }
+.ci-who-r { font-size:11px; opacity:.8; }
+.ci-who-ch { font-size:11px; color:#fff; background:rgba(255,255,255,.18); border:none; border-radius:99px; padding:5px 11px; font-family:inherit; cursor:pointer; }
+.ci-body { padding:14px; }
+
+/* แถบ 3 รอบวันนี้ */
+.ci-windows { display:flex; gap:8px; margin-bottom:14px; }
+.ci-win { flex:1; background:#fff; border:1.5px solid #E5E7EB; border-radius:13px; padding:10px 6px; text-align:center; }
+.ci-win.done { border-color:#1D9E75; background:#F0FDF8; }
+.ci-win.late { border-color:#E0A828; background:#FFFBEB; }
+.ci-win-ic { font-size:19px; }
+.ci-win-lb { font-size:11.5px; font-weight:600; color:#4B5563; margin-top:2px; }
+.ci-win-st { font-size:10.5px; margin-top:3px; font-weight:600; }
+.ci-win.done .ci-win-st { color:#0d6e4f; }
+.ci-win.late .ci-win-st { color:#92400E; }
+.ci-win .ci-win-st.wait { color:#9CA3AF; }
+.ci-win-time { font-size:9px; color:#9CA3AF; }
+
+.ci-bigbtn { width:100%; min-height:60px; background:#1F3864; color:#fff; border:none; border-radius:15px; font-size:18px; font-weight:700; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px; box-shadow:0 4px 14px rgba(31,56,100,.28); }
+.ci-bigbtn:active { transform:scale(.99); }
+.ci-bigbtn[disabled] { opacity:.5; }
+
+/* ฟอร์มเช็คอิน */
+.ci-form { background:#fff; border:1px solid #E5E7EB; border-radius:15px; padding:15px; margin-top:14px; display:none; }
+.ci-form.show { display:block; animation:ciSlide .18s ease; }
+@keyframes ciSlide { from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:none;} }
+.ci-gps { border-radius:11px; padding:10px 12px; font-size:12.5px; font-weight:600; margin-bottom:13px; display:flex; align-items:center; gap:8px; }
+.ci-gps.searching { background:#EFF6FF; color:#1E40AF; }
+.ci-gps.near { background:#F0FDF8; color:#0d6e4f; }
+.ci-gps.far { background:#FFF7ED; color:#9A3412; }
+.ci-gps.err { background:#FEF2F2; color:#991B1B; }
+.ci-lbl { font-size:12px; font-weight:600; color:#374151; margin:12px 0 6px; display:block; }
+.ci-seg { display:flex; gap:8px; }
+.ci-seg-b { flex:1; min-height:46px; border:1.5px solid #D1D5DB; background:#fff; border-radius:11px; font-size:13px; font-weight:600; color:#4B5563; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; }
+.ci-seg-b.on { border-color:#1F3864; background:#EEF2FF; color:#1F3864; }
+.ci-sel, .ci-inp, .ci-ta { width:100%; box-sizing:border-box; border:1.5px solid #D1D5DB; border-radius:10px; padding:11px; font-size:14px; font-family:inherit; }
+.ci-ta { min-height:54px; resize:vertical; }
+.ci-photo-row { display:flex; align-items:center; gap:10px; margin-top:6px; }
+.ci-photo-btn { font-size:12.5px; font-weight:600; color:#1F3864; background:#EEF2FF; border:1px solid #C7D2FE; border-radius:9px; padding:9px 13px; cursor:pointer; }
+.ci-photo-thumb { width:44px; height:44px; border-radius:8px; object-fit:cover; border:1px solid #E5E7EB; }
+.ci-actions { display:flex; gap:9px; margin-top:16px; }
+.ci-submit { flex:1; min-height:50px; background:#1D9E75; color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; font-family:inherit; cursor:pointer; }
+.ci-submit[disabled] { opacity:.5; }
+.ci-cancel { min-height:50px; background:#F3F4F6; color:#6B7280; border:none; border-radius:12px; font-size:14px; font-weight:600; font-family:inherit; padding:0 18px; cursor:pointer; }
+
+/* การ์ด section */
+.ci-card { background:#fff; border:1px solid #E5E7EB; border-radius:15px; padding:14px; margin-top:16px; }
+.ci-card-h { font-size:14px; font-weight:700; color:#1F2937; display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+.ci-print { font-size:11.5px; font-weight:600; color:#1F3864; background:#EEF2FF; border:1px solid #C7D2FE; border-radius:8px; padding:6px 11px; cursor:pointer; font-family:inherit; }
+
+/* ใบลงเวลา */
+.ts-day { border:1px solid #EEF0F3; border-radius:11px; padding:9px 11px; margin-bottom:8px; }
+.ts-day-h { display:flex; align-items:center; justify-content:space-between; font-size:12.5px; font-weight:700; color:#374151; }
+.ts-day-dots { display:flex; gap:5px; }
+.ts-dot { width:9px; height:9px; border-radius:50%; background:#E5E7EB; }
+.ts-dot.done { background:#1D9E75; } .ts-dot.late { background:#E0A828; }
+.ts-entry { font-size:11.5px; color:#4B5563; padding:5px 0 0; display:flex; gap:7px; }
+.ts-entry-t { font-weight:700; color:#1F3864; min-width:38px; }
+.ts-badge { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:99px; }
+.ts-b-on { background:#D1FAE5; color:#065F46; } .ts-b-off { background:#FEF3C7; color:#92400E; } .ts-b-flag { background:#FEE2E2; color:#991B1B; }
+.ts-empty { font-size:12.5px; color:#9CA3AF; text-align:center; padding:14px; }
+
+.ci-site-row { display:flex; gap:8px; align-items:flex-end; }
+.ci-mini { font-size:11px; color:#6B7280; margin-top:7px; }
+
+/* bottom nav */
+.bnav { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #E5E7EB; padding:6px 4px 8px; display:flex; justify-content:space-around; z-index:48; max-width:480px; margin:0 auto; }
+.bnav-i { display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 12px; color:#9CA3AF; cursor:pointer; min-width:54px; text-decoration:none; }
+.bnav-i.on { color:#1F3864; }
+.bnav-ic { font-size:18px; } .bnav-lb { font-size:9px; font-weight:500; }
+
+@media print {
+  .ci-hdr, .ci-windows, .ci-bigbtn, .ci-form, .bnav, .ci-print, #ciSiteCard, #ciNamePrompt { display:none !important; }
+  .app { padding:0; } .ci-card { border:none; box-shadow:none; }
+  #ciPrintHead { display:block !important; }
+}
+#ciPrintHead { display:none; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- หน้า prompt ใส่ชื่อ (กรณี login แบบไม่รู้ตัวตน) -->
+  <div id="ciNamePrompt" style="display:none; padding:40px 20px; text-align:center;">
+    <div style="font-size:38px;">⏰</div>
+    <div style="font-size:17px; font-weight:700; color:#1F2937; margin:10px 0 4px;">คุณคือใคร?</div>
+    <div style="font-size:13px; color:#6B7280; margin-bottom:16px;">ใส่ชื่อเพื่อลงเวลาให้ถูกคน (จำไว้ในเครื่องนี้)</div>
+    <input id="ciNameInput" class="ci-inp" placeholder="เช่น สมชาย (Site Engineer)" style="max-width:300px; margin:0 auto 12px;">
+    <div><button class="ci-submit" style="max-width:300px; margin:0 auto;" onclick="saveIdentity()">บันทึก</button></div>
+  </div>
+
+  <div id="ciMain" style="display:none;">
+    <div class="ci-hdr">
+      <div class="ci-hdr-h">⏰ ลงเวลาหน้างาน</div>
+      <div class="ci-hdr-date" id="ciDate">—</div>
+      <div class="ci-who">
+        <div>
+          <div class="ci-who-n" id="ciWhoName">—</div>
+          <div class="ci-who-r" id="ciWhoRole"></div>
+        </div>
+        <button class="ci-who-ch" onclick="changeIdentity()">เปลี่ยนคน</button>
+      </div>
+    </div>
+
+    <div class="ci-body">
+      <!-- 3 รอบวันนี้ -->
+      <div class="ci-windows" id="ciWindows"></div>
+
+      <!-- ปุ่มเช็คอินใหญ่ -->
+      <button class="ci-bigbtn" id="ciBigBtn" onclick="openCheckin()">📍 เช็คอินตอนนี้</button>
+
+      <!-- ฟอร์มเช็คอิน -->
+      <div class="ci-form" id="ciForm">
+        <div class="ci-gps searching" id="ciGps">📡 กำลังหาตำแหน่ง...</div>
+
+        <label class="ci-lbl">ตอนนี้อยู่ที่ไหน</label>
+        <div class="ci-seg">
+          <button class="ci-seg-b on" id="segOn" onclick="setLocType('onsite')">🏗️ อยู่ไซต์</button>
+          <button class="ci-seg-b" id="segOff" onclick="setLocType('offsite')">🚗 งานนอกไซต์</button>
+        </div>
+
+        <div id="ciReasonWrap" style="display:none;">
+          <label class="ci-lbl">เหตุผลที่อยู่นอกไซต์</label>
+          <select class="ci-sel" id="ciReason">
+            <option value="รับ/ซื้อวัสดุ">รับ/ซื้อวัสดุ</option>
+            <option value="พบเจ้าบ้าน">พบเจ้าบ้าน</option>
+            <option value="พบผู้รับเหมา/ซัพพลายเออร์">พบผู้รับเหมา/ซัพพลายเออร์</option>
+            <option value="เข้าออฟฟิศ/ทำเอกสาร">เข้าออฟฟิศ/ทำเอกสาร</option>
+            <option value="Work from home">Work from home</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+
+        <label class="ci-lbl">กำลังทำอะไร</label>
+        <input class="ci-inp" id="ciActivity" placeholder="เช่น ขึ้นโครง F-11 / เคลียร์แบบกับเจ้าบ้าน">
+
+        <label class="ci-lbl">โน้ตเพิ่มเติม (ไม่บังคับ)</label>
+        <textarea class="ci-ta" id="ciNote" placeholder="บันทึกถึงตัวเอง..."></textarea>
+
+        <label class="ci-lbl">รูป (ไม่บังคับ)</label>
+        <div class="ci-photo-row">
+          <label class="ci-photo-btn">📷 แนบรูป<input type="file" id="ciPhoto" accept="image/*" capture="environment" style="display:none" onchange="onPhoto(event)"></label>
+          <img id="ciPhotoThumb" class="ci-photo-thumb" style="display:none">
+          <span id="ciPhotoName" style="font-size:11.5px; color:#6B7280;"></span>
+        </div>
+
+        <div class="ci-actions">
+          <button class="ci-cancel" onclick="closeCheckin()">ยกเลิก</button>
+          <button class="ci-submit" id="ciSubmit" onclick="submitCheckin()">✓ ยืนยันเช็คอิน</button>
+        </div>
+      </div>
+
+      <!-- ใบลงเวลาของฉัน -->
+      <div class="ci-card">
+        <div id="ciPrintHead" style="margin-bottom:8px;">
+          <div style="font-size:16px; font-weight:700;">ใบลงเวลา — <span id="ciPrintName"></span></div>
+          <div style="font-size:12px; color:#555;" id="ciPrintRange"></div>
+        </div>
+        <div class="ci-card-h">
+          <span>🗓️ ใบลงเวลาของฉัน (สัปดาห์นี้)</span>
+          <button class="ci-print" onclick="window.print()">🖨️ พิมพ์/PDF</button>
+        </div>
+        <div id="ciTimesheet"><div class="ts-empty">กำลังโหลด...</div></div>
+      </div>
+
+      <!-- ตั้งพิกัดไซต์ (เฉพาะแอดมิน/หัวหน้า) -->
+      <div class="ci-card" id="ciSiteCard" style="display:none;">
+        <div class="ci-card-h"><span>📍 พิกัดไซต์ (ตั้งค่า)</span></div>
+        <div id="ciSiteStatus" class="ci-mini">—</div>
+        <div style="margin-top:10px;">
+          <button class="ci-photo-btn" style="width:100%; min-height:44px;" onclick="captureSite()">📍 ใช้ตำแหน่งปัจจุบันเป็นไซต์</button>
+        </div>
+        <div class="ci-site-row" style="margin-top:10px;">
+          <div style="flex:1;">
+            <label class="ci-lbl" style="margin-top:0;">รัศมี (เมตร)</label>
+            <input class="ci-inp" id="ciRadius" type="number" value="150">
+          </div>
+          <button class="ci-submit" style="flex:0 0 auto; padding:0 18px; min-height:46px;" onclick="saveSiteRadius()">บันทึก</button>
+        </div>
+        <div class="ci-mini">รัศมีเผื่อ GPS แกว่ง — ค่าแนะนำ 150 ม. · อยู่ในรัศมี = "อยู่ไซต์"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- bottom nav -->
+  <div class="bnav">
+    <a class="bnav-i" href="dashboard.html?project=bow-house"><div class="bnav-ic">🏠</div><div class="bnav-lb">Home</div></a>
+    <a class="bnav-i" href="materials.html?project=bow-house"><div class="bnav-ic">📦</div><div class="bnav-lb">Materials</div></a>
+    <a class="bnav-i on" href="#"><div class="bnav-ic">⏰</div><div class="bnav-lb">ลงเวลา</div></a>
+    <a class="bnav-i" href="daily.html?project=bow-house"><div class="bnav-ic">📝</div><div class="bnav-lb">Daily</div></a>
+    <a class="bnav-i" href="projects.html"><div class="bnav-ic">⋯</div><div class="bnav-lb">More</div></a>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/state.js"></script>
+<script src="js/modal.js"></script>
+<script>
+if (!Auth.requireAuth('admin')) { /* redirected */ }
+
+var ME = null;             // { name, staff_id, role }
+var SITE = null;           // { configured, site_lat, site_lng, radius_m }
+var GPS = null;            // { lat, lng, accuracy }
+var LOCTYPE = 'onsite';
+var PHOTO_DATA = null;
+var TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+function fmtDateTH(d) {
+  return d.getDate() + ' ' + TH_MONTHS[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+}
+function ymd(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function weekRange() {
+  var now = new Date();
+  var dow = (now.getDay() + 6) % 7; // จันทร์=0
+  var mon = new Date(now); mon.setDate(now.getDate() - dow);
+  var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return { from: ymd(mon), to: ymd(sun), fromD: mon, toD: sun };
+}
+
+// ── ตัวตน ──────────────────────────────────────────────
+function resolveIdentity() {
+  var u = (typeof Auth !== 'undefined' && Auth.getUser) ? Auth.getUser() : null;
+  if (u && u.name) return { name: u.name, staff_id: u.staff_id || '', role: u.role || '' };
+  try {
+    var s = JSON.parse(localStorage.getItem('dstr_checkin_identity') || 'null');
+    if (s && s.name) return s;
+  } catch (e) {}
+  return null;
+}
+function saveIdentity() {
+  var n = document.getElementById('ciNameInput').value.trim();
+  if (!n) { alert('ใส่ชื่อก่อนนะครับ'); return; }
+  ME = { name: n, staff_id: '', role: Auth.getRole() || '' };
+  localStorage.setItem('dstr_checkin_identity', JSON.stringify(ME));
+  boot();
+}
+function changeIdentity() {
+  localStorage.removeItem('dstr_checkin_identity');
+  document.getElementById('ciMain').style.display = 'none';
+  document.getElementById('ciNamePrompt').style.display = 'block';
+}
+
+// ── boot ───────────────────────────────────────────────
+function boot() {
+  ME = resolveIdentity();
+  if (!ME) {
+    document.getElementById('ciNamePrompt').style.display = 'block';
+    document.getElementById('ciMain').style.display = 'none';
+    return;
+  }
+  document.getElementById('ciNamePrompt').style.display = 'none';
+  document.getElementById('ciMain').style.display = 'block';
+  document.getElementById('ciDate').textContent = fmtDateTH(new Date());
+  document.getElementById('ciWhoName').textContent = ME.name;
+  document.getElementById('ciWhoRole').textContent = ME.role ? ('สิทธิ์: ' + ME.role) : '';
+  document.getElementById('ciPrintName').textContent = ME.name;
+  var wr = weekRange();
+  document.getElementById('ciPrintRange').textContent = 'สัปดาห์ ' + fmtDateTH(wr.fromD) + ' – ' + fmtDateTH(wr.toD);
+
+  // แอดมิน/เจ้าของ เห็นการตั้งพิกัดไซต์
+  var role = Auth.getRole();
+  if (!role || role === 'admin' || role === 'owner' || role === 'pm') {
+    document.getElementById('ciSiteCard').style.display = 'block';
+  }
+  loadSite();
+  loadToday();
+  loadTimesheet();
+}
+
+function loadSite() {
+  API.getSiteLocation().then(function (res) {
+    SITE = (res && res.data) ? res.data : { configured: false, radius_m: 150 };
+    var el = document.getElementById('ciSiteStatus');
+    if (el) {
+      el.textContent = SITE.configured
+        ? ('ตั้งไว้แล้ว: ' + SITE.site_lat.toFixed(5) + ', ' + SITE.site_lng.toFixed(5) + ' · รัศมี ' + SITE.radius_m + ' ม.')
+        : 'ยังไม่ได้ตั้งพิกัดไซต์ — เช็คอินจะบันทึกได้ แต่ยังไม่เทียบระยะ';
+    }
+    var r = document.getElementById('ciRadius');
+    if (r && SITE.radius_m) r.value = SITE.radius_m;
+  });
+}
+
+function loadToday() {
+  var today = ymd(new Date());
+  API.getCheckins({ staff_name: ME.name, date: today }).then(function (res) {
+    var list = (res && res.data) ? res.data : [];
+    renderWindows(list);
+  });
+}
+
+var WINDOWS = [
+  { key:'morning', label:'เช้า', ic:'🌅', time:'8:00-8:30' },
+  { key:'noon', label:'กลางวัน', ic:'☀️', time:'13:00-13:30' },
+  { key:'evening', label:'เย็น', ic:'🌆', time:'17:00-17:30' }
+];
+function renderWindows(todayList) {
+  var html = '';
+  WINDOWS.forEach(function (w) {
+    var e = todayList.filter(function (x) { return x.period === w.key; })[0];
+    var cls = 'ci-win', st = '<span class="ci-win-st wait">ยังไม่เช็คอิน</span>';
+    if (e) {
+      if (e.on_time) { cls += ' done'; st = '<span class="ci-win-st">✓ ' + e.time + '</span>'; }
+      else { cls += ' late'; st = '<span class="ci-win-st">' + e.time + ' (นอกช่วง)</span>'; }
+    }
+    html += '<div class="'+cls+'"><div class="ci-win-ic">'+w.ic+'</div><div class="ci-win-lb">'+w.label+'</div>'+st+'<div class="ci-win-time">'+w.time+'</div></div>';
+  });
+  document.getElementById('ciWindows').innerHTML = html;
+}
+
+// ── เช็คอิน ─────────────────────────────────────────────
+function openCheckin() {
+  document.getElementById('ciForm').classList.add('show');
+  document.getElementById('ciBigBtn').style.display = 'none';
+  setLocType('onsite');
+  PHOTO_DATA = null;
+  document.getElementById('ciActivity').value = '';
+  document.getElementById('ciNote').value = '';
+  document.getElementById('ciPhotoThumb').style.display = 'none';
+  document.getElementById('ciPhotoName').textContent = '';
+  getGps();
+}
+function closeCheckin() {
+  document.getElementById('ciForm').classList.remove('show');
+  document.getElementById('ciBigBtn').style.display = 'flex';
+}
+function setLocType(t) {
+  LOCTYPE = t;
+  document.getElementById('segOn').classList.toggle('on', t === 'onsite');
+  document.getElementById('segOff').classList.toggle('on', t === 'offsite');
+  document.getElementById('ciReasonWrap').style.display = (t === 'offsite') ? 'block' : 'none';
+}
+function getGps() {
+  var el = document.getElementById('ciGps');
+  el.className = 'ci-gps searching'; el.textContent = '📡 กำลังหาตำแหน่ง...';
+  GPS = null;
+  if (!navigator.geolocation) { el.className='ci-gps err'; el.textContent='เครื่องนี้ไม่รองรับ GPS — เช็คอินได้ แต่ไม่มีพิกัด'; return; }
+  navigator.geolocation.getCurrentPosition(function (pos) {
+    GPS = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: Math.round(pos.coords.accuracy) };
+    showGpsStatus();
+  }, function (err) {
+    el.className = 'ci-gps err';
+    el.innerHTML = '⚠️ หาตำแหน่งไม่ได้ ('+ (err.code===1?'ไม่อนุญาต':'หมดเวลา') +') — เช็คอินได้ แต่ไม่มีพิกัด <b onclick="getGps()" style="text-decoration:underline;cursor:pointer">ลองใหม่</b>';
+  }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+}
+function haversine(la1,lo1,la2,lo2){var R=6371000,r=function(d){return d*Math.PI/180;};var dla=r(la2-la1),dlo=r(lo2-lo1);var a=Math.sin(dla/2)*Math.sin(dla/2)+Math.cos(r(la1))*Math.cos(r(la2))*Math.sin(dlo/2)*Math.sin(dlo/2);return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));}
+function showGpsStatus() {
+  var el = document.getElementById('ciGps');
+  if (!GPS) return;
+  if (SITE && SITE.configured) {
+    var d = haversine(GPS.lat, GPS.lng, SITE.site_lat, SITE.site_lng);
+    var dTxt = d >= 1000 ? (d/1000).toFixed(1)+' กม.' : d+' ม.';
+    if (d <= SITE.radius_m) {
+      el.className = 'ci-gps near'; el.textContent = '✅ อยู่ในไซต์ (ห่าง ~'+dTxt+')';
+    } else {
+      el.className = 'ci-gps far'; el.innerHTML = '📍 นอกไซต์ (ห่าง ~'+dTxt+') — ถ้าเป็นงานนอกไซต์ เลือก "🚗 งานนอกไซต์" ด้วยนะ';
+    }
+  } else {
+    el.className = 'ci-gps near'; el.textContent = '✅ ได้ตำแหน่งแล้ว (ความแม่น ~'+GPS.accuracy+' ม.)';
+  }
+}
+function onPhoto(ev) {
+  var f = ev.target.files[0];
+  if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function (e) {
+    PHOTO_DATA = e.target.result;
+    var t = document.getElementById('ciPhotoThumb');
+    t.src = PHOTO_DATA; t.style.display = 'block';
+    document.getElementById('ciPhotoName').textContent = 'แนบรูปแล้ว';
+  };
+  rd.readAsDataURL(f);
+}
+function submitCheckin() {
+  var btn = document.getElementById('ciSubmit');
+  var activity = document.getElementById('ciActivity').value.trim();
+  if (LOCTYPE === 'onsite' && !activity) { alert('ใส่ว่ากำลังทำอะไรอยู่ก่อนนะครับ'); return; }
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+
+  function doCreate(photoUrl) {
+    var data = {
+      staff_name: ME.name, staff_id: ME.staff_id || '', role: ME.role || '',
+      location_type: LOCTYPE,
+      off_site_reason: LOCTYPE === 'offsite' ? document.getElementById('ciReason').value : '',
+      activity: activity,
+      ff_code: (activity.match(/F[A-Z]?-\d+/) || [''])[0],
+      note: document.getElementById('ciNote').value.trim(),
+      photo_url: photoUrl || ''
+    };
+    if (GPS) { data.lat = GPS.lat; data.lng = GPS.lng; }
+    API.createCheckin(data).then(function (res) {
+      var r = (res && res.data) ? res.data : res;
+      if (r && r.ok) {
+        var msg = '✓ เช็คอินแล้ว ' + (r.classified ? r.classified.label : '') + ' ' + (r.checkin ? r.checkin.time : '');
+        if (r.flagged) msg += '\n🚩 หมายเหตุ: แจ้งอยู่ไซต์ แต่ GPS ห่าง ' + r.distance_m + ' ม.';
+        if (typeof Modal !== 'undefined' && Modal.toast) Modal.toast(msg); else alert(msg);
+        closeCheckin(); loadToday(); loadTimesheet();
+      } else {
+        alert('บันทึกไม่สำเร็จ: ' + ((r && r.error) || 'ลองใหม่'));
+      }
+      btn.disabled = false; btn.textContent = '✓ ยืนยันเช็คอิน';
+    });
+  }
+
+  if (PHOTO_DATA) {
+    API.uploadLogPhoto(PHOTO_DATA).then(function (up) {
+      doCreate((up && (up.photo_url || up.url)) || '');
+    }).catch(function () { doCreate(''); });
+  } else {
+    doCreate('');
+  }
+}
+
+// ── ใบลงเวลา ────────────────────────────────────────────
+function loadTimesheet() {
+  var wr = weekRange();
+  API.getTimesheet({ from: wr.from, to: wr.to, staff_name: ME.name }).then(function (res) {
+    var d = (res && res.data) ? res.data : null;
+    var s = (d && d.staff && d.staff[0]) ? d.staff[0] : null;
+    renderTimesheet(s);
+  });
+}
+function renderTimesheet(staff) {
+  var el = document.getElementById('ciTimesheet');
+  if (!staff || !staff.days || !staff.days.length) {
+    el.innerHTML = '<div class="ts-empty">ยังไม่มีการเช็คอินในสัปดาห์นี้</div>'; return;
+  }
+  var html = '';
+  staff.days.slice().reverse().forEach(function (day) {
+    var dotHtml = WINDOWS.map(function (w) {
+      var p = day.periods[w.key];
+      var c = 'ts-dot'; if (p) c += p.on_time ? ' done' : ' late';
+      return '<div class="'+c+'" title="'+w.label+'"></div>';
+    }).join('');
+    var dt = new Date(day.date + 'T00:00:00');
+    var entries = day.entries.map(function (e) {
+      var badge = e.location_type === 'offsite'
+        ? '<span class="ts-badge ts-b-off">'+(e.off_site_reason||'นอกไซต์')+'</span>'
+        : (e.is_far ? '<span class="ts-badge ts-b-flag">🚩 GPS ไกล</span>' : '<span class="ts-badge ts-b-on">อยู่ไซต์</span>');
+      return '<div class="ts-entry"><span class="ts-entry-t">'+e.time+'</span><span style="flex:1">'+(e.activity||'-')+' '+badge+'</span></div>';
+    }).join('');
+    html += '<div class="ts-day"><div class="ts-day-h"><span>'+fmtDateTH(dt)+'</span><div class="ts-day-dots">'+dotHtml+'</div></div>'+entries+'</div>';
+  });
+  var totalDays = staff.days_present;
+  html += '<div style="font-size:12px; color:#374151; font-weight:600; text-align:right; margin-top:6px;">รวมมา '+totalDays+' วัน (สัปดาห์นี้)</div>';
+  el.innerHTML = html;
+}
+
+// ── ตั้งพิกัดไซต์ ────────────────────────────────────────
+function captureSite() {
+  if (!navigator.geolocation) { alert('เครื่องนี้ไม่รองรับ GPS'); return; }
+  var st = document.getElementById('ciSiteStatus');
+  st.textContent = '📡 กำลังหาตำแหน่งปัจจุบัน...';
+  navigator.geolocation.getCurrentPosition(function (pos) {
+    var radius = parseInt(document.getElementById('ciRadius').value, 10) || 150;
+    API.setSiteLocation({
+      site_lat: pos.coords.latitude, site_lng: pos.coords.longitude,
+      radius_m: radius, updated_by: ME.name
+    }).then(function () { loadSite(); alert('✓ ตั้งพิกัดไซต์เป็นตำแหน่งปัจจุบันแล้ว'); });
+  }, function () { st.textContent = '⚠️ หาตำแหน่งไม่ได้ (ต้องอนุญาตให้เข้าถึงตำแหน่ง)'; },
+  { enableHighAccuracy: true, timeout: 12000 });
+}
+function saveSiteRadius() {
+  if (!SITE || !SITE.configured) { alert('ตั้งพิกัดไซต์ก่อน (กดปุ่มใช้ตำแหน่งปัจจุบัน)'); return; }
+  var radius = parseInt(document.getElementById('ciRadius').value, 10) || 150;
+  API.setSiteLocation({ site_lat: SITE.site_lat, site_lng: SITE.site_lng, radius_m: radius, updated_by: ME.name })
+    .then(function () { loadSite(); alert('✓ บันทึกรัศมีแล้ว'); });
+}
+
+// PWA service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
+
+boot();
+</script>
+</body>
+</html>

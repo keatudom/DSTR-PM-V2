@@ -835,6 +835,41 @@ const API = {
   },
 
   // ============================================================
+  // ⏰ CHECK-IN / TIMESHEET — ลงเวลาหน้างาน (ดู checkin.gs)
+  // ============================================================
+  // mutation ใช้ callRead (JSONP GET) ตามบทเรียน callwrite-loses-post-body
+  // รูปแนบ: เรียก uploadLogPhoto ก่อน (callUpload) → ได้ url → ส่งใน createCheckin
+
+  /**
+   * บันทึกเช็คอิน 1 ครั้ง
+   * @param {object} data - { staff_name (req), staff_id?, role?, lat?, lng?,
+   *   location_type ('onsite'|'offsite'), off_site_reason?, activity?, ff_code?, note?, photo_url? }
+   */
+  createCheckin: function(data) {
+    return this.callRead('create_checkin', data);
+  },
+
+  /** อ่านเช็คอิน (scope project) — { staff_id?, staff_name?, date?, from?, to? } */
+  getCheckins: function(params) {
+    return this.callRead('get_checkins', params || {});
+  },
+
+  /** ใบลงเวลา รวมต่อคน→ต่อวัน→3 รอบ — { from, to, staff_id?, staff_name? } */
+  getTimesheet: function(params) {
+    return this.callRead('get_timesheet', params || {});
+  },
+
+  /** พิกัดไซต์ของโครงการ (configured?, site_lat, site_lng, radius_m, windows) */
+  getSiteLocation: function() {
+    return this.callRead('get_site_location');
+  },
+
+  /** ตั้งพิกัดไซต์ — { site_lat, site_lng, radius_m?, updated_by? } */
+  setSiteLocation: function(data) {
+    return this.callRead('set_site_location', data);
+  },
+
+  // ============================================================
   // 🧪 UTILS
   // ============================================================
 

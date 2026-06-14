@@ -95,6 +95,8 @@ const SHEET = {
   CONTRACT_FILES: '25_ContractFiles',
   PAYMENT_SLIPS:  '26_PaymentSlips',
   PROJECT_STAFF:  '27_Project_Staff',
+  CHECKINS:       '28_CheckIns',
+  SITE_CONFIG:    '29_SiteConfig',
 };
 
 
@@ -420,7 +422,15 @@ function route(action, p) {
     case 'clone_project': return cloneProject_(p);      // Phase C-4 — clone FF + tasks จาก source (default bow-house)
     case 'update_project': return updateProject_(p);    // แก้ meta โครงการ (total_value/end_date ฯลฯ)
     case 'create_payment': return createPayment_(p);    // เพิ่มงวดเบิก (สัญญางานเพิ่ม)
+    case 'update_payment_info': return updatePaymentInfo_(p); // แก้รายละเอียดงวดเบิก (ไม่ยุ่งสถานะ)
     case '_task_weights_backfill': return taskWeightsBackfill_(p); // ใส่ weight รายงาน task (idempotent)
+
+    // ⏰ CHECK-IN / TIMESHEET — ลงเวลาหน้างาน (ดู checkin.gs)
+    case 'create_checkin':     return createCheckin_(p);
+    case 'get_checkins':       return getCheckins_(p);
+    case 'get_timesheet':      return getTimesheet_(p);
+    case 'get_site_location':  return getSiteLocation_(p);
+    case 'set_site_location':  return setSiteLocation_(p);
 
     // 📋 CONTRACTOR EVALUATION — ดู evaluations.gs
     case 'get_eval_config':  return getEvalConfig_();
@@ -743,6 +753,24 @@ function createPayment_(p) {
     ' (' + Number(row['Amount (THB)']).toLocaleString() + ' บาท)',
     { meta: { kind: 'payment', payment_id: id } });
   return { ok: true, payment_id: id };
+}
+
+/**
+ * update_payment_info — แก้รายละเอียดงวดเบิก (sub/milestone/zone/notes/amount/pct)
+ * ไม่ยุ่งสถานะจ่าย — สถานะใช้ updatePayment เดิม
+ */
+function updatePaymentInfo_(p) {
+  if (!p.payment_id) throw new Error('payment_id required');
+  const updates = {};
+  if (p.sub !== undefined) updates['Sub-Item'] = p.sub;
+  if (p.milestone !== undefined) updates['Milestone'] = p.milestone;
+  if (p.zone !== undefined) updates['Zone'] = p.zone;
+  if (p.notes !== undefined) updates['Notes'] = p.notes;
+  if (p.amount !== undefined) updates['Amount (THB)'] = Number(p.amount);
+  if (p.pct !== undefined) updates['% of Total'] = Number(p.pct);
+  if (!Object.keys(updates).length) throw new Error('ไม่มี field ให้แก้');
+  updateRowByCol(SHEET.PAYMENTS, 'Payment ID', p.payment_id, updates);
+  return { ok: true, payment_id: p.payment_id, updated: Object.keys(updates) };
 }
 
 /**
