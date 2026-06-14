@@ -91,7 +91,7 @@
 .bnav-ic { font-size:18px; } .bnav-lb { font-size:9px; font-weight:500; }
 
 @media print {
-  .ci-hdr, .ci-windows, .ci-bigbtn, .ci-form, .bnav, .ci-print, #ciSiteCard, #ciNamePrompt { display:none !important; }
+  .ci-hdr, .ci-windows, .ci-bigbtn, .ci-form, .bnav, .ci-print, #ciSiteCard, #ciNamePrompt, .ts-entry span[onclick] { display:none !important; }
   .app { padding:0; } .ci-card { border:none; box-shadow:none; }
   #ciPrintHead { display:block !important; }
 }
@@ -462,13 +462,19 @@ function renderTimesheet(staff) {
       var badge = e.location_type === 'offsite'
         ? '<span class="ts-badge ts-b-off">'+(e.off_site_reason||'นอกไซต์')+'</span>'
         : (e.is_far ? '<span class="ts-badge ts-b-flag">🚩 GPS ไกล</span>' : '<span class="ts-badge ts-b-on">อยู่ไซต์</span>');
-      return '<div class="ts-entry"><span class="ts-entry-t">'+e.time+'</span><span style="flex:1">'+(e.activity||'-')+' '+badge+'</span></div>';
+      return '<div class="ts-entry"><span class="ts-entry-t">'+e.time+'</span><span style="flex:1">'+(e.activity||'-')+' '+badge+'</span>'+
+'<span onclick="delCheckin(\''+e.checkin_id+'\')" style="color:#C0392B;cursor:pointer;font-size:11px;padding:0 2px" title="ลบ">✕</span></div>';
     }).join('');
     html += '<div class="ts-day"><div class="ts-day-h"><span>'+fmtDateTH(dt)+'</span><div class="ts-day-dots">'+dotHtml+'</div></div>'+entries+'</div>';
   });
   var totalDays = staff.days_present;
   html += '<div style="font-size:12px; color:#374151; font-weight:600; text-align:right; margin-top:6px;">รวมมา '+totalDays+' วัน (สัปดาห์นี้)</div>';
   el.innerHTML = html;
+}
+
+function delCheckin(id) {
+  if (!confirm('ลบรายการเช็คอินนี้?')) return;
+  API.deleteCheckin(id).then(function () { loadToday(); loadTimesheet(); });
 }
 
 // ── ตั้งพิกัดไซต์ ────────────────────────────────────────

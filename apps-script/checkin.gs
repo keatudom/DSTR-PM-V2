@@ -19,7 +19,7 @@ var SITECONFIG_SHEET_ = '29_SiteConfig';
 
 var CHECKIN_HEADERS_ = [
   'checkin_id', 'project_id', 'staff_id', 'staff_name', 'role',
-  'date', 'time', 'period', 'on_time',
+  'date', 'time', 'ts', 'period', 'on_time',
   'location_type', 'off_site_reason', 'distance_m', 'is_far',
   'lat', 'lng', 'activity', 'ff_code', 'note', 'photo_url', 'created_at'
 ];
@@ -141,8 +141,10 @@ function createCheckin_(p) {
   if (!name) throw new Error('ต้องระบุชื่อผู้เช็คอิน');
 
   _getOrCreateSheet_(CHECKIN_SHEET_, CHECKIN_HEADERS_);
+  ensureColumn_(CHECKIN_SHEET_, 'ts');  // epoch ms — แหล่งเวลาที่เชื่อถือได้ (ไม่โดน Sheets coerce)
 
   var now = new Date();
+  var ts = now.getTime();
   var date = Utilities.formatDate(now, 'Asia/Bangkok', 'yyyy-MM-dd');
   var time = Utilities.formatDate(now, 'Asia/Bangkok', 'HH:mm');
   var cls = _classifyTime_(time);
@@ -170,6 +172,7 @@ function createCheckin_(p) {
     role: p.role || '',
     date: date,
     time: time,
+    ts: ts,
     period: cls.period,
     on_time: cls.on_time ? 'TRUE' : 'FALSE',
     location_type: locType,
@@ -205,15 +208,41 @@ function createCheckin_(p) {
   };
 }
 
+// ลบเช็คอิน (รายการทดสอบ/กดผิด) — by checkin_id
+function deleteCheckin_(p) {
+  if (!p || !p.checkin_id) throw new Error('checkin_id required');
+  var sh = getSheet(CHECKIN_SHEET_);
+  var data = sh.getDataRange().getValues();
+  var idIdx = data[0].indexOf('checkin_id');
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][idIdx]) === String(p.checkin_id)) {
+      sh.deleteRow(i + 1);
+      return { ok: true, deleted: p.checkin_id };
+    }
+  }
+  throw new Error('ไม่พบเช็คอิน: ' + p.checkin_id);
+}
+
+// แปลงค่าเวลาให้เป็น "HH:mm" (กันกรณีอ่านกลับมาเป็น Date จาก legacy row)
+function _fmtTime_(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, 'Asia/Bangkok', 'HH:mm');
+  return String(v || '');
+}
+
 // ── อ่านเช็คอิน (scope project + filter) ────────────────────
 function _mapCheckin_(r) {
+  // วัน-เวลาคำนวณจาก ts (epoch) — เชื่อถือได้ ไม่โดน Sheets coerce
+  // fallback: row เก่าที่ไม่มี ts → ใช้คอลัมน์ date/time เดิม
+  var ts = (r.ts !== '' && r.ts !== undefined && r.ts !== null) ? Number(r.ts) : null;
+  var dateStr = ts ? Utilities.formatDate(new Date(ts), 'Asia/Bangkok', 'yyyy-MM-dd') : formatDateValue(r.date);
+  var timeStr = ts ? Utilities.formatDate(new Date(ts), 'Asia/Bangkok', 'HH:mm') : _fmtTime_(r.time);
   return {
     checkin_id: r.checkin_id,
     staff_id: r.staff_id || '',
     staff_name: r.staff_name || '',
     role: r.role || '',
-    date: formatDateValue(r.date),
-    time: r.time || '',
+    date: dateStr,
+    time: timeStr,
     period: r.period || '',
     on_time: String(r.on_time).toUpperCase() === 'TRUE',
     location_type: r.location_type || 'onsite',

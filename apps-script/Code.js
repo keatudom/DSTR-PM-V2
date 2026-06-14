@@ -431,6 +431,7 @@ function route(action, p) {
     case 'get_timesheet':      return getTimesheet_(p);
     case 'get_site_location':  return getSiteLocation_(p);
     case 'set_site_location':  return setSiteLocation_(p);
+    case 'delete_checkin':     return deleteCheckin_(p);
 
     // 📋 CONTRACTOR EVALUATION — ดู evaluations.gs
     case 'get_eval_config':  return getEvalConfig_();

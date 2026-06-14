@@ -854,6 +854,11 @@ const API = {
     return this.callRead('get_checkins', params || {});
   },
 
+  /** ลบเช็คอิน (กดผิด/ทดสอบ) — by checkin_id */
+  deleteCheckin: function(checkinId) {
+    return this.callRead('delete_checkin', { checkin_id: checkinId });
+  },
+
   /** ใบลงเวลา รวมต่อคน→ต่อวัน→3 รอบ — { from, to, staff_id?, staff_name? } */
   getTimesheet: function(params) {
     return this.callRead('get_timesheet', params || {});
