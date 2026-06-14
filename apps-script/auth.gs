@@ -185,13 +185,15 @@ function getMe_(p) {
 // PRICING = ราคา/มูลค่า/ส่วนลด (เจ้าของงานเท่านั้น)
 // ADMIN   = จัดการผู้ใช้/สิทธิ์/สร้างโครงการ/migration (เจ้าของงานเท่านั้น)
 // PROCURE = จัดซื้อ/จัดการวัสดุ+ราคาซื้อ (ฝ่ายจัดซื้อ + ทีมที่แตะวัสดุ)
+// SITECFG = ตั้ง/ย้ายหมุดพิกัดไซต์ (กระทบ "อยู่/นอกไซต์" ของทุกคน → SE ขึ้นไปเท่านั้น
+//           ไม่ให้ foreman/ช่าง กันแอบย้ายหมุดโกง GPS)
 var _ROLE_CAPS_ = {
-  creator:    { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1 }, // ผู้สร้างระบบ (super admin — ล็อก ไม่อยู่ใน dropdown)
-  owner:      { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1 }, // เจ้าของกิจการ
-  director:   { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1 },  // ผู้ดูแลโครงการ (ไม่เห็นราคา/กำไร, ไม่จัดการผู้ใช้) — คีย์ director กัน 'admin' ชน legacy
-  pm:            { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1 }, // ผู้จัดการโครงการ (scope เฉพาะที่รับผิดชอบ)
-  site_engineer: { READ: 1, OPS: 1, PROCURE: 1 },                        // วิศวกรหน้างาน (ทำงานหน้างาน + จัดการวัสดุ)
-  foreman:       { READ: 1, OPS: 1, PROCURE: 1 },                        // โฟร์แมน (คุมวัสดุหน้างานเต็มที่ — รับ/นับ/สร้าง/แก้/ราคา)
+  creator:    { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1, SITECFG: 1 }, // ผู้สร้างระบบ (super admin — ล็อก ไม่อยู่ใน dropdown)
+  owner:      { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1, SITECFG: 1 }, // เจ้าของกิจการ
+  director:   { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1 },  // ผู้ดูแลโครงการ (ไม่เห็นราคา/กำไร, ไม่จัดการผู้ใช้) — คีย์ director กัน 'admin' ชน legacy
+  pm:            { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1 }, // ผู้จัดการโครงการ (scope เฉพาะที่รับผิดชอบ)
+  site_engineer: { READ: 1, OPS: 1, PROCURE: 1, SITECFG: 1 },            // วิศวกรหน้างาน (ทำงานหน้างาน + จัดการวัสดุ + ปักหมุดไซต์)
+  foreman:       { READ: 1, OPS: 1, PROCURE: 1 },                        // โฟร์แมน (คุมวัสดุหน้างานเต็มที่ — รับ/นับ/สร้าง/แก้/ราคา · ปักหมุดไม่ได้)
   purchaser:     { READ: 1, PROCURE: 1 },                                // ฝ่ายจัดซื้อ (วัสดุ+ราคาซื้อ, อื่นๆ ดูอย่างเดียว)
   contractor: { READ: 1 },                                              // ผู้รับเหมา/ช่าง (เผื่ออนาคต)
   client:     {} // client ใช้ whitelist แยก (CLIENT_ALLOWED_ACTIONS)
@@ -249,6 +251,8 @@ var _ACTION_CAP_ = (function () {
   ]);
 
   add('PRICING', ['create_project']); // มูลค่า/ราคาขายโครงการ — เจ้าของเท่านั้น
+
+  add('SITECFG', ['set_site_location']); // ปักหมุดไซต์ — SE ขึ้นไป (ดู _ROLE_CAPS_)
 
   add('ADMIN', [
     'create_staff', 'update_staff', 'assign_project_staff',

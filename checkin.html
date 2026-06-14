@@ -283,9 +283,11 @@ function boot() {
   var wr = weekRange();
   document.getElementById('ciPrintRange').textContent = 'สัปดาห์ ' + fmtDateTH(wr.fromD) + ' – ' + fmtDateTH(wr.toD);
 
-  // แอดมิน/เจ้าของ เห็นการตั้งพิกัดไซต์
+  // ปักหมุดไซต์: ตั้งแต่ Site Engineer ขึ้นไป (server บังคับซ้ำด้วย cap SITECFG)
+  // foreman/ช่าง ปักไม่ได้ — กันแอบย้ายหมุดโกง GPS
   var role = Auth.getRole();
-  if (!role || role === 'admin' || role === 'owner' || role === 'pm') {
+  var PIN_ROLES = { admin:1, creator:1, owner:1, director:1, pm:1, site_engineer:1 };
+  if (!role || PIN_ROLES[role]) {
     document.getElementById('ciSiteCard').style.display = 'block';
   }
   loadSite();
