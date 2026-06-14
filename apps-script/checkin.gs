@@ -21,7 +21,7 @@ var CHECKIN_HEADERS_ = [
   'checkin_id', 'project_id', 'staff_id', 'staff_name', 'role',
   'date', 'time', 'ts', 'period', 'on_time',
   'location_type', 'off_site_reason', 'distance_m', 'is_far',
-  'lat', 'lng', 'activity', 'ff_code', 'note', 'photo_url', 'created_at'
+  'lat', 'lng', 'accuracy', 'activity', 'ff_code', 'note', 'photo_url', 'created_at'
 ];
 var SITECONFIG_HEADERS_ = [
   'project_id', 'site_lat', 'site_lng', 'radius_m', 'updated_at', 'updated_by'
@@ -141,7 +141,8 @@ function createCheckin_(p) {
   if (!name) throw new Error('ต้องระบุชื่อผู้เช็คอิน');
 
   _getOrCreateSheet_(CHECKIN_SHEET_, CHECKIN_HEADERS_);
-  ensureColumn_(CHECKIN_SHEET_, 'ts');  // epoch ms — แหล่งเวลาที่เชื่อถือได้ (ไม่โดน Sheets coerce)
+  ensureColumn_(CHECKIN_SHEET_, 'ts');        // epoch ms — แหล่งเวลาที่เชื่อถือได้ (ไม่โดน Sheets coerce)
+  ensureColumn_(CHECKIN_SHEET_, 'accuracy');  // ค่าความแม่น GPS (เมตร) ของการเช็คอินนี้
 
   var now = new Date();
   var ts = now.getTime();
@@ -181,6 +182,7 @@ function createCheckin_(p) {
     is_far: isFar ? 'TRUE' : 'FALSE',
     lat: hasGps ? Number(p.lat) : '',
     lng: hasGps ? Number(p.lng) : '',
+    accuracy: (hasGps && p.accuracy !== undefined && p.accuracy !== '') ? Number(p.accuracy) : '',
     activity: p.activity || '',
     ff_code: p.ff_code || '',
     note: p.note || '',
@@ -249,6 +251,7 @@ function _mapCheckin_(r) {
     off_site_reason: r.off_site_reason || '',
     distance_m: (r.distance_m === '' || r.distance_m === undefined) ? null : Number(r.distance_m),
     is_far: String(r.is_far).toUpperCase() === 'TRUE',
+    accuracy: (r.accuracy === '' || r.accuracy === undefined) ? null : Number(r.accuracy),
     activity: r.activity || '',
     ff_code: r.ff_code || '',
     note: r.note || '',

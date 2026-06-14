@@ -358,33 +358,69 @@ function setLocType(t) {
   document.getElementById('segOff').classList.toggle('on', t === 'offsite');
   document.getElementById('ciReasonWrap').style.display = (t === 'offsite') ? 'block' : 'none';
 }
+var WEAK_GPS_M = 50; // เกินนี้ = สัญญาณอ่อน เตือนให้ออกที่โล่ง
+
+// จับ GPS ต่อเนื่องหลายวินาที เก็บค่าที่ "แม่นสุด" (accuracy ต่ำสุด)
+// onProgress(best) เรียกทุกครั้งที่ได้ค่าแม่นขึ้น · หยุดเร็วถ้าได้แม่นถึง target
+function getBestPosition(opts, onProgress) {
+  opts = opts || {};
+  var duration = opts.duration || 7000, target = opts.target || 12;
+  return new Promise(function (resolve, reject) {
+    if (!navigator.geolocation) { reject(new Error('no-geo')); return; }
+    var best = null, wid = null, timer = null, done = false;
+    function finish() {
+      if (done) return; done = true;
+      if (wid !== null) navigator.geolocation.clearWatch(wid);
+      if (timer) clearTimeout(timer);
+      best ? resolve(best) : reject(new Error('no-fix'));
+    }
+    wid = navigator.geolocation.watchPosition(function (pos) {
+      var f = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: Math.round(pos.coords.accuracy) };
+      if (!best || f.accuracy < best.accuracy) { best = f; if (onProgress) onProgress(best); }
+      if (best.accuracy <= target) finish(); // แม่นพอแล้ว หยุดเลย
+    }, function (err) {
+      if (!best && !done) { done = true; if (timer) clearTimeout(timer); reject(err); }
+    }, { enableHighAccuracy: true, timeout: duration, maximumAge: 0 });
+    timer = setTimeout(finish, duration);
+  });
+}
+
 function getGps() {
   var el = document.getElementById('ciGps');
-  el.className = 'ci-gps searching'; el.textContent = '📡 กำลังหาตำแหน่ง...';
+  el.className = 'ci-gps searching'; el.textContent = '📡 กำลังหาตำแหน่ง... (ยิ่งรอ ยิ่งแม่น)';
   GPS = null;
-  if (!navigator.geolocation) { el.className='ci-gps err'; el.textContent='เครื่องนี้ไม่รองรับ GPS — เช็คอินได้ แต่ไม่มีพิกัด'; return; }
-  navigator.geolocation.getCurrentPosition(function (pos) {
-    GPS = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: Math.round(pos.coords.accuracy) };
-    showGpsStatus();
-  }, function (err) {
+  getBestPosition({ duration: 7000, target: 12 }, function (best) {
+    GPS = best;
+    el.className = 'ci-gps searching';
+    el.textContent = '📡 กำลังจับสัญญาณ... ±' + best.accuracy + ' ม. (รออีกนิด)';
+  }).then(function (best) {
+    GPS = best; showGpsStatus();
+  }).catch(function (err) {
     el.className = 'ci-gps err';
-    el.innerHTML = '⚠️ หาตำแหน่งไม่ได้ ('+ (err.code===1?'ไม่อนุญาต':'หมดเวลา') +') — เช็คอินได้ แต่ไม่มีพิกัด <b onclick="getGps()" style="text-decoration:underline;cursor:pointer">ลองใหม่</b>';
-  }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+    el.innerHTML = '⚠️ หาตำแหน่งไม่ได้ (' + (err && err.code === 1 ? 'ไม่อนุญาต' : 'หมดเวลา') +
+      ') — เช็คอินได้ แต่ไม่มีพิกัด <b onclick="getGps()" style="text-decoration:underline;cursor:pointer">ลองใหม่</b>';
+  });
 }
 function haversine(la1,lo1,la2,lo2){var R=6371000,r=function(d){return d*Math.PI/180;};var dla=r(la2-la1),dlo=r(lo2-lo1);var a=Math.sin(dla/2)*Math.sin(dla/2)+Math.cos(r(la1))*Math.cos(r(la2))*Math.sin(dlo/2)*Math.sin(dlo/2);return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));}
 function showGpsStatus() {
   var el = document.getElementById('ciGps');
   if (!GPS) return;
+  var weak = GPS.accuracy > WEAK_GPS_M;
+  var accTxt = ' · ความแม่น ±' + GPS.accuracy + ' ม.';
+  var warn = weak ? '<br>⚠️ สัญญาณ GPS อ่อน — ลองออกที่โล่ง (นอกตัวอาคาร) เพื่อความแม่น' : '';
   if (SITE && SITE.configured) {
     var d = haversine(GPS.lat, GPS.lng, SITE.site_lat, SITE.site_lng);
     var dTxt = d >= 1000 ? (d/1000).toFixed(1)+' กม.' : d+' ม.';
     if (d <= SITE.radius_m) {
-      el.className = 'ci-gps near'; el.textContent = '✅ อยู่ในไซต์ (ห่าง ~'+dTxt+')';
+      el.className = weak ? 'ci-gps far' : 'ci-gps near';
+      el.innerHTML = '✅ อยู่ในไซต์ (ห่าง ~'+dTxt+')'+accTxt+warn;
     } else {
-      el.className = 'ci-gps far'; el.innerHTML = '📍 นอกไซต์ (ห่าง ~'+dTxt+') — ถ้าเป็นงานนอกไซต์ เลือก "🚗 งานนอกไซต์" ด้วยนะ';
+      el.className = 'ci-gps far';
+      el.innerHTML = '📍 นอกไซต์ (ห่าง ~'+dTxt+')'+accTxt+' — ถ้าเป็นงานนอกไซต์ เลือก "🚗 งานนอกไซต์" ด้วยนะ'+warn;
     }
   } else {
-    el.className = 'ci-gps near'; el.textContent = '✅ ได้ตำแหน่งแล้ว (ความแม่น ~'+GPS.accuracy+' ม.)';
+    el.className = weak ? 'ci-gps far' : 'ci-gps near';
+    el.innerHTML = '✅ ได้ตำแหน่งแล้ว'+accTxt+warn;
   }
 }
 function onPhoto(ev) {
@@ -415,7 +451,7 @@ function submitCheckin() {
       note: document.getElementById('ciNote').value.trim(),
       photo_url: photoUrl || ''
     };
-    if (GPS) { data.lat = GPS.lat; data.lng = GPS.lng; }
+    if (GPS) { data.lat = GPS.lat; data.lng = GPS.lng; data.accuracy = GPS.accuracy; }
     API.createCheckin(data).then(function (res) {
       var r = (res && res.data) ? res.data : res;
       if (r && r.ok) {
@@ -465,7 +501,8 @@ function renderTimesheet(staff) {
       var badge = e.location_type === 'offsite'
         ? '<span class="ts-badge ts-b-off">'+(e.off_site_reason||'นอกไซต์')+'</span>'
         : (e.is_far ? '<span class="ts-badge ts-b-flag">🚩 GPS ไกล</span>' : '<span class="ts-badge ts-b-on">อยู่ไซต์</span>');
-      return '<div class="ts-entry"><span class="ts-entry-t">'+e.time+'</span><span style="flex:1">'+(e.activity||'-')+' '+badge+'</span>'+
+      var acc = (e.accuracy != null) ? ' <span style="color:'+(e.accuracy>WEAK_GPS_M?'#C0392B':'#9CA3AF')+';font-size:10px">±'+e.accuracy+'ม.</span>' : '';
+      return '<div class="ts-entry"><span class="ts-entry-t">'+e.time+'</span><span style="flex:1">'+(e.activity||'-')+' '+badge+acc+'</span>'+
 '<span onclick="delCheckin(\''+e.checkin_id+'\')" style="color:#C0392B;cursor:pointer;font-size:11px;padding:0 2px" title="ลบ">✕</span></div>';
     }).join('');
     html += '<div class="ts-day"><div class="ts-day-h"><span>'+fmtDateTH(dt)+'</span><div class="ts-day-dots">'+dotHtml+'</div></div>'+entries+'</div>';
@@ -484,15 +521,23 @@ function delCheckin(id) {
 function captureSite() {
   if (!navigator.geolocation) { alert('เครื่องนี้ไม่รองรับ GPS'); return; }
   var st = document.getElementById('ciSiteStatus');
-  st.textContent = '📡 กำลังหาตำแหน่งปัจจุบัน...';
-  navigator.geolocation.getCurrentPosition(function (pos) {
-    var radius = parseInt(document.getElementById('ciRadius').value, 10) || 150;
-    API.setSiteLocation({
-      site_lat: pos.coords.latitude, site_lng: pos.coords.longitude,
-      radius_m: radius, updated_by: ME.name
-    }).then(function () { loadSite(); alert('✓ ตั้งพิกัดไซต์เป็นตำแหน่งปัจจุบันแล้ว'); });
-  }, function () { st.textContent = '⚠️ หาตำแหน่งไม่ได้ (ต้องอนุญาตให้เข้าถึงตำแหน่ง)'; },
-  { enableHighAccuracy: true, timeout: 12000 });
+  st.textContent = '📡 กำลังจับตำแหน่ง... (จับ ~8 วิ เลือกค่าที่แม่นสุด ยืนนิ่งๆ ที่โล่ง)';
+  // จับยาวขึ้น (10 วิ) + แม่นเป้า 8 ม. เพราะหมุดต้องนิ่งและแม่นกว่าเช็คอินปกติ
+  getBestPosition({ duration: 10000, target: 8 }, function (best) {
+    st.textContent = '📡 กำลังจับ... ±' + best.accuracy + ' ม. (ยิ่งนิ่ง ยิ่งแม่น)';
+  }).then(function (best) {
+    var save = function () {
+      var radius = parseInt(document.getElementById('ciRadius').value, 10) || 150;
+      API.setSiteLocation({ site_lat: best.lat, site_lng: best.lng, radius_m: radius, updated_by: ME.name })
+        .then(function () { loadSite(); alert('✓ ตั้งพิกัดไซต์แล้ว (ความแม่น ±' + best.accuracy + ' ม.)'); });
+    };
+    if (best.accuracy > WEAK_GPS_M) {
+      if (!confirm('⚠️ สัญญาณ GPS อ่อน (±' + best.accuracy + ' ม.) หมุดอาจคลาดเคลื่อน\n\nแนะนำออกไปยืนที่โล่งนอกตัวอาคารแล้วลองใหม่\nจะบันทึกหมุดนี้เลยไหม?')) return;
+    }
+    save();
+  }).catch(function () {
+    st.textContent = '⚠️ หาตำแหน่งไม่ได้ (ต้องอนุญาตให้เข้าถึงตำแหน่ง)';
+  });
 }
 function saveSiteRadius() {
   if (!SITE || !SITE.configured) { alert('ตั้งพิกัดไซต์ก่อน (กดปุ่มใช้ตำแหน่งปัจจุบัน)'); return; }
