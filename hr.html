@@ -107,7 +107,7 @@
 if (!Auth.requireAuth('admin')) { /* client ถูกเด้งออก */ }
 
 var TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-var ROLE_TH = { owner:'เจ้าของกิจการ', director:'ผู้ดูแลโครงการ', pm:'PM', hr:'ฝ่ายบุคคล',
+var ROLE_TH = { creator:'ผู้สร้างระบบ', owner:'เจ้าของกิจการ', director:'ผู้ดูแลโครงการ', pm:'PM', hr:'ฝ่ายบุคคล',
   site_engineer:'วิศวกรหน้างาน', foreman:'โฟร์แมน', purchaser:'ฝ่ายจัดซื้อ', contractor:'ผู้รับเหมา', admin:'แอดมิน' };
 function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function fmtTH(d){ d=(d instanceof Date)?d:new Date(d+'T00:00:00'); return d.getDate()+' '+TH_MONTHS[d.getMonth()]+' '+(d.getFullYear()+543); }
