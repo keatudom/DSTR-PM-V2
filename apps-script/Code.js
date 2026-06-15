@@ -429,6 +429,7 @@ function route(action, p) {
     case 'create_checkin':     return createCheckin_(p);
     case 'get_checkins':       return getCheckins_(p);
     case 'get_timesheet':      return getTimesheet_(p);
+    case 'get_attendance_all': return getAttendanceAll_(p);  // HR: ใบลงเวลาทุกคน (cap ATTEND)
     case 'get_site_location':  return getSiteLocation_(p);
     case 'set_site_location':  return setSiteLocation_(p);
     case 'delete_checkin':     return deleteCheckin_(p);

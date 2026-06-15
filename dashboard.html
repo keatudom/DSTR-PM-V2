@@ -824,6 +824,12 @@
         <div class="hub-card-sub">คลิปสอนใช้งาน</div>
         <div class="hub-card-arrow">→</div>
       </div>
+      <div class="hub-card" id="hubHrCard" style="display:none;border-color:#0d6e4f;background:#F0FDF8" onclick="window.location.href='hr.html'">
+        <div class="hub-card-icon">🗂️</div>
+        <div class="hub-card-title">ใบลงเวลาทีม (HR)</div>
+        <div class="hub-card-sub">ดูเวลา · เบิกค่าแรง</div>
+        <div class="hub-card-arrow">→</div>
+      </div>
     </div>
 
     <!-- KPIs -->
@@ -1003,7 +1009,11 @@
 <script src="js/state.js"></script>
 <script src="js/modal.js"></script>
 <script src="js/pwa-install.js"></script>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
+// การ์ด HR ขึ้นเฉพาะ ฝ่ายบุคคล/ผู้บริหาร (server ก็กัน get_attendance_all ด้วย cap ATTEND)
+(function(){ try{ var r=(typeof Auth!=='undefined'&&Auth.getRole)?Auth.getRole():null;
+  var allow={hr:1,owner:1,creator:1,director:1,pm:1,admin:1};
+  if(!r || allow[r]){ var c=document.getElementById('hubHrCard'); if(c) c.style.display=''; } }catch(e){} })();</script>
 <script>
 // ตรวจสอบสิทธิ์ Admin
 if (!Auth.requireAuth('admin')) {

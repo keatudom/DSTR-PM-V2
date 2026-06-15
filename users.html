@@ -98,6 +98,7 @@ var UM = {
     { v: 'owner',     t: '👑 เจ้าของกิจการ' },
     { v: 'director',  t: '🗂️ ผู้ดูแลโครงการ' },
     { v: 'pm',            t: '📋 ผู้จัดการโครงการ (PM)' },
+    { v: 'hr',            t: '🗂️ ฝ่ายบุคคล (HR) — ดูใบลงเวลา' },
     { v: 'site_engineer', t: '📐 วิศวกรหน้างาน' },
     { v: 'foreman',       t: '👷 โฟร์แมน (หัวหน้าช่าง)' },
     { v: 'purchaser',     t: '🛒 ฝ่ายจัดซื้อ' },
@@ -127,7 +128,7 @@ UM.render = function () {
   if (!UM.users.length) { el.innerHTML = '<div class="um-empty">ยังไม่มีผู้ใช้</div>'; return; }
 
   // เรียง: owner ก่อน, ปิดใช้งานท้ายสุด
-  var order = { creator: -1, owner: 0, director: 1, pm: 2, site_engineer: 3, foreman: 4, purchaser: 5, contractor: 6, client: 7 };
+  var order = { creator: -1, owner: 0, director: 1, pm: 2, hr: 3, site_engineer: 4, foreman: 5, purchaser: 6, contractor: 7, client: 8 };
   var sorted = UM.users.slice().sort(function (a, b) {
     if (a.active !== b.active) return a.active ? -1 : 1;
     return (order[a.auth_role] != null ? order[a.auth_role] : 9) - (order[b.auth_role] != null ? order[b.auth_role] : 9);

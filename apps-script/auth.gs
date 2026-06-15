@@ -187,11 +187,13 @@ function getMe_(p) {
 // PROCURE = จัดซื้อ/จัดการวัสดุ+ราคาซื้อ (ฝ่ายจัดซื้อ + ทีมที่แตะวัสดุ)
 // SITECFG = ตั้ง/ย้ายหมุดพิกัดไซต์ (กระทบ "อยู่/นอกไซต์" ของทุกคน → SE ขึ้นไปเท่านั้น
 //           ไม่ให้ foreman/ช่าง กันแอบย้ายหมุดโกง GPS)
+// ATTEND = ดูใบลงเวลา "ทุกคน" ข้ามไซต์ (สำหรับ HR เบิกค่าแรง) — ไม่เห็นเงิน/ต้นทุน/สัญญา
 var _ROLE_CAPS_ = {
-  creator:    { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1, SITECFG: 1 }, // ผู้สร้างระบบ (super admin — ล็อก ไม่อยู่ใน dropdown)
-  owner:      { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1, SITECFG: 1 }, // เจ้าของกิจการ
-  director:   { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1 },  // ผู้ดูแลโครงการ (ไม่เห็นราคา/กำไร, ไม่จัดการผู้ใช้) — คีย์ director กัน 'admin' ชน legacy
-  pm:            { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1 }, // ผู้จัดการโครงการ (scope เฉพาะที่รับผิดชอบ)
+  creator:    { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1, SITECFG: 1, ATTEND: 1 }, // ผู้สร้างระบบ (super admin — ล็อก ไม่อยู่ใน dropdown)
+  owner:      { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1, SITECFG: 1, ATTEND: 1 }, // เจ้าของกิจการ
+  director:   { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1, ATTEND: 1 },  // ผู้ดูแลโครงการ (ไม่เห็นราคา/กำไร, ไม่จัดการผู้ใช้) — คีย์ director กัน 'admin' ชน legacy
+  pm:            { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1, ATTEND: 1 }, // ผู้จัดการโครงการ (scope เฉพาะที่รับผิดชอบ)
+  hr:            { ATTEND: 1 },                                          // ฝ่ายบุคคล — ดูใบลงเวลาทุกคนเพื่อเบิกค่าแรงเท่านั้น (ไม่เห็นเงิน/ต้นทุน/โครงการ)
   site_engineer: { READ: 1, OPS: 1, PROCURE: 1, SITECFG: 1 },            // วิศวกรหน้างาน (ทำงานหน้างาน + จัดการวัสดุ + ปักหมุดไซต์)
   foreman:       { READ: 1, OPS: 1, PROCURE: 1 },                        // โฟร์แมน (คุมวัสดุหน้างานเต็มที่ — รับ/นับ/สร้าง/แก้/ราคา · ปักหมุดไม่ได้)
   purchaser:     { READ: 1, PROCURE: 1 },                                // ฝ่ายจัดซื้อ (วัสดุ+ราคาซื้อ, อื่นๆ ดูอย่างเดียว)
@@ -254,6 +256,8 @@ var _ACTION_CAP_ = (function () {
 
   add('SITECFG', ['set_site_location']); // ปักหมุดไซต์ — SE ขึ้นไป (ดู _ROLE_CAPS_)
 
+  add('ATTEND', ['get_attendance_all']); // ดูใบลงเวลาทุกคน — HR + ผู้บริหาร (ดู _ROLE_CAPS_)
+
   add('ADMIN', [
     'create_staff', 'update_staff', 'assign_project_staff',
     'unassign_project_staff', 'get_users', 'upsert_user', 'set_user_role',
@@ -275,7 +279,7 @@ var _SCOPED_CAPS_ = { OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1 };
 
 // บทบาทที่ทำงาน "ข้ามทุกโครงการ" — ไม่ต้องผูกรายโครงการ → ข้าม project scope
 // (owner/ผู้ดูแลโครงการ/ฝ่ายจัดซื้อ ดูแลภาพรวมทั้งบริษัท · admin = legacy รหัสผ่าน)
-var _CROSS_PROJECT_ROLES_ = { creator: 1, owner: 1, director: 1, purchaser: 1, admin: 1 };
+var _CROSS_PROJECT_ROLES_ = { creator: 1, owner: 1, director: 1, purchaser: 1, admin: 1, hr: 1 };
 
 function _userProjectIds_(staffId) {
   if (!staffId) return [];
@@ -381,7 +385,7 @@ function getUsers_() {
   });
 }
 
-var _VALID_AUTH_ROLES_ = { creator: 1, owner: 1, director: 1, pm: 1, site_engineer: 1, foreman: 1, purchaser: 1, contractor: 1, client: 1 };
+var _VALID_AUTH_ROLES_ = { creator: 1, owner: 1, director: 1, pm: 1, hr: 1, site_engineer: 1, foreman: 1, purchaser: 1, contractor: 1, client: 1 };
 
 // upsert_user — เพิ่ม/แก้ผู้ใช้ (อีเมล + บทบาทสิทธิ์)
 // param: { staff_id?, name, email, auth_role, phone?, role?, active? }

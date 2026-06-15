@@ -243,6 +243,7 @@ function _mapCheckin_(r) {
     staff_id: r.staff_id || '',
     staff_name: r.staff_name || '',
     role: r.role || '',
+    project_id: r.project_id || '',
     date: dateStr,
     time: timeStr,
     period: r.period || '',
@@ -321,4 +322,50 @@ function getTimesheet_(p) {
 
   staffArr.sort(function (a, b) { return (a.staff_name || '').localeCompare(b.staff_name || ''); });
   return { from: p.from || '', to: p.to || '', windows: CHECKIN_WINDOWS_, staff: staffArr };
+}
+
+// ── HR: ใบลงเวลา "ทุกคน ทุกไซต์" (สิทธิ์ ATTEND) ─────────────
+// ไม่ scope project → เห็นข้ามไซต์ · กรองเองได้ด้วย p.project_id · คืนชื่อโครงการ (ไม่มีข้อมูลเงิน)
+function getAttendanceAll_(p) {
+  p = p || {};
+  var rows;
+  try { rows = getAllRows(CHECKIN_SHEET_); }
+  catch (e) { return { from: p.from || '', to: p.to || '', windows: CHECKIN_WINDOWS_, staff: [], projects: [] }; }
+
+  var list = rows.map(_mapCheckin_);
+  if (p.project_id) list = list.filter(function (c) { return String(c.project_id) === String(p.project_id); });
+  if (p.from) list = list.filter(function (c) { return c.date >= p.from; });
+  if (p.to) list = list.filter(function (c) { return c.date <= p.to; });
+
+  // group: staff → date → entries (เหมือน getTimesheet_)
+  var byStaff = {};
+  list.forEach(function (c) {
+    var sk = c.staff_id || c.staff_name || '?';
+    if (!byStaff[sk]) byStaff[sk] = { staff_id: c.staff_id, staff_name: c.staff_name, role: c.role, days: {} };
+    if (!byStaff[sk].days[c.date]) byStaff[sk].days[c.date] = [];
+    byStaff[sk].days[c.date].push(c);
+  });
+  var staffArr = Object.keys(byStaff).map(function (sk) {
+    var s = byStaff[sk];
+    var days = Object.keys(s.days).sort().map(function (d) {
+      var entries = s.days[d].slice().sort(function (a, b) { return a.time < b.time ? -1 : 1; });
+      return {
+        date: d, entries: entries, present: entries.length > 0,
+        offsite_count: entries.filter(function (x) { return x.location_type === 'offsite'; }).length,
+        flagged_count: entries.filter(function (x) { return x.is_far && x.location_type === 'onsite'; }).length
+      };
+    });
+    return { staff_id: s.staff_id, staff_name: s.staff_name, role: s.role, days: days, days_present: days.length };
+  });
+  staffArr.sort(function (a, b) { return (a.staff_name || '').localeCompare(b.staff_name || ''); });
+
+  // ชื่อโครงการ (เฉพาะ id + name — ไม่หลุดข้อมูลเงิน)
+  var projects = [];
+  try {
+    getAllRows('00_Projects').forEach(function (r) {
+      if (r.project_id) projects.push({ project_id: String(r.project_id), name: r.name || String(r.project_id) });
+    });
+  } catch (e) {}
+
+  return { from: p.from || '', to: p.to || '', windows: CHECKIN_WINDOWS_, staff: staffArr, projects: projects };
 }

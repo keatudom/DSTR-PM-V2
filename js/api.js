@@ -864,6 +864,11 @@ const API = {
     return this.callRead('get_timesheet', params || {});
   },
 
+  /** HR: ใบลงเวลาทุกคน ทุกไซต์ (สิทธิ์ ATTEND) — { from, to, project_id? } */
+  getAttendanceAll: function(params) {
+    return this.callRead('get_attendance_all', params || {});
+  },
+
   /** พิกัดไซต์ของโครงการ (configured?, site_lat, site_lng, radius_m, windows) */
   getSiteLocation: function() {
     return this.callRead('get_site_location');
