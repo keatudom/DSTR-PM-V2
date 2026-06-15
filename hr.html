@@ -8,14 +8,13 @@
 <link rel="stylesheet" href="css/main.css">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1F3864">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="DSTR">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <style>
-.app { padding-bottom: 30px; max-width: 640px; margin: 0 auto; }
+.app { padding-bottom: 30px; max-width: 680px; margin: 0 auto; }
 .hr-hdr { background:#1F3864; color:#fff; padding:16px 16px 18px; border-radius:0 0 18px 18px; }
 .hr-hdr-h { font-size:18px; font-weight:700; display:flex; align-items:center; gap:7px; }
 .hr-hdr-sub { font-size:12.5px; opacity:.85; margin-top:3px; }
+.hr-back { font-size:12.5px; color:#fff; background:rgba(255,255,255,.15); border:none; border-radius:99px; padding:6px 13px; font-family:inherit; cursor:pointer; margin-top:8px; }
 .hr-body { padding:14px; }
 .hr-ctrl { background:#fff; border:1px solid #E5E7EB; border-radius:13px; padding:13px; margin-bottom:14px; }
 .hr-lbl { font-size:11.5px; font-weight:600; color:#4B5563; margin:0 0 6px; display:block; }
@@ -29,38 +28,60 @@
 .hr-sum-v { font-size:21px; font-weight:700; color:#1F3864; }
 .hr-sum-l { font-size:10.5px; color:#6B7280; margin-top:2px; }
 .hr-print { width:100%; min-height:46px; background:#1F3864; color:#fff; border:none; border-radius:11px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; margin-bottom:14px; }
+.hr-print-hint { font-size:11px; color:#6B7280; text-align:center; margin:-8px 0 14px; }
 
-.hr-person { background:#fff; border:1px solid #E5E7EB; border-radius:13px; padding:13px; margin-bottom:11px; }
-.hr-p-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
-.hr-p-name { font-size:15px; font-weight:700; color:#1F2937; }
-.hr-p-role { font-size:11px; color:#6B7280; }
+.hr-person { background:#fff; border:1px solid #E5E7EB; border-radius:13px; padding:14px; margin-bottom:11px; }
+.doc-letterhead { display:none; }
+.hr-p-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
+.hr-p-name { font-size:16px; font-weight:700; color:#1F2937; }
+.hr-p-role { font-size:11.5px; color:#6B7280; }
 .hr-p-days { font-size:11.5px; font-weight:700; color:#0d6e4f; background:#D1FAE5; padding:3px 11px; border-radius:99px; white-space:nowrap; }
-.hr-day { border-top:1px solid #F0F0F3; padding:7px 0 3px; }
-.hr-day-d { font-size:12.5px; font-weight:600; color:#374151; margin-bottom:3px; }
-.hr-ent { font-size:11.5px; color:#4B5563; padding:2px 0; display:flex; gap:7px; }
-.hr-ent-t { font-weight:700; color:#1F3864; min-width:40px; }
-.hr-badge { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:99px; }
-.hr-b-on { background:#D1FAE5; color:#065F46; } .hr-b-off { background:#FEF3C7; color:#92400E; } .hr-b-flag { background:#FEE2E2; color:#991B1B; }
+.hr-p-info { font-size:12.5px; color:#374151; background:#F9FAFB; border:1px solid #EEF0F3; border-radius:9px; padding:9px 11px; margin-bottom:9px; }
+.hr-p-info .row { display:flex; align-items:center; gap:7px; margin-bottom:5px; flex-wrap:wrap; }
+.hr-p-info .row:last-child { margin-bottom:0; }
+.id-inp { border:1.5px solid #D1D5DB; border-radius:7px; padding:6px 9px; font-size:13px; font-family:inherit; width:190px; letter-spacing:1px; }
+.id-save { font-size:11px; color:#1F3864; background:#EEF2FF; border:1px solid #C7D2FE; border-radius:7px; padding:6px 11px; cursor:pointer; font-family:inherit; }
+.day-row { border-top:1px solid #F0F0F3; padding:7px 0 4px; }
+.day-d { font-size:12.5px; font-weight:600; color:#374151; margin-bottom:3px; }
+.ent { font-size:11.5px; color:#4B5563; padding:2px 0; display:flex; gap:7px; }
+.ent-t { font-weight:700; color:#1F3864; min-width:42px; }
+.badge { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:99px; }
+.b-on { background:#D1FAE5; color:#065F46; } .b-off { background:#FEF3C7; color:#92400E; } .b-flag { background:#FEE2E2; color:#991B1B; }
+.doc-sign { display:none; }
 .hr-empty { text-align:center; color:#9CA3AF; font-size:13px; padding:30px 14px; }
 .hr-deny { text-align:center; padding:50px 20px; }
-.hr-back { font-size:12.5px; color:#fff; background:rgba(255,255,255,.15); border:none; border-radius:99px; padding:6px 13px; font-family:inherit; cursor:pointer; margin-top:8px; }
 
 @media print {
-  .hr-hdr .hr-back, .hr-ctrl, .hr-print, .hr-sum { display:none !important; }
+  @page { margin: 14mm; }
+  body { background:#fff; }
+  .hr-hdr, .hr-ctrl, .hr-sum, .hr-print, .hr-print-hint, .hr-back { display:none !important; }
   .app { padding:0; max-width:100%; } .hr-body { padding:0; }
-  .hr-hdr { background:#fff; color:#000; border:none; padding:0 0 8px; border-radius:0; }
-  .hr-hdr-sub { color:#333; }
-  .hr-person { border:none; border-bottom:1.5px solid #000; border-radius:0; page-break-inside:avoid; }
-  #hrPrintHead { display:block !important; }
+  .hr-person { border:none; border-radius:0; padding:0; margin:0; page-break-after:always; }
+  .hr-person:last-child { page-break-after:auto; }
+  .doc-letterhead { display:flex; align-items:center; gap:12px; border-bottom:2.5px solid #1F3864; padding-bottom:10px; margin-bottom:12px; }
+  .doc-logo { width:54px; height:54px; border-radius:8px; }
+  .doc-co-th { font-size:16px; font-weight:700; color:#111; }
+  .doc-co-en { font-size:11px; color:#444; letter-spacing:.5px; }
+  .doc-co-addr { font-size:9.5px; color:#666; margin-top:2px; }
+  .doc-title { margin-left:auto; text-align:right; font-size:17px; font-weight:700; color:#1F3864; line-height:1.2; }
+  .doc-title span { font-size:10px; color:#666; font-weight:500; }
+  .hr-p-info { background:none; border:none; padding:0; font-size:13px; }
+  .hr-p-days { background:none; color:#000; padding:0; font-weight:600; }
+  .id-inp { border:none; border-bottom:1px solid #000; border-radius:0; padding:2px 4px; width:200px; font-size:13px; }
+  .id-save { display:none; }
+  .day-row { border-top:1px solid #ccc; }
+  .doc-sign { display:flex; justify-content:space-between; gap:20px; margin-top:34px; padding-top:6px; }
+  .doc-sign > div { flex:1; text-align:center; font-size:12px; color:#000; }
+  .doc-sign .line { margin-bottom:5px; color:#000; }
 }
-#hrPrintHead { display:none; font-size:12px; color:#555; margin-bottom:8px; }
+.doc-letterhead, .doc-sign { /* on-screen hidden via display:none above */ }
 </style>
 </head>
 <body>
 <div class="app">
   <div class="hr-hdr">
     <div class="hr-hdr-h">🗂️ ใบลงเวลาทีม (HR)</div>
-    <div class="hr-hdr-sub">ดูการเข้างานทุกคน · ไว้เบิกค่าแรง</div>
+    <div class="hr-hdr-sub">ดูการเข้างานทุกคน · กรอกเลขบัตร · พิมพ์เอกสารเบิกค่าแรง</div>
     <button class="hr-back" onclick="history.length>1?history.back():location.href='index.html'">← กลับ</button>
   </div>
   <div class="hr-body">
@@ -68,16 +89,19 @@
       <div class="hr-ctrl">
         <span class="hr-lbl">ช่วงเวลา</span>
         <div class="hr-quick" id="hrQuick">
-          <button class="hr-qbtn on" data-r="week" onclick="setRange('week',this)">สัปดาห์นี้</button>
-          <button class="hr-qbtn" data-r="lastweek" onclick="setRange('lastweek',this)">สัปดาห์ที่แล้ว</button>
-          <button class="hr-qbtn" data-r="month" onclick="setRange('month',this)">เดือนนี้</button>
+          <button class="hr-qbtn on" onclick="setRange('week',this)">สัปดาห์นี้</button>
+          <button class="hr-qbtn" onclick="setRange('lastweek',this)">สัปดาห์ที่แล้ว</button>
+          <button class="hr-qbtn" onclick="setRange('month',this)">เดือนนี้</button>
         </div>
         <div class="hr-row">
           <div><span class="hr-lbl">ตั้งแต่</span><input type="date" class="hr-inp" id="hrFrom" onchange="customRange()"></div>
           <div><span class="hr-lbl">ถึง</span><input type="date" class="hr-inp" id="hrTo" onchange="customRange()"></div>
-          <div style="flex:1;min-width:140px"><span class="hr-lbl">ไซต์</span>
-            <select class="hr-sel" id="hrSite" style="width:100%" onchange="load()"><option value="">ทุกไซต์</option></select>
-          </div>
+        </div>
+        <div class="hr-row" style="margin-top:10px">
+          <div style="flex:1;min-width:150px"><span class="hr-lbl">ไซต์</span>
+            <select class="hr-sel" id="hrSite" style="width:100%" onchange="load()"><option value="">ทุกไซต์</option></select></div>
+          <div style="flex:1;min-width:150px"><span class="hr-lbl">เลือกพนักงาน (แยกรายคน)</span>
+            <select class="hr-sel" id="hrPerson" style="width:100%" onchange="renderList()"><option value="">— ทุกคน —</option></select></div>
         </div>
       </div>
 
@@ -86,9 +110,9 @@
         <div class="hr-sum-c"><div class="hr-sum-v" id="hrCntManDays">—</div><div class="hr-sum-l">วัน-คน รวม</div></div>
         <div class="hr-sum-c"><div class="hr-sum-v" id="hrCntFlag">—</div><div class="hr-sum-l">🚩 GPS ไกล</div></div>
       </div>
-      <button class="hr-print" onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF (แยกหน้าต่อคน)</button>
+      <button class="hr-print" onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button>
+      <div class="hr-print-hint">เอกสารแยกหน้าต่อคน · มีโลโก้บริษัท + ช่องเซ็น · เลือกพนักงานก่อนพิมพ์ = ได้เฉพาะคนนั้น</div>
 
-      <div id="hrPrintHead"></div>
       <div id="hrList"><div class="hr-empty">กำลังโหลด...</div></div>
     </div>
 
@@ -109,8 +133,10 @@ if (!Auth.requireAuth('admin')) { /* client ถูกเด้งออก */ }
 var TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 var ROLE_TH = { creator:'ผู้สร้างระบบ', owner:'เจ้าของกิจการ', director:'ผู้ดูแลโครงการ', pm:'PM', hr:'ฝ่ายบุคคล',
   site_engineer:'วิศวกรหน้างาน', foreman:'โฟร์แมน', purchaser:'ฝ่ายจัดซื้อ', contractor:'ผู้รับเหมา', admin:'แอดมิน' };
+var DATA = null, RANGE = { from:'', to:'' };
 function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function fmtTH(d){ d=(d instanceof Date)?d:new Date(d+'T00:00:00'); return d.getDate()+' '+TH_MONTHS[d.getMonth()]+' '+(d.getFullYear()+543); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 function rangeFor(kind){
   var now=new Date(), f, t;
@@ -125,42 +151,42 @@ function setRange(kind,btn){
   document.querySelectorAll('.hr-qbtn').forEach(function(b){b.classList.remove('on');});
   if(btn) btn.classList.add('on');
   var r=rangeFor(kind);
-  document.getElementById('hrFrom').value=r.from;
-  document.getElementById('hrTo').value=r.to;
+  document.getElementById('hrFrom').value=r.from; document.getElementById('hrTo').value=r.to;
   load();
 }
 function customRange(){ document.querySelectorAll('.hr-qbtn').forEach(function(b){b.classList.remove('on');}); load(); }
 
 function load(){
-  var from=document.getElementById('hrFrom').value, to=document.getElementById('hrTo').value;
+  RANGE.from=document.getElementById('hrFrom').value; RANGE.to=document.getElementById('hrTo').value;
   var site=document.getElementById('hrSite').value;
   document.getElementById('hrList').innerHTML='<div class="hr-empty">กำลังโหลด...</div>';
-  API.getAttendanceAll({ from:from, to:to, project_id:site }).then(function(res){
-    if(!res || res.ok===false){ // ไม่มีสิทธิ์ (ATTEND)
-      document.getElementById('hrMain').style.display='none';
-      document.getElementById('hrDeny').style.display='block';
-      return;
-    }
-    var d=res.data||res;
-    fillSites(d.projects||[]);
-    render(d, from, to);
-  }).catch(function(){
-    document.getElementById('hrList').innerHTML='<div class="hr-empty">โหลดไม่สำเร็จ ลองใหม่</div>';
-  });
+  API.getAttendanceAll({ from:RANGE.from, to:RANGE.to, project_id:site }).then(function(res){
+    if(!res || res.ok===false){ document.getElementById('hrMain').style.display='none'; document.getElementById('hrDeny').style.display='block'; return; }
+    DATA = res.data||res;
+    fillSites(DATA.projects||[]);
+    fillPersons(DATA.staff||[]);
+    renderList();
+  }).catch(function(){ document.getElementById('hrList').innerHTML='<div class="hr-empty">โหลดไม่สำเร็จ ลองใหม่</div>'; });
 }
 
 var sitesFilled=false;
 function fillSites(projects){
   if(sitesFilled) return; sitesFilled=true;
-  var sel=document.getElementById('hrSite'); var cur=sel.value;
-  sel.innerHTML='<option value="">ทุกไซต์</option>'+projects.map(function(p){
-    return '<option value="'+p.project_id+'">'+p.name+'</option>'; }).join('');
+  var sel=document.getElementById('hrSite'), cur=sel.value;
+  sel.innerHTML='<option value="">ทุกไซต์</option>'+projects.map(function(p){ return '<option value="'+esc(p.project_id)+'">'+esc(p.name)+'</option>'; }).join('');
+  sel.value=cur;
+}
+function fillPersons(staff){
+  var sel=document.getElementById('hrPerson'), cur=sel.value;
+  sel.innerHTML='<option value="">— ทุกคน —</option>'+staff.map(function(s){ return '<option value="'+esc(s.staff_name)+'">'+esc(s.staff_name)+'</option>'; }).join('');
   sel.value=cur;
 }
 
-function render(d, from, to){
-  var staff=d.staff||[];
-  document.getElementById('hrPrintHead').textContent='ใบลงเวลาทีม · '+fmtTH(from)+' – '+fmtTH(to);
+function renderList(){
+  if(!DATA) return;
+  var pick=document.getElementById('hrPerson').value;
+  var staff=(DATA.staff||[]).filter(function(s){ return !pick || s.staff_name===pick; });
+
   var manDays=0, flags=0;
   staff.forEach(function(s){ manDays+=s.days_present; s.days.forEach(function(dd){ flags+=dd.flagged_count||0; }); });
   document.getElementById('hrCntPeople').textContent=staff.length;
@@ -168,35 +194,63 @@ function render(d, from, to){
   document.getElementById('hrCntFlag').textContent=flags;
 
   if(!staff.length){ document.getElementById('hrList').innerHTML='<div class="hr-empty">ยังไม่มีการเช็คอินในช่วงนี้</div>'; return; }
-  var html='';
-  staff.forEach(function(s){
-    var role=ROLE_TH[s.role]||s.role||'';
-    var days=s.days.slice().reverse().map(function(dd){
-      var ent=dd.entries.map(function(e){
-        var b=e.location_type==='offsite'
-          ? '<span class="hr-badge hr-b-off">'+(e.off_site_reason||'นอกไซต์')+'</span>'
-          : (e.is_far?'<span class="hr-badge hr-b-flag">🚩 GPS ไกล</span>':'<span class="hr-badge hr-b-on">ไซต์</span>');
-        return '<div class="hr-ent"><span class="hr-ent-t">'+e.time+'</span><span style="flex:1">'+(e.activity||'-')+' '+b+'</span></div>';
-      }).join('');
-      return '<div class="hr-day"><div class="hr-day-d">'+fmtTH(dd.date)+'</div>'+ent+'</div>';
-    }).join('');
-    html+='<div class="hr-person"><div class="hr-p-head"><div><div class="hr-p-name">'+s.staff_name+'</div>'+
-      (role?'<div class="hr-p-role">'+role+'</div>':'')+'</div><div class="hr-p-days">มา '+s.days_present+' วัน</div></div>'+days+'</div>';
-  });
-  document.getElementById('hrList').innerHTML=html;
+  var period=fmtTH(RANGE.from)+' – '+fmtTH(RANGE.to);
+  document.getElementById('hrList').innerHTML=staff.map(function(s){ return personCard(s, period); }).join('');
 }
 
-// boot
+function personCard(s, period){
+  var role=ROLE_TH[s.role]||s.role||'-';
+  var days=s.days.slice().reverse().map(function(dd){
+    var ent=dd.entries.map(function(e){
+      var b=e.location_type==='offsite'
+        ? '<span class="badge b-off">'+esc(e.off_site_reason||'นอกไซต์')+'</span>'
+        : (e.is_far?'<span class="badge b-flag">🚩 GPS ไกล</span>':'<span class="badge b-on">อยู่ไซต์</span>');
+      return '<div class="ent"><span class="ent-t">'+esc(e.time)+'</span><span style="flex:1">'+esc(e.activity||'-')+' '+b+'</span></div>';
+    }).join('');
+    return '<div class="day-row"><div class="day-d">'+fmtTH(dd.date)+'</div>'+ent+'</div>';
+  }).join('');
+  var nm=esc(s.staff_name);
+  return '<div class="hr-person">'+
+    '<div class="doc-letterhead"><img class="doc-logo" src="icons/icon-192.png">'+
+      '<div><div class="doc-co-th">บริษัท ดีไซน์ ทีเรีย จำกัด</div><div class="doc-co-en">DESIGNTERIOR CO., LTD.</div>'+
+      '<div class="doc-co-addr">89 ม.4 ต.สระสมิง อ.วารินชำราบ จ.อุบลราชธานี 34190 · เลขภาษี 0105555121538</div></div>'+
+      '<div class="doc-title">ใบลงเวลาทำงาน<br><span>TIME SHEET</span></div></div>'+
+    '<div class="hr-p-head"><div><div class="hr-p-name">'+nm+'</div><div class="hr-p-role">ตำแหน่ง: '+esc(role)+'</div></div>'+
+      '<div class="hr-p-days">มา '+s.days_present+' วัน</div></div>'+
+    '<div class="hr-p-info">'+
+      '<div class="row"><b>เลขบัตรประชาชน:</b> <input class="id-inp" value="'+esc(s.national_id||'')+'" placeholder="กรอกเพื่อใส่ในเอกสาร" maxlength="17" '+
+        'onkeyup="this.value=this.value.replace(/[^0-9 -]/g,\'\')"> '+
+        '<button class="id-save" onclick="saveId(\''+nm.replace(/'/g,"\\'")+'\', this)">💾 บันทึก</button></div>'+
+      '<div class="row"><b>ช่วงเวลา:</b> '+period+'</div>'+
+    '</div>'+
+    '<div class="day-list">'+days+'</div>'+
+    '<div class="doc-sign">'+
+      '<div><div class="line">ลงชื่อ ............................</div>พนักงาน</div>'+
+      '<div><div class="line">ลงชื่อ ............................</div>ผู้ตรวจสอบ (ฝ่ายบุคคล)</div>'+
+      '<div><div class="line">ลงชื่อ ............................</div>ผู้มีอำนาจอนุมัติ</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function saveId(name, btn){
+  var inp=btn.parentNode.querySelector('.id-inp');
+  var id=(inp.value||'').trim();
+  btn.textContent='กำลังบันทึก...'; btn.disabled=true;
+  API.setIdCard({ staff_name:name, national_id:id }).then(function(){
+    // อัปเดต cache ในหน้า
+    (DATA.staff||[]).forEach(function(s){ if(s.staff_name===name) s.national_id=id; });
+    btn.textContent='✓ บันทึกแล้ว';
+    setTimeout(function(){ btn.textContent='💾 บันทึก'; btn.disabled=false; }, 1500);
+  }).catch(function(){ btn.textContent='❌ ลองใหม่'; btn.disabled=false; });
+}
+
 (function(){
   var role=Auth.getRole();
   var allow={ hr:1, owner:1, creator:1, director:1, pm:1, admin:1 };
-  if(role && !allow[role]){ // role ที่ไม่ใช่ HR/ผู้บริหาร → แจ้งไม่มีสิทธิ์ (server ก็กันอยู่)
-    document.getElementById('hrDeny').style.display='block'; return;
-  }
+  if(role && !allow[role]){ document.getElementById('hrDeny').style.display='block'; return; }
   document.getElementById('hrMain').style.display='block';
   var r=rangeFor('week');
-  document.getElementById('hrFrom').value=r.from;
-  document.getElementById('hrTo').value=r.to;
+  document.getElementById('hrFrom').value=r.from; document.getElementById('hrTo').value=r.to;
   load();
 })();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});

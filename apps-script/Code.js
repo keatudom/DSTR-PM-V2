@@ -430,6 +430,8 @@ function route(action, p) {
     case 'get_checkins':       return getCheckins_(p);
     case 'get_timesheet':      return getTimesheet_(p);
     case 'get_attendance_all': return getAttendanceAll_(p);  // HR: ใบลงเวลาทุกคน (cap ATTEND)
+    case 'update_checkin':     return updateCheckin_(p);     // HR: แก้เช็คอินที่ลงผิดคน
+    case 'set_id_card':        return setIdCard_(p);         // HR: บันทึกเลขบัตรประชาชน
     case 'get_site_location':  return getSiteLocation_(p);
     case 'set_site_location':  return setSiteLocation_(p);
     case 'delete_checkin':     return deleteCheckin_(p);

@@ -210,6 +210,41 @@ function createCheckin_(p) {
   };
 }
 
+// แก้เช็คอิน (เช่น ลงผิดอีเมล/ผิดคน) — by checkin_id · สิทธิ์ ATTEND (HR/ผู้บริหาร)
+function updateCheckin_(p) {
+  if (!p || !p.checkin_id) throw new Error('checkin_id required');
+  var updates = {};
+  ['staff_name', 'staff_id', 'role', 'activity', 'note'].forEach(function (f) {
+    if (p[f] !== undefined) updates[f] = p[f];
+  });
+  if (!Object.keys(updates).length) throw new Error('ไม่มี field ให้แก้');
+  updateRowByCol(CHECKIN_SHEET_, 'checkin_id', p.checkin_id, updates);
+  return { ok: true, checkin_id: p.checkin_id, updated: Object.keys(updates) };
+}
+
+// ── เลขบัตรประชาชนพนักงาน (สำหรับเอกสารเบิกค่าแรง) — เก็บแยก sheet, เห็นเฉพาะ HR ──
+var IDCARD_SHEET_ = '30_StaffIDCard';
+var IDCARD_HEADERS_ = ['staff_name', 'national_id', 'updated_at'];
+function setIdCard_(p) {
+  if (!p || !p.staff_name) throw new Error('staff_name required');
+  var sh = _getOrCreateSheet_(IDCARD_SHEET_, IDCARD_HEADERS_);
+  var data = sh.getDataRange().getValues();
+  var nIdx = data[0].indexOf('staff_name');
+  var rowIdx = -1;
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][nIdx]) === String(p.staff_name)) { rowIdx = i + 1; break; }
+  }
+  var obj = { staff_name: p.staff_name, national_id: String(p.national_id || ''), updated_at: nowStr() };
+  if (rowIdx === -1) appendRow(IDCARD_SHEET_, obj);
+  else IDCARD_HEADERS_.forEach(function (h, c) { sh.getRange(rowIdx, c + 1).setValue(obj[h]); });
+  return { ok: true, staff_name: p.staff_name };
+}
+function _idCardMap_() {
+  var m = {};
+  try { getAllRows(IDCARD_SHEET_).forEach(function (r) { if (r.staff_name) m[String(r.staff_name)] = String(r.national_id || ''); }); } catch (e) {}
+  return m;
+}
+
 // ลบเช็คอิน (รายการทดสอบ/กดผิด) — by checkin_id
 function deleteCheckin_(p) {
   if (!p || !p.checkin_id) throw new Error('checkin_id required');
@@ -358,6 +393,10 @@ function getAttendanceAll_(p) {
     return { staff_id: s.staff_id, staff_name: s.staff_name, role: s.role, days: days, days_present: days.length };
   });
   staffArr.sort(function (a, b) { return (a.staff_name || '').localeCompare(b.staff_name || ''); });
+
+  // แนบเลขบัตรประชาชน (ถ้า HR กรอกไว้) — สำหรับเอกสารเบิกค่าแรง
+  var idmap = _idCardMap_();
+  staffArr.forEach(function (s) { s.national_id = idmap[String(s.staff_name)] || ''; });
 
   // ชื่อโครงการ (เฉพาะ id + name — ไม่หลุดข้อมูลเงิน)
   var projects = [];

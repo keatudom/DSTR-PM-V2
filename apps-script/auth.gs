@@ -256,7 +256,7 @@ var _ACTION_CAP_ = (function () {
 
   add('SITECFG', ['set_site_location']); // ปักหมุดไซต์ — SE ขึ้นไป (ดู _ROLE_CAPS_)
 
-  add('ATTEND', ['get_attendance_all']); // ดูใบลงเวลาทุกคน — HR + ผู้บริหาร (ดู _ROLE_CAPS_)
+  add('ATTEND', ['get_attendance_all', 'update_checkin', 'set_id_card']); // HR: ดู/แก้ใบลงเวลา + เลขบัตร (ดู _ROLE_CAPS_)
 
   add('ADMIN', [
     'create_staff', 'update_staff', 'assign_project_staff',

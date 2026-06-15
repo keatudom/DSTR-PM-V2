@@ -869,6 +869,16 @@ const API = {
     return this.callRead('get_attendance_all', params || {});
   },
 
+  /** HR: แก้เช็คอินที่ลงผิดคน — { checkin_id, staff_name?, staff_id?, role? } */
+  updateCheckin: function(data) {
+    return this.callRead('update_checkin', data);
+  },
+
+  /** HR: บันทึกเลขบัตรประชาชนพนักงาน — { staff_name, national_id } */
+  setIdCard: function(data) {
+    return this.callRead('set_id_card', data);
+  },
+
   /** พิกัดไซต์ของโครงการ (configured?, site_lat, site_lng, radius_m, windows) */
   getSiteLocation: function() {
     return this.callRead('get_site_location');
