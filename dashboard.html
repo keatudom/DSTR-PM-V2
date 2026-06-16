@@ -897,6 +897,39 @@
       </div>
     </div>
 
+    <!-- 📊 ความคืบหน้างาน vs การเบิกเงิน (เจ้าบ้าน) -->
+    <style>
+      .pp-card { border-left: 4px solid #2563eb; }
+      .pp-cmp { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+      .pp-col { flex:1; min-width:130px; background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:11px 12px; }
+      .pp-col-l { font-size:11px; color:#6B7280; }
+      .pp-col-v { font-size:24px; font-weight:800; line-height:1.1; margin-top:2px; font-variant-numeric:tabular-nums; }
+      .pp-col-s { font-size:11px; color:#9CA3AF; margin-top:2px; }
+      .pp-prog .pp-col-v { color:#2563eb; }
+      .pp-pay  .pp-col-v { color:#0d6e4f; }
+      .pp-gap  .pp-col-v.over { color:#dc2626; }
+      .pp-gap  .pp-col-v.under { color:#0d6e4f; }
+      .pp-stack { height:14px; border-radius:7px; overflow:hidden; display:flex; background:#eef2f7; margin:4px 0 6px; }
+      .pp-stack-prog { background:#2563eb; }
+      .pp-stack-gap  { background:#fca5a5; }
+      .pp-legend { font-size:11px; color:#6B7280; display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px; }
+      .pp-legend i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:middle; }
+      .pp-note { font-size:11.5px; color:#475569; background:#eff6ff; border:1px solid #bfdbfe; border-radius:9px; padding:9px 11px; line-height:1.55; margin-bottom:12px; }
+      .pp-row { display:flex; align-items:center; gap:8px; padding:9px 0; border-top:1px solid #f1f5f9; }
+      .pp-row-name { font-size:12.5px; font-weight:600; color:#1f2937; flex:1; min-width:90px; }
+      .pp-row-bars { flex:2; min-width:140px; }
+      .pp-mini { height:7px; border-radius:99px; background:#eef2f7; overflow:hidden; margin:2px 0; }
+      .pp-mini-prog { height:100%; background:#2563eb; }
+      .pp-mini-pay  { height:100%; background:#12936b; }
+      .pp-row-num { font-size:11px; color:#6B7280; min-width:120px; text-align:right; white-space:nowrap; }
+      .pp-row-num b.p { color:#2563eb; } .pp-row-num b.m { color:#0d6e4f; }
+      .pp-head-mini { font-size:11px; color:#9CA3AF; display:flex; justify-content:flex-end; gap:14px; margin-bottom:2px; }
+    </style>
+    <div class="card pp-card">
+      <div class="card-title">📊 ความคืบหน้างาน vs การเบิกเงิน</div>
+      <div id="ppBody"></div>
+    </div>
+
     <!-- 💰 Phase F — Client Finance (สัญญาเจ้าบ้าน / เงินเข้า) -->
     <style>
       .cf-card { border-left: 4px solid #12936b; }
@@ -1125,7 +1158,7 @@ async function loadData() {
 
     // Phase F: โหลดสัญญาเจ้าบ้าน + งวด + หลักฐาน (parallel)
     API.getClientFinance().then(res => {
-      if (res.ok && res.data) { state.clientFinance = res.data; renderClientFinance(); }
+      if (res.ok && res.data) { state.clientFinance = res.data; renderClientFinance(); renderKPIs(); }
     }).catch(()=>{});
 
     // Phase H: โหลดการแจ้งเตือน (parallel)
@@ -1436,7 +1469,14 @@ function renderKPIs() {
   const actualPct = calcProjectProgress();
   const planPct = calcPlanProgress(project);
   const variance = calcVariance(actualPct, planPct);
-  const paidAmount = state.data.payments.filter(p => p.status === 'Paid').reduce((s,p) => s+p.amount, 0);
+  // ยอดเบิก: ใช้สัญญาเจ้าบ้านทุกสัญญา (Phase F) ถ้ามี · ไม่งั้น fallback 04_Payments เดิม
+  const payStats = calcClientPaymentStats();
+  const paidAmount = payStats.hasData
+    ? payStats.totalPaid
+    : state.data.payments.filter(p => p.status === 'Paid').reduce((s,p) => s+p.amount, 0);
+  const paidPct = payStats.hasData
+    ? payStats.pct
+    : Math.round(paidAmount / project.totalValue * 100);
   const daysLeft = Math.max(0, daysBetween(new Date(), new Date(project.endDate)));
 
   const actualClass = variance >= -5 ? 'ok' : (variance >= -15 ? 'warn' : 'bad');
@@ -1460,7 +1500,7 @@ function renderKPIs() {
     <div class="kpi ok">
       <div class="kpi-l">เบิกแล้ว</div>
       <div class="kpi-v">${fmt(paidAmount)}</div>
-      <div class="kpi-s">💰 ${Math.round(paidAmount/project.totalValue*100)}% ของโครงการ</div>
+      <div class="kpi-s">💰 ${paidPct}% ของโครงการ</div>
     </div>
   `;
 }
@@ -2880,7 +2920,91 @@ function cfOpenLink(url) {
   if (url) window.open(url, '_blank', 'noopener');
 }
 
+// ============================================================
+// 📊 ความคืบหน้างาน vs การเบิกเงิน (เจ้าบ้าน)
+// progress = weight-based จาก checklist · payment = ยอดรับจริงทุกสัญญา (Phase F)
+// ============================================================
+function renderPaymentProgress() {
+  const el = document.getElementById('ppBody');
+  if (!el || !state.data) return;
+
+  const prog = calcProgressByContract();          // { overall, main, addon, hasAddon }
+  const pay = calcClientPaymentStats();            // { hasData, pct, totalPaid, totalValue, contracts }
+  const progPct = prog.overall;
+
+  // ── แถบเทียบรวม: progress vs payment vs ส่วนต่าง ──
+  let topHtml = '<div class="pp-cmp">';
+  topHtml += '<div class="pp-col pp-prog"><div class="pp-col-l">งานเสร็จจริง (Progress)</div>' +
+    '<div class="pp-col-v">' + progPct + '%</div>' +
+    '<div class="pp-col-s">⚖ ถ่วงน้ำหนักตามมูลค่า+งวด</div></div>';
+
+  if (pay.hasData) {
+    topHtml += '<div class="pp-col pp-pay"><div class="pp-col-l">เบิกเจ้าบ้านแล้ว (Payment)</div>' +
+      '<div class="pp-col-v">' + pay.pct + '%</div>' +
+      '<div class="pp-col-s">💰 ' + fmt(pay.totalPaid) + ' / ' + fmt(pay.totalValue) + '</div></div>';
+
+    const gap = Math.round((pay.pct - progPct) * 10) / 10;
+    const over = gap > 0;
+    topHtml += '<div class="pp-col pp-gap"><div class="pp-col-l">' +
+      (over ? 'เบิกล้ำหน้างาน' : 'เบิกตามหลังงาน') + '</div>' +
+      '<div class="pp-col-v ' + (over ? 'over' : 'under') + '">' +
+      (over ? '+' : '') + gap + '%</div>' +
+      '<div class="pp-col-s">' + (over ? 'payment − progress' : 'งานนำเงิน') + '</div></div>';
+    topHtml += '</div>';
+
+    // แถบ stack: progress (น้ำเงิน) + ส่วนที่เบิกล้ำ (แดงอ่อน)
+    const pw = Math.min(progPct, 100);
+    const gw = Math.max(0, Math.min(pay.pct, 100) - pw);
+    topHtml += '<div class="pp-stack">' +
+      '<div class="pp-stack-prog" style="width:' + pw + '%"></div>' +
+      '<div class="pp-stack-gap" style="width:' + gw + '%"></div></div>';
+    topHtml += '<div class="pp-legend">' +
+      '<span><i style="background:#2563eb"></i>งานเสร็จ ' + progPct + '%</span>' +
+      (gw > 0 ? '<span><i style="background:#fca5a5"></i>เบิกล้ำหน้างาน ' + Math.round(gw * 10) / 10 + '%</span>' : '') +
+      '</div>';
+
+    if (over && gap >= 10) {
+      topHtml += '<div class="pp-note">ℹ️ การเบิกนำหน้างานเป็นเรื่อง<b>ปกติ</b>สำหรับงวดมัดจำ/วัสดุเข้า (เก็บเงินก่อนงานเสร็จตามสัดส่วน) — ไม่ใช่ความผิดพลาด แต่ควรดูช่องว่างนี้ไว้ อย่าเบิกล้ำหน้างานจนเสี่ยงเวลาส่งมอบ</div>';
+    }
+  } else {
+    topHtml += '<div class="pp-col pp-pay"><div class="pp-col-l">เบิกเจ้าบ้านแล้ว (Payment)</div>' +
+      '<div class="pp-col-v" style="color:#9CA3AF">—</div>' +
+      '<div class="pp-col-s">ยังไม่มีสัญญาเจ้าบ้าน</div></div></div>';
+  }
+
+  // ── แยกตามสัญญา: งานหลัก / งานเพิ่ม ──
+  let rowsHtml = '';
+  if (prog.hasAddon && prog.main) {
+    rowsHtml += '<div class="pp-head-mini"><span>■ งานเสร็จ</span><span>■ เบิกแล้ว</span></div>';
+    const payByNo = {};
+    if (pay.hasData) pay.contracts.forEach(c => { payByNo[c.contract_no] = c; });
+
+    const renderRow = (name, p, payRow) => {
+      const payPct = payRow ? payRow.pct : null;
+      return '<div class="pp-row">' +
+        '<div class="pp-row-name">' + name + '</div>' +
+        '<div class="pp-row-bars">' +
+          '<div class="pp-mini"><div class="pp-mini-prog" style="width:' + Math.min(p.pct, 100) + '%"></div></div>' +
+          (payPct !== null ? '<div class="pp-mini"><div class="pp-mini-pay" style="width:' + Math.min(payPct, 100) + '%"></div></div>' : '') +
+        '</div>' +
+        '<div class="pp-row-num"><b class="p">' + p.pct + '%</b>' +
+          (payPct !== null ? ' · <b class="m">เบิก ' + payPct + '%</b>' : '') + '</div>' +
+      '</div>';
+    };
+    // จับคู่สัญญากับกลุ่มงาน (เลขที่สัญญาจาก config: หลัก=quoteNo, เพิ่ม=CT005)
+    const proj = (CONFIG.PROJECTS || {})[state.projectId] || {};
+    rowsHtml += renderRow('งานหลัก', prog.main, payByNo[proj.quoteNo]);
+    rowsHtml += renderRow('งานเพิ่ม (ตู้ F-21/F-22)', prog.addon, null);
+
+    rowsHtml = '<div style="margin-top:6px">' + rowsHtml +
+      '<div class="pp-col-s" style="margin-top:6px">หมายเหตุ: "เบิกแล้ว %" ของงานเพิ่มมีงวดมัดจำที่เก็บก่อนเริ่มผลิต — เทียบ % ตรงๆ กับงานเสร็จไม่ได้</div></div>';
+  }
+
+  el.innerHTML = topHtml + rowsHtml;
+}
+
 function renderClientFinance() {
+  renderPaymentProgress();
   const body = document.getElementById('cfBody');
   const actions = document.getElementById('cfHeaderActions');
   if (!body || !actions) return;
@@ -2898,72 +3022,77 @@ function renderClientFinance() {
     return;
   }
 
-  // ใช้สัญญาหลักตัวแรก (ปกติเจ้าบ้าน 1 สัญญา/โครงการ)
-  const c = contracts[0];
-  const cMilestones = milestones.filter(m => String(m.contract_id) === String(c.contract_id));
-  const paidTotal = cMilestones.reduce((s, m) => s + Number(m.paid_amount || 0), 0);
-  const pct = c.value > 0 ? Math.round((paidTotal / c.value) * 100) : 0;
-  const cFiles = files.filter(f => String(f.contract_id) === String(c.contract_id));
-
+  // แสดงทุกสัญญาเจ้าบ้าน (บ้านคุณโบว์มี 3 สัญญา: หลัก + งานเพิ่ม + ปรับวัสดุ)
   actions.innerHTML =
-    '<button class="cf-btn cf-btn-secondary" onclick="CF.openAddMilestone(\'' + escapeHtmlAttr(c.contract_id) + '\')">+ เพิ่มงวด</button>' +
-    '<button class="cf-btn cf-btn-secondary" onclick="CF.openEditContract(\'' + escapeHtmlAttr(c.contract_id) + '\')">✏️ แก้สัญญา</button>';
+    '<button class="cf-btn cf-btn-primary" onclick="CF.openCreateContract()">+ สร้างสัญญา</button>';
 
-  // ── สรุปสัญญา ──
-  let filesHtml = '';
-  cFiles.forEach(f => {
-    const ic = f.file_type === 'pdf' ? '📄' : '🖼️';
-    filesHtml += '<div class="cf-file-row"><span>' + ic + '</span>' +
-      '<span class="cf-file-name" onclick="cfOpenLink(\'' + escapeHtmlAttr(f.url) + '\')">' + escapeHtml(f.name) + '</span>' +
-      '<span class="cf-file-del" onclick="CF.deleteContractFile(\'' + escapeHtmlAttr(f.file_id) + '\')">✕</span></div>';
-  });
+  let html = '';
+  contracts.forEach(c => {
+    const cMilestones = milestones.filter(m => String(m.contract_id) === String(c.contract_id));
+    const paidTotal = cMilestones.reduce((s, m) => s + Number(m.paid_amount || 0), 0);
+    const pct = c.value > 0 ? Math.round((paidTotal / c.value) * 100) : 0;
+    const cFiles = files.filter(f => String(f.contract_id) === String(c.contract_id));
 
-  let html = '<div class="cf-summary">' +
-    '<div class="cf-sum-title">' + escapeHtml(c.title || 'สัญญาก่อสร้าง') + (c.contract_no ? ' <span style="font-weight:400;color:#6B7280">(' + escapeHtml(c.contract_no) + ')</span>' : '') + '</div>' +
-    '<div class="cf-sum-row"><span>มูลค่าสัญญา</span><span class="cf-sum-amt">' + cfBaht(c.value) + '</span></div>' +
-    '<div class="cf-sum-row"><span>รับแล้ว</span><span class="cf-sum-amt">' + cfBaht(paidTotal) + ' (' + pct + '%)</span></div>' +
-    '<div class="cf-bar"><div class="cf-bar-fill" style="width:' + Math.min(pct, 100) + '%"></div></div>' +
-    '<div style="margin-top:6px">' + filesHtml +
-      '<button class="cf-slip-btn" onclick="CF.openUploadContractFile(\'' + escapeHtmlAttr(c.contract_id) + '\')">📄 แนบไฟล์สัญญา</button>' +
-    '</div>' +
-  '</div>';
-
-  // ── งวดการชำระ ──
-  if (!cMilestones.length) {
-    html += '<div class="cf-empty">ยังไม่มีงวดการชำระ — กด <b>+ เพิ่มงวด</b></div>';
-  } else {
-    cMilestones.forEach(m => {
-      const isPaid = ['paid', 'done', 'completed'].indexOf(String(m.status || '').toLowerCase()) >= 0 || !!m.paid_date;
-      const badge = isPaid
-        ? '<span class="cf-badge cf-badge-paid">✓ รับแล้ว</span>'
-        : '<span class="cf-badge cf-badge-pending">⏳ รอเก็บ</span>';
-      const mSlips = slips.filter(s => String(s.milestone_id) === String(m.milestone_id));
-      let slipHtml = '';
-      mSlips.forEach(s => {
-        const ic = s.file_type === 'pdf' ? '📄' : '🖼️';
-        slipHtml += '<div class="cf-slip-row"><span>' + ic + '</span>' +
-          '<span class="cf-slip-name" onclick="cfOpenLink(\'' + escapeHtmlAttr(s.url) + '\')">' + escapeHtml(s.name) + '</span>' +
-          '<span class="cf-slip-del" onclick="CF.deleteSlip(\'' + escapeHtmlAttr(s.slip_id) + '\')">✕</span></div>';
-      });
-      html += '<div class="cf-ms">' +
-        '<div class="cf-ms-head">' +
-          '<div style="flex:1">' +
-            '<div class="cf-ms-name" onclick="CF.openMilestone(\'' + escapeHtmlAttr(m.milestone_id) + '\')">งวด ' + (m.seq || '') + ' · ' + escapeHtml(m.name || '') + ' ✏️</div>' +
-            (m.condition ? '<div class="cf-ms-cond">เงื่อนไข: ' + escapeHtml(m.condition) + '</div>' : '') +
-            (isPaid && m.paid_date ? '<div class="cf-ms-cond">รับเมื่อ ' + escapeHtml(m.paid_date) + '</div>' : '') +
-          '</div>' +
-          '<div style="text-align:right">' +
-            '<div class="cf-ms-amt">' + cfBaht(m.amount) + '</div>' +
-            '<div style="margin-top:4px">' + badge + '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="cf-slip-wrap">' +
-          (slipHtml || '<div style="font-size:11px;color:#9CA3AF">ยังไม่มีหลักฐานการรับเงิน</div>') +
-          '<button class="cf-slip-btn" onclick="CF.openUploadSlip(\'' + escapeHtmlAttr(m.milestone_id) + '\',\'' + escapeHtmlAttr(c.contract_id) + '\')">📎 แนบสลิป/ใบเสร็จ</button>' +
-        '</div>' +
-      '</div>';
+    // ── สรุปสัญญา ──
+    let filesHtml = '';
+    cFiles.forEach(f => {
+      const ic = f.file_type === 'pdf' ? '📄' : '🖼️';
+      filesHtml += '<div class="cf-file-row"><span>' + ic + '</span>' +
+        '<span class="cf-file-name" onclick="cfOpenLink(\'' + escapeHtmlAttr(f.url) + '\')">' + escapeHtml(f.name) + '</span>' +
+        '<span class="cf-file-del" onclick="CF.deleteContractFile(\'' + escapeHtmlAttr(f.file_id) + '\')">✕</span></div>';
     });
-  }
+
+    html += '<div class="cf-summary">' +
+      '<div class="cf-sum-title">' + escapeHtml(c.title || 'สัญญาก่อสร้าง') + (c.contract_no ? ' <span style="font-weight:400;color:#6B7280">(' + escapeHtml(c.contract_no) + ')</span>' : '') + '</div>' +
+      '<div class="cf-sum-row"><span>มูลค่าสัญญา</span><span class="cf-sum-amt">' + cfBaht(c.value) + '</span></div>' +
+      '<div class="cf-sum-row"><span>รับแล้ว</span><span class="cf-sum-amt">' + cfBaht(paidTotal) + ' (' + pct + '%)</span></div>' +
+      '<div class="cf-bar"><div class="cf-bar-fill" style="width:' + Math.min(pct, 100) + '%"></div></div>' +
+      '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">' +
+        '<button class="cf-btn cf-btn-secondary" onclick="CF.openAddMilestone(\'' + escapeHtmlAttr(c.contract_id) + '\')">+ เพิ่มงวด</button>' +
+        '<button class="cf-btn cf-btn-secondary" onclick="CF.openEditContract(\'' + escapeHtmlAttr(c.contract_id) + '\')">✏️ แก้สัญญา</button>' +
+      '</div>' +
+      '<div style="margin-top:6px">' + filesHtml +
+        '<button class="cf-slip-btn" onclick="CF.openUploadContractFile(\'' + escapeHtmlAttr(c.contract_id) + '\')">📄 แนบไฟล์สัญญา</button>' +
+      '</div>' +
+    '</div>';
+
+    // ── งวดการชำระ ──
+    if (!cMilestones.length) {
+      html += '<div class="cf-empty">ยังไม่มีงวดการชำระ — กด <b>+ เพิ่มงวด</b></div>';
+    } else {
+      cMilestones.forEach(m => {
+        const isPaid = ['paid', 'done', 'completed'].indexOf(String(m.status || '').toLowerCase()) >= 0 || !!m.paid_date;
+        const badge = isPaid
+          ? '<span class="cf-badge cf-badge-paid">✓ รับแล้ว</span>'
+          : '<span class="cf-badge cf-badge-pending">⏳ รอเก็บ</span>';
+        const mSlips = slips.filter(s => String(s.milestone_id) === String(m.milestone_id));
+        let slipHtml = '';
+        mSlips.forEach(s => {
+          const ic = s.file_type === 'pdf' ? '📄' : '🖼️';
+          slipHtml += '<div class="cf-slip-row"><span>' + ic + '</span>' +
+            '<span class="cf-slip-name" onclick="cfOpenLink(\'' + escapeHtmlAttr(s.url) + '\')">' + escapeHtml(s.name) + '</span>' +
+            '<span class="cf-slip-del" onclick="CF.deleteSlip(\'' + escapeHtmlAttr(s.slip_id) + '\')">✕</span></div>';
+        });
+        html += '<div class="cf-ms">' +
+          '<div class="cf-ms-head">' +
+            '<div style="flex:1">' +
+              '<div class="cf-ms-name" onclick="CF.openMilestone(\'' + escapeHtmlAttr(m.milestone_id) + '\')">งวด ' + (m.seq || '') + ' · ' + escapeHtml(m.name || '') + ' ✏️</div>' +
+              (m.condition ? '<div class="cf-ms-cond">เงื่อนไข: ' + escapeHtml(m.condition) + '</div>' : '') +
+              (isPaid && m.paid_date ? '<div class="cf-ms-cond">รับเมื่อ ' + escapeHtml(m.paid_date) + '</div>' : '') +
+            '</div>' +
+            '<div style="text-align:right">' +
+              '<div class="cf-ms-amt">' + cfBaht(m.amount) + '</div>' +
+              '<div style="margin-top:4px">' + badge + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="cf-slip-wrap">' +
+            (slipHtml || '<div style="font-size:11px;color:#9CA3AF">ยังไม่มีหลักฐานการรับเงิน</div>') +
+            '<button class="cf-slip-btn" onclick="CF.openUploadSlip(\'' + escapeHtmlAttr(m.milestone_id) + '\',\'' + escapeHtmlAttr(c.contract_id) + '\')">📎 แนบสลิป/ใบเสร็จ</button>' +
+          '</div>' +
+        '</div>';
+      });
+    }
+  });
 
   body.innerHTML = html;
 }

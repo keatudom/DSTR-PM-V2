@@ -110,8 +110,27 @@ function buildWeights() {
     const tw = t => Number(t.weight) || 1;
     const totalWeight = ffTasks.reduce((s, t) => s + tw(t), 0);
 
+    // น้ำหนักงวด (p1-p4) ภายในชิ้นงาน
     const phaseWeights = { p1: 0, p2: 0, p3: 0, p4: 0 };
-    if (totalWeight > 0) {
+    const fixed = (typeof CONFIG !== 'undefined') ? CONFIG.PHASE_PROGRESS_WEIGHT : null;
+
+    if (fixed) {
+      // โหมดใหม่: ใช้สัดส่วนงวดตายตัวจาก CONFIG (เช่น p2 งานโรงงานหนักสุด)
+      // เฉลี่ยน้ำหนักใหม่เฉพาะงวดที่ชิ้นงานนี้มี task จริง → ยังขึ้น 100% ได้
+      const present = ['p1','p2','p3','p4'].filter(p =>
+        ffTasks.some(t => t.phase === p));
+      const denom = present.reduce((s, p) => s + (Number(fixed[p]) || 0), 0);
+      if (denom > 0) {
+        present.forEach(p => { phaseWeights[p] = (Number(fixed[p]) || 0) / denom; });
+      } else if (totalWeight > 0) {
+        // ทุกงวดที่มี task น้ำหนัก config = 0 (กันพลาด) → ถอยไปแบบเดิม
+        ['p1','p2','p3','p4'].forEach(p => {
+          const wsum = ffTasks.filter(t => t.phase === p).reduce((s, t) => s + tw(t), 0);
+          phaseWeights[p] = wsum / totalWeight;
+        });
+      }
+    } else if (totalWeight > 0) {
+      // โหมดเดิม: น้ำหนักงวด = ผลรวมความเหนื่อย task ในงวด / รวมทั้งชิ้น
       ['p1','p2','p3','p4'].forEach(p => {
         const wsum = ffTasks.filter(t => t.phase === p).reduce((s, t) => s + tw(t), 0);
         phaseWeights[p] = wsum / totalWeight;
@@ -160,6 +179,88 @@ function calcProjectProgress() {
     total += w.ffWeight * (ffProg.pct / 100);
   });
   return Math.round(total * 100 * 10) / 10;  // 1 decimal
+}
+
+// คำนวณ % คืบหน้าของ "กลุ่มชิ้นงานย่อย" (value-weighted ภายในกลุ่ม)
+// ffCodes = array รหัส FF ที่อยู่ในกลุ่ม → ใช้แยก progress งานหลัก vs งานเพิ่ม
+// คืน { pct, value } — pct = % คืบหน้าถ่วงด้วยราคาภายในกลุ่ม, value = มูลค่ารวมกลุ่ม
+function calcProgressForFFs(ffCodes) {
+  if (!state.data || !Array.isArray(ffCodes) || !ffCodes.length) {
+    return { pct: 0, value: 0 };
+  }
+  const set = {};
+  ffCodes.forEach(c => { set[c] = true; });
+  const groupFFs = state.data.ffs.filter(f => set[f.code]);
+  const groupValue = groupFFs.reduce((s, f) => s + (f.price || 0), 0);
+  if (groupValue <= 0) return { pct: 0, value: 0 };
+
+  let total = 0;
+  groupFFs.forEach(ff => {
+    const ffProg = calcFFProgressWeighted(ff.code);
+    total += ((ff.price || 0) / groupValue) * (ffProg.pct / 100);
+  });
+  return { pct: Math.round(total * 100 * 10) / 10, value: groupValue };
+}
+
+// แยก progress เป็น "งานหลัก" vs "งานเพิ่ม" (addon) ตาม config addonFFs ของโปรเจกต์
+// คืน { overall, main:{pct,value,codes}, addon:{pct,value,codes}, hasAddon }
+function calcProgressByContract() {
+  const overall = calcProjectProgress();
+  const out = { overall, main: null, addon: null, hasAddon: false };
+  if (!state.data) return out;
+
+  let addonCodes = [];
+  try {
+    const proj = (typeof CONFIG !== 'undefined' && CONFIG.PROJECTS)
+      ? CONFIG.PROJECTS[state.projectId] : null;
+    addonCodes = (proj && Array.isArray(proj.addonFFs)) ? proj.addonFFs : [];
+  } catch (e) { addonCodes = []; }
+
+  const allCodes = state.data.ffs.map(f => f.code);
+  const addonSet = {};
+  addonCodes.forEach(c => { addonSet[c] = true; });
+  const addonPresent = addonCodes.filter(c => allCodes.indexOf(c) !== -1);
+  const mainCodes = allCodes.filter(c => !addonSet[c]);
+
+  out.main = Object.assign({ codes: mainCodes }, calcProgressForFFs(mainCodes));
+  if (addonPresent.length) {
+    out.hasAddon = true;
+    out.addon = Object.assign({ codes: addonPresent }, calcProgressForFFs(addonPresent));
+  }
+  return out;
+}
+
+// รวมยอดการเบิกเงินฝั่งเจ้าบ้าน (เงินเข้า) จาก state.clientFinance ทุกสัญญา
+// คืน { hasData, totalValue, totalPaid, pct, contracts:[{...paidPct}] }
+// fallback: ถ้ายังไม่มีสัญญาเจ้าบ้าน คืน hasData:false (ให้ผู้เรียกไปใช้ 04_Payments เดิม)
+function calcClientPaymentStats() {
+  const cf = state.clientFinance || {};
+  const contracts = cf.contracts || [];
+  const milestones = cf.milestones || [];
+  if (!contracts.length) return { hasData: false, totalValue: 0, totalPaid: 0, pct: 0, contracts: [] };
+
+  const rows = contracts.map(c => {
+    const ms = milestones.filter(m => String(m.contract_id) === String(c.contract_id));
+    const paid = ms.reduce((s, m) => s + Number(m.paid_amount || 0), 0);
+    const value = Number(c.value || 0);
+    return {
+      contract_id: c.contract_id,
+      contract_no: c.contract_no || '',
+      title: c.title || '',
+      value: value,
+      paid: paid,
+      pct: value > 0 ? Math.round((paid / value) * 1000) / 10 : 0
+    };
+  });
+  const totalValue = rows.reduce((s, r) => s + r.value, 0);
+  const totalPaid = rows.reduce((s, r) => s + r.paid, 0);
+  return {
+    hasData: true,
+    totalValue: totalValue,
+    totalPaid: totalPaid,
+    pct: totalValue > 0 ? Math.round((totalPaid / totalValue) * 1000) / 10 : 0,
+    contracts: rows
+  };
 }
 
 // คำนวณ Plan ณ วันนี้ (% ที่ควรเสร็จ)
