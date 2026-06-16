@@ -47,6 +47,7 @@
 .ent-t { font-weight:700; color:#1F3864; min-width:42px; }
 .badge { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:99px; }
 .b-on { background:#D1FAE5; color:#065F46; } .b-off { background:#FEF3C7; color:#92400E; } .b-flag { background:#FEE2E2; color:#991B1B; }
+.ent-photo img { width:44px; height:44px; border-radius:6px; object-fit:cover; vertical-align:middle; margin-left:5px; border:1px solid #E5E7EB; }
 .doc-sign { display:none; }
 .hr-empty { text-align:center; color:#9CA3AF; font-size:13px; padding:30px 14px; }
 .hr-deny { text-align:center; padding:50px 20px; }
@@ -69,8 +70,9 @@
   .hr-p-days { background:none; color:#000; padding:0; font-weight:600; }
   .id-inp { border:none; border-bottom:1px solid #000; border-radius:0; padding:2px 4px; width:200px; font-size:13px; }
   .id-save { display:none; }
-  .day-row { border-top:1px solid #ccc; }
-  .doc-sign { display:flex; justify-content:space-between; gap:20px; margin-top:34px; padding-top:6px; }
+  .day-row { border-top:1px solid #ccc; page-break-inside:avoid; }
+  .ent-photo img { width:54px; height:54px; }
+  .doc-sign { display:flex; justify-content:space-between; gap:20px; margin-top:34px; padding-top:6px; page-break-inside:avoid; }
   .doc-sign > div { flex:1; text-align:center; font-size:12px; color:#000; }
   .doc-sign .line { margin-bottom:5px; color:#000; }
 }
@@ -200,12 +202,13 @@ function renderList(){
 
 function personCard(s, period){
   var role=ROLE_TH[s.role]||s.role||'-';
-  var days=s.days.slice().reverse().map(function(dd){
+  var days=s.days.slice().map(function(dd){
     var ent=dd.entries.map(function(e){
       var b=e.location_type==='offsite'
         ? '<span class="badge b-off">'+esc(e.off_site_reason||'นอกไซต์')+'</span>'
         : (e.is_far?'<span class="badge b-flag">🚩 GPS ไกล</span>':'<span class="badge b-on">อยู่ไซต์</span>');
-      return '<div class="ent"><span class="ent-t">'+esc(e.time)+'</span><span style="flex:1">'+esc(e.activity||'-')+' '+b+'</span></div>';
+      var ph=e.photo_url?' <a class="ent-photo" href="'+esc(e.photo_url)+'" target="_blank"><img src="'+esc(e.photo_url)+'=w200" alt="รูปเช็คอิน" loading="lazy"></a>':'';
+      return '<div class="ent"><span class="ent-t">'+esc(e.time)+'</span><span style="flex:1">'+esc(e.activity||'-')+' '+b+ph+'</span></div>';
     }).join('');
     return '<div class="day-row"><div class="day-d">'+fmtTH(dd.date)+'</div>'+ent+'</div>';
   }).join('');

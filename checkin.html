@@ -502,7 +502,8 @@ function renderTimesheet(staff) {
         ? '<span class="ts-badge ts-b-off">'+(e.off_site_reason||'นอกไซต์')+'</span>'
         : (e.is_far ? '<span class="ts-badge ts-b-flag">🚩 GPS ไกล</span>' : '<span class="ts-badge ts-b-on">อยู่ไซต์</span>');
       var acc = (e.accuracy != null) ? ' <span style="color:'+(e.accuracy>WEAK_GPS_M?'#C0392B':'#9CA3AF')+';font-size:10px">±'+e.accuracy+'ม.</span>' : '';
-      return '<div class="ts-entry"><span class="ts-entry-t">'+e.time+'</span><span style="flex:1">'+(e.activity||'-')+' '+badge+acc+'</span>'+
+      var ph = e.photo_url ? ' <a href="'+e.photo_url+'" target="_blank"><img src="'+e.photo_url+'=w200" alt="รูป" loading="lazy" style="width:42px;height:42px;border-radius:6px;object-fit:cover;vertical-align:middle;border:1px solid #E5E7EB"></a>' : '';
+      return '<div class="ts-entry"><span class="ts-entry-t">'+e.time+'</span><span style="flex:1">'+(e.activity||'-')+' '+badge+acc+ph+'</span>'+
 '<span onclick="delCheckin(\''+e.checkin_id+'\')" style="color:#C0392B;cursor:pointer;font-size:11px;padding:0 2px" title="ลบ">✕</span></div>';
     }).join('');
     html += '<div class="ts-day"><div class="ts-day-h"><span>'+fmtDateTH(dt)+'</span><div class="ts-day-dots">'+dotHtml+'</div></div>'+entries+'</div>';

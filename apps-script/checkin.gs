@@ -355,7 +355,7 @@ function getTimesheet_(p) {
     };
   });
 
-  staffArr.sort(function (a, b) { return (a.staff_name || '').localeCompare(b.staff_name || ''); });
+  staffArr.sort(function (a, b) { return (a.staff_name || '').localeCompare(b.staff_name || '', 'th'); });
   return { from: p.from || '', to: p.to || '', windows: CHECKIN_WINDOWS_, staff: staffArr };
 }
 
@@ -392,7 +392,7 @@ function getAttendanceAll_(p) {
     });
     return { staff_id: s.staff_id, staff_name: s.staff_name, role: s.role, days: days, days_present: days.length };
   });
-  staffArr.sort(function (a, b) { return (a.staff_name || '').localeCompare(b.staff_name || ''); });
+  staffArr.sort(function (a, b) { return (a.staff_name || '').localeCompare(b.staff_name || '', 'th'); });
 
   // แนบเลขบัตรประชาชน (ถ้า HR กรอกไว้) — สำหรับเอกสารเบิกค่าแรง
   var idmap = _idCardMap_();
