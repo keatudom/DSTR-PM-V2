@@ -426,12 +426,32 @@ function showGpsStatus() {
 function onPhoto(ev) {
   var f = ev.target.files[0];
   if (!f) return;
+  document.getElementById('ciPhotoName').textContent = 'กำลังเตรียมรูป...';
+  function show(dataUrl) {
+    PHOTO_DATA = dataUrl;
+    var t = document.getElementById('ciPhotoThumb');
+    t.src = dataUrl; t.style.display = 'block';
+    document.getElementById('ciPhotoName').textContent = 'แนบรูปแล้ว';
+  }
   var rd = new FileReader();
   rd.onload = function (e) {
-    PHOTO_DATA = e.target.result;
-    var t = document.getElementById('ciPhotoThumb');
-    t.src = PHOTO_DATA; t.style.display = 'block';
-    document.getElementById('ciPhotoName').textContent = 'แนบรูปแล้ว';
+    var raw = e.target.result;
+    // ย่อรูปก่อนอัป — รูปกล้องมือถือใหญ่หลาย MB อัปไม่ผ่าน (เคยทำรูปหายเงียบ)
+    // ย่อด้านยาวสุดเหลือ 1280px + JPEG q0.72 → เล็กลงหลายเท่า อัปเสถียรทุกเครื่อง
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var MAX = 1280, w = img.width, h = img.height;
+        if (w >= h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        else if (h > w && h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+        var cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        show(cv.toDataURL('image/jpeg', 0.72));
+      } catch (err) { show(raw); }  // canvas พลาด → ใช้ไฟล์เดิม
+    };
+    img.onerror = function () { show(raw); };  // decode ไม่ได้ (HEIC บางเครื่อง) → ใช้ไฟล์เดิม
+    img.src = raw;
   };
   rd.readAsDataURL(f);
 }
@@ -466,10 +486,20 @@ function submitCheckin() {
     });
   }
 
+  function photoFailed() {
+    // อัปรูปไม่ผ่าน — ถามก่อน อย่าทิ้งรูปเงียบๆ (เดิมเช็คอินผ่านแต่รูปหายโดยผู้ใช้ไม่รู้)
+    if (confirm('⚠️ อัปโหลดรูปไม่สำเร็จ (รูปอาจใหญ่ หรือเน็ตช้า)\n\nกด "ตกลง" = เช็คอินโดยไม่มีรูป\nกด "ยกเลิก" = กลับไปลองแนบรูปใหม่')) {
+      doCreate('');
+    } else {
+      btn.disabled = false; btn.textContent = '✓ ยืนยันเช็คอิน';
+    }
+  }
   if (PHOTO_DATA) {
+    btn.textContent = 'กำลังอัปโหลดรูป...';
     API.uploadLogPhoto(PHOTO_DATA).then(function (up) {
-      doCreate((up && (up.photo_url || up.url)) || '');
-    }).catch(function () { doCreate(''); });
+      var url = (up && (up.photo_url || up.url)) || '';
+      if (url) doCreate(url); else photoFailed();
+    }).catch(function () { photoFailed(); });
   } else {
     doCreate('');
   }
