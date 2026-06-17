@@ -214,7 +214,7 @@ function createCheckin_(p) {
 function updateCheckin_(p) {
   if (!p || !p.checkin_id) throw new Error('checkin_id required');
   var updates = {};
-  ['staff_name', 'staff_id', 'role', 'activity', 'note'].forEach(function (f) {
+  ['staff_name', 'staff_id', 'role', 'activity', 'note', 'photo_url'].forEach(function (f) {
     if (p[f] !== undefined) updates[f] = p[f];
   });
   if (!Object.keys(updates).length) throw new Error('ไม่มี field ให้แก้');
@@ -243,6 +243,26 @@ function _idCardMap_() {
   var m = {};
   try { getAllRows(IDCARD_SHEET_).forEach(function (r) { if (r.staff_name) m[String(r.staff_name)] = String(r.national_id || ''); }); } catch (e) {}
   return m;
+}
+
+// 🔍 DIAG (read-only): ลิสต์ไฟล์รูปใน Drive folder 'activity' ช่วงวันที่ที่ระบุ
+// ใช้กู้รูปเช็คอินที่ "ขึ้น Drive แล้วแต่ link กลับมาไม่ติด" (orphan) — by from/to (yyyy-MM-dd)
+function _diagActivityPhotos_(p) {
+  p = p || {};
+  var folder = getDriveFolder_('activity');
+  var files = folder.getFiles();
+  var from = p.from || '', to = p.to || '';
+  var out = [];
+  while (files.hasNext()) {
+    var f = files.next();
+    var created = Utilities.formatDate(f.getDateCreated(), 'Asia/Bangkok', 'yyyy-MM-dd HH:mm:ss');
+    var day = created.substring(0, 10);
+    if (from && day < from) continue;
+    if (to && day > to) continue;
+    out.push({ id: f.getId(), name: f.getName(), created: created });
+  }
+  out.sort(function (a, b) { return a.created < b.created ? -1 : 1; });
+  return { folder: 'activity', count: out.length, files: out };
 }
 
 // ลบเช็คอิน (รายการทดสอบ/กดผิด) — by checkin_id
@@ -275,6 +295,7 @@ function _mapCheckin_(r) {
   var timeStr = ts ? Utilities.formatDate(new Date(ts), 'Asia/Bangkok', 'HH:mm') : _fmtTime_(r.time);
   return {
     checkin_id: r.checkin_id,
+    ts: ts || '',
     staff_id: r.staff_id || '',
     staff_name: r.staff_name || '',
     role: r.role || '',
