@@ -6,6 +6,7 @@
 import type { Env } from './lib/env.ts';
 import * as auth from './modules/auth.ts';
 import * as checkin from './modules/checkin.ts'; // Session 2 — โมดูล 1
+import * as ffTasks from './modules/ff_tasks.ts'; // Session 2 — โมดูล 2
 import * as qc from './modules/qc.ts'; // ★ Session 3 — QC Checklist
 
 export async function route(env: Env, action: string, p: Record<string, unknown>): Promise<unknown> {
@@ -26,6 +27,30 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
       return auth.upsertUser(env, p);
     case 'set_user_role':
       return auth.setUserRole(env, p);
+
+    // 📋 FF / TASKS / PAYMENTS (Code.js + projects_wizard.gs) — Session 2 โมดูล 2
+    case 'get_ff_list':
+      return ffTasks.getFfListAction(env, p);
+    case 'get_tasks':
+      return ffTasks.getTasksAction(env, p);
+    case 'updateTask': // ‼raw
+      return ffTasks.updateTask(env, p);
+    case 'updatePayment': // ‼raw
+      return ffTasks.updatePayment(env, p);
+    case 'create_payment':
+      return ffTasks.createPayment(env, p);
+    case 'update_payment_info':
+      return ffTasks.updatePaymentInfo(env, p);
+    case 'create_ff':
+      return ffTasks.createFF(env, p);
+    case 'create_ff_batch':
+      return ffTasks.createFFBatch(env, p);
+    case 'update_ff':
+      return ffTasks.updateFF(env, p);
+    case 'delete_ff':
+      return ffTasks.deleteFF(env, p);
+    case 'clone_project':
+      return ffTasks.cloneProject(env, p);
 
     // ⏰ CHECK-IN / TIMESHEET (checkin.gs) — Session 2 โมดูล 1
     case 'create_checkin':

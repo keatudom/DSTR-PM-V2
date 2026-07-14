@@ -52,3 +52,22 @@ export function mapRows(rows: Record<string, unknown>[], map: ColMap): Record<st
 export function toBool(v: unknown): boolean {
   return !(v === false || v === 'FALSE' || v === 'false' || v === 0 || v === '0' || v === '' || v == null);
 }
+
+// project_id ของ request (แทน _getCurrentProjectId_() || 'bow-house' เดิม)
+export function pidOf(p: Record<string, unknown>): string {
+  return String(p.project_id ?? '').trim() || 'bow-house';
+}
+
+// project scope SQL — เทียบ _filterByProject_ (projects_filter.gs:30)
+//   'bow-house' รวมแถวที่ project_id ว่าง/null (legacy ยังไม่ stamp) · อื่น = exact match
+export function projectScope(pid: string, col = 'project_id'): { sql: string; binds: unknown[] } {
+  if (pid === 'bow-house') {
+    return { sql: `(${col} = ? OR ${col} IS NULL OR TRIM(${col}) = '')`, binds: [pid] };
+  }
+  return { sql: `${col} = ?`, binds: [pid] };
+}
+
+// formatDateValue (Code.js:848) — D1 เก็บวันที่เป็น TEXT อยู่แล้ว → String; ว่าง → ''
+export function fmtDate(v: unknown): string {
+  return v == null || v === '' ? '' : String(v);
+}
