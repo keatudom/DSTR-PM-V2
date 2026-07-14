@@ -10,19 +10,34 @@ import type { Env } from './lib/env.ts';
 import { route } from './router.ts';
 import { authorize } from './lib/authz.ts';
 import { corsHeaders, jsonResponse, wrapResult } from './lib/resp.ts';
+import { lineWebhook, lineDailyDigest, lineWeeklyDigest, lineOpsDigest } from './modules/line_webhook.ts';
 
 const app = new Hono<{ Bindings: Env }>();
 
 // preflight CORS (ทุก path)
 app.options('*', (c) => new Response(null, { status: 204, headers: corsHeaders(c.req.header('Origin') ?? null, c.env) }));
 
-// /media/<key> (Session 3) + /line/webhook (Session 2) — ยังไม่รองรับในรอบนี้
-app.all('/media/*', (c) =>
-  jsonResponse({ ok: false, error: 'not implemented in Session 1' }, c.req.header('Origin') ?? null, c.env, 501),
-);
-app.post('/line/webhook', (c) =>
-  jsonResponse({ ok: false, error: 'not implemented in Session 1' }, c.req.header('Origin') ?? null, c.env, 501),
-);
+// GET /media/<key> — เสิร์ฟไฟล์จาก R2 (ไฟล์ใหม่ · ลิงก์ Drive เก่าอยู่ที่ url เดิม)
+//   ⛔ R2 (MEDIA) ยังปิดใน wrangler.toml (Session 3) → คืน 501 จนกว่าจะเปิด
+app.get('/media/*', async (c) => {
+  if (!c.env.MEDIA) return c.text('R2 (MEDIA) not enabled yet', 501);
+  const key = c.req.path.replace(/^\/media\//, '');
+  const obj = await c.env.MEDIA.get(key);
+  if (!obj) return c.text('not found', 404);
+  const headers = new Headers();
+  obj.writeHttpMetadata(headers);
+  headers.set('Cache-Control', 'public, max-age=31536000');
+  return new Response(obj.body, { headers });
+});
+
+// POST /line/webhook — LINE ส่ง {destination, events[]} · ตอบ 200 'OK' เร็ว (งานจริงใน waitUntil)
+app.post('/line/webhook', async (c) => {
+  let body: Record<string, unknown> = {};
+  try { body = (await c.req.json()) as Record<string, unknown>; } catch { /* */ }
+  const ctx = c.executionCtx;
+  ctx.waitUntil(lineWebhook(c.env, body, ctx).catch(() => {}));
+  return c.text('OK');
+});
 
 // action dispatch — path ใดก็ได้ (/, /api) ตาม ?action=
 app.all('*', async (c) => {
@@ -66,4 +81,16 @@ app.all('*', async (c) => {
   return jsonResponse(result, origin, env);
 });
 
-export default app;
+// ── Cron Triggers (LINE digests) — เวลาจาก line.gs (ops ทุก 3 ชม · daily 18:30 · weekly อา. 19:00 ไทย)
+//    ต้องตั้ง crons ใน wrangler.toml + LINE_TOKEN/GROUP secrets (Session 3 gate)
+async function scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+  const cron = event.cron;
+  const forward = { __ctx: ctx } as Record<string, unknown>;
+  try {
+    if (cron === '0 */3 * * *') await lineOpsDigest(env, forward);        // ทุก 3 ชม → กลุ่มหน้างาน
+    else if (cron === '30 11 * * *') await lineDailyDigest(env, forward);  // 18:30 ไทย → กลุ่มหลัก
+    else if (cron === '0 12 * * 0') await lineWeeklyDigest(env, forward);  // อา. 19:00 ไทย → กลุ่มหลัก
+  } catch { /* best-effort */ }
+}
+
+export default { fetch: app.fetch, scheduled };

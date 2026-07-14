@@ -16,6 +16,7 @@ import * as teamsFinance from './modules/teams_finance.ts'; // Session 2 — โ
 import * as clientView from './modules/client_view.ts'; // Session 2 — โมดูล 10
 import * as photos from './modules/photos.ts'; // Session 2 — โมดูล 7
 import * as notifications from './modules/notifications.ts'; // Session 2 — โมดูล 11
+import * as line from './modules/line_webhook.ts'; // Session 2 — โมดูล 11 (LINE digests)
 import * as qc from './modules/qc.ts'; // ★ Session 3 — QC Checklist
 
 export async function route(env: Env, action: string, p: Record<string, unknown>): Promise<unknown> {
@@ -64,6 +65,14 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
     // 🔔 NOTIFICATIONS (notifications.gs) — Session 2 โมดูล 11
     case 'get_notifications':
       return notifications.getNotifications(env, p);
+
+    // 💬 LINE digests สั่งเอง (cron handlers เดียวกัน — line.gs) — Session 2 โมดูล 11
+    case '_run_line_digest':
+      return line.lineDailyDigest(env, p);
+    case '_run_ops_digest':
+      return line.lineOpsDigest(env, p);
+    case '_run_weekly_digest':
+      return line.lineWeeklyDigest(env, p);
 
     // 👁️ CLIENT VIEW (read-only, whitelist) — Session 2 โมดูล 10
     case 'client_get_overview':

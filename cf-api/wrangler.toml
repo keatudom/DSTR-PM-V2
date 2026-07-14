@@ -36,7 +36,8 @@ GOOGLE_CLIENT_ID = "1007106153160-bih4m06f6qdrche186s7ng4u85ghs6t0.apps.googleus
 # ADMIN_PASSWORD, CLIENT_PASSWORD, LINE_TOKEN, LINE_GROUP_ID,
 # LINE_GROUP_OPS_ID, LINE_OWNER_UID  (รวม 10 ตัว — จดลง secrets-ledger)
 
-# ── Cron Triggers (LINE digests) — handlers มาใน Session 2 (line_webhook.ts)
-# เวลาเดิมคัดจาก line.gs; ใส่ placeholder ปิดไว้ก่อน ไม่ให้ยิงตอนยังไม่มี handler
-# [triggers]
-# crons = ["0 11 * * *"]  # ตัวอย่าง daily digest 18:00 ไทย (UTC+7) — Session 2 เปิด
+# ── Cron Triggers (LINE digests) — handler = scheduled() ใน index.ts (Session 2)
+# เวลาเดิมจาก line.gs: ops ทุก 3 ชม · daily 18:30 ไทย (=11:30 UTC) · weekly อา. 19:00 ไทย (=12:00 UTC อา.)
+# ⛔ เปิดจริงตอน deploy + ตั้ง LINE_TOKEN/LINE_GROUP_ID/LINE_GROUP_OPS_ID secrets (Session 3 gate)
+[triggers]
+crons = ["0 */3 * * *", "30 11 * * *", "0 12 * * 0"]
