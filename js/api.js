@@ -48,11 +48,41 @@ const API = {
   },
 
   /**
+   * ☁️ _cfCall — เส้นทางใหม่: ยิงตรงไป Cloudflare Worker (BACKEND==='cf')
+   * ============================================================
+   * ต่างจากของเดิม (Apps Script): Worker ตอบ CORS header จริง →
+   * ทุก call เป็น fetch POST JSON ธรรมดา อ่าน response ได้ตรงๆ
+   * ไม่ต้องใช้ JSONP / no-cors / iframe hack อีกต่อไป
+   *
+   * - action + ทุก param ส่งใน body JSON (Worker รวม query+body, อ่าน action จาก body)
+   * - auth: แนบ auth_token ทั้งใน body (ตัวที่ authz อ่านจริง) และ Bearer header (เผื่ออนาคต)
+   * - รูป base64 ก็ส่งใน JSON ได้เลย (ไม่ติด 302 redirect เหมือน Apps Script)
+   * - ใช้ path '/api' (Worker ไม่ route ตาม path ยกเว้น /media, /line/webhook)
+   *
+   * @returns {Promise<object>} JSON ที่ Worker ตอบ (โครงเดิมเป๊ะ: {ok,data} หรือ raw)
+   */
+  _cfCall: function(action, params) {
+    params = this._injectAuth(this._injectProjectId(params || {}));
+    var base = String(CONFIG.CF_API_URL || '').replace(/\/+$/, '');
+    var headers = { 'Content-Type': 'application/json' };
+    if (params.auth_token) headers['Authorization'] = 'Bearer ' + params.auth_token;
+    return fetch(base + '/api', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(Object.assign({ action: action }, params))
+    }).then(function(res) {
+      return res.json();
+    });
+  },
+
+  /**
    * อ่านข้อมูลด้วย JSONP (bypass CORS)
    * @param {string} action - ชื่อ action ที่ Apps Script รู้จัก
    * @param {object} params - query parameters
    */
   callRead(action, params) {
+    // ☁️ โหมด Cloudflare — fetch ตรง (อ่าน response ได้จริง)
+    if (CONFIG.BACKEND === 'cf') return this._cfCall(action, params);
     params = this._injectAuth(this._injectProjectId(params));
     return new Promise(function(resolve, reject) {
       var cbName = 'jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
@@ -99,6 +129,13 @@ const API = {
    * หมายเหตุ: no-cors mode = ไม่สามารถอ่าน response ได้ คืน {ok: true} เสมอ
    */
   callWrite: function(action, data) {
+    // ☁️ โหมด Cloudflare — POST จริง อ่าน {ok,...} จริง (ไม่ใช่ {ok:true} หลอกแบบ no-cors)
+    if (CONFIG.BACKEND === 'cf') {
+      return this._cfCall(action, data).catch(function(err) {
+        console.error('API write error (cf):', err);
+        return { ok: false, error: err.message };
+      });
+    }
     data = this._injectAuth(this._injectProjectId(data));
     return fetch(CONFIG.APPS_SCRIPT_URL, {
       method: 'POST',
@@ -122,6 +159,13 @@ const API = {
    *    fetch + redirect ของ Apps Script ทำให้ POST กลายเป็น GET → body หาย
    */
   callPost: function(action, data) {
+    // ☁️ โหมด Cloudflare — POST JSON อ่าน response ได้ (เหมือน callRead แต่ผ่าน body)
+    if (CONFIG.BACKEND === 'cf') {
+      return this._cfCall(action, data).catch(function(err) {
+        console.error('API post error (cf):', err);
+        return { ok: false, error: err.message };
+      });
+    }
     data = this._injectAuth(this._injectProjectId(data));
     return fetch(CONFIG.APPS_SCRIPT_URL, {
       method: 'POST',
@@ -157,6 +201,14 @@ const API = {
    * @returns {Promise<object>} JSON response จาก backend
    */
   callUpload: function(action, data) {
+    // ☁️ โหมด Cloudflare — อัปโหลด base64 ผ่าน JSON ตรงๆ (ไม่ต้อง iframe hack)
+    //   Worker ไม่ 302 redirect → body ไม่หาย → อ่าน {ok, photo_url, ...} ได้เลย
+    if (CONFIG.BACKEND === 'cf') {
+      return this._cfCall(action, data).catch(function(err) {
+        console.error('API upload error (cf):', err);
+        return { ok: false, error: err.message };
+      });
+    }
     var self = this;
     return new Promise(function(resolve, reject) {
       data = self._injectAuth(self._injectProjectId(data));
@@ -887,6 +939,60 @@ const API = {
   /** ตั้งพิกัดไซต์ — { site_lat, site_lng, radius_m?, updated_by? } */
   setSiteLocation: function(data) {
     return this.callRead('set_site_location', data);
+  },
+
+  // ============================================================
+  // ✅ QC — Quality Checklist (ฟีเจอร์ใหม่ Session 3 · ทำงานบน BACKEND==='cf' เท่านั้น)
+  // ============================================================
+  // ตรวจคุณภาพงานเฟอร์นิเจอร์บิวท์อินก่อนส่งมอบ (26 ข้อ หมวด A–I)
+  // project_id แนบอัตโนมัติจาก state.projectId ผ่าน _injectProjectId
+
+  /** เกณฑ์มาตรฐาน 26 ข้อ (ไว้สร้างฟอร์มตรวจ) */
+  getQcCriteria: function() {
+    return this.callRead('get_qc_criteria');
+  },
+
+  /** รายการการตรวจของโครงการปัจจุบัน — { ff_code?, status? } */
+  getQcInspections: function(params) {
+    return this.callRead('get_qc_inspections', params || {});
+  },
+
+  /** หัวการตรวจ + ผลรายข้อ — { inspection_id } */
+  getQcInspection: function(inspectionId) {
+    return this.callRead('get_qc_inspection', { inspection_id: inspectionId });
+  },
+
+  /**
+   * สร้างการตรวจใหม่ (สร้างหัว + 26 แถวผลจากเกณฑ์ active)
+   * @param {object} data - { ff_code, item_name?, location?, maker?, drawing_ref?,
+   *                          inspector?, inspect_date?, round?, notes? }
+   */
+  createQcInspection: function(data) {
+    return this.callPost('create_qc_inspection', data);
+  },
+
+  /**
+   * ติ๊กผลรายข้อ + defect/หมายเหตุ/รูป/ตรวจซ้ำ
+   * @param {object} data - { result_id | (inspection_id + criteria_id), result:'pass'|'fail'|'na',
+   *                          defect_class?:'C'|'M'|'Mn', note?, photo_url?, fixed_date?, recheck_result? }
+   */
+  updateQcResult: function(data) {
+    return this.callPost('update_qc_result', data);
+  },
+
+  /** สรุป + ตั้งสถานะการตรวจ (ผ่าน/ผ่านมีเงื่อนไข/ไม่ผ่าน) — { inspection_id } */
+  closeQcInspection: function(inspectionId) {
+    return this.callPost('close_qc_inspection', { inspection_id: inspectionId });
+  },
+
+  /** ลบการตรวจ + ผลรายข้อ (เผื่อกดผิด/ทดสอบ) — { inspection_id } */
+  deleteQcInspection: function(inspectionId) {
+    return this.callPost('delete_qc_inspection', { inspection_id: inspectionId });
+  },
+
+  /** สรุป QC ต่อ FF (รอบล่าสุด + defect ค้าง) — เลี้ยงการ์ด dashboard */
+  qcSummary: function() {
+    return this.callRead('qc_summary');
   },
 
   // ============================================================

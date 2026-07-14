@@ -4,6 +4,18 @@
 // ============================================================
 
 const CONFIG = {
+  // ── เครื่องยนต์หลังบ้าน (backend engine) ──────────────────────────
+  //  'gas' = Apps Script เดิม (ค่าเริ่มต้น · ร่มชูชีพ rollback)
+  //  'cf'  = Cloudflare Worker ตัวใหม่ (เร็วกว่า ~10–50 เท่า)
+  //  ★ กฎเหล็ก: ค่าใน commit ต้องเป็น 'gas' เสมอ — การสลับไป 'cf' จริง
+  //    (ตัดยอด) เป็นขั้นตอนแยกที่มีมนุษย์เคาะ (ดู BLUEPRINT §6.4)
+  //  สลับกลับได้ทันที = แก้บรรทัดนี้บรรทัดเดียว (rollback 1 บรรทัด)
+  BACKEND: 'gas',
+
+  // URL ของ Worker ใหม่ (เติมค่าจริงจาก S1-HANDOFF.md หลัง Session 1 deploy)
+  // ใช้เฉพาะเมื่อ BACKEND === 'cf' — ตอน 'gas' ไม่ถูกแตะเลย
+  CF_API_URL: 'https://dstr-api.PLACEHOLDER.workers.dev',
+
   // Apps Script v4 - Backward compat + AI parser
   APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwTqbjq54JzVD81OklbVJ1oSRaROJqc0oJSjg1ovTp3ZWBAfvtwam7_Ksjqps0HjhG1/exec',
 
