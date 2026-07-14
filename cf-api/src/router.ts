@@ -5,6 +5,7 @@
 // ============================================================
 import type { Env } from './lib/env.ts';
 import * as auth from './modules/auth.ts';
+import * as qc from './modules/qc.ts'; // ★ Session 3 — QC Checklist
 
 export async function route(env: Env, action: string, p: Record<string, unknown>): Promise<unknown> {
   switch (action) {
@@ -24,6 +25,24 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
       return auth.upsertUser(env, p);
     case 'set_user_role':
       return auth.setUserRole(env, p);
+
+    // ✅ QC — Quality Checklist (Session 3, ฟีเจอร์ใหม่)
+    case 'get_qc_criteria':
+      return qc.getQcCriteria(env);
+    case 'get_qc_inspections':
+      return qc.getQcInspections(env, p);
+    case 'get_qc_inspection':
+      return qc.getQcInspection(env, p);
+    case 'create_qc_inspection':
+      return qc.createQcInspection(env, p);
+    case 'update_qc_result':
+      return qc.updateQcResult(env, p);
+    case 'close_qc_inspection':
+      return qc.closeQcInspection(env, p);
+    case 'delete_qc_inspection':
+      return qc.deleteQcInspection(env, p);
+    case 'qc_summary':
+      return qc.qcSummary(env, p);
 
     default:
       // Session 2 จะเติม 131 actions ที่เหลือ — ระหว่างนี้ error ชัดเจน

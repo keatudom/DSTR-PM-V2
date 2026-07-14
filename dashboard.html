@@ -812,6 +812,13 @@
         <div class="hub-card-sub" id="hubTeamSub">— ทีม</div>
         <div class="hub-card-arrow">→</div>
       </div>
+      <div class="hub-card" id="hubQcCard" onclick="window.location.href='qc.html?project=' + encodeURIComponent((typeof state!=='undefined'&&state.projectId)?state.projectId:'bow-house')">
+        <div class="hub-card-icon">✅</div>
+        <div class="hub-card-title">QC ตรวจคุณภาพ</div>
+        <div class="hub-card-sub" id="hubQcSub">ตรวจก่อนส่งมอบ</div>
+        <div class="hub-card-arrow">→</div>
+        <div class="hub-card-badge" id="hubQcBadge" style="display:none"></div>
+      </div>
       <div class="hub-card" onclick="alert('เร็วๆ นี้: BOQ')">
         <div class="hub-card-icon">📋</div>
         <div class="hub-card-title">BOQ</div>
@@ -1046,7 +1053,25 @@
 // การ์ด HR ขึ้นเฉพาะ ฝ่ายบุคคล/ผู้บริหาร (server ก็กัน get_attendance_all ด้วย cap ATTEND)
 (function(){ try{ var r=(typeof Auth!=='undefined'&&Auth.getRole)?Auth.getRole():null;
   var allow={hr:1,owner:1,creator:1,director:1,pm:1,admin:1};
-  if(!r || allow[r]){ var c=document.getElementById('hubHrCard'); if(c) c.style.display=''; } }catch(e){} })();</script>
+  if(!r || allow[r]){ var c=document.getElementById('hubHrCard'); if(c) c.style.display=''; } }catch(e){} })();
+// ✅ การ์ด QC — อัปเดตตัวเลขภาพรวม (ผ่าน/ไม่ผ่าน/รอตรวจ) เฉพาะเครื่องยนต์ใหม่ (cf)
+(function(){
+  try {
+    if (typeof CONFIG === 'undefined' || CONFIG.BACKEND !== 'cf') return;  // gas mode: คงข้อความเริ่มต้น
+    if (typeof API === 'undefined' || !API.qcSummary) return;
+    API.qcSummary().then(function(res){
+      if (!res || !res.ok || !res.data || !res.data.tally) return;
+      var t = res.data.tally;
+      var sub = document.getElementById('hubQcSub');
+      if (sub) sub.textContent = 'ผ่าน ' + (t.pass||0) + ' · มีเงื่อนไข ' + (t.conditional||0) + ' · ไม่ผ่าน ' + (t.fail||0);
+      var pend = (t.pending||0) + (t.fail||0) + (t.conditional||0);
+      if (pend > 0) {
+        var b = document.getElementById('hubQcBadge');
+        if (b) { b.textContent = pend; b.style.display=''; }
+      }
+    }).catch(function(){});
+  } catch(e){}
+})();</script>
 <script>
 // ตรวจสอบสิทธิ์ Admin
 if (!Auth.requireAuth('admin')) {
