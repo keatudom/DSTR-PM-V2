@@ -13,6 +13,7 @@ import * as risks from './modules/risks.ts'; // Session 2 — โมดูล 8
 import * as evals from './modules/evals.ts'; // Session 2 — โมดูล 9
 import * as daily from './modules/daily.ts'; // Session 2 — โมดูล 5
 import * as teamsFinance from './modules/teams_finance.ts'; // Session 2 — โมดูล 6
+import * as clientView from './modules/client_view.ts'; // Session 2 — โมดูล 10
 import * as qc from './modules/qc.ts'; // ★ Session 3 — QC Checklist
 
 export async function route(env: Env, action: string, p: Record<string, unknown>): Promise<unknown> {
@@ -23,6 +24,16 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
     // 📊 getAll ‼raw (Code.js:621) — aggregate สำหรับ dashboard เก่า — Session 2
     case 'getAll':
       return ffTasks.getAll(env, p);
+
+    // 👁️ CLIENT VIEW (read-only, whitelist) — Session 2 โมดูล 10
+    case 'client_get_overview':
+      return clientView.clientGetOverview(env, p);
+    case 'client_get_photos':
+      return clientView.clientGetPhotos(env, p);
+    case 'client_get_milestones':
+      return clientView.clientGetMilestones(env);
+    case 'client_get_payments':
+      return clientView.clientGetPayments(env, p);
 
     // 👷 TEAMS / CONTRACTS / MILESTONES / STAFF / CLIENT-FINANCE — Session 2 โมดูล 6
     case 'get_teams_bundle':
