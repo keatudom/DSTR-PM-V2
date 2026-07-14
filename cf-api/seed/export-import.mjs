@@ -52,9 +52,9 @@ const TABLES = [
   { tab: '11_Materials', table: 'materials', idCol: 'id', cols: ['id','project_id','name','unit','category','spec','size','default_price','default_supplier_id','linked_ffs','min_stock_alert','current_stock','notes','active','created_at','tracking_mode','last_status_update'] },
   { tab: '12_Material_Transactions', table: 'material_transactions', idCol: 'id', cols: ['id','project_id','date','type','material_id','quantity','unit_price','total_value','supplier_id','contractor_id','ff_code','report_id','remaining_after','receipt_no','notes','created_by','created_at'] },
   { tab: '13_Task_Photos', table: 'task_photos', idCol: 'photo_id', cols: ['photo_id','project_id','task_id','report_id','url','drive_id','r2_key','caption','client_visible','uploaded_at','uploaded_by'] },
-  { tab: '16_Material_Photos', table: 'material_photos', idCol: 'photo_id', cols: ['photo_id','project_id','linked_to','link_id','url','drive_id','r2_key','caption','uploaded_at','uploaded_by'] },
+  { tab: '16_Material_Photos ', table: 'material_photos', idCol: 'photo_id', cols: ['photo_id','project_id','linked_to','link_id','url','drive_id','r2_key','caption','uploaded_at','uploaded_by'] },
   { tab: '14_BOQ_Items', table: 'boq_items', idCol: 'id', cols: ['id','project_id','ff_code','material_id','planned_qty','unit','notes','created_at'] },
-  { tab: '17_Activity_Logs', table: 'activity_logs', idCol: 'log_id', cols: ['log_id','project_id','date','timestamp','type','source','text','tags_ff','tags_ctr','tags_issue','tags_phase','photo_url','meta_json'] },
+  { tab: '17_Activity_Logs ', table: 'activity_logs', idCol: 'log_id', cols: ['log_id','project_id','date','timestamp','type','source','text','tags_ff','tags_ctr','tags_issue','tags_phase','photo_url','meta_json'] },
   { tab: '21_Teams', table: 'teams', idCol: 'team_id', cols: ['team_id','name','type','lead_name','phone','category','members','active','notes','created_at'] },
   { tab: '29_Project_Teams', table: 'project_teams', idCol: 'assignment_id', cols: ['assignment_id','project_id','team_id','active','added_at'] },
   { tab: '22_Contracts', table: 'contracts', idCol: 'contract_id', cols: ['contract_id','project_id','team_id','contract_no','type','title','value','sign_date','paid_total','tax_pct','file_link','parent_id','status','party','notes','created_at'] },
@@ -69,9 +69,18 @@ const TABLES = [
   { tab: '28_Contractor_Evaluations', table: 'contractor_evaluations', idCol: 'eval_id', cols: ['eval_id','project_id','team_id','team_name','eval_date','evaluator','manpower','progress','quality','first_pass','delivery','response','discipline','finance','total_score','grade','status','remark','sub_scores','created_at'] },
 ];
 
-// header override เมื่อ auto-snake ไม่ตรงคอลัมน์ D1 (เติมหลังเห็น --tabs/--dump จริง)
+// header override เมื่อ auto-snake ไม่ตรงคอลัมน์ D1 (ยืนยันจากหัวจริงแล้ว 2026-07-14)
 // รูปแบบ: { 'ชื่อตาราง': { 'normalized_header': 'd1_col' } }
-const OVERRIDES = {};
+const OVERRIDES = {
+  ff_items: { ff_code: 'code', item_name: 'name', area_room: 'area', price_thb: 'price' },
+  tasks: { task_id: 'id', task_name: 'name' },
+  payments: { of_total: 'pct_of_total', amount_thb: 'amount' },
+  risks: { mitigation_plan: 'mitigation' },
+  task_photos: { id: 'photo_id', drive_url: 'url' },
+  material_photos: { drive_url: 'url' },
+  quick_logs: { timestamp: 'created_at' }, // report_id/photos/tagged_* ไม่มีช่องใน schema (3 แถว transient — ยอมทิ้ง)
+  boq_items: { planned_quantity: 'planned_qty' }, // planned_unit_price/planned_total/created_by ไม่มีช่อง (0 แถว)
+};
 
 function normalize(h) {
   return String(h).trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
@@ -152,14 +161,24 @@ function buildInserts(def, headers, rows) {
   const useCols = def.cols.filter((c) => c in colIdx);
   const stmts = [`DELETE FROM ${def.table};`];
   const idVals = [];
-  for (let b = 0; b < rows.length; b += BATCH) {
-    const chunk = rows.slice(b, b + BATCH);
-    const tuples = chunk.map((row) => {
-      if (def.idCol && colIdx[def.idCol] !== undefined) idVals.push(row[colIdx[def.idCol]]);
-      return '(' + useCols.map((c) => sqlLit(row[colIdx[c]])).join(',') + ')';
-    });
-    stmts.push(`INSERT INTO ${def.table} (${useCols.join(',')}) VALUES\n${tuples.join(',\n')};`);
+  // แบ่ง INSERT ตาม "ขนาดไบต์" (กัน SQLITE_TOOBIG: D1 จำกัด ~100KB/statement → เผื่อไว้ 50KB)
+  const MAX_STMT_BYTES = 50_000;
+  let buf = [];
+  let bufBytes = 0;
+  const flush = () => {
+    if (!buf.length) return;
+    stmts.push(`INSERT INTO ${def.table} (${useCols.join(',')}) VALUES\n${buf.join(',\n')};`);
+    buf = [];
+    bufBytes = 0;
+  };
+  for (const row of rows) {
+    if (def.idCol && colIdx[def.idCol] !== undefined) idVals.push(row[colIdx[def.idCol]]);
+    const tuple = '(' + useCols.map((c) => sqlLit(row[colIdx[c]])).join(',') + ')';
+    if (buf.length && (bufBytes + tuple.length > MAX_STMT_BYTES || buf.length >= BATCH)) flush();
+    buf.push(tuple);
+    bufBytes += tuple.length + 2;
   }
+  flush();
   return { sql: stmts.join('\n'), count: rows.length, unmapped, useCols, idVals };
 }
 
