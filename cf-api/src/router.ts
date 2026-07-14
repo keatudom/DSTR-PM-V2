@@ -11,6 +11,7 @@ import * as projects from './modules/projects.ts'; // Session 2 — โมดู
 import * as materials from './modules/materials.ts'; // Session 2 — โมดูล 4
 import * as risks from './modules/risks.ts'; // Session 2 — โมดูล 8
 import * as evals from './modules/evals.ts'; // Session 2 — โมดูล 9
+import * as daily from './modules/daily.ts'; // Session 2 — โมดูล 5
 import * as qc from './modules/qc.ts'; // ★ Session 3 — QC Checklist
 
 export async function route(env: Env, action: string, p: Record<string, unknown>): Promise<unknown> {
@@ -31,6 +32,50 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
       return auth.upsertUser(env, p);
     case 'set_user_role':
       return auth.setUserRole(env, p);
+
+    // 📝 DAILY / ACTIVITY / AI (Code.js) — Session 2 โมดูล 5
+    case 'get_daily_reports':
+      return daily.getDailyReports(env, p);
+    case 'get_daily_report':
+      return daily.getDailyReport(env, p);
+    case 'create_daily':
+      return daily.createDaily(env, p);
+    case 'auto_detect_daily':
+      return daily.autoDetectDaily(env, p);
+    case 'generate_daily_summary':
+      return daily.generateDailySummary(env, p);
+    case 'delete_daily':
+      return daily.deleteDaily(env, p);
+    case 'add_quick_log':
+      return daily.addQuickLog(env, p);
+    case 'ai_summary':
+      return daily.aiSummary(env, p);
+    case 'add_activity_log':
+      return daily.addActivityLog(env, p);
+    case 'get_activity_feed':
+      return daily.getActivityFeed(env, p);
+    case 'get_material_transactions':
+      return daily.getMaterialTransactions(env, p);
+    case 'delete_activity_log':
+      return daily.deleteActivityLog(env, p);
+    case 'untick_task_from_log':
+      return daily.untickTaskFromLog(env, p);
+    case 'generate_daily_summary_v2':
+      return daily.generateDailySummaryV2(env, p);
+    case 'save_ai_summary':
+      return daily.saveAiSummary(env, p);
+    case 'get_saved_summary':
+      return daily.getSavedSummary(env, p);
+    case 'parse_activity_text':
+      return daily.parseActivityText(env, p);
+    case 'suggest_task_from_log':
+      return daily.suggestTaskFromLog(env, p);
+    case 'confirm_task_tick':
+      return daily.confirmTaskTick(env, p);
+    case 'get_today_stats':
+      return daily.getTodayStats(env, p);
+    case 'get_daily_bundle':
+      return daily.getDailyBundle(env, p);
 
     // 📊 EVALUATIONS (evaluations.gs) — Session 2 โมดูล 9
     case 'get_eval_config':

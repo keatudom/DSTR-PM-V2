@@ -46,3 +46,18 @@ export async function callGemini(env: Env, prompt: string): Promise<string> {
   }
   return cand.content.parts[0].text || '';
 }
+
+// callGeminiJSON_ (Code.js:2774) — responseMimeType JSON แล้ว parse 2 ชั้น
+export async function callGeminiJSON(env: Env, prompt: string): Promise<unknown> {
+  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + (env.GEMINI_API_KEY || '');
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.2, maxOutputTokens: 1024, responseMimeType: 'application/json' },
+  };
+  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  const text = await res.text();
+  if (res.status !== 200) throw new Error('AI: ' + text.slice(0, 200));
+  const result = JSON.parse(text) as { candidates: { content: { parts: { text: string }[] } }[] };
+  return JSON.parse(result.candidates[0].content.parts[0].text);
+}
