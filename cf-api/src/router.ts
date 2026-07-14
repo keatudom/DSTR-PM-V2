@@ -8,6 +8,7 @@ import * as auth from './modules/auth.ts';
 import * as checkin from './modules/checkin.ts'; // Session 2 — โมดูล 1
 import * as ffTasks from './modules/ff_tasks.ts'; // Session 2 — โมดูล 2
 import * as projects from './modules/projects.ts'; // Session 2 — โมดูล 3
+import * as materials from './modules/materials.ts'; // Session 2 — โมดูล 4
 import * as qc from './modules/qc.ts'; // ★ Session 3 — QC Checklist
 
 export async function route(env: Env, action: string, p: Record<string, unknown>): Promise<unknown> {
@@ -28,6 +29,50 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
       return auth.upsertUser(env, p);
     case 'set_user_role':
       return auth.setUserRole(env, p);
+
+    // 📦 MATERIALS / BOQ / INVENTORY / AI (Code.js) — Session 2 โมดูล 4
+    case 'get_suppliers':
+      return materials.getSuppliers(env);
+    case 'create_supplier':
+      return materials.createSupplier(env, p);
+    case 'get_materials':
+      return materials.getMaterialsAction(env, p);
+    case 'get_material':
+      return materials.getMaterial(env, p);
+    case 'create_material':
+      return materials.createMaterial(env, p);
+    case 'update_material':
+      return materials.updateMaterial(env, p);
+    case 'deactivate_material':
+      return materials.deactivateMaterial(env, p);
+    case 'delete_material':
+      return materials.deleteMaterial(env, p);
+    case 'get_transactions':
+      return materials.getTransactionsAction(env, p);
+    case 'receive_material':
+      return materials.receiveMaterial(env, p);
+    case 'withdraw_material':
+      return materials.withdrawMaterial(env, p);
+    case 'count_material':
+      return materials.countMaterial(env, p);
+    case 'parse_material_log':
+      return materials.parseMaterialLog(env, p);
+    case 'confirm_material_log':
+      return materials.confirmMaterialLog(env, p);
+    case 'check_stock_for_items':
+      return materials.checkStockForItems(env, p);
+    case 'get_boq':
+      return materials.getBoqAction(env, p);
+    case 'create_boq':
+      return materials.createBOQ(env, p);
+    case 'check_boq_status':
+      return materials.checkBoqStatus(env, p);
+    case 'get_inventory_summary':
+      return materials.getInventorySummary(env, p);
+    case 'update_material_prices':
+      return materials.updateMaterialPrices(env, p);
+    case 'get_ai_alerts':
+      return materials.getAiAlerts(env, p);
 
     // 🏗️ PROJECTS registry (projects_patch.gs) — Session 2 โมดูล 3
     case 'get_projects':

@@ -259,6 +259,7 @@ async function createFFRow(env: Env, pid: string, p: Record<string, unknown>): P
     pid, code, row['BF Code'], name, row['Area / Room'], row['Zone'], row['Price (THB)'],
     row['Scope Type'], row['Status'], row['Risk Level'], row['Notes'],
   );
+  row.project_id = pid; // appendRow เดิม stamp project_id ลง object → คืนกลับใน response ด้วย
   return row;
 }
 export function createFF(env: Env, p: Record<string, unknown>): Promise<Record<string, unknown>> {

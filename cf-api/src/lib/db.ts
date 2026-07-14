@@ -71,3 +71,11 @@ export function projectScope(pid: string, col = 'project_id'): { sql: string; bi
 export function fmtDate(v: unknown): string {
   return v == null || v === '' ? '' : String(v);
 }
+
+// raw read: Sheets ช่องว่าง = '' แต่ seed แปลงเป็น NULL → coalesce null→'' ให้ตรงพฤติกรรมเดิม
+// (ใช้กับ action ที่คืน getAllRows(...) ดิบ เช่น get_materials/get_suppliers/get_daily_reports)
+export function blankNulls(row: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k in row) out[k] = row[k] == null ? '' : row[k];
+  return out;
+}
