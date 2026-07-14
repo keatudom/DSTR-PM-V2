@@ -43,23 +43,31 @@
 - **unit test กติกา C/M/Mn: 10/10 ผ่าน** (ตรรกะ computeStatus/countPendingDefects)
 - **end-to-end บน `wrangler dev --local` + D1 local: 15/15 ผ่าน** — create→tick(pass/fail C/M/Mn/na)→close→recheck→re-inspect(round+1)→qc_summary→delete ครบ ทดสอบบน `project_id='_test-mig'` แล้วลบเกลี้ยง (ไม่แตะ bow-house)
   - พิสูจน์ทุกกติกา: C→fail · Mn→conditional · all-pass→pass · แก้ C แล้วตรวจซ้ำผ่าน→กลับเป็น pass
+- **บน CLOUD จริง (verify 2026-07-14):** Worker LIVE `https://dstr-api.keatudom456.workers.dev` (ping ok) · seed qc_criteria → **remote D1 = 26** · create/cleanup บน _test-mig ผ่าน live worker สำเร็จ แล้วลบเกลี้ยง
+  - ⚠️ **caveat:** worker ที่ deploy อยู่รัน qc.ts **เวอร์ชันก่อน cleanup** (create คืน `data.ok` เกินมา 1 field — double-ok) เพราะ deploy เกิดก่อนผมแก้ · **frontend ทำงานได้ปกติทั้งสองเวอร์ชัน** (อ่าน `res.data.inspection_id` ซึ่งมีทั้งคู่) · **redeploy ครั้งหน้า** (`wrangler deploy` จาก src ปัจจุบัน) จะได้เวอร์ชันสะอาดตรง commit — ไม่เร่งด่วน (ไม่กระทบการใช้งาน)
 
 ### สัญญา response (สำคัญต่อคนทำต่อ)
 ทุก QC action ถูก router ห่อ `{ok, data}` เสมอ (ไม่ใช่ RAW_ACTION) → **handler คืน data ดิบ, frontend อ่าน `res.data.*`** เช่น create คืน `res.data.inspection_id`
 
 ---
 
-## 2. ⛔ ค้าง (gated — ต้องรออย่างอื่นก่อน)
+## 2. ✅ เสร็จแล้ว (cloud) + ⛔ ค้าง (gated)
 
+**เสร็จ:**
+- `CF_API_URL` ใน `js/config.js` = `https://dstr-api.keatudom456.workers.dev` (verify ping ok) · **BACKEND ยัง 'gas'**
+- seed `qc_criteria` ขึ้น **D1 remote สำเร็จ** (26 เกณฑ์) — ถ้า reseed: `cd cf-api && wrangler d1 execute dstr-db --remote --file=seed/qc_criteria_seed.sql`
+
+**ค้าง (gated):**
 | งานค้าง | ติดที่ | ทำเมื่อ |
 |---|---|---|
-| เติม `CF_API_URL` จริงใน `js/config.js` | รอ S1 deploy (Worker URL ยัง PENDING) | หลัง `wrangler deploy` (ดู S1-HANDOFF §gate) |
-| seed `qc_criteria` ขึ้น **D1 remote** | รอ D1 จริง (หลัง `wrangler d1 create`) | `cd cf-api && wrangler d1 execute dstr-db --remote --file=seed/qc_criteria_seed.sql` |
-| แนบรูป defect ใน QC (ปุ่ม 📷) | รอ `modules/photos.ts` (upload_log_photo → R2) ของ **Session 2** | หลัง S2 ทำ photos + `/media` route ใน index.ts |
-| Playwright smoke ทุกหน้าโหมด cf (login→dashboard→checkin→materials→daily→team→client→hr) | รอ **S2** (131 actions) + cloud ขึ้น | หลัง S2 + deploy |
-| rollback test (สลับ gas↔cf จริง 1 รอบ) | รอ cloud ขึ้น | หลัง deploy — สลับ `BACKEND:'cf'` ทดสอบ แล้วสลับกลับ 'gas' |
+| redeploy worker ให้ตรง commit (แก้ double-ok cosmetic) | ไม่เร่ง (frontend ทำงานได้อยู่) | ครั้งหน้าที่ใครรัน `wrangler deploy` (จะได้ S2 modules ไปด้วย) |
+| แนบรูป defect ใน QC (ปุ่ม 📷) | รอ `modules/photos.ts` (upload_log_photo → R2) ของ **Session 2** + R2 เปิด (ยังไม่ enable) | หลัง S2 ทำ photos + `/media` route |
+| Playwright smoke ทุกหน้าโหมด cf (login→dashboard→checkin→materials→daily→team→client→hr) | รอ **S2** (131 actions) | หลัง S2 |
+| rollback test (สลับ gas↔cf จริง 1 รอบ) | รอ S2 ครบ (หน้าเว็บส่วนใหญ่ยังไม่มี backend cf) | หลัง S2 — สลับ `BACKEND:'cf'` ทดสอบ แล้วสลับกลับ 'gas' |
+| secrets 10 ตัว + seed ข้อมูลจริงจาก Sheets | รอเจ้าของงานใส่ secrets (S1 §gate) | ดู S1-HANDOFF |
 
 > **ยังไม่สลับ `BACKEND` เป็น 'cf' ใน commit** ตามกฎเหล็ก — การตัดยอดจริงเป็นขั้นตอนแยกที่มีมนุษย์เคาะ (BLUEPRINT §6.4)
+> **QC ใช้งานได้บน cloud แล้ว** (get_qc_criteria/create/close/... ผ่าน live worker) — ทดสอบผ่านหน้า qc.html ได้โดยตั้ง `BACKEND='cf'` ชั่วคราวใน DevTools
 
 ---
 

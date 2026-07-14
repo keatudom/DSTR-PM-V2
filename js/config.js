@@ -12,9 +12,9 @@ const CONFIG = {
   //  สลับกลับได้ทันที = แก้บรรทัดนี้บรรทัดเดียว (rollback 1 บรรทัด)
   BACKEND: 'gas',
 
-  // URL ของ Worker ใหม่ (เติมค่าจริงจาก S1-HANDOFF.md หลัง Session 1 deploy)
+  // URL ของ Worker ใหม่ (Session 1 deploy แล้ว · verify ping ok 2026-07-14)
   // ใช้เฉพาะเมื่อ BACKEND === 'cf' — ตอน 'gas' ไม่ถูกแตะเลย
-  CF_API_URL: 'https://dstr-api.PLACEHOLDER.workers.dev',
+  CF_API_URL: 'https://dstr-api.keatudom456.workers.dev',
 
   // Apps Script v4 - Backward compat + AI parser
   APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwTqbjq54JzVD81OklbVJ1oSRaROJqc0oJSjg1ovTp3ZWBAfvtwam7_Ksjqps0HjhG1/exec',
