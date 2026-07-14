@@ -7,6 +7,7 @@ import type { Env } from './lib/env.ts';
 import * as auth from './modules/auth.ts';
 import * as checkin from './modules/checkin.ts'; // Session 2 — โมดูล 1
 import * as ffTasks from './modules/ff_tasks.ts'; // Session 2 — โมดูล 2
+import * as projects from './modules/projects.ts'; // Session 2 — โมดูล 3
 import * as qc from './modules/qc.ts'; // ★ Session 3 — QC Checklist
 
 export async function route(env: Env, action: string, p: Record<string, unknown>): Promise<unknown> {
@@ -27,6 +28,14 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
       return auth.upsertUser(env, p);
     case 'set_user_role':
       return auth.setUserRole(env, p);
+
+    // 🏗️ PROJECTS registry (projects_patch.gs) — Session 2 โมดูล 3
+    case 'get_projects':
+      return projects.getProjects(env);
+    case 'create_project':
+      return projects.createProject(env, p);
+    case 'update_project':
+      return projects.updateProject(env, p);
 
     // 📋 FF / TASKS / PAYMENTS (Code.js + projects_wizard.gs) — Session 2 โมดูล 2
     case 'get_ff_list':
