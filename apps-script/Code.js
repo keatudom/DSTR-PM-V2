@@ -295,6 +295,10 @@ function route(action, p) {
     case '_init_auth_secret': return initAuthSecret_();  // สร้าง AUTH_SECRET ล่วงหน้า (idempotent)
     case '_auth_selftest':    return authSelfTest_();    // ตรวจ token crypto roundtrip
 
+    // 🆕 CF MIGRATION (additive-only) — ดัมป์แท็บดิบให้ seed script (gate ด้วย ADMIN_PASSWORD) ดู export.gs
+    case 'export_all':  return exportAll_(p);
+    case 'export_tabs': return exportTabs_(p);
+
     case 'get_ff_list': return getFFList(p.project_id || 'bow-house');
     case 'get_tasks': return getTasksAsObjects(p.ff_code, p.project_id || 'bow-house');
 
