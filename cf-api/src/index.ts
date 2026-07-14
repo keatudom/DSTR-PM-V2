@@ -55,6 +55,8 @@ app.all('*', async (c) => {
     // ร้อย actor (จาก token) ให้ handler อ่านผ่าน params.__actor — แทน global _setCurrentActor_ เดิม
     // ใช้ตอน autoLog เพื่อติดป้าย "ใครทำ" (Code.js:2655)
     params.__actor = auth.actor;
+    // ร้อย executionCtx ให้ handler ยิง LINE/Gemini แบบ waitUntil (ไม่ให้ผู้ใช้รอ — BLUEPRINT §4)
+    params.__ctx = c.executionCtx;
     const data = await route(env, action, params);
     result = wrapResult(action, data);
   } catch (err) {
