@@ -51,7 +51,10 @@ app.all('*', async (c) => {
 
   let result: unknown;
   try {
-    await authorize(env, action, params);
+    const auth = await authorize(env, action, params);
+    // ร้อย actor (จาก token) ให้ handler อ่านผ่าน params.__actor — แทน global _setCurrentActor_ เดิม
+    // ใช้ตอน autoLog เพื่อติดป้าย "ใครทำ" (Code.js:2655)
+    params.__actor = auth.actor;
     const data = await route(env, action, params);
     result = wrapResult(action, data);
   } catch (err) {

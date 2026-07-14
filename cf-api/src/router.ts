@@ -5,6 +5,7 @@
 // ============================================================
 import type { Env } from './lib/env.ts';
 import * as auth from './modules/auth.ts';
+import * as checkin from './modules/checkin.ts'; // Session 2 — โมดูล 1
 import * as qc from './modules/qc.ts'; // ★ Session 3 — QC Checklist
 
 export async function route(env: Env, action: string, p: Record<string, unknown>): Promise<unknown> {
@@ -25,6 +26,26 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
       return auth.upsertUser(env, p);
     case 'set_user_role':
       return auth.setUserRole(env, p);
+
+    // ⏰ CHECK-IN / TIMESHEET (checkin.gs) — Session 2 โมดูล 1
+    case 'create_checkin':
+      return checkin.createCheckin(env, p);
+    case 'get_checkins':
+      return checkin.getCheckins(env, p);
+    case 'get_timesheet':
+      return checkin.getTimesheet(env, p);
+    case 'get_attendance_all':
+      return checkin.getAttendanceAll(env, p);
+    case 'update_checkin':
+      return checkin.updateCheckin(env, p);
+    case 'set_id_card':
+      return checkin.setIdCard(env, p);
+    case 'get_site_location':
+      return checkin.getSiteLocationAction(env, p);
+    case 'set_site_location':
+      return checkin.setSiteLocation(env, p);
+    case 'delete_checkin':
+      return checkin.deleteCheckin(env, p);
 
     // ✅ QC — Quality Checklist (Session 3, ฟีเจอร์ใหม่)
     case 'get_qc_criteria':
