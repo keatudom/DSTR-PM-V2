@@ -1,0 +1,23 @@
+{
+  "name": "dstr-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DSTR-PM backend on Cloudflare Workers (D1 + R2) — contract-preserving port of Apps Script",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test \"test/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "migrate:local": "wrangler d1 migrations apply dstr-db --local",
+    "migrate:remote": "wrangler d1 migrations apply dstr-db --remote"
+  },
+  "dependencies": {
+    "hono": "^4.6.14"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260708.1",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.110.0"
+  }
+}

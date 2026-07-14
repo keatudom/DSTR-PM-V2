@@ -1,0 +1,7 @@
+node_modules/
+.wrangler/
+.dev.vars
+dist/
+*.log
+# seed dumps อาจมีข้อมูลจริง — ไม่ commit
+seed/_dump/

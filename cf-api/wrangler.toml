@@ -1,0 +1,40 @@
+# ============================================================
+# dstr-api — Cloudflare Worker (engine ใหม่ของ DSTR-PM)
+# ย้ายจาก Apps Script + Google Sheets → Workers + D1 + R2
+# หลักการ: contract-preserving (ดู docs/migration-cloudflare/BLUEPRINT.md §1)
+# ============================================================
+name = "dstr-api"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ── D1 (ฐานข้อมูล SQLite แทน Google Sheets) ──
+# database_id เติมหลัง `wrangler d1 create dstr-db` (Session 1 gate)
+[[d1_databases]]
+binding = "DB"
+database_name = "dstr-db"
+database_id = "PLACEHOLDER_RUN_wrangler_d1_create"
+migrations_dir = "migrations"
+
+# ── R2 (เก็บรูป/ไฟล์ใหม่ แทน Google Drive; ลิงก์ Drive เก่ายังใช้ต่อ) ──
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "dstr-media"
+
+# ── ตัวแปรสาธารณะ (ไม่ใช่ความลับ) ──
+# ALLOW_ANON_READ='true' = คงพฤติกรรมเดิม (read เปิด anonymous) จนกว่าจะปิดหลังตัดยอด (BLUEPRINT §7)
+# ALLOWED_ORIGINS = origin ที่ยิงเข้าได้ (GitHub Pages ของ repo นี้ + localhost dev)
+[vars]
+ALLOW_ANON_READ = "true"
+ALLOWED_ORIGINS = "https://keatudom.github.io,http://localhost:8080,http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000"
+GOOGLE_CLIENT_ID = "1007106153160-bih4m06f6qdrche186s7ng4u85ghs6t0.apps.googleusercontent.com"
+
+# ── Secrets (ตั้งด้วย `wrangler secret put <NAME>` — ห้าม commit ค่า) ──
+# AUTH_SECRET, GEMINI_API_KEY, GEMINI_MODEL, GEMINI_VISION_MODEL,
+# ADMIN_PASSWORD, CLIENT_PASSWORD, LINE_TOKEN, LINE_GROUP_ID,
+# LINE_GROUP_OPS_ID, LINE_OWNER_UID  (รวม 10 ตัว — จดลง secrets-ledger)
+
+# ── Cron Triggers (LINE digests) — handlers มาใน Session 2 (line_webhook.ts)
+# เวลาเดิมคัดจาก line.gs; ใส่ placeholder ปิดไว้ก่อน ไม่ให้ยิงตอนยังไม่มี handler
+# [triggers]
+# crons = ["0 11 * * *"]  # ตัวอย่าง daily digest 18:00 ไทย (UTC+7) — Session 2 เปิด
