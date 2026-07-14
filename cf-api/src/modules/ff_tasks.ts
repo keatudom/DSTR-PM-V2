@@ -15,9 +15,25 @@ import { queryAll, queryFirst, exec, pidOf, projectScope, fmtDate } from '../lib
 import { nextId } from '../lib/ids.ts';
 import { todayStr } from '../lib/time.ts';
 import { autoLog } from '../lib/activity.ts';
+import { getRisksAsObjects } from './risks.ts';
+import { getContractors } from './teams_finance.ts';
+import { getMaterials } from './materials.ts';
 
 function actorOf(p: Record<string, unknown>): TokenPayload | null {
   return (p.__actor as TokenPayload | null) ?? null;
+}
+
+// ── getAll ‼raw (Code.js:621) — aggregate dashboard เก่า (คืน raw ไม่ห่อ {ok,data}) ──
+export async function getAll(env: Env, p: Record<string, unknown>): Promise<unknown> {
+  const projectId = String(p.project_id || 'bow-house');
+  return {
+    ffs: await getFFList(env, projectId),
+    tasks: await getTasksAsObjects(env, null, projectId),
+    payments: await getPaymentsAsObjects(env, projectId),
+    risks: await getRisksAsObjects(env, projectId),
+    contractors: await getContractors(env), // shared — ไม่กรอง
+    materials: await getMaterials(env, undefined, undefined, projectId),
+  };
 }
 
 // ── get_ff_list (Code.js:632 getFFList) ──
