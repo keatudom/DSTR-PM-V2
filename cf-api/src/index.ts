@@ -12,6 +12,18 @@ import { authorize } from './lib/authz.ts';
 import { corsHeaders, jsonResponse, wrapResult } from './lib/resp.ts';
 import { lineWebhook, lineDailyDigest, lineWeeklyDigest, lineOpsDigest } from './modules/line_webhook.ts';
 
+// เขียน string ที่ขึ้นต้น "/media/" ให้เป็นลิงก์เต็ม (Worker origin) ทั่วทั้ง response แบบ recursive
+function absolutizeMedia(node: unknown, base: string): unknown {
+  if (typeof node === 'string') return node.startsWith('/media/') ? base + node : node;
+  if (Array.isArray(node)) return node.map((n) => absolutizeMedia(n, base));
+  if (node && typeof node === 'object') {
+    const obj = node as Record<string, unknown>;
+    for (const k of Object.keys(obj)) obj[k] = absolutizeMedia(obj[k], base);
+    return obj;
+  }
+  return node;
+}
+
 const app = new Hono<{ Bindings: Env }>();
 
 // preflight CORS (ทุก path)
@@ -21,7 +33,10 @@ app.options('*', (c) => new Response(null, { status: 204, headers: corsHeaders(c
 //   ⛔ R2 (MEDIA) ยังปิดใน wrangler.toml (Session 3) → คืน 501 จนกว่าจะเปิด
 app.get('/media/*', async (c) => {
   if (!c.env.MEDIA) return c.text('R2 (MEDIA) not enabled yet', 501);
-  const key = c.req.path.replace(/^\/media\//, '');
+  let key = c.req.path.replace(/^\/media\//, '');
+  // frontend เดิมต่อท้ายรูปด้วยขนาดแบบ Google Drive/lh3 (เช่น "=w200", "=s400", "=w200-h200")
+  // R2 ไม่เข้าใจ → ตัดทิ้งก่อนหา key (กัน 404 โดยไม่ต้องแก้ทุกหน้า html)
+  key = key.replace(/=[sw]\d+(-h\d+)?$/i, '');
   const obj = await c.env.MEDIA.get(key);
   if (!obj) return c.text('not found', 404);
   const headers = new Headers();
@@ -77,6 +92,11 @@ app.all('*', async (c) => {
   } catch (err) {
     result = { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
+
+  // รูป/ไฟล์ใหม่เก็บ url แบบย่อ "/media/<key>" (relative) — ถ้าปล่อยไป เบราว์เซอร์จะเปิดกับ
+  // origin ของหน้าเว็บ (github.io) → 404 · เขียนให้เป็นลิงก์เต็มของ Worker ทุก response ที่เดียว
+  // (ลิงก์ Drive เก่าเป็น absolute อยู่แล้ว → ไม่ถูกแตะ)
+  result = absolutizeMedia(result, url.origin);
 
   return jsonResponse(result, origin, env);
 });
