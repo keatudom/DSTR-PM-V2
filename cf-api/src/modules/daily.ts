@@ -18,6 +18,7 @@ import { autoLog, appendActivityLog } from '../lib/activity.ts';
 import { lineNotifyImportant, ctxOf } from '../lib/line.ts';
 import { callGemini, callGeminiJSON } from '../lib/gemini.ts';
 import { getFFList } from './ff_tasks.ts';
+import { getTeams } from './teams_finance.ts';
 
 function actorOf(p: Record<string, unknown>): TokenPayload | null { return (p.__actor as TokenPayload | null) ?? null; }
 
@@ -460,8 +461,7 @@ export async function getDailyBundle(env: Env, p: Record<string, unknown>): Prom
   if (!skipRefs) {
     try { bundle.contractors = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM contractors')).map(blankNulls); } catch { bundle.contractors = []; }
     try { bundle.ffs = await getFFList(env, pidOf(p)); } catch { bundle.ffs = []; }
-    // teams: getTeams (teams_finance) — ทำเต็มตอนโมดูล 6; ชั่วคราวคืน teams active ดิบ
-    try { bundle.teams = (await queryAll<Record<string, unknown>>(env, "SELECT * FROM teams WHERE active NOT IN ('FALSE','false','0') OR active IS NULL")).map(blankNulls); } catch { bundle.teams = []; }
+    try { bundle.teams = await getTeams(env, { project_id: p.project_id }); } catch { bundle.teams = []; }
   }
   return bundle;
 }

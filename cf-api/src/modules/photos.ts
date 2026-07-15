@@ -11,7 +11,7 @@
 //   upload คืน url เป็น R2 /media/<key> แทน Drive url (BLUEPRINT §4 — ไฟล์ใหม่เข้า R2, ลิงก์เก่าคงเดิม)
 // ============================================================
 import type { Env } from '../lib/env.ts';
-import { queryAll, queryFirst, exec, pidOf, fmtDate, blankNulls } from '../lib/db.ts';
+import { queryAll, queryFirst, exec, pidOf, fmtDate, fmtDateTime, blankNulls } from '../lib/db.ts';
 import { nextId } from '../lib/ids.ts';
 import { nowStr, todayStr } from '../lib/time.ts';
 import { putMedia, decodeDataUrl } from '../lib/r2.ts';
@@ -50,7 +50,7 @@ export async function getTaskPhotos(env: Env, p: Record<string, unknown>): Promi
   if (!taskId) return [];
   let rows: Record<string, unknown>[];
   try { rows = await queryAll<Record<string, unknown>>(env, 'SELECT * FROM task_photos WHERE task_id = ?', String(taskId)); } catch { return []; }
-  const out = rows.map((r) => ({ id: r.photo_id || '', task_id: r.task_id || '', drive_url: r.url || '', drive_id: r.drive_id || '', caption: r.caption || '', uploaded_at: fmtDate(r.uploaded_at), uploaded_by: r.uploaded_by || '' }));
+  const out = rows.map((r) => ({ id: r.photo_id || '', task_id: r.task_id || '', drive_url: r.url || '', drive_id: r.drive_id || '', caption: r.caption || '', uploaded_at: fmtDateTime(r.uploaded_at), uploaded_by: r.uploaded_by || '' }));
   out.sort((a, b) => String(a.uploaded_at).localeCompare(String(b.uploaded_at)));
   return out;
 }
@@ -89,7 +89,7 @@ export async function deleteTaskPhoto(env: Env, p: Record<string, unknown>): Pro
 export async function getContractFiles(env: Env, p: Record<string, unknown>): Promise<unknown> {
   if (!p.contract_id) throw new Error('contract_id required');
   const files = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM contract_files WHERE contract_id = ?', p.contract_id))
-    .map((f) => ({ file_id: f.file_id, contract_id: f.contract_id, url: f.url, drive_id: f.drive_id, name: f.name || '', file_type: f.file_type || 'file', uploaded_at: fmtDate(f.uploaded_at) }));
+    .map((f) => ({ file_id: f.file_id, contract_id: f.contract_id, url: f.url, drive_id: f.drive_id, name: f.name || '', file_type: f.file_type || 'file', uploaded_at: fmtDateTime(f.uploaded_at) }));
   return { files };
 }
 export async function deleteContractFile(env: Env, p: Record<string, unknown>): Promise<unknown> {

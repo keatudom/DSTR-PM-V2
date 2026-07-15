@@ -8,7 +8,7 @@
 //     → ใช้ตาราง projects แทน · tasks/milestones/photos ต้นฉบับไม่ scope project (ตามเดิม)
 // ============================================================
 import type { Env } from '../lib/env.ts';
-import { queryAll, queryFirst, pidOf, fmtDate } from '../lib/db.ts';
+import { queryAll, queryFirst, pidOf, fmtDate, fmtDateTime } from '../lib/db.ts';
 import { todayStr } from '../lib/time.ts';
 import { getTodayStats, getActivityFeed } from './daily.ts';
 import { clientMilestonesForView } from './teams_finance.ts';
@@ -105,7 +105,7 @@ export async function clientGetPhotos(env: Env, p: Record<string, unknown>): Pro
     const task = taskMap[String(r.task_id || '')] || { name: '', ff: '' };
     let caption = String(r.caption || '').trim();
     if (!caption) caption = task.name || '';
-    out.push({ id: r.photo_id || '', drive_id: r.drive_id || '', drive_url: r.url || '', caption, uploaded_at: fmtDate(r.uploaded_at) });
+    out.push({ id: r.photo_id || '', drive_id: r.drive_id || '', drive_url: r.url || '', caption, uploaded_at: fmtDateTime(r.uploaded_at) });
   }
   out.sort((a, b) => String(b.uploaded_at).localeCompare(String(a.uploaded_at)));
   return out.slice(0, limit);

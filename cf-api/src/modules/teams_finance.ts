@@ -59,7 +59,7 @@ export function getTeamsAction(env: Env, p: Record<string, unknown>): Promise<un
 export async function getTeamsBundle(env: Env, p: Record<string, unknown>): Promise<unknown> {
   const pid = pidOf(p);
   const teams = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM teams')).filter((t) => activeRow(t.active))
-    .map((t) => ({ team_id: t.team_id, name: t.name, type: t.type, lead_name: t.lead_name, phone: t.phone || '', category: t.category || 'contractor', members: t.members || '', notes: t.notes || '' }));
+    .map((t) => ({ team_id: t.team_id, name: t.name || '', type: t.type || '', lead_name: t.lead_name || '', phone: t.phone || '', category: t.category || 'contractor', members: t.members || '', notes: t.notes || '' }));
   const scope = projectScope(pid);
   const contracts = (await queryAll<Record<string, unknown>>(env, `SELECT * FROM contracts WHERE ${scope.sql}`, ...scope.binds))
     .filter((c) => String(c.party || 'contractor').toLowerCase() !== 'client')

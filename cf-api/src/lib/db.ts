@@ -67,8 +67,18 @@ export function projectScope(pid: string, col = 'project_id'): { sql: string; bi
   return { sql: `${col} = ?`, binds: [pid] };
 }
 
-// formatDateValue (Code.js:848) — D1 เก็บวันที่เป็น TEXT อยู่แล้ว → String; ว่าง → ''
+// formatDateValue (Code.js:848) — ของเดิม format Date cell → 'yyyy-MM-dd' (ตัดเวลาทิ้ง)
+// D1 เก็บ datetime ที่ seed มาจาก Date cell เป็น string เต็ม → ตัดให้เหลือ yyyy-MM-dd ให้ตรงเดิม
+// (ใช้กับ "date field" เท่านั้น — timestamp field เช่น uploaded_at/created_at ให้ String เต็มผ่าน fmtDateTime)
 export function fmtDate(v: unknown): string {
+  if (v == null || v === '') return '';
+  const s = String(v);
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : s;
+}
+
+// timestamp field เต็ม (uploaded_at ฯลฯ) — ของเดิม formatDateValue บน string คืนเต็ม (ไม่ใช่ Date)
+export function fmtDateTime(v: unknown): string {
   return v == null || v === '' ? '' : String(v);
 }
 
