@@ -17,11 +17,10 @@ database_id = "5f4125bf-59a5-4d16-9a04-5826b0b695b4"
 migrations_dir = "migrations"
 
 # ── R2 (เก็บรูป/ไฟล์ใหม่ แทน Google Drive; ลิงก์ Drive เก่ายังใช้ต่อ) ──
-# ⛔ ปิดไว้ชั่วคราว: ต้อง "เปิดใช้ R2" ในหน้า Cloudflare Dashboard ก่อน 1 ครั้ง (code 10042)
-#    Session 1 ไม่ใช้ R2 → ปลดคอมเมนต์ + `wrangler r2 bucket create dstr-media` ตอน Session 3
-# [[r2_buckets]]
-# binding = "MEDIA"
-# bucket_name = "dstr-media"
+# ✅ เปิดแล้ว 2026-07-15: bucket 'dstr-media' สร้างสำเร็จ (บัญชีเปิด R2 ไว้แล้ว ไม่ต้องผูกบัตรเพิ่ม)
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "dstr-media"
 
 # ── ตัวแปรสาธารณะ (ไม่ใช่ความลับ) ──
 # ALLOW_ANON_READ='true' = คงพฤติกรรมเดิม (read เปิด anonymous) จนกว่าจะปิดหลังตัดยอด (BLUEPRINT §7)

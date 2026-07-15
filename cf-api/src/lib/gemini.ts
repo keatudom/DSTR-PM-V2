@@ -12,7 +12,10 @@ export async function callGemini(env: Env, prompt: string): Promise<string> {
     model + ':generateContent?key=' + (env.GEMINI_API_KEY || '');
   const payload = {
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 2048 },
+    // maxOutputTokens 2048→8192: gemini-2.5-flash ใช้ token "คิดในใจ" (thinking) กินโควตา
+    // → คำตอบ JSON ยาวๆ (needs_clarification หลาย option) โดนตัดกลางคัน → parse พัง
+    // ขยายเพดานกัน truncation (ตรงเจตนาเดิม: ให้ parse สำเร็จ) · ดู deviation #9
+    generationConfig: { temperature: 0.1, maxOutputTokens: 8192 },
   };
   const res = await fetch(url, {
     method: 'POST',
@@ -68,7 +71,7 @@ export async function callGeminiJSON(env: Env, prompt: string): Promise<unknown>
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + (env.GEMINI_API_KEY || '');
   const payload = {
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.2, maxOutputTokens: 1024, responseMimeType: 'application/json' },
+    generationConfig: { temperature: 0.2, maxOutputTokens: 8192, responseMimeType: 'application/json' },
   };
   const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   const text = await res.text();
