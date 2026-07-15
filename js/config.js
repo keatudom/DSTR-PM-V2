@@ -7,10 +7,10 @@ const CONFIG = {
   // ── เครื่องยนต์หลังบ้าน (backend engine) ──────────────────────────
   //  'gas' = Apps Script เดิม (ค่าเริ่มต้น · ร่มชูชีพ rollback)
   //  'cf'  = Cloudflare Worker ตัวใหม่ (เร็วกว่า ~10–50 เท่า)
-  //  ★ กฎเหล็ก: ค่าใน commit ต้องเป็น 'gas' เสมอ — การสลับไป 'cf' จริง
-  //    (ตัดยอด) เป็นขั้นตอนแยกที่มีมนุษย์เคาะ (ดู BLUEPRINT §6.4)
-  //  สลับกลับได้ทันที = แก้บรรทัดนี้บรรทัดเดียว (rollback 1 บรรทัด)
-  BACKEND: 'gas',
+  //  ✅ ตัดยอดแล้ว 2026-07-15: LIVE บน Cloudflare (Workers+D1+R2) — เจ้าของงานเคาะ
+  //    reseed ข้อมูลสดครบ 26 ตาราง + smoke test หน้าเว็บผ่าน (dashboard+QC)
+  //  🔙 rollback = แก้บรรทัดนี้กลับเป็น 'gas' + push (ระบบเก่าเก็บถึง ~2026-08-14)
+  BACKEND: 'cf',
 
   // URL ของ Worker ใหม่ (Session 1 deploy แล้ว · verify ping ok 2026-07-14)
   // ใช้เฉพาะเมื่อ BACKEND === 'cf' — ตอน 'gas' ไม่ถูกแตะเลย
