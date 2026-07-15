@@ -4,6 +4,15 @@
 > อัปเดตล่าสุด: 2026-07-14 · ผู้ปฏิบัติ: Session 3
 > อ่านคู่กับ: `BLUEPRINT.md` §5 · `S1-HANDOFF.md` (รากฐาน + gate ที่ยังค้าง)
 
+## ⚡ UPDATE 2026-07-15 — redeploy หลัง 3 sessions เสร็จครบ
+ทั้ง S1/S2/S3 commit ครบ tree สะอาด → **redeploy worker แล้ว** (`wrangler deploy`) · verify บน live:
+- S2 131 actions live บนข้อมูลจริง (get_ff_list=F-01, get_checkins=CK090 ✓)
+- qc.ts เวอร์ชันสะอาดขึ้น live แล้ว — create คืน single-ok `{ok,data:{inspection_id,...}}` (หาย double-ok)
+- ทดสอบ create/delete บน _test-mig ผ่าน live ลบเกลี้ยง
+- ⚠️ **cron schedules ลงทะเบียนไม่ผ่าน** (Cloudflare API error ที่ /schedules) — ยังไม่กระทบ (ไม่มี LINE secrets อยู่แล้ว) · ตรวจซ้ำตอนตั้ง LINE secrets
+- ผู้ใช้จริงไม่กระทบ (BACKEND ยัง 'gas') — นี่คือ cf engine คู่ขนานพร้อมตัดยอด
+**เหลือ gate ก่อนตัดยอดจริง (ต้องเจ้าของงาน):** secrets 10 ตัว · เปิด R2 (dashboard) · เคาะ 2 deviation ของ S2 (activity project_id stamp, team counter) · golden test เต็ม (หลัง secrets) · flip BACKEND:'cf' + push
+
 ---
 
 ## 0. บริบทสำคัญ (Session 1 รันขนานกันจริง)
