@@ -114,6 +114,74 @@
   .tab-panel.active { display:block; }
   .soon-box { text-align:center; padding:var(--space-8); color:var(--color-slate-400); }
   .soon-box i { width:40px; height:40px; color:var(--color-slate-300); margin-bottom:var(--space-2); }
+
+  /* ── FF list (S2b) ── */
+  .wl-filters { display:flex; flex-direction:column; gap:var(--space-2); }
+  .zone-tabs, .sort-row { display:flex; gap:var(--space-2); flex-wrap:wrap; }
+  .zt { padding:6px 14px; border-radius:var(--radius-full); border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-600); font-size:var(--text-xs); font-weight:500; cursor:pointer; font-family:inherit; }
+  .zt:hover { border-color:var(--color-blue-500); }
+  .zt.on { background:var(--color-blue-600); color:#fff; border-color:var(--color-blue-600); }
+  .sort-row .zt.on { background:var(--color-slate-700); border-color:var(--color-slate-700); }
+
+  .wp-row { display:grid; grid-template-columns:auto 1fr auto 90px auto auto auto auto auto; align-items:center; gap:var(--space-2); padding:var(--space-3); border:1px solid var(--color-slate-200); border-radius:var(--radius-md); margin-bottom:var(--space-2); cursor:pointer; background:#fff; transition:border-color .15s; }
+  .wp-row:hover { border-color:var(--color-slate-300); background:var(--color-slate-50); }
+  .wp-row.expanded { border-color:var(--color-blue-500); background:var(--color-blue-50); }
+  .wp-code { font-size:var(--text-xs); font-weight:700; padding:2px 8px; border-radius:var(--radius-full); background:var(--color-blue-50); color:var(--color-blue-700); white-space:nowrap; }
+  .wp-name { font-size:var(--text-sm); font-weight:500; color:var(--color-slate-800); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .wp-weight { font-size:var(--text-xs); color:var(--color-slate-400); white-space:nowrap; }
+  .wp-prog { height:6px; background:var(--color-slate-100); border-radius:var(--radius-full); overflow:hidden; }
+  .wp-prog-fill { height:100%; border-radius:var(--radius-full); }
+  .wp-pct { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-900); min-width:38px; text-align:right; }
+  .wp-pct.zero { color:var(--color-slate-400); }
+  .wp-arrow, .wp-edit, .wp-del, .wp-chev { color:var(--color-slate-400); font-size:14px; padding:2px 4px; border-radius:4px; }
+  .wp-arrow:hover, .wp-edit:hover, .wp-del:hover { background:var(--color-slate-200); color:var(--color-slate-700); }
+  .wp-chev { transition:transform .15s; }
+  .wp-row.expanded .wp-chev { transform:rotate(180deg); color:var(--color-blue-600); }
+  @media(max-width:768px){ .wp-row{ grid-template-columns:auto 1fr auto auto; } .wp-weight,.wp-prog,.wp-arrow,.wp-edit{ display:none; } }
+
+  .subtasks { grid-column:1/-1; padding:var(--space-3) 0 var(--space-1); }
+  .subtask-phase { margin-bottom:var(--space-3); }
+  .subtask-phase-h { display:flex; align-items:center; gap:var(--space-2); font-size:var(--text-xs); font-weight:600; color:var(--color-slate-500); margin-bottom:var(--space-2); }
+  .phase-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .phase-dot.p1{background:#1e293b}.phase-dot.p2{background:#3b82f6}.phase-dot.p3{background:#10b981}.phase-dot.p4{background:#b45309}
+  .phase-count { margin-left:auto; color:var(--color-slate-400); font-weight:500; }
+  .subtask-item { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-2) var(--space-3); background:var(--color-slate-50); border:1px solid var(--color-slate-200); border-radius:var(--radius-md); margin-bottom:var(--space-2); cursor:pointer; }
+  .subtask-item:hover { border-color:var(--color-slate-300); background:#fff; }
+  .subtask-item.done { background:var(--color-success-50); border-color:#a7f3d0; }
+  .subtask-check { width:20px; height:20px; border:2px solid var(--color-slate-300); border-radius:5px; display:flex; align-items:center; justify-content:center; background:#fff; color:#fff; font-size:12px; flex-shrink:0; }
+  .subtask-item.done .subtask-check.on { background:var(--color-success-500); border-color:var(--color-success-500); }
+  .subtask-name { flex:1; font-size:var(--text-sm); font-weight:500; color:var(--color-slate-700); }
+  .subtask-item.done .subtask-name { text-decoration:line-through; color:var(--color-slate-400); }
+  .subtask-date { font-size:var(--text-xs); color:var(--color-slate-400); }
+  .subtask-photo { font-size:10px; color:var(--color-blue-700); background:var(--color-blue-50); border:1px solid #bfdbfe; border-radius:var(--radius-full); padding:2px 8px; flex-shrink:0; font-weight:600; cursor:pointer; }
+  .subtask-photo.empty { color:var(--color-slate-400); background:var(--color-slate-100); border-color:var(--color-slate-200); }
+  .subtask-photo.uploading { color:var(--color-warning-700); background:var(--color-warning-50); }
+  .subtask-photo.failed { color:var(--color-error-700); background:var(--color-error-50); border-color:#fecaca; }
+  .ffd-cta { grid-column:1/-1; text-align:center; font-size:var(--text-xs); color:var(--color-blue-700); background:var(--color-blue-50); border-radius:var(--radius-md); padding:var(--space-2); cursor:pointer; margin-top:var(--space-1); }
+  .ffd-cta:hover { background:var(--color-blue-100); }
+
+  /* ── Task photos (grid/gallery/lightbox) ── */
+  .tp-sec { margin-top:var(--space-4); }
+  .tp-sec-h { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-700); margin-bottom:var(--space-2); }
+  .tp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:var(--space-2); }
+  .tp-cell { aspect-ratio:1; border-radius:var(--radius-md); overflow:hidden; background:var(--color-slate-100); cursor:pointer; position:relative; }
+  .tp-cell img { width:100%; height:100%; object-fit:cover; }
+  .tp-add { border:2px dashed var(--color-slate-300); display:flex; align-items:center; justify-content:center; background:#fff; }
+  .tp-add-ic { display:block; font-size:22px; color:var(--color-blue-600); text-align:center; }
+  .tp-add-lb { display:block; font-size:10px; color:var(--color-slate-500); text-align:center; }
+  .tp-ph { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; font-size:10px; color:var(--color-slate-400); }
+  .tp-ph-ic { font-size:18px; }
+  .tp-empty { font-size:var(--text-xs); color:var(--color-slate-400); margin-top:var(--space-2); text-align:center; }
+  .tp-skel { display:flex; gap:var(--space-2); }
+  .tp-skel-c { width:84px; height:84px; border-radius:var(--radius-md); }
+  .tp-lightbox { position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; display:flex; align-items:center; justify-content:center; padding:var(--space-4); }
+  .tp-lightbox img { max-width:100%; max-height:90vh; border-radius:var(--radius-md); }
+  .tp-lb-x { position:absolute; top:16px; right:20px; color:#fff; font-size:26px; cursor:pointer; }
+  .tp-lb-del { position:absolute; top:18px; left:20px; color:#fff; font-size:13px; background:rgba(239,68,68,0.9); padding:6px 12px; border-radius:var(--radius-full); cursor:pointer; }
+  .tp-lb-cap { position:absolute; bottom:20px; color:#fff; font-size:var(--text-sm); }
+  .modal-info-row { display:flex; gap:var(--space-2); font-size:var(--text-sm); padding:2px 0; }
+  .modal-info-key { color:var(--color-slate-500); min-width:64px; }
+  .modal-info-val { color:var(--color-slate-800); font-weight:500; }
 </style>
 </head>
 <body>
@@ -176,7 +244,17 @@
 
         <!-- TAB: รายการงาน (S2b) -->
         <div class="tab-panel" id="panel-tasks">
-          <div class="card card-body soon-box"><i data-lucide="list-todo"></i><h4>รายการงาน (FF) + เช็คลิสต์งานย่อย</h4><p class="text-sm">กำลังพัฒนาในเฟส S2b — ตอนนี้ใช้ได้ที่หน้าเดิม</p></div>
+          <div class="card card-body">
+            <div class="flex justify-between items-center mb-4" style="flex-wrap:wrap;gap:var(--space-3)">
+              <h3 class="card-title"><i data-lucide="list-todo" style="width:18px;height:18px;vertical-align:-3px"></i> รายการงาน (FF)</h3>
+              <button class="btn btn-primary btn-sm" id="addFFBtn"><i data-lucide="plus"></i> เพิ่มงาน</button>
+            </div>
+            <div class="wl-filters">
+              <div class="zone-tabs" id="zoneTabs"></div>
+              <div class="sort-row" id="sortRow"></div>
+            </div>
+            <div id="weightList" style="margin-top:var(--space-3)"></div>
+          </div>
         </div>
         <!-- TAB: การเงิน (S2c) -->
         <div class="tab-panel" id="panel-finance">
@@ -218,6 +296,12 @@
 
   // extended state
   state.materials=[]; state.contractors=[]; state.teams=[]; state.alerts=[]; state.inventory=null;
+  if(state.zone===undefined) state.zone='all';
+  if(state.sortMode===undefined) state.sortMode='code';
+  if(!state.openFFs) state.openFFs=new Set();
+  if(!state.recentUncheck) state.recentUncheck={};
+
+  function renderAll(){ renderHeader(); renderKPIs(); renderGauge(); renderInventory(); renderTimeline(); renderFilters(); renderWeightList(); if(window.lucide) lucide.createIcons(); }
 
   function switchTab(name){
     document.querySelectorAll('.tab[data-tab]').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
@@ -255,7 +339,8 @@
       API.callRead('get_ai_alerts').then(res=>{ if(res.ok&&res.data){state.alerts=res.data; renderAiAlertsBanner();} }).catch(()=>{});
       loadLatestReport();
 
-      renderHeader(); renderKPIs(); renderGauge(); renderInventory(); renderTimeline();
+      renderAll();
+      document.getElementById('addFFBtn').onclick=()=>openFFDetailStub();
       document.getElementById('loadingScreen').style.display='none';
       document.getElementById('mainContent').style.display='block';
       if(window.lucide) lucide.createIcons();
@@ -427,6 +512,229 @@
   NF.open=function(){NF.renderList();document.getElementById('nfPanel').classList.add('open');document.getElementById('nfOverlay').classList.add('open');if(NF.events.length){try{localStorage.setItem(NF._seenKey(),NF.events[0].timestamp);}catch(e){}}NF.renderBadge();};
   NF.close=function(){document.getElementById('nfPanel').classList.remove('open');document.getElementById('nfOverlay').classList.remove('open');};
   NF.renderList=function(){var el=document.getElementById('nfList');if(!NF.events.length){el.innerHTML='<div class="nf-empty">ยังไม่มีการแจ้งเตือน<br><span style="font-size:11px">เมื่อมีคนทำงาน/เบิกของ/ติ๊กงาน จะขึ้นที่นี่</span></div>';return;}var last=NF._lastSeen();el.innerHTML=NF.events.map(function(e){var u=e.timestamp>last;var who=e.actor?'<span class="nf-actor">'+escapeHtml(e.actor)+'</span> · ':'';return '<div class="nf-item'+(u?' unread':'')+'"><div class="nf-ic">'+NF.iconFor(e)+'</div><div><div class="nf-txt">'+escapeHtml(e.text||'')+'</div><div class="nf-meta">'+who+NF.relTime(e.timestamp)+'</div></div>'+(u?'<div class="nf-dot"></div>':'')+'</div>';}).join('');};
+
+  // ══════════════════ S2b: FF LIST + TASK TOGGLE + PHOTOS ══════════════════
+  function renderFilters(){
+    const zones=Array.from(new Set((state.data.ffs||[]).map(f=>f.zone).filter(Boolean)))
+      .sort((a,b)=>String(a).localeCompare(String(b),'th',{numeric:true}));
+    const zt=document.getElementById('zoneTabs');
+    zt.innerHTML=`<button class="zt${state.zone==='all'?' on':''}" onclick="setZone('all')">ทุก Zone</button>`+
+      zones.map(z=>`<button class="zt${state.zone===z?' on':''}" onclick="setZone('${escapeHtmlAttr(z)}')">${escapeHtml(z)}</button>`).join('');
+    const sorts=[['code','รหัส'],['weight','น้ำหนัก'],['progress','คืบหน้า']];
+    document.getElementById('sortRow').innerHTML=sorts.map(([m,l])=>`<button class="zt${state.sortMode===m?' on':''}" onclick="setSort('${m}')">${l}</button>`).join('');
+  }
+  function setZone(z){ state.zone=z; renderFilters(); renderWeightList(); }
+  function setSort(m){ state.sortMode=m; renderFilters(); renderWeightList(); }
+
+  function renderWeightList(){
+    const el=document.getElementById('weightList'); if(!el) return;
+    let filtered=state.zone==='all'?state.data.ffs.slice():state.data.ffs.filter(ff=>ff.zone===state.zone);
+    const sm=state.sortMode||'code';
+    if(sm==='weight') filtered.sort((a,b)=>(state.weights[b.code]?.ffWeight||0)-(state.weights[a.code]?.ffWeight||0));
+    else if(sm==='code') filtered.sort((a,b)=>parseInt(a.code.replace("F-",""))-parseInt(b.code.replace("F-","")));
+    else if(sm==='progress') filtered.sort((a,b)=>calcFFProgressWeighted(b.code).pct-calcFFProgressWeighted(a.code).pct);
+    let html='';
+    filtered.forEach(ff=>{
+      const w=state.weights[ff.code]; const prog=calcFFProgressWeighted(ff.code);
+      const wPct=((w?.ffWeight||0)*100).toFixed(2);
+      const color=prog.pct===100?'#10b981':(prog.pct>0?'#3b82f6':'#e2e8f0');
+      const pctClass=prog.pct===0?'zero':''; const isExp=state.openFFs.has(ff.code);
+      html+=`<div class="wp-row${isExp?' expanded':''}" onclick="toggleFFExpand('${ff.code}')">
+        <span class="wp-code">${ff.code}</span>
+        <span class="wp-name">${escapeHtml(ff.name)}</span>
+        <span class="wp-weight">${wPct}%</span>
+        <div class="wp-prog"><div class="wp-prog-fill" style="width:${prog.pct}%;background:${color}"></div></div>
+        <span class="wp-pct ${pctClass}">${prog.pct}%</span>
+        <span class="wp-arrow" title="รายละเอียด" onclick="event.stopPropagation();openFFDetail('${ff.code}')"><i data-lucide="arrow-right" style="width:15px;height:15px"></i></span>
+        <span class="wp-edit" title="แก้ไข" onclick="event.stopPropagation();FFW.openEdit('${ff.code}')"><i data-lucide="square-pen" style="width:15px;height:15px"></i></span>
+        <span class="wp-del" title="ลบ" onclick="event.stopPropagation();FFW.confirmDelete('${ff.code}')"><i data-lucide="trash-2" style="width:15px;height:15px"></i></span>
+        <span class="wp-chev"><i data-lucide="chevron-down" style="width:16px;height:16px"></i></span>
+      </div>`;
+      if(isExp) html+=renderFFSubtasks(ff.code);
+    });
+    if(filtered.length===0){
+      html = state.data.ffs.length===0
+        ? `<div class="empty-state"><i data-lucide="clipboard-list"></i><h4>ยังไม่มีงาน (FF) ในโครงการนี้</h4><p>เริ่มจากเพิ่มรายการเฟอร์นิเจอร์บิ้วอิน</p><button class="btn btn-primary mt-4" onclick="openFFWizardModal()"><i data-lucide="plus"></i> เพิ่มงานแรก</button></div>`
+        : '<div class="empty-state"><i data-lucide="search-x"></i><p>ไม่มีรายการใน Zone นี้</p></div>';
+    }
+    el.innerHTML=html;
+    if(window.lucide) lucide.createIcons();
+  }
+
+  function renderFFSubtasks(ffCode){
+    const phases=['p1','p2','p3','p4'];
+    const pn={p1:'งวด 1 · Pre-Production',p2:'งวด 2 · วัสดุ+โครง',p3:'งวด 3 · ติดตั้ง',p4:'งวด 4 · ส่งมอบ'};
+    const inOverlay=arguments[1]===true;
+    let html='<div class="subtasks">';
+    phases.forEach(p=>{
+      const tasks=state.data.tasks.filter(t=>t.ffCode===ffCode&&t.phase===p);
+      if(!tasks.length) return;
+      const done=tasks.filter(t=>t.status==='Done').length;
+      html+=`<div class="subtask-phase"><div class="subtask-phase-h"><span class="phase-dot ${p}"></span><span>${pn[p]}</span><span class="phase-count">${done}/${tasks.length}</span></div>`;
+      tasks.forEach(t=>{
+        const isDone=t.status==='Done'; const pc=Number(t.photoCount)||0;
+        const chip=pc>0
+          ? `<span class="subtask-photo" id="spc-${tpEsc(t.id)}" title="ดู/เพิ่มรูป (${pc})" onclick="event.stopPropagation();subtaskPhotoTap('${tpEsc(t.id)}',true)">📷${pc}</span>`
+          : `<span class="subtask-photo empty" id="spc-${tpEsc(t.id)}" title="เพิ่มรูป" onclick="event.stopPropagation();subtaskPhotoTap('${tpEsc(t.id)}',false)">📷＋</span>`;
+        html+=`<div class="subtask-item ${isDone?'done':''}" onclick="event.stopPropagation();toggleTask('${t.id}')">
+          <div class="subtask-check ${isDone?'on':''}">${isDone?'✓':''}</div>
+          <span class="subtask-name">${escapeHtml(t.name)}</span>${chip}
+          ${t.doneDate?`<span class="subtask-date">${t.doneDate}</span>`:''}</div>`;
+      });
+      html+='</div>';
+    });
+    if(!inOverlay) html+=`<div class="ffd-cta" onclick="event.stopPropagation();openFFDetail('${ffCode}')">เปิดรายละเอียด ${ffCode} (กราฟ · แบบ · รูปรวม)</div>`;
+    html+='</div>';
+    return html;
+  }
+
+  function toggleFFExpand(ffCode){
+    if(state.openFFs.has(ffCode)) state.openFFs.delete(ffCode);
+    else { state.openFFs.clear(); state.openFFs.add(ffCode); }
+    renderWeightList();
+  }
+
+  async function toggleTask(taskId){
+    const task=state.data.tasks.find(t=>t.id===taskId); if(!task) return;
+    if(task.status==='Done'){
+      Modal.show(`<div class="modal-icon warn">⚠️</div><div class="modal-title">ยืนยันยกเลิกการเสร็จ?</div>
+        <div class="modal-desc">งานนี้ถูกทำเครื่องหมาย "เสร็จ" แล้ว</div>
+        <div class="modal-info"><div class="modal-info-row"><span class="modal-info-key">FF:</span><span class="modal-info-val">${task.ffCode}</span></div>
+        <div class="modal-info-row"><span class="modal-info-key">งาน:</span><span class="modal-info-val">${escapeHtml(task.name)}</span></div>
+        ${task.doneDate?`<div class="modal-info-row"><span class="modal-info-key">เสร็จเมื่อ:</span><span class="modal-info-val">${task.doneDate}</span></div>`:''}</div>
+        <div class="tp-sec"><div class="tp-sec-h">📷 รูปงาน</div><div id="tpGallery"><div class="tp-skel"><div class="tp-skel-c skeleton"></div><div class="tp-skel-c skeleton"></div><div class="tp-skel-c skeleton"></div></div></div></div>
+        <div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ไม่ใช่</button>
+        <button class="modal-btn modal-btn-warn" onclick="confirmUncheck('${taskId}')">ยืนยันยกเลิก</button></div>`);
+      loadTaskPhotos(taskId); return;
+    }
+    const recent=state.recentUncheck[taskId]; const fiveMin=Date.now()-5*60*1000;
+    if(recent&&recent.time>fiveMin&&recent.doneDate){
+      Modal.show(`<div class="modal-icon info">📅</div><div class="modal-title">งานนี้เคยเสร็จมาก่อน</div>
+        <div class="modal-desc">ใช้วันที่เดิม หรือบันทึกเป็นวันนี้?</div>
+        <div class="modal-info"><div class="modal-info-row"><span class="modal-info-key">งาน:</span><span class="modal-info-val">${escapeHtml(task.name)}</span></div>
+        <div class="modal-info-row"><span class="modal-info-key">วันเดิม:</span><span class="modal-info-val">${recent.doneDate}</span></div>
+        <div class="modal-info-row"><span class="modal-info-key">วันนี้:</span><span class="modal-info-val">${todayStr()}</span></div></div>
+        <div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="markDone('${taskId}','${recent.doneDate}')">ใช้วันเดิม</button>
+        <button class="modal-btn modal-btn-primary" onclick="markDone('${taskId}','')">ใช้วันนี้</button></div>`);
+      return;
+    }
+    await markDone(taskId,'');
+  }
+  async function markDone(taskId,doneDate){
+    Modal.close(); const task=state.data.tasks.find(t=>t.id===taskId); if(!task) return;
+    task.status='Done'; task.doneDate=doneDate||todayStr(); delete state.recentUncheck[taskId];
+    renderAll(); Modal.toast('กำลังบันทึก...');
+    const r=await API.updateTask(taskId,'Done',doneDate||'');
+    if(r.ok) Modal.toast('✓ บันทึกแล้ว'); else { Modal.toast('❌ บันทึกไม่สำเร็จ'); task.status='Not Started'; renderAll(); }
+  }
+  async function confirmUncheck(taskId){
+    Modal.close(); const task=state.data.tasks.find(t=>t.id===taskId); if(!task) return;
+    state.recentUncheck[taskId]={time:Date.now(),doneDate:task.doneDate||''};
+    task.status='Not Started'; task.doneDate=''; renderAll(); Modal.toast('กำลังยกเลิก...');
+    const r=await API.updateTask(taskId,'Not Started');
+    if(r.ok) Modal.toast('✓ ยกเลิกแล้ว'); else { Modal.toast('❌ ยกเลิกไม่สำเร็จ'); task.status='Done'; renderAll(); }
+  }
+
+  // ── Task photos ──
+  function tpThumbUrl(p){ if(p&&p.drive_id) return 'https://lh3.googleusercontent.com/d/'+encodeURIComponent(p.drive_id)+'=w400'; if(p&&p.drive_url) return p.drive_url; return ''; }
+  function tpFullUrl(p){ if(p&&p.drive_id) return 'https://lh3.googleusercontent.com/d/'+encodeURIComponent(p.drive_id)+'=w1600'; if(p&&p.drive_url) return p.drive_url; return ''; }
+  function tpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  async function loadTaskPhotos(taskId){
+    let res; try{ res=await API.getTaskPhotos(taskId); }catch(e){ res=null; }
+    const box=document.getElementById('tpGallery'); if(!box) return;
+    const photos=(res&&res.ok&&Array.isArray(res.data))?res.data:[];
+    const addCell=`<div class="tp-cell tp-add" title="เพิ่มรูป" onclick="spAddFromGallery('${tpEsc(taskId)}')"><div><span class="tp-add-ic">＋</span><span class="tp-add-lb">เพิ่มรูป</span></div></div>`;
+    if(!photos.length){ box.innerHTML='<div class="tp-grid">'+addCell+'</div><div class="tp-empty">ยังไม่มีรูป — แตะ ＋ เพื่อเพิ่ม</div>'; return; }
+    window._tpPhotos=photos; let cells=addCell;
+    photos.forEach((p,i)=>{ const th=tpThumbUrl(p);
+      cells+= th ? `<div class="tp-cell" onclick="openTaskPhoto(${i})"><img src="${tpEsc(th)}" alt="รูปงาน" loading="lazy" onerror="this.parentNode.innerHTML='&lt;div class=\\'tp-ph\\'&gt;🖼️ เปิดไม่ได้&lt;/div&gt;'"></div>`
+        : `<div class="tp-cell"><div class="tp-ph"><span class="tp-ph-ic">🖼️</span>เปิดไม่ได้</div></div>`; });
+    box.innerHTML='<div class="tp-grid">'+cells+'</div>';
+  }
+  function openTaskPhoto(idx){
+    const photos=window._tpPhotos||[]; const p=photos[idx]; if(!p) return;
+    const full=tpFullUrl(p); if(!full) return; closeTaskPhoto();
+    const lb=document.createElement('div'); lb.className='tp-lightbox'; lb.id='tpLightbox';
+    const delBtn=(p.id&&p.task_id)?`<span class="tp-lb-del" onclick="event.stopPropagation();deleteTaskPhotoFlow('${tpEsc(p.id)}','${tpEsc(p.task_id)}',${idx})">🗑 ลบรูปนี้</span>`:'';
+    lb.innerHTML=`<span class="tp-lb-x" onclick="closeTaskPhoto()">✕</span>${delBtn}<img src="${tpEsc(full)}" alt="รูปงาน" onerror="this.outerHTML='&lt;div style=\\'color:#fff\\'&gt;🖼️ เปิดรูปไม่ได้&lt;/div&gt;'">${p.caption?`<div class="tp-lb-cap">${tpEsc(p.caption)}</div>`:''}`;
+    lb.addEventListener('click',e=>{ if(e.target===lb) closeTaskPhoto(); });
+    document.body.appendChild(lb);
+  }
+  async function deleteTaskPhotoFlow(photoId,taskId,idx){
+    const ok=await Modal.confirm({icon:'🗑',iconClass:'danger',title:'ลบรูปนี้ถาวร?',desc:'ไม่สามารถกู้คืนได้',confirmText:'ลบเลย',confirmClass:'modal-btn-danger'});
+    if(!ok) return;
+    Modal.toast('⏳ กำลังลบ...');
+    let res; try{ res=await API.deleteTaskPhoto(photoId); }catch(e){ res=null; }
+    if(!res||!res.ok){ Modal.toast('❌ ลบไม่สำเร็จ — ลองใหม่'); return; }
+    if(window._tpPhotos&&idx>=0&&idx<window._tpPhotos.length) window._tpPhotos.splice(idx,1);
+    closeTaskPhoto();
+    const task=state.data.tasks.find(t=>String(t.id)===String(taskId));
+    if(task) task.photoCount=Math.max(0,(Number(task.photoCount)||0)-1);
+    if(document.getElementById('tpGallery')) loadTaskPhotos(taskId);
+    if(state.openFFs.size>0) renderWeightList();
+    Modal.toast('✓ ลบรูปแล้ว');
+  }
+  function closeTaskPhoto(){ const lb=document.getElementById('tpLightbox'); if(lb&&lb.parentNode) lb.parentNode.removeChild(lb); }
+
+  // ── subtask photo add (3-state optimistic + retry) ──
+  const _spUploading={}, _spRetryMem={};
+  function compressImage(file,maxDim,quality){
+    return new Promise((resolve,reject)=>{ const rd=new FileReader(); rd.onerror=()=>reject(new Error('read failed'));
+      rd.onload=ev=>{ const img=new Image(); img.onerror=()=>reject(new Error('decode failed'));
+        img.onload=()=>{ let w=img.naturalWidth,h=img.naturalHeight;
+          if(w>maxDim||h>maxDim){ if(w>=h){h=Math.round(h*maxDim/w);w=maxDim;}else{w=Math.round(w*maxDim/h);h=maxDim;} }
+          const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
+          try{ resolve(c.toDataURL('image/jpeg',quality)); }catch(e){ reject(e); } };
+        img.src=ev.target.result; };
+      rd.readAsDataURL(file); });
+  }
+  function _spUploadedBy(){ try{ const s=(typeof Auth!=='undefined'&&Auth.getSession)?Auth.getSession():null; return (s&&s.role)?String(s.role):''; }catch(e){ return ''; } }
+  function _spSetChip(taskId,mode,count){
+    const el=document.getElementById('spc-'+taskId); if(!el) return;
+    el.classList.remove('empty','uploading','failed');
+    if(mode==='uploading'){ el.classList.add('uploading'); el.textContent='⏳'; }
+    else if(mode==='failed'){ el.classList.add('failed'); el.textContent='📷↻'; el.title='อัปไม่สำเร็จ — แตะลองใหม่'; }
+    else if(mode==='has'){ el.textContent='📷'+(count||0); el.title='ดู/เพิ่มรูป ('+(count||0)+')'; }
+    else { el.classList.add('empty'); el.textContent='📷＋'; }
+  }
+  function subtaskPhotoTap(taskId,hasPhotos){ if(_spRetryMem[taskId]){ _spDoUpload(taskId,_spRetryMem[taskId]); return; } if(hasPhotos) _spOpenGalleryModal(taskId); else _spOpenPicker(taskId); }
+  function spAddFromGallery(taskId){ if(_spRetryMem[taskId]){ _spDoUpload(taskId,_spRetryMem[taskId]); return; } _spOpenPicker(taskId); }
+  function _spOpenGalleryModal(taskId){
+    const task=state.data.tasks.find(t=>t.id===taskId); const name=task?task.name:'';
+    Modal.show(`<div class="modal-icon info">📷</div><div class="modal-title">รูปงาน</div>${name?`<div class="modal-desc">${tpEsc(name)}</div>`:''}
+      <div class="tp-sec"><div id="tpGallery"><div class="tp-skel"><div class="tp-skel-c skeleton"></div><div class="tp-skel-c skeleton"></div></div></div></div>
+      <div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button></div>`);
+    loadTaskPhotos(taskId);
+  }
+  function _spOpenPicker(taskId){
+    if(_spUploading[taskId]){ Modal.toast('⏳ กำลังอัปรูปงานนี้อยู่'); return; }
+    const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.style.display='none';
+    inp.addEventListener('change',async e=>{ const file=e.target.files&&e.target.files[0]; if(inp.parentNode) inp.parentNode.removeChild(inp); if(!file) return;
+      let dataUrl; try{ dataUrl=await compressImage(file,1600,0.8); }catch(err){ Modal.toast('❌ อ่านรูปไม่ได้'); return; } _spDoUpload(taskId,dataUrl); });
+    document.body.appendChild(inp); inp.click();
+  }
+  async function _spDoUpload(taskId,dataUrl){
+    if(_spUploading[taskId]){ Modal.toast('⏳ กำลังอัปรูปงานนี้อยู่'); return; }
+    _spUploading[taskId]=true; _spRetryMem[taskId]=dataUrl; _spSetChip(taskId,'uploading'); Modal.toast('📷 กำลังอัปรูป... (5-15 วิ)');
+    let upRes=null;
+    for(let a=1;a<=2;a++){ try{ upRes=await API.uploadLogPhoto(dataUrl); if(upRes&&upRes.ok&&upRes.photo_url) break; }catch(e){ upRes={ok:false,error:e.message}; } if(a===1) Modal.toast('📷 ลองอัปใหม่...'); }
+    const task=state.data.tasks.find(t=>t.id===taskId);
+    if(upRes&&upRes.ok&&upRes.photo_url){
+      try{ await API.addPhoto({task_id:taskId,drive_url:upRes.photo_url,drive_id:upRes.drive_id||'',photo_url:upRes.photo_url,photo_drive_id:upRes.drive_id||'',uploaded_by:_spUploadedBy()}); }catch(e){}
+      delete _spRetryMem[taskId]; if(task) task.photoCount=(Number(task.photoCount)||0)+1;
+      _spSetChip(taskId,'has',task?task.photoCount:1); Modal.toast('✓ เพิ่มรูปงานแล้ว');
+      if(document.getElementById('tpGallery')) loadTaskPhotos(taskId);
+    } else { _spSetChip(taskId,'failed'); Modal.toast('❌ อัปไม่สำเร็จ — งานไม่กระทบ · แตะ chip เพื่อลองใหม่',4500); }
+    _spUploading[taskId]=false;
+  }
+
+  // ── S2b-2 stubs (FF detail overlay + wizard — เฟสถัดไป) ──
+  function _soon(){ Modal.toast('🚧 ส่วนนี้กำลังพัฒนา (S2b-2) — ใช้ที่หน้าเดิมก่อน'); }
+  function openFFDetail(){ _soon(); }
+  function openFFDetailStub(){ _soon(); }
+  function openFFWizardModal(){ _soon(); }
+  function confirmCloneFromTemplate(){ _soon(); }
+  const FFW={ openEdit:_soon, confirmDelete:_soon, open:_soon };
 
   loadData();
   </script>
