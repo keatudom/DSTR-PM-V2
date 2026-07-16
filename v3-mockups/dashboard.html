@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แดชบอร์ด — DSTR PM V3</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="css/design-system.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    /* Dashboard specific styles */
+    .kpi-grid {
+      margin-bottom: var(--space-6);
+    }
+    
+    .kpi-card {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-4);
+    }
+    
+    .kpi-title {
+      color: var(--color-slate-500);
+      font-size: var(--text-sm);
+      font-weight: 500;
+    }
+    
+    .kpi-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .kpi-icon.blue { background: var(--color-blue-50); color: var(--color-blue-600); }
+    .kpi-icon.green { background: var(--color-success-50); color: var(--color-success-700); }
+    .kpi-icon.amber { background: var(--color-warning-50); color: var(--color-warning-700); }
+    .kpi-icon.slate { background: var(--color-slate-100); color: var(--color-slate-700); }
+    
+    .kpi-value {
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      color: var(--color-slate-900);
+      margin-bottom: var(--space-1);
+    }
+    
+    .kpi-trend {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--text-sm);
+    }
+    
+    .kpi-trend.positive { color: var(--color-success-700); }
+    .kpi-trend.negative { color: var(--color-error-700); }
+    .kpi-trend.neutral { color: var(--color-slate-500); }
+    .kpi-trend i { width: 16px; height: 16px; }
+
+    /* Project List Section */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-4);
+      margin-top: var(--space-8);
+    }
+
+    .project-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+    .project-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--color-blue-500);
+    }
+
+    .project-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: var(--space-3);
+    }
+    
+    .project-title {
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--color-slate-900);
+      margin-bottom: var(--space-1);
+    }
+    
+    .project-client {
+      font-size: var(--text-sm);
+      color: var(--color-slate-500);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+    
+    .project-client i { width: 14px; height: 14px; }
+
+    .progress-bar-container {
+      margin-bottom: var(--space-4);
+    }
+    
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-2);
+    }
+    .progress-header span:first-child { color: var(--color-slate-600); font-weight: 500; }
+    .progress-header span:last-child { color: var(--color-slate-900); font-weight: 600; }
+    
+    .progress-track {
+      height: 8px;
+      background-color: var(--color-slate-100);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background-color: var(--color-blue-600);
+      border-radius: var(--radius-full);
+    }
+    .progress-fill.success { background-color: var(--color-success-500); }
+    .progress-fill.warning { background-color: var(--color-warning-500); }
+
+    .project-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--color-slate-100);
+    }
+    
+    .avatar-group {
+      display: flex;
+    }
+    .avatar-group .avatar {
+      width: 28px;
+      height: 28px;
+      border: 2px solid white;
+      margin-left: -8px;
+      font-size: var(--text-xs);
+    }
+    .avatar-group .avatar:first-child { margin-left: 0; }
+    
+    .project-date {
+      font-size: var(--text-xs);
+      color: var(--color-slate-500);
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+    .project-date i { width: 14px; height: 14px; }
+
+    /* AI Banner */
+    .ai-banner {
+      background: linear-gradient(to right, #f3e8ff, #e0e7ff);
+      border: 1px solid #c4b5fd;
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+    .ai-banner-icon {
+      color: #7c3aed;
+      background: white;
+      padding: var(--space-2);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+    .ai-banner-content h4 {
+      color: #5b21b6;
+      margin-bottom: var(--space-1);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .ai-banner-content p {
+      color: #4c1d95;
+      font-size: var(--text-sm);
+    }
+    .ai-action {
+      margin-left: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <i data-lucide="building-2"></i> DSTR
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <div style="font-size: 11px; font-weight: 600; color: var(--color-slate-400); text-transform: uppercase; margin: var(--space-4) 0 var(--space-2) var(--space-3); letter-spacing: 0.05em;">เมนูหลัก</div>
+        <a href="#" class="nav-item active">
+          <i data-lucide="layout-dashboard"></i>
+          ภาพรวม
+        </a>
+        <a href="#" class="nav-item">
+          <i data-lucide="briefcase"></i>
+          โครงการทั้งหมด
+        </a>
+        <a href="#" class="nav-item">
+          <i data-lucide="check-square"></i>
+          งานของฉัน
+        </a>
+        <a href="#" class="nav-item">
+          <i data-lucide="package"></i>
+          วัสดุ/เบิกจ่าย
+        </a>
+        
+        <div style="font-size: 11px; font-weight: 600; color: var(--color-slate-400); text-transform: uppercase; margin: var(--space-6) 0 var(--space-2) var(--space-3); letter-spacing: 0.05em;">การจัดการ</div>
+        <a href="#" class="nav-item">
+          <i data-lucide="users"></i>
+          ทีม/ผู้รับเหมา
+        </a>
+        <a href="#" class="nav-item">
+          <i data-lucide="clipboard-check"></i>
+          ตรวจสอบคุณภาพ (QC)
+        </a>
+        <a href="#" class="nav-item">
+          <i data-lucide="file-text"></i>
+          รายงาน
+        </a>
+        
+        <div style="font-size: 11px; font-weight: 600; color: var(--color-slate-400); text-transform: uppercase; margin: var(--space-6) 0 var(--space-2) var(--space-3); letter-spacing: 0.05em;">ระบบ</div>
+        <a href="#" class="nav-item">
+          <i data-lucide="settings"></i>
+          ตั้งค่า
+        </a>
+        <a href="#" class="nav-item">
+          <i data-lucide="help-circle"></i>
+          ช่วยเหลือและวิธีใช้
+        </a>
+      </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <!-- Topbar -->
+      <header class="topbar">
+        <h1 class="page-title">แดชบอร์ด</h1>
+        
+        <div class="topbar-actions">
+          <div style="position: relative;">
+            <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; color: var(--color-slate-400);"></i>
+            <input type="text" placeholder="ค้นหาโครงการ..." class="form-input" style="padding-left: 36px; width: 240px; border-radius: var(--radius-full); background: var(--color-slate-50);">
+          </div>
+          
+          <button class="btn btn-ghost" style="position: relative; padding: var(--space-2);">
+            <i data-lucide="bell"></i>
+            <span style="position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; background: var(--color-error-500); border-radius: 50%; border: 2px solid white;"></span>
+          </button>
+          
+          <div class="user-profile">
+            <div class="avatar" style="background: var(--color-blue-100); color: var(--color-blue-700);">PK</div>
+            <div style="display: flex; flex-direction: column; align-items: flex-start; margin-left: var(--space-2);">
+              <span style="font-size: var(--text-sm); font-weight: 600;">ผู้จัดการโครงการ</span>
+              <span style="font-size: var(--text-xs); color: var(--color-slate-500);">บริษัท ดีไซน์ ทีเรีย</span>
+            </div>
+            <i data-lucide="chevron-down" style="width: 16px; color: var(--color-slate-400); margin-left: var(--space-2);"></i>
+          </div>
+        </div>
+      </header>
+      
+      <!-- Page Content -->
+      <div class="page-content">
+        
+        <!-- AI Banner -->
+        <div class="ai-banner">
+          <div class="ai-banner-icon">
+            <i data-lucide="sparkles"></i>
+          </div>
+          <div class="ai-banner-content">
+            <h4>สรุปรายงานรายวันโดย AI <span class="badge badge-blue">ใหม่</span></h4>
+            <p>โครงการบ้านคุณโบว์มีรายการขออนุมัติวัสดุค้างอยู่ 3 รายการ ซึ่งอาจทำให้แผนงานล่าช้า 2 วัน พบความเสี่ยงระดับสูง 1 จุดที่ Zone 3</p>
+          </div>
+          <button class="btn btn-primary ai-action">ดูรายละเอียด</button>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="grid-4 kpi-grid">
+          <div class="card card-body kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">โครงการที่กำลังดำเนินการ</span>
+              <div class="kpi-icon blue"><i data-lucide="briefcase"></i></div>
+            </div>
+            <div class="kpi-value">12</div>
+            <div class="kpi-trend positive">
+              <i data-lucide="trending-up"></i>
+              <span>เพิ่ม 2 จากเดือนที่แล้ว</span>
+            </div>
+          </div>
+          
+          <div class="card card-body kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">งานที่เสร็จสิ้น (เดือนนี้)</span>
+              <div class="kpi-icon green"><i data-lucide="check-circle-2"></i></div>
+            </div>
+            <div class="kpi-value">148</div>
+            <div class="kpi-trend positive">
+              <i data-lucide="trending-up"></i>
+              <span>เพิ่ม 12% ในสัปดาห์นี้</span>
+            </div>
+          </div>
+          
+          <div class="card card-body kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">ปัญหาสำคัญ (ความเสี่ยง)</span>
+              <div class="kpi-icon amber"><i data-lucide="alert-triangle"></i></div>
+            </div>
+            <div class="kpi-value">3</div>
+            <div class="kpi-trend negative">
+              <i data-lucide="trending-down"></i>
+              <span>ต้องจัดการด่วน</span>
+            </div>
+          </div>
+          
+          <div class="card card-body kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">ผู้รับเหมาที่ไซต์งานวันนี้</span>
+              <div class="kpi-icon slate"><i data-lucide="users"></i></div>
+            </div>
+            <div class="kpi-value">24</div>
+            <div class="kpi-trend neutral">
+              <i data-lucide="minus"></i>
+              <span>ทำงานที่ไซต์วันนี้</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Active Projects -->
+        <div class="section-header">
+          <h2>โครงการที่ดำเนินการอยู่</h2>
+          <button class="btn btn-primary"><i data-lucide="plus"></i> สร้างโครงการใหม่</button>
+        </div>
+        
+        <div class="grid-3">
+          
+          <!-- Project 1 -->
+          <div class="card card-body project-card" onclick="window.location.href='project-detail.html'">
+            <div class="project-meta">
+              <span class="badge badge-warning">ตามแผน</span>
+              <span class="badge badge-gray" style="font-family: monospace;">QT-690400007</span>
+            </div>
+            
+            <h3 class="project-title">บ้านคุณโบว์ (Kun Beau House)</h3>
+            <div class="project-client">
+              <i data-lucide="user"></i> คุณอสณบรีย อิสสระเสรี
+            </div>
+            
+            <div class="progress-bar-container">
+              <div class="progress-header">
+                <span>ความคืบหน้ารวม</span>
+                <span>27.7%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill warning" style="width: 27.7%"></div>
+              </div>
+            </div>
+            
+            <div class="project-footer">
+              <div class="avatar-group">
+                <div class="avatar" style="background: #e2e8f0; z-index: 3;">PM</div>
+                <div class="avatar" style="background: #f1f5f9; z-index: 2;">EN</div>
+                <div class="avatar" style="background: #f8fafc; z-index: 1;">+3</div>
+              </div>
+              <div class="project-date">
+                <i data-lucide="calendar"></i> กำหนดส่ง: ต.ค. 2026
+              </div>
+            </div>
+          </div>
+          
+          <!-- Project 2 -->
+          <div class="card card-body project-card">
+            <div class="project-meta">
+              <span class="badge badge-success">เร็วกว่าแผน</span>
+              <span class="badge badge-gray" style="font-family: monospace;">QT-690500122</span>
+            </div>
+            
+            <h3 class="project-title">Sukhumvit Penthouse</h3>
+            <div class="project-client">
+              <i data-lucide="user"></i> นพ. ธนา
+            </div>
+            
+            <div class="progress-bar-container">
+              <div class="progress-header">
+                <span>ความคืบหน้ารวม</span>
+                <span>84.2%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill success" style="width: 84.2%"></div>
+              </div>
+            </div>
+            
+            <div class="project-footer">
+              <div class="avatar-group">
+                <div class="avatar" style="background: #e2e8f0; z-index: 3;">PM</div>
+                <div class="avatar" style="background: #f1f5f9; z-index: 2;">EN</div>
+              </div>
+              <div class="project-date">
+                <i data-lucide="calendar"></i> กำหนดส่ง: ส.ค. 2026
+              </div>
+            </div>
+          </div>
+          
+          <!-- Project 3 -->
+          <div class="card card-body project-card" style="border-style: dashed; background-color: var(--color-slate-50); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220px; box-shadow: none;">
+            <div style="width: 48px; height: 48px; background: white; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-3); color: var(--color-blue-600); box-shadow: var(--shadow-sm);">
+              <i data-lucide="plus"></i>
+            </div>
+            <h3 style="font-size: var(--text-base); color: var(--color-slate-700); margin-bottom: var(--space-1);">สร้างโครงการใหม่</h3>
+            <p style="font-size: var(--text-sm); color: var(--color-slate-500);">ตั้งค่าไซต์งานใหม่ในระบบ</p>
+          </div>
+          
+        </div>
+        
+      </div>
+    </main>
+    
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="bottom-nav-item active">
+        <i data-lucide="layout-dashboard"></i>
+        <span>ภาพรวม</span>
+      </a>
+      <a href="#" class="bottom-nav-item">
+        <i data-lucide="briefcase"></i>
+        <span>โครงการ</span>
+      </a>
+      <a href="project-detail.html" class="bottom-nav-item">
+        <i data-lucide="list-todo"></i>
+        <span>งาน (FF)</span>
+      </a>
+      <a href="#" class="bottom-nav-item">
+        <i data-lucide="users"></i>
+        <span>ทีม</span>
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
