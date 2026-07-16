@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แดชบอร์ดโครงการ — DSTR PM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<link rel="manifest" href="../manifest.json">
+<meta name="theme-color" content="#0f172a">
+<style>
+  /* Project header block */
+  .proj-head { display:flex; justify-content:space-between; align-items:flex-start; gap:var(--space-4); margin-bottom:var(--space-4); }
+  .proj-head h1 { font-size:var(--text-2xl); }
+  .proj-head-sub { color:var(--color-slate-500); font-size:var(--text-sm); margin-top:2px; }
+  .proj-pills { display:flex; gap:var(--space-2); margin-top:var(--space-3); flex-wrap:wrap; }
+
+  /* KPI */
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-4); margin-bottom:var(--space-6); }
+  @media(max-width:768px){ .kpi-grid{ grid-template-columns:1fr 1fr; } }
+  .kpi { background:#fff; border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:var(--space-4); box-shadow:var(--shadow-sm); }
+  .kpi-l { color:var(--color-slate-500); font-size:var(--text-sm); font-weight:500; }
+  .kpi-v { font-size:var(--text-2xl); font-weight:700; color:var(--color-slate-900); margin:var(--space-1) 0; }
+  .kpi-s { font-size:var(--text-xs); color:var(--color-slate-500); display:flex; align-items:center; gap:4px; }
+  .kpi.ok .kpi-v { color:var(--color-success-700); }
+  .kpi.warn .kpi-v { color:var(--color-warning-700); }
+  .kpi.bad .kpi-v { color:var(--color-error-700); }
+
+  /* Gauge donut */
+  .gauge-row { display:flex; gap:var(--space-6); align-items:center; flex-wrap:wrap; }
+  .gauge-wrap { position:relative; width:180px; height:180px; flex-shrink:0; margin:0 auto; }
+  .gauge-svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .gauge-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .gauge-num { font-size:var(--text-3xl); font-weight:700; color:var(--color-slate-900); }
+  .gauge-sublabel { font-size:var(--text-xs); color:var(--color-slate-500); text-transform:uppercase; letter-spacing:0.05em; font-weight:600; }
+  .gauge-plan-marker { font-size:var(--text-xs); color:var(--color-slate-400); margin-top:2px; }
+  .gauge-extras { flex:1; min-width:240px; display:flex; flex-direction:column; gap:var(--space-2); }
+  .gauge-stat { display:flex; justify-content:space-between; align-items:center; padding:var(--space-2) var(--space-3); background:var(--color-slate-50); border-radius:var(--radius-md); font-size:var(--text-sm); }
+  .gauge-stat-l { color:var(--color-slate-600); display:flex; align-items:center; gap:6px; }
+  .gauge-stat-l i { width:15px; height:15px; }
+  .gauge-stat-v { font-weight:600; color:var(--color-slate-900); }
+  .gauge-stat-v.neg { color:var(--color-error-700); } .gauge-stat-v.pos { color:var(--color-success-700); }
+
+  /* AI daily report card */
+  .dr-card { cursor:pointer; }
+  .dr-card .dr-date { font-size:var(--text-xs); color:var(--color-blue-700); font-weight:600; }
+  .dr-card .dr-body { font-size:var(--text-sm); color:var(--color-slate-700); margin:var(--space-2) 0; line-height:1.6; }
+  .dr-card .dr-meta { font-size:var(--text-xs); color:var(--color-slate-400); }
+  .dr-empty { color:var(--color-slate-400); font-size:var(--text-sm); }
+
+  /* AI alerts banner */
+  .ai-bnr { display:flex; align-items:center; gap:var(--space-3); background:var(--color-warning-50); border:1px solid #fde68a; border-radius:var(--radius-lg); padding:var(--space-3) var(--space-4); margin-bottom:var(--space-4); cursor:pointer; }
+  .ai-bnr i.lead { color:var(--color-warning-700); width:22px; height:22px; }
+  .ai-bnr-tx { flex:1; font-size:var(--text-sm); color:var(--color-warning-700); }
+  .ai-bnr-tx strong { color:var(--color-warning-700); }
+
+  /* Inventory */
+  .inv-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-3); margin-bottom:var(--space-3); }
+  .inv-card { border-radius:var(--radius-md); padding:var(--space-3); text-align:center; }
+  .inv-card .lbl { font-size:var(--text-xs); color:var(--color-slate-500); }
+  .inv-card .val { font-size:var(--text-xl); font-weight:700; }
+  .inv-card .unit { font-size:10px; color:var(--color-slate-400); }
+  .inv-card.received { background:var(--color-blue-50); } .inv-card.received .val{ color:var(--color-blue-700); }
+  .inv-card.issued { background:var(--color-warning-50); } .inv-card.issued .val{ color:var(--color-warning-700); }
+  .inv-card.balance { background:var(--color-success-50); } .inv-card.balance .val{ color:var(--color-success-700); }
+  .inv-warn { font-size:var(--text-xs); border-radius:var(--radius-md); padding:var(--space-2) var(--space-3); line-height:1.6; }
+  .inv-warn.ok { background:var(--color-success-50); color:var(--color-success-700); }
+  .inv-warn.bad { background:var(--color-error-50); color:var(--color-error-700); }
+  .inv-empty { color:var(--color-slate-400); font-size:var(--text-sm); padding:var(--space-3); }
+  .inv-cat-row { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:var(--space-2); padding:var(--space-2) var(--space-1); font-size:var(--text-sm); border-bottom:1px solid var(--color-slate-100); }
+  .inv-cat-row.head { color:var(--color-slate-500); font-size:var(--text-xs); font-weight:600; text-transform:uppercase; }
+  .inv-cat-row .r,.inv-cat-row .i,.inv-cat-row .b { text-align:right; font-variant-numeric:tabular-nums; }
+  .inv-setprice-btn { font-size:var(--text-xs); background:var(--color-slate-100); color:var(--color-slate-700); border-radius:var(--radius-md); padding:var(--space-2) var(--space-3); font-weight:500; }
+
+  /* Timeline grid (คงจากเดิม — grid เฉพาะทาง) */
+  .tl-wrap { overflow-x:auto; }
+  .tl{display:grid;grid-template-columns:150px repeat(20,minmax(30px,1fr)) 110px;gap:1px;min-width:900px}
+  .tl-h{font-size:9px;color:var(--color-slate-500);text-align:center;padding:4px 0;font-weight:600;background:var(--color-slate-50);border-radius:3px;position:relative}
+  .tl-h-m{font-size:10px;font-weight:600;color:var(--color-slate-700)}
+  .tl-name{font-size:11px;color:var(--color-slate-800);padding:4px 8px;display:flex;align-items:center;background:var(--color-slate-50);border-radius:3px;font-weight:500;gap:6px}
+  .tl-name-code{font-size:10px;font-weight:600;padding:1px 5px;border-radius:99px;background:var(--color-blue-50);color:var(--color-blue-700);flex-shrink:0}
+  .tl-name-z{font-size:9px;color:var(--color-slate-400);flex-shrink:0}
+  .tl-cell{height:22px;border-radius:3px;background:transparent;position:relative;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:600}
+  .tl-p1{background:#1e293b}.tl-p2{background:#3b82f6}.tl-p3{background:#10b981}.tl-p4{background:#b45309}
+  .tl-done{background:#047857 !important;background-image:linear-gradient(45deg,rgba(255,255,255,0.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,0.15) 50%,rgba(255,255,255,0.15) 75%,transparent 75%) !important;background-size:8px 8px !important}
+  .tl-late{background:#ef4444 !important;background-image:linear-gradient(45deg,rgba(255,255,255,0.2) 25%,transparent 25%,transparent 50%,rgba(255,255,255,0.2) 50%,rgba(255,255,255,0.2) 75%,transparent 75%) !important;background-size:8px 8px !important}
+  .tl-today-line::before{content:'';position:absolute;top:-2px;bottom:-2px;left:50%;width:2px;background:var(--color-error-500);z-index:3}
+  .tl-status{font-size:10px;padding:4px 8px;display:flex;align-items:center;justify-content:center;background:var(--color-slate-50);border-radius:3px;font-weight:600;gap:4px}
+  .tl-status-ok{color:var(--color-success-700)}.tl-status-warn{color:var(--color-warning-700)}.tl-status-bad{color:var(--color-error-700)}.tl-status-soon{color:var(--color-blue-700)}
+  .tl-summary{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;padding:8px 12px;background:var(--color-slate-50);border-radius:8px;font-size:11px;color:var(--color-slate-600)}
+  .tl-summary-num{font-weight:600;color:var(--color-slate-900)}
+
+  /* Notification panel */
+  .nf-bell { position:relative; }
+  .nf-badge { position:absolute; top:-4px; right:-4px; background:var(--color-error-500); color:#fff; font-size:9px; font-weight:700; min-width:16px; height:16px; border-radius:99px; display:flex; align-items:center; justify-content:center; padding:0 3px; }
+  .nf-overlay { position:fixed; inset:0; background:rgba(15,23,42,0.4); z-index:99; opacity:0; visibility:hidden; transition:.2s; }
+  .nf-overlay.open { opacity:1; visibility:visible; }
+  .nf-panel { position:fixed; top:0; right:0; bottom:0; width:360px; max-width:90vw; background:#fff; box-shadow:var(--shadow-xl); z-index:100; transform:translateX(100%); transition:transform .25s ease; display:flex; flex-direction:column; }
+  .nf-panel.open { transform:translateX(0); }
+  .nf-panel-head { display:flex; justify-content:space-between; align-items:center; padding:var(--space-4); border-bottom:1px solid var(--color-slate-200); }
+  .nf-list { overflow-y:auto; flex:1; }
+  .nf-item { display:flex; gap:var(--space-3); padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--color-slate-100); position:relative; }
+  .nf-item.unread { background:var(--color-blue-50); }
+  .nf-ic { font-size:18px; flex-shrink:0; }
+  .nf-txt { font-size:var(--text-sm); color:var(--color-slate-800); }
+  .nf-meta { font-size:var(--text-xs); color:var(--color-slate-400); margin-top:2px; }
+  .nf-actor { font-weight:600; color:var(--color-slate-600); }
+  .nf-dot { width:8px; height:8px; background:var(--color-blue-500); border-radius:99px; flex-shrink:0; align-self:center; }
+  .nf-empty { text-align:center; color:var(--color-slate-400); font-size:var(--text-sm); padding:var(--space-8) var(--space-4); line-height:1.6; }
+
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+  .soon-box { text-align:center; padding:var(--space-8); color:var(--color-slate-400); }
+  .soon-box i { width:40px; height:40px; color:var(--color-slate-300); margin-bottom:var(--space-2); }
+</style>
+</head>
+<body>
+  <div class="app-container">
+    <main class="main-content">
+      <!-- Loading -->
+      <div id="loadingScreen" class="loading-center" style="min-height:60vh"><div class="spinner"></div> กำลังโหลดข้อมูลโครงการ...</div>
+
+      <div class="page-content" id="mainContent" style="display:none">
+
+        <!-- Project header -->
+        <div class="proj-head">
+          <div>
+            <h1 id="projName">โครงการ</h1>
+            <div class="proj-head-sub" id="projSub"></div>
+            <div class="proj-pills" id="projPills"></div>
+          </div>
+          <div class="flex gap-2 items-center">
+            <button class="btn btn-ghost btn-icon nf-bell" id="nfBell" onclick="NF.toggle()" title="การแจ้งเตือน">
+              <i data-lucide="bell"></i><span class="nf-badge" id="nfBadge" style="display:none">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs" style="margin-bottom:var(--space-6)">
+          <div class="tab active" data-tab="overview" onclick="switchTab('overview')"><i data-lucide="pie-chart"></i> ภาพรวม</div>
+          <div class="tab" data-tab="tasks" onclick="switchTab('tasks')"><i data-lucide="list-todo"></i> รายการงาน (FF)</div>
+          <div class="tab" data-tab="finance" onclick="switchTab('finance')"><i data-lucide="wallet"></i> การเงิน</div>
+          <div class="tab" data-tab="risk" onclick="switchTab('risk')"><i data-lucide="shield-alert"></i> ความเสี่ยง/ประเมิน</div>
+        </div>
+
+        <!-- TAB: ภาพรวม -->
+        <div class="tab-panel active" id="panel-overview">
+          <div id="aiBnr" style="display:none"></div>
+
+          <div class="kpi-grid" id="kpiGrid"></div>
+
+          <div class="grid-2" style="margin-bottom:var(--space-6);align-items:start">
+            <div class="card card-body">
+              <h3 class="card-title mb-4"><i data-lucide="pie-chart" style="width:18px;height:18px;vertical-align:-3px"></i> สถานะโครงการ</h3>
+              <div class="gauge-row" id="gaugeRow"></div>
+            </div>
+            <div class="card dr-card" id="drReportCard" style="display:none">
+              <div class="card-header"><span class="card-title"><i data-lucide="sparkles" style="width:16px;height:16px;vertical-align:-2px;color:#7c3aed"></i> สรุปรายงานหน้างานล่าสุด</span><span class="dr-date" id="drRcDate"></span></div>
+              <div class="card-body"><div class="dr-body" id="drRcBody"></div><div class="dr-meta" id="drRcMeta"></div></div>
+            </div>
+          </div>
+
+          <div class="card card-body" style="margin-bottom:var(--space-6)">
+            <h3 class="card-title mb-4"><i data-lucide="package" style="width:18px;height:18px;vertical-align:-3px"></i> มูลค่าวัสดุคงคลัง</h3>
+            <div id="invSummary"><div class="inv-empty">กำลังโหลด...</div></div>
+          </div>
+
+          <div class="card card-body">
+            <h3 class="card-title mb-4"><i data-lucide="calendar-range" style="width:18px;height:18px;vertical-align:-3px"></i> ไทม์ไลน์ / แผนงาน (20 สัปดาห์)</h3>
+            <div class="tl-wrap" id="timeline"></div>
+          </div>
+        </div>
+
+        <!-- TAB: รายการงาน (S2b) -->
+        <div class="tab-panel" id="panel-tasks">
+          <div class="card card-body soon-box"><i data-lucide="list-todo"></i><h4>รายการงาน (FF) + เช็คลิสต์งานย่อย</h4><p class="text-sm">กำลังพัฒนาในเฟส S2b — ตอนนี้ใช้ได้ที่หน้าเดิม</p></div>
+        </div>
+        <!-- TAB: การเงิน (S2c) -->
+        <div class="tab-panel" id="panel-finance">
+          <div class="card card-body soon-box"><i data-lucide="wallet"></i><h4>งวดงาน · การเงินเจ้าบ้าน · เบิกจ่าย</h4><p class="text-sm">กำลังพัฒนาในเฟส S2c</p></div>
+        </div>
+        <!-- TAB: ความเสี่ยง/ประเมิน (S2c) -->
+        <div class="tab-panel" id="panel-risk">
+          <div class="card card-body soon-box"><i data-lucide="shield-alert"></i><h4>ความเสี่ยง · ประเมินผู้รับเหมา</h4><p class="text-sm">กำลังพัฒนาในเฟส S2c</p></div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Notification panel -->
+  <div class="nf-overlay" id="nfOverlay" onclick="NF.close()"></div>
+  <div class="nf-panel" id="nfPanel">
+    <div class="nf-panel-head"><h3>การแจ้งเตือน</h3><button class="btn btn-ghost btn-icon" onclick="NF.close()"><i data-lucide="x"></i></button></div>
+    <div class="nf-list" id="nfList"></div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/state.js"></script>
+  <script src="../js/modal.js"></script>
+  <script src="../vendor/lucide/lucide.min.js"></script>
+  <script src="../js/shell.js"></script>
+  <script>
+  // ── guard ──
+  if (!Auth.requireAuth()) { /* redirect ไป index.html */ }
+  Shell.render({ page: 'dashboard', title: 'แดชบอร์ดโครงการ', scope: 'project' });
+
+  let project = CONFIG.PROJECTS[state.projectId] || {};
+
+  function escapeHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+  function escapeHtmlAttr(s){return escapeHtml(s);}
+  function thaiDateShort(dStr){const m=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];const d=new Date(dStr);if(isNaN(d))return dStr;return d.getDate()+' '+m[d.getMonth()]+' '+(d.getFullYear()+543);}
+
+  // extended state
+  state.materials=[]; state.contractors=[]; state.teams=[]; state.alerts=[]; state.inventory=null;
+
+  function switchTab(name){
+    document.querySelectorAll('.tab[data-tab]').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+name));
+  }
+
+  async function refreshProjectMeta(){
+    try{
+      const res=await API.getProjects();
+      if(res&&res.ok&&Array.isArray(res.data)){
+        const p=res.data.find(x=>x.project_id===state.projectId);
+        if(p) project={name:p.name,client:p.client,quoteNo:p.quote_no,startDate:p.start_date,endDate:p.end_date,totalDays:Number(p.total_days)||0,totalValue:Number(p.total_value)||0,contractor:p.contractor,status:p.status};
+      }
+    }catch(e){ console.warn('[dashboard] refreshProjectMeta fail', e); }
+    _updateProjectHeaderUI();
+  }
+  function _updateProjectHeaderUI(){
+    const dispName=(project&&project.name)?project.name:(state.projectId==='bow-house'?'Kun Beau House':(state.projectId||'โครงการ'));
+    const nameEl=document.getElementById('projName'); if(nameEl) nameEl.textContent=dispName;
+    document.title=dispName+' — DSTR PM';
+    const subEl=document.getElementById('projSub');
+    if(subEl){const parts=[];if(project.client&&String(project.client).trim())parts.push(String(project.client).trim());if(project.quoteNo&&String(project.quoteNo).trim())parts.push(String(project.quoteNo).trim());subEl.textContent=parts.join(' · ');}
+  }
+
+  async function loadData(){
+    try{
+      const [data]=await Promise.all([API.fetchAll(), refreshProjectMeta()]);
+      if(!data||!data.ffs) throw new Error('No data');
+      state.data=data; state.materials=data.materials||[]; state.contractors=data.contractors||[];
+      buildWeights();
+
+      API.getInventorySummary().then(res=>{ if(res.ok&&res.data){state.inventory=res.data; renderInventory();} }).catch(()=>{});
+      API.getClientFinance().then(res=>{ if(res.ok&&res.data){state.clientFinance=res.data; renderKPIs();} }).catch(()=>{});
+      NF.load();
+      API.callRead('get_ai_alerts').then(res=>{ if(res.ok&&res.data){state.alerts=res.data; renderAiAlertsBanner();} }).catch(()=>{});
+      loadLatestReport();
+
+      renderHeader(); renderKPIs(); renderGauge(); renderInventory(); renderTimeline();
+      document.getElementById('loadingScreen').style.display='none';
+      document.getElementById('mainContent').style.display='block';
+      if(window.lucide) lucide.createIcons();
+    }catch(err){
+      document.getElementById('loadingScreen').innerHTML='<i data-lucide="alert-triangle"></i> โหลดข้อมูลไม่สำเร็จ: '+err.message;
+      if(window.lucide) lucide.createIcons();
+    }
+  }
+
+  async function loadLatestReport(){
+    const card=document.getElementById('drReportCard');
+    const today=new Date().toISOString().slice(0,10);
+    const y=new Date(); y.setDate(y.getDate()-1); const yStr=y.toISOString().slice(0,10);
+    try{
+      let res=await API.callRead('get_saved_summary',{date:today}); let rDate=today;
+      if(!res.ok||!res.data||!res.data.exists){ res=await API.callRead('get_saved_summary',{date:yStr}); rDate=yStr; }
+      if(res.ok&&res.data&&res.data.exists){
+        const d=res.data; const isToday=rDate===today;
+        document.getElementById('drRcDate').textContent=(isToday?'วันนี้ · ':'เมื่อวาน · ')+thaiDateShort(rDate);
+        document.getElementById('drRcBody').textContent=d.summary;
+        const st=String(d.saved_at||'').slice(0,16).replace('T',' ');
+        document.getElementById('drRcMeta').textContent='โดย '+(d.author||'Admin')+(st?' · '+st:'');
+        card.style.display='block';
+        card.onclick=()=>window.location.href='daily.html?project='+encodeURIComponent(state.projectId);
+      }else{
+        document.getElementById('drRcDate').textContent='ยังไม่มี';
+        document.getElementById('drRcBody').innerHTML='<div class="dr-empty">ยังไม่มีรายงานสรุป · แตะเพื่อสร้างใน Daily</div>';
+        document.getElementById('drRcMeta').textContent='';
+        card.style.display='block';
+        card.onclick=()=>window.location.href='daily.html?project='+encodeURIComponent(state.projectId);
+      }
+    }catch(err){ card.style.display='none'; }
+  }
+
+  function renderHeader(){
+    const a=calcProjectProgress(), p=calcPlanProgress(project), v=calcVariance(a,p);
+    let st='ตามแผน', badge='badge-success';
+    if(v<-15){ st='ล่าช้ามาก'; badge='badge-error'; } else if(v<-5){ st='ใกล้ล่าช้า'; badge='badge-warning'; }
+    document.getElementById('projPills').innerHTML=
+      `<span class="badge ${badge}">${st}</span>`+
+      `<span class="badge badge-gray">${state.data.ffs.length} FF · 4 Zones</span>`+
+      `<span class="badge badge-gray">${state.data.tasks.length} tasks</span>`;
+  }
+
+  function renderKPIs(){
+    const a=calcProjectProgress(), p=calcPlanProgress(project), v=calcVariance(a,p);
+    const ps=calcClientPaymentStats();
+    const paid=ps.hasData?ps.totalPaid:state.data.payments.filter(x=>x.status==='Paid').reduce((s,x)=>s+x.amount,0);
+    const paidPct=ps.hasData?ps.pct:Math.round(paid/project.totalValue*100);
+    const ac=v>=-5?'ok':(v>=-15?'warn':'bad');
+    document.getElementById('kpiGrid').innerHTML=
+      `<div class="kpi ${ac}"><div class="kpi-l">ความคืบหน้า (จริง)</div><div class="kpi-v">${a}%</div><div class="kpi-s"><i data-lucide="scale" style="width:13px;height:13px"></i> ตามน้ำหนักงาน</div></div>`+
+      `<div class="kpi"><div class="kpi-l">ตามแผน</div><div class="kpi-v">${p}%</div><div class="kpi-s"><i data-lucide="calendar" style="width:13px;height:13px"></i> ที่ควรเสร็จวันนี้</div></div>`+
+      `<div class="kpi ${v<0?'bad':'ok'}"><div class="kpi-l">Variance (ต่าง)</div><div class="kpi-v">${v>0?'+':''}${v}%</div><div class="kpi-s">${v<0?'ล่าช้ากว่าแผน':'เร็วกว่าแผน'}</div></div>`+
+      `<div class="kpi ok"><div class="kpi-l">เบิกแล้ว</div><div class="kpi-v">${fmt(paid)}</div><div class="kpi-s"><i data-lucide="wallet" style="width:13px;height:13px"></i> ${paidPct}% ของโครงการ</div></div>`;
+    if(window.lucide) lucide.createIcons();
+  }
+
+  function renderGauge(){
+    const a=calcProjectProgress(), p=calcPlanProgress(project), v=calcVariance(a,p);
+    const fc=calcForecast(project,a); const end=new Date(project.endDate);
+    const delay=fc?Math.max(0,daysBetween(end,fc)):0;
+    const total=264, aLen=(a/100)*total, pOff=-(p/100)*total;
+    const col=v>=-5?'#10b981':(v>=-15?'#f59e0b':'#dc2626');
+    document.getElementById('gaugeRow').innerHTML=
+      `<div class="gauge-wrap"><svg class="gauge-svg" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" stroke-width="10"/>
+        <circle cx="50" cy="50" r="42" fill="none" stroke="${col}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${aLen} ${total}" pathLength="264"/>
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#0f172a" stroke-width="2" stroke-dasharray="2 4" pathLength="264" stroke-dashoffset="${pOff}" opacity="0.4"/>
+      </svg><div class="gauge-center"><div class="gauge-num">${a}%</div><div class="gauge-sublabel">คืบหน้าจริง</div><div class="gauge-plan-marker">เทียบแผน ${p}%</div></div></div>`+
+      `<div class="gauge-extras">
+        <div class="gauge-stat"><span class="gauge-stat-l"><i data-lucide="calendar"></i> แผน ณ วันนี้</span><span class="gauge-stat-v">${p}%</span></div>
+        <div class="gauge-stat"><span class="gauge-stat-l"><i data-lucide="trending-down"></i> Variance</span><span class="gauge-stat-v ${v<0?'neg':'pos'}">${v>0?'+':''}${v}%</span></div>
+        <div class="gauge-stat"><span class="gauge-stat-l"><i data-lucide="target"></i> คาดเสร็จ</span><span class="gauge-stat-v">${fc?formatDateThai(fc):'รอข้อมูล'}</span></div>
+        <div class="gauge-stat"><span class="gauge-stat-l"><i data-lucide="clock"></i> ล่าช้าจากกำหนด</span><span class="gauge-stat-v ${delay>0?'neg':'pos'}">${delay>0?'~'+delay+' วัน':'ตรงเวลา'}</span></div>
+      </div>`;
+    if(window.lucide) lucide.createIcons();
+  }
+
+  function renderAiAlertsBanner(){
+    const bnr=document.getElementById('aiBnr');
+    const crit=state.alerts.filter(a=>a.severity==='high'||a.severity==='medium');
+    if(!crit.length){ bnr.style.display='none'; return; }
+    const msgs=crit.slice(0,3).map(a=>a.mat_name).join(', ');
+    bnr.className='ai-bnr';
+    bnr.innerHTML=`<i data-lucide="alert-triangle" class="lead"></i><div class="ai-bnr-tx"><strong>${crit.length} วัสดุต้องการความสนใจ</strong><br>${msgs}${crit.length>3?` +${crit.length-3}`:''}</div><i data-lucide="chevron-right"></i>`;
+    bnr.style.display='flex';
+    bnr.onclick=()=>window.location.href='materials.html?project='+encodeURIComponent(state.projectId);
+    if(window.lucide) lucide.createIcons();
+  }
+
+  function renderInventory(){
+    const el=document.getElementById('invSummary'); if(!el) return;
+    const inv=state.inventory;
+    if(!inv){ el.innerHTML='<div class="inv-empty">กำลังโหลด...</div>'; return; }
+    const t=inv.totals||{received:0,issued:0,balance:0}; const meta=inv.meta||{materials:0};
+    if(!t.received&&!t.issued&&!t.balance){
+      el.innerHTML = meta.materials>0
+        ? `<div class="inv-warn bad">มีวัสดุ <b>${meta.materials}</b> รายการ แต่ยังไม่ได้ใส่ราคาต่อหน่วย — ตั้งราคาที่หน้าเดิมก่อน (ฟีเจอร์ตั้งราคาจะมาในเฟสถัดไป)</div>`
+        : '<div class="inv-empty">ยังไม่มีวัสดุในโครงการนี้</div>';
+      return;
+    }
+    let html=`<div class="inv-cards">
+      <div class="inv-card received"><div class="lbl">ซื้อเข้ามา</div><div class="val">${fmt(t.received)}</div><div class="unit">บาท</div></div>
+      <div class="inv-card issued"><div class="lbl">เบิกใช้ไป</div><div class="val">${fmt(t.issued)}</div><div class="unit">บาท</div></div>
+      <div class="inv-card balance"><div class="lbl">ค้างสต๊อก</div><div class="val">${fmt(t.balance)}</div><div class="unit">บาท</div></div>
+    </div>`;
+    if(t.received>0){
+      const wp=calcProjectProgress(), up=Math.round(t.issued/t.received*100), gap=up-wp;
+      html+= gap>20
+        ? `<div class="inv-warn bad">ใช้วัสดุไปแล้ว <b>${up}%</b> ของที่ซื้อ แต่งานเสร็จ <b>${wp}%</b> — ใช้วัสดุเร็วกว่างานมาก ควรเช็คความเปลือง/ของหาย</div>`
+        : `<div class="inv-warn ok">ใช้วัสดุ <b>${up}%</b> · งานเสร็จ <b>${wp}%</b> — อัตราสมดุลกับงาน</div>`;
+    }
+    const cats=inv.by_category||[];
+    if(cats.length){
+      html+=`<div class="inv-cat-row head" style="margin-top:10px"><div>หมวดวัสดุ</div><div class="r">ซื้อ</div><div class="i">ใช้</div><div class="b">เหลือ</div></div>`;
+      cats.forEach(c=>{ html+=`<div class="inv-cat-row"><div title="${escapeHtmlAttr(c.category)}">${escapeHtml(c.category)}</div><div class="r">${fmt(c.received)}</div><div class="i">${fmt(c.issued)}</div><div class="b">${fmt(c.balance)}</div></div>`; });
+    }
+    el.innerHTML=html;
+  }
+
+  function renderTimeline(){
+    const container=document.getElementById('timeline');
+    const months=['เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.']; const plan=CONFIG.GANTT_PLAN;
+    const today=new Date(); const dss=daysBetween(new Date(project.startDate),today);
+    const currentWeek=Math.max(1,Math.min(20,Math.floor(dss/7)+1));
+    let stOnTrack=0,stLate=0,stDone=0,stUpcoming=0;
+    const sortedFFs=state.data.ffs.slice().sort((a,b)=>parseInt(a.code.replace("F-",""))-parseInt(b.code.replace("F-","")));
+    const hasAnyPlan=sortedFFs.some(ff=>(plan[ff.code]||[]).length>0);
+    if(!hasAnyPlan){ container.innerHTML='<div class="inv-empty" style="text-align:center;padding:18px">ยังไม่ได้ตั้งแผน Timeline สำหรับโครงการนี้</div>'; return; }
+    let html='<div class="tl"><div></div>';
+    months.forEach(m=>{ html+=`<div class="tl-h tl-h-m" style="grid-column:span 4">${m}</div>`; });
+    html+='<div class="tl-h tl-h-m">สถานะ</div><div></div>';
+    for(let i=0;i<5;i++){ for(let w=1;w<=4;w++){ const isCur=(i*4+w)===currentWeek; html+=`<div class="tl-h${isCur?' tl-today-line':''}" style="${isCur?'color:#ef4444;font-weight:700':''}">W${w}</div>`; } }
+    html+='<div class="tl-h">progress</div>';
+    sortedFFs.forEach(ff=>{
+      const ffPlan=plan[ff.code]||[]; const pStatus={1:0,2:0,3:0,4:0}, pTotal={1:0,2:0,3:0,4:0};
+      state.data.tasks.filter(t=>t.ffCode===ff.code).forEach(t=>{ const p=parseInt(t.phase.replace('p','')); if(pTotal[p]!==undefined){ pTotal[p]++; if(t.status==='Done')pStatus[p]++; } });
+      const cellMap={}; ffPlan.forEach(([phase,start,end])=>{ const pd=pTotal[phase]>0?(pStatus[phase]/pTotal[phase]):0; for(let w=start;w<=end;w++)cellMap[w]={phase,phaseDone:pd,start,end}; });
+      let plannedNow=null; for(let w=1;w<=currentWeek;w++){ if(cellMap[w])plannedNow=cellMap[w].phase; }
+      const prog=calcFFProgressWeighted(ff.code); let statusText='',statusClass='';
+      if(prog.pct===100){ statusText='✓ เสร็จ'; statusClass='tl-status-ok'; stDone++; }
+      else if(plannedNow){ let sbd=0; for(let p=1;p<plannedNow;p++)sbd+=pTotal[p]||0; const tt=Object.values(pTotal).reduce((s,n)=>s+n,0); const exp=tt>0?(sbd/tt*100):0;
+        if(prog.pct>=exp-5){ statusText=`● ตามแผน · งวด ${plannedNow}`; statusClass='tl-status-ok'; stOnTrack++; }
+        else if(prog.pct>=exp-20){ statusText='⚠ ใกล้ล่าช้า'; statusClass='tl-status-warn'; stLate++; }
+        else { statusText='▲ ล่าช้า'; statusClass='tl-status-bad'; stLate++; }
+      } else { statusText='○ ยังไม่เริ่ม'; statusClass='tl-status-soon'; stUpcoming++; }
+      html+=`<div class="tl-name"><span class="tl-name-code">${ff.code}</span><span class="tl-name-z">${ff.zone.replace('Zone ','Z')}</span></div>`;
+      for(let w=1;w<=20;w++){ const info=cellMap[w]; if(!info){ html+=`<div class="tl-cell${w===currentWeek?' tl-today-line':''}"></div>`; continue; }
+        let cls=`tl-p${info.phase}`; if(info.phaseDone>=1)cls='tl-done'; else if(currentWeek>info.end&&info.phaseDone<1)cls='tl-late';
+        const first=w===info.start&&(info.end-info.start)>=1; const cc=first?`<span style="position:absolute;left:4px;font-size:9px">${Math.round(info.phaseDone*100)}%</span>`:'';
+        html+=`<div class="tl-cell ${cls}${w===currentWeek?' tl-today-line':''}">${cc}</div>`;
+      }
+      html+=`<div class="tl-status ${statusClass}">${statusText}</div>`;
+    });
+    html+='</div>';
+    const summary=`<div class="tl-summary"><div>รวม: <span class="tl-summary-num">${sortedFFs.length}</span></div><div style="color:var(--color-success-700)">เสร็จ: <span class="tl-summary-num">${stDone}</span></div><div style="color:var(--color-success-700)">ตามแผน: <span class="tl-summary-num">${stOnTrack}</span></div><div style="color:var(--color-error-700)">ล่าช้า: <span class="tl-summary-num">${stLate}</span></div><div style="color:var(--color-blue-700)">ยังไม่เริ่ม: <span class="tl-summary-num">${stUpcoming}</span></div><div style="margin-left:auto;color:var(--color-error-700)">สัปดาห์ที่ ${currentWeek}/20</div></div>`;
+    container.innerHTML=summary+html;
+  }
+
+  // ── Notifications ──
+  const NF={ events:[], _seenKey:function(){return 'nf_seen_'+(state.projectId||'bow-house');}, _lastSeen:function(){try{return localStorage.getItem(NF._seenKey())||'';}catch(e){return '';}} };
+  NF.iconFor=function(ev){var k=ev.kind||'';if(k==='contract')return '📄';if(k==='milestone')return '🧾';if(k==='risk')return '⚠️';if(k==='eval')return '📋';if(k==='daily')return '📝';var t=ev.text||'';if(t.indexOf('เบิก')>=0)return '📤';if(t.indexOf('รับ')>=0)return '📥';if(t.indexOf('เสร็จ')>=0)return '✅';if(t.indexOf('หน้างาน')>=0)return '👷';return '🔔';};
+  NF.relTime=function(iso){if(!iso)return '';var d=new Date(iso);if(isNaN(d))return '';var diff=(Date.now()-d.getTime())/1000;if(diff<60)return 'เมื่อสักครู่';if(diff<3600)return Math.floor(diff/60)+' นาทีที่แล้ว';if(diff<86400)return Math.floor(diff/3600)+' ชม.ที่แล้ว';if(diff<604800)return Math.floor(diff/86400)+' วันที่แล้ว';return d.toLocaleDateString('th-TH',{day:'numeric',month:'short'});};
+  NF.unreadCount=function(){var last=NF._lastSeen();return NF.events.filter(function(e){return e.timestamp>last;}).length;};
+  NF.load=function(){API.getNotifications(40).then(function(res){if(res&&res.ok&&res.data&&Array.isArray(res.data.events)){NF.events=res.data.events;NF.renderBadge();}}).catch(function(){});};
+  NF.renderBadge=function(){var n=NF.unreadCount();var b=document.getElementById('nfBadge');if(!b)return;if(n>0){b.textContent=n>99?'99+':n;b.style.display='flex';}else b.style.display='none';};
+  NF.toggle=function(){var p=document.getElementById('nfPanel');if(p.classList.contains('open'))NF.close();else NF.open();};
+  NF.open=function(){NF.renderList();document.getElementById('nfPanel').classList.add('open');document.getElementById('nfOverlay').classList.add('open');if(NF.events.length){try{localStorage.setItem(NF._seenKey(),NF.events[0].timestamp);}catch(e){}}NF.renderBadge();};
+  NF.close=function(){document.getElementById('nfPanel').classList.remove('open');document.getElementById('nfOverlay').classList.remove('open');};
+  NF.renderList=function(){var el=document.getElementById('nfList');if(!NF.events.length){el.innerHTML='<div class="nf-empty">ยังไม่มีการแจ้งเตือน<br><span style="font-size:11px">เมื่อมีคนทำงาน/เบิกของ/ติ๊กงาน จะขึ้นที่นี่</span></div>';return;}var last=NF._lastSeen();el.innerHTML=NF.events.map(function(e){var u=e.timestamp>last;var who=e.actor?'<span class="nf-actor">'+escapeHtml(e.actor)+'</span> · ':'';return '<div class="nf-item'+(u?' unread':'')+'"><div class="nf-ic">'+NF.iconFor(e)+'</div><div><div class="nf-txt">'+escapeHtml(e.text||'')+'</div><div class="nf-meta">'+who+NF.relTime(e.timestamp)+'</div></div>'+(u?'<div class="nf-dot"></div>':'')+'</div>';}).join('');};
+
+  loadData();
+  </script>
+</body>
+</html>
