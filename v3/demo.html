@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design System Demo — DSTR V3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/design-system.css">
+</head>
+<body>
+  <div class="app-container">
+    <main class="main-content">
+      <div class="page-content">
+
+        <div class="section-header" style="margin-top:0;">
+          <h2>ปุ่ม (Buttons)</h2>
+        </div>
+        <div class="flex gap-2 items-center" style="flex-wrap:wrap;">
+          <button class="btn btn-primary"><i data-lucide="plus"></i> หลัก</button>
+          <button class="btn btn-secondary"><i data-lucide="download"></i> รอง</button>
+          <button class="btn btn-ghost">โปร่ง</button>
+          <button class="btn btn-danger"><i data-lucide="trash-2"></i> ลบ</button>
+          <button class="btn btn-success"><i data-lucide="check"></i> ยืนยัน</button>
+          <button class="btn btn-primary" disabled>ปิดใช้</button>
+          <button class="btn btn-secondary btn-sm">เล็ก</button>
+          <button class="btn btn-primary btn-lg">ใหญ่</button>
+          <button class="btn btn-secondary btn-icon"><i data-lucide="settings"></i></button>
+        </div>
+
+        <div class="section-header"><h2>ป้าย (Badges)</h2></div>
+        <div class="flex gap-2 items-center" style="flex-wrap:wrap;">
+          <span class="badge badge-success">เสร็จแล้ว</span>
+          <span class="badge badge-warning">ตามแผน</span>
+          <span class="badge badge-error">ล่าช้า</span>
+          <span class="badge badge-blue">ใหม่</span>
+          <span class="badge badge-gray">QT-690400007</span>
+        </div>
+
+        <div class="section-header"><h2>การ์ด + Progress</h2></div>
+        <div class="grid-3">
+          <div class="card card-body">
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-muted text-sm">ความคืบหน้ารวม</span>
+              <div class="avatar" style="background:var(--color-blue-50);color:var(--color-blue-600);"><i data-lucide="briefcase" style="width:18px;height:18px;"></i></div>
+            </div>
+            <div style="font-size:var(--text-3xl);font-weight:700;">27.7%</div>
+            <div class="progress-track mt-2"><div class="progress-fill warning" style="width:27.7%"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">มีหัวการ์ด</span><button class="btn btn-ghost btn-icon"><i data-lucide="more-horizontal"></i></button></div>
+            <div class="card-body text-sm text-muted">เนื้อหาการ์ดพร้อมหัวและเส้นคั่น</div>
+          </div>
+          <div class="card card-body">
+            <div class="progress-track mb-2"><div class="progress-fill success" style="width:84%"></div></div>
+            <div class="progress-track mb-2"><div class="progress-fill" style="width:50%"></div></div>
+            <div class="progress-track"><div class="progress-fill error" style="width:20%"></div></div>
+          </div>
+        </div>
+
+        <div class="section-header"><h2>แท็บ (Tabs)</h2></div>
+        <div class="tabs">
+          <div class="tab active"><i data-lucide="list-todo"></i> รายการงาน</div>
+          <div class="tab"><i data-lucide="bar-chart-3"></i> ความคืบหน้า</div>
+          <div class="tab"><i data-lucide="folder"></i> ไฟล์แนบ</div>
+        </div>
+
+        <div class="section-header"><h2>Chips</h2></div>
+        <div class="flex gap-2" style="flex-wrap:wrap;">
+          <div class="chip on"><i data-lucide="users"></i> ทีมช่างไม้</div>
+          <div class="chip"><i data-lucide="users"></i> ทีมช่างไฟ</div>
+          <div class="chip"><i data-lucide="users"></i> ทีมช่างประปา</div>
+        </div>
+
+        <div class="section-header"><h2>ฟอร์ม</h2></div>
+        <div class="card card-body" style="max-width:520px;">
+          <div class="form-group">
+            <label class="form-label">ชื่องาน <span class="req">*</span></label>
+            <input type="text" class="form-input" placeholder="กรอกชื่องาน">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ประเภท</label>
+              <select class="form-select"><option>ตู้บิ้วอิน</option><option>งานเหล็ก</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">วันที่</label>
+              <input type="date" class="form-input">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ค้นหา</label>
+            <div class="input-icon"><i data-lucide="search"></i><input type="text" class="form-input" placeholder="ค้นหา..."></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">หมายเหตุ</label>
+            <textarea class="form-textarea" placeholder="รายละเอียดเพิ่มเติม"></textarea>
+            <div class="form-hint">ระบบจะบันทึกอัตโนมัติ</div>
+          </div>
+          <label class="check-line mb-4"><input type="checkbox" checked> เปิดใช้งานทันที</label>
+          <div class="file-drop"><i data-lucide="upload-cloud"></i><div>แตะเพื่อแนบไฟล์ หรือลากมาวาง</div></div>
+        </div>
+
+        <div class="section-header"><h2>ตาราง</h2></div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>รหัส</th><th>ชิ้นงาน</th><th class="num">มูลค่า</th><th>สถานะ</th></tr></thead>
+            <tbody>
+              <tr><td>F-01</td><td>ตู้ TV</td><td class="num tabular">120,000</td><td><span class="badge badge-success">เสร็จ</span></td></tr>
+              <tr><td>F-02</td><td>ผนังเปียโน</td><td class="num tabular">68,000</td><td><span class="badge badge-warning">ตามแผน</span></td></tr>
+              <tr><td>F-03</td><td>ตู้ห้องทำงาน</td><td class="num tabular">95,500</td><td><span class="badge badge-error">ล่าช้า</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section-header"><h2>สถานะโหลด / ว่าง</h2></div>
+        <div class="grid-3">
+          <div class="card card-body">
+            <div class="skeleton skeleton-line w-60"></div>
+            <div class="skeleton skeleton-line"></div>
+            <div class="skeleton skeleton-line w-40"></div>
+          </div>
+          <div class="card"><div class="loading-center"><div class="spinner"></div> กำลังโหลด...</div></div>
+          <div class="card"><div class="empty-state"><i data-lucide="inbox"></i><h4>ยังไม่มีข้อมูล</h4><p>เริ่มเพิ่มรายการแรกได้เลย</p></div></div>
+        </div>
+
+        <div class="section-header"><h2>Modal / Toast (ทดสอบ js/modal.js)</h2></div>
+        <div class="flex gap-2" style="flex-wrap:wrap;">
+          <button class="btn btn-secondary" onclick="Modal.toast('บันทึกเรียบร้อย ✓')">แสดง Toast</button>
+          <button class="btn btn-secondary" onclick="demoConfirm()">แสดง Confirm</button>
+          <button class="btn btn-secondary" onclick="demoForm()">แสดง Modal ฟอร์ม</button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/modal.js"></script>
+  <script src="../vendor/lucide/lucide.min.js"></script>
+  <script src="../js/shell.js"></script>
+  <script>
+    Shell.render({ page: 'dashboard', title: 'Design System Demo', scope: 'project' });
+
+    function demoConfirm() {
+      Modal.confirm({
+        icon: '<i data-lucide="trash-2"></i>', iconClass: 'danger',
+        title: 'ลบรายการนี้?', desc: 'การลบไม่สามารถย้อนกลับได้',
+        confirmText: 'ลบเลย', confirmClass: 'modal-btn-danger'
+      }).then(function(ok){ Modal.toast(ok ? 'ลบแล้ว' : 'ยกเลิก'); });
+      if (window.lucide) lucide.createIcons();
+    }
+    function demoForm() {
+      Modal.show(
+        '<div class="modal-head"><div class="modal-title">เพิ่มงานใหม่</div>' +
+        '<button class="modal-close" onclick="Modal.close()"><i data-lucide=\'x\'></i></button></div>' +
+        '<div class="form-group"><label class="form-label">ชื่องาน</label><input class="form-input" placeholder="เช่น ตู้ครัว"></div>' +
+        '<div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>' +
+        '<button class="modal-btn modal-btn-primary" onclick="Modal.close();Modal.toast(\'บันทึกแล้ว\')">บันทึก</button></div>'
+      );
+      if (window.lucide) lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

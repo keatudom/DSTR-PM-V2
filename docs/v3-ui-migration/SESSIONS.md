@@ -95,4 +95,4 @@
 
 | Session | วันที่ | ทำอะไร | ตัดยอด? (commit) | หมายเหตุ |
 |---|---|---|---|---|
-| S0 | — | — | — | — |
+| S0 | 2026-07-16 | ฐานราก: `css/design-system.css` (เติม modal/toast/table/form/tabs/chips/skeleton/empty ครบ), `js/shell.js` (sidebar+topbar+bottom-nav+drawer, อ่าน projectId จาก URL เอง), Lucide **v1.24.0** self-host `vendor/lucide/`, `docs/.../ICON-MAP.md`, `v3/demo.html` | — (ยังไม่ตัดยอด) | ✅ verified Playwright: desktop+mobile+drawer+modal ผ่าน · 32 ไอคอนเรนเดอร์ offline · 0 error (นอกจาก favicon) |
