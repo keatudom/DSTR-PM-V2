@@ -69,7 +69,8 @@ const API = {
     return fetch(base + '/api', {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify(Object.assign({ action: action }, params))
+      // action (ชื่อ route) วางท้ายสุด → ชนะเสมอ กันข้อมูลใน params ที่บังเอิญชื่อ 'action' มาเขียนทับ
+      body: JSON.stringify(Object.assign({}, params, { action: action }))
     }).then(function(res) {
       return res.json();
     });

@@ -136,7 +136,9 @@ export async function teamCheckin(env: Env, p: Record<string, unknown>): Promise
   if (!p.team_id) throw new Error('team_id required');
   const teamId = String(p.team_id).trim();
   const date = (p.date as string) || todayStr();
-  const action = p.action === 'out' ? 'out' : 'in';
+  // ทิศทางเช็คอิน ใช้คีย์ checkin_action — ห้ามใช้ 'action' เพราะชนกับชื่อ route ('team_checkin')
+  // ที่ frontend รวมลง body เดียวกัน (เคยทำ CF ตอบ "Unknown action: in")
+  const action = p.checkin_action === 'out' ? 'out' : 'in';
   const workerCount = p.worker_count === undefined || p.worker_count === null || p.worker_count === '' ? null : Number(p.worker_count);
   let teamName = teamId;
   try { const team = await queryFirst<{ name: string }>(env, 'SELECT name FROM teams WHERE team_id = ?', teamId); if (team && team.name) teamName = team.name; } catch { /* ignore */ }

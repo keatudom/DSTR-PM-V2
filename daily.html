@@ -1035,7 +1035,7 @@ async function toggleTeamCheckin(teamId) {
   Modal.toast(wasOn ? '⏳ กำลังยกเลิก ' + nm + '...' : '⏳ กำลังเช็คอิน ' + nm + '...');
 
   try {
-    const params = { team_id: teamId, action: action, date: drState.date };
+    const params = { team_id: teamId, checkin_action: action, date: drState.date };
     if (!wasOn) params.worker_count = 1;
     const res = await API.teamCheckin(params);
     if (!res || !res.ok) throw new Error((res && res.error) || 'เช็คอินไม่สำเร็จ');
@@ -1076,7 +1076,7 @@ async function adjustTeamQty(teamId, delta) {
     const res = await API.teamCheckin({
       team_id: teamId,
       worker_count: next,
-      action: 'in',
+      checkin_action: 'in',
       date: drState.date
     });
     if (!res || !res.ok) throw new Error((res && res.error) || 'อัปเดตไม่สำเร็จ');
