@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ภาพรวมโครงการ — DSTR PM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<link rel="manifest" href="../manifest.json">
+<meta name="theme-color" content="#0f172a">
+<style>
+  .kpi-grid { margin-bottom: var(--space-6); }
+  .kpi-card { display:flex; flex-direction:column; }
+  .kpi-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-4); }
+  .kpi-title { color:var(--color-slate-500); font-size:var(--text-sm); font-weight:500; }
+  .kpi-icon { width:40px; height:40px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; }
+  .kpi-icon.blue { background:var(--color-blue-50); color:var(--color-blue-600); }
+  .kpi-icon.green { background:var(--color-success-50); color:var(--color-success-700); }
+  .kpi-icon.amber { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .kpi-icon.slate { background:var(--color-slate-100); color:var(--color-slate-700); }
+  .kpi-value { font-size:var(--text-3xl); font-weight:700; color:var(--color-slate-900); margin-bottom:var(--space-1); }
+  .kpi-sub { font-size:var(--text-sm); color:var(--color-slate-500); }
+
+  .project-card { transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s; cursor:pointer; }
+  .project-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:var(--color-blue-500); }
+  .project-meta { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:var(--space-3); gap:var(--space-2); }
+  .project-title { font-size:var(--text-lg); font-weight:600; color:var(--color-slate-900); margin-bottom:var(--space-1); }
+  .project-client { font-size:var(--text-sm); color:var(--color-slate-500); display:flex; align-items:center; gap:var(--space-2); margin-bottom:var(--space-4); }
+  .project-client i { width:14px; height:14px; flex-shrink:0; }
+  .proj-figures { display:flex; justify-content:space-between; gap:var(--space-3); margin-bottom:var(--space-4); }
+  .proj-fig-l { font-size:var(--text-xs); color:var(--color-slate-500); }
+  .proj-fig-v { font-size:var(--text-base); font-weight:600; color:var(--color-slate-900); }
+  .progress-header { display:flex; justify-content:space-between; font-size:var(--text-sm); margin-bottom:var(--space-2); }
+  .progress-header span:first-child { color:var(--color-slate-600); font-weight:500; }
+  .progress-header span:last-child { font-weight:600; }
+  .project-footer { display:flex; justify-content:space-between; align-items:center; padding-top:var(--space-4); border-top:1px solid var(--color-slate-100); margin-top:var(--space-4); }
+
+  .card-new { border-style:dashed; background:var(--color-slate-50); display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:240px; box-shadow:none; cursor:pointer; transition:border-color 0.15s, background 0.15s; }
+  .card-new:hover { border-color:var(--color-blue-500); background:var(--color-blue-50); }
+  .card-new-icon { width:48px; height:48px; background:white; border-radius:var(--radius-full); display:flex; align-items:center; justify-content:center; margin-bottom:var(--space-3); color:var(--color-blue-600); box-shadow:var(--shadow-sm); }
+</style>
+</head>
+<body>
+  <div class="app-container">
+    <main class="main-content">
+      <div class="page-content">
+
+        <!-- KPI (bind ข้อมูลจริง — ตัวไหนไม่มีข้อมูลจะซ่อน) -->
+        <div class="grid-4 kpi-grid" id="kpiGrid"></div>
+
+        <div class="section-header" style="margin-top:0;">
+          <h2>โครงการที่ดำเนินการอยู่</h2>
+          <button class="btn btn-primary" id="addBtn" onclick="openCreateProjectModal()"><i data-lucide="plus"></i> เปิดโปรเจกต์ใหม่</button>
+        </div>
+
+        <div class="grid-3" id="projGrid">
+          <div class="card"><div class="loading-center"><div class="spinner"></div> กำลังโหลด...</div></div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/state.js"></script>
+  <script src="../js/modal.js"></script>
+  <script src="../vendor/lucide/lucide.min.js"></script>
+  <script src="../js/shell.js"></script>
+  <script>
+  // ── guard: ต้อง login ก่อน ──
+  if (!Auth.requireAuth()) { /* redirect ไป index.html โดย auth.js */ }
+  const role = Auth.getRole();
+  const isClient = (role === 'client');
+
+  Shell.render({ page: 'projects', title: 'ภาพรวมโครงการ', scope: 'global' });
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // ลูกค้า: ซ่อนปุ่มเปิดโปรเจกต์
+  if (isClient) { const b = document.getElementById('addBtn'); if (b) b.style.display = 'none'; }
+
+  // ── โหลดโปรเจกต์ (MERGE CONFIG legacy + API overlay — ตรรกะเดิม) ──
+  async function loadProjects() {
+    const grid = document.getElementById('projGrid');
+
+    const byId = {};
+    Object.keys(CONFIG.PROJECTS).forEach(id => {
+      const p = CONFIG.PROJECTS[id];
+      byId[id] = {
+        project_id: id, name: p.name, client: p.client, quote_no: p.quoteNo,
+        start_date: p.startDate, end_date: p.endDate, total_days: p.totalDays,
+        total_value: p.totalValue, contractor: p.contractor, status: p.status || 'active'
+      };
+    });
+
+    try {
+      const res = await API.getProjects();
+      if (res && res.ok && Array.isArray(res.data)) res.data.forEach(p => { byId[p.project_id] = p; });
+    } catch (e) { console.warn('[projects] getProjects fail — ใช้ CONFIG อย่างเดียว', e); }
+
+    const projects = Object.values(byId).sort((a, b) => {
+      if (a.project_id === 'bow-house') return -1;
+      if (b.project_id === 'bow-house') return 1;
+      const sa = (a.status || 'active') === 'active' ? 0 : 1;
+      const sb = (b.status || 'active') === 'active' ? 0 : 1;
+      if (sa !== sb) return sa - sb;
+      return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+    });
+
+    // FF data (เฉพาะ bow-house ในเฟส A)
+    let ffData = null;
+    try {
+      const data = await API.fetchAll();
+      if (data && data.ffs) { state.data = data; buildWeights(); ffData = data; }
+    } catch (e) { console.warn('[projects] fetchAll fail', e); }
+
+    renderKPIs(projects, ffData);
+
+    let html = '';
+    projects.forEach(proj => {
+      html += (proj.project_id === 'bow-house' && ffData) ? renderActiveCard(proj, ffData) : renderPendingCard(proj);
+    });
+    if (!isClient) {
+      html += `
+        <div class="card card-new" onclick="openCreateProjectModal()">
+          <div class="card-new-icon"><i data-lucide="plus"></i></div>
+          <h3 style="font-size:var(--text-base);color:var(--color-slate-700);margin-bottom:var(--space-1);">เปิดโปรเจกต์ใหม่</h3>
+          <p class="text-sm text-muted">เพิ่มเข้ามาเมื่อมีลูกค้าใหม่</p>
+        </div>`;
+    }
+    grid.innerHTML = html;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ── KPI: คำนวณจากข้อมูลจริงเท่านั้น (ไม่มีข้อมูล = ซ่อน) ──
+  function renderKPIs(projects, ffData) {
+    const activeCount = projects.filter(p => (p.status || 'active') === 'active').length;
+    const totalValue = projects.reduce((s, p) => s + (parseFloat(p.total_value) || 0), 0);
+    const cards = [];
+    cards.push(kpiCard('โครงการที่ดำเนินการ', activeCount, 'briefcase', 'blue', 'โครงการทั้งหมดในระบบ'));
+    if (ffData && ffData.ffs) {
+      const pct = calcProjectProgress();
+      cards.push(kpiCard('งานทั้งหมด (บ้านคุณโบว์)', ffData.ffs.length + ' รายการ', 'list-todo', 'slate', 'ชิ้นงาน FF'));
+      cards.push(kpiCard('ความคืบหน้าเฉลี่ย', pct + '%', 'trending-up', 'green', 'บ้านคุณโบว์'));
+    }
+    cards.push(kpiCard('มูลค่ารวมทุกโครงการ', fmt(totalValue) + ' ฿', 'wallet', 'amber', 'ตามสัญญา'));
+    document.getElementById('kpiGrid').innerHTML = cards.join('');
+  }
+  function kpiCard(title, value, icon, color, sub) {
+    return `
+      <div class="card card-body kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-title">${title}</span>
+          <div class="kpi-icon ${color}"><i data-lucide="${icon}"></i></div>
+        </div>
+        <div class="kpi-value">${value}</div>
+        <div class="kpi-sub">${sub}</div>
+      </div>`;
+  }
+
+  // ── การ์ดโครงการที่มี FF (progress จริง — ตรรกะคำนวณเดิม) ──
+  function renderActiveCard(proj, ffData) {
+    const cfg = CONFIG.PROJECTS[proj.project_id] || { endDate: proj.end_date, totalDays: proj.total_days, name: proj.name };
+    const actualPct = calcProjectProgress();
+    const planPct = calcPlanProgress(cfg);
+    const variance = calcVariance(actualPct, planPct);
+    const daysLeft = Math.max(0, daysBetween(new Date(), new Date(cfg.endDate)));
+
+    let badge = 'badge-warning', statusText = 'ใกล้ล่าช้า';
+    if (variance >= -5) { badge = 'badge-success'; statusText = 'ตามแผน'; }
+    else if (variance < -15) { badge = 'badge-error'; statusText = 'ล่าช้า'; }
+    const onPlan = actualPct >= planPct - 5;
+
+    const targetPage = isClient ? 'client.html' : 'dashboard.html';
+    const goUrl = '../' + targetPage + '?project=' + encodeURIComponent(proj.project_id);
+
+    return `
+      <div class="card card-body project-card" onclick="window.location.href='${goUrl}'">
+        <div class="project-meta">
+          <span class="badge ${badge}">${statusText}</span>
+          <span class="badge badge-gray" style="font-family:monospace;">${esc(proj.quote_no || cfg.quoteNo || '')}</span>
+        </div>
+        <div class="project-title">${esc(proj.name)}</div>
+        <div class="project-client"><i data-lucide="user"></i> ${esc(proj.client)}</div>
+        <div class="proj-figures">
+          <div><div class="proj-fig-l">มูลค่าโครงการ</div><div class="proj-fig-v">${fmt(proj.total_value || cfg.totalValue)} ฿</div></div>
+          <div style="text-align:right;"><div class="proj-fig-l">วันเหลือ</div><div class="proj-fig-v">${daysLeft} / ${proj.total_days || cfg.totalDays}</div></div>
+        </div>
+        <div class="progress-header">
+          <span>ความคืบหน้า</span>
+          <span style="color:${onPlan ? 'var(--color-success-700)' : 'var(--color-warning-700)'}">${actualPct}%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill ${onPlan ? 'success' : 'warning'}" style="width:${actualPct}%"></div></div>
+        <div class="project-footer">
+          <div class="flex gap-2">
+            <span class="badge badge-blue">${ffData.ffs.length} FF</span>
+            <span class="badge badge-gray">4 Zone</span>
+          </div>
+          <div class="text-xs text-muted flex items-center gap-1"><i data-lucide="calendar" style="width:14px;height:14px;"></i> ${esc(cfg.endDate || proj.end_date || '')}</div>
+        </div>
+      </div>`;
+  }
+
+  // ── การ์ดโครงการใหม่ (ยังไม่มี FF) ──
+  function renderPendingCard(proj) {
+    const value = parseFloat(proj.total_value) || 0;
+    const days = parseInt(proj.total_days, 10) || 0;
+    const targetPage = isClient ? 'client.html' : 'dashboard.html';
+    const goUrl = '../' + targetPage + '?project=' + encodeURIComponent(proj.project_id);
+    return `
+      <div class="card card-body project-card" onclick="window.location.href='${goUrl}'">
+        <div class="project-meta">
+          <span class="badge badge-gray">ยังไม่เริ่ม</span>
+          ${proj.quote_no ? `<span class="badge badge-gray" style="font-family:monospace;">${esc(proj.quote_no)}</span>` : ''}
+        </div>
+        <div class="project-title">${esc(proj.name)}</div>
+        <div class="project-client"><i data-lucide="user"></i> ${esc(proj.client || '—')}</div>
+        <div class="proj-figures">
+          <div><div class="proj-fig-l">มูลค่าโครงการ</div><div class="proj-fig-v">${fmt(value)} ฿</div></div>
+          <div style="text-align:right;"><div class="proj-fig-l">ระยะเวลา</div><div class="proj-fig-v">${days ? days + ' วัน' : '—'}</div></div>
+        </div>
+        <div class="project-footer" style="border-top:none;padding-top:0;margin-top:0;">
+          <span class="badge badge-warning">รอเพิ่มงาน (FF)</span>
+        </div>
+      </div>`;
+  }
+
+  // ── modal เปิดโปรเจกต์ใหม่ (ตรรกะเดิม, ฟอร์ม design-system) ──
+  function openCreateProjectModal() {
+    const today = new Date().toISOString().slice(0, 10);
+    const end = new Date(Date.now() + 120 * 86400000).toISOString().slice(0, 10);
+    const html = `
+      <div class="modal-head"><div class="modal-title">เปิดโปรเจกต์ใหม่</div>
+        <button class="modal-close" onclick="Modal.close()"><i data-lucide="x"></i></button></div>
+      <form id="pfForm" onsubmit="submitCreateProject(event)">
+        <div class="form-group"><label class="form-label">ชื่อโครงการ <span class="req">*</span></label>
+          <input id="pfName" class="form-input" type="text" placeholder="เช่น Kun Beau House" required></div>
+        <div class="form-group"><label class="form-label">ลูกค้า</label>
+          <input id="pfClient" class="form-input" type="text" placeholder="ชื่อ-นามสกุล ลูกค้า"></div>
+        <div class="form-group"><label class="form-label">เลขที่ใบเสนอราคา</label>
+          <input id="pfQuote" class="form-input" type="text" placeholder="เช่น QT-690400007"></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">วันเริ่ม</label>
+            <input id="pfStart" class="form-input" type="date" value="${today}"></div>
+          <div class="form-group"><label class="form-label">วันสิ้นสุด</label>
+            <input id="pfEnd" class="form-input" type="date" value="${end}"></div>
+        </div>
+        <div class="form-group"><label class="form-label">มูลค่ารวม (บาท)</label>
+          <input id="pfValue" class="form-input" type="number" min="0" placeholder="เช่น 1695000"></div>
+        <div class="form-group"><label class="form-label">ผู้รับเหมา</label>
+          <input id="pfContractor" class="form-input" type="text" value="บริษัท ดีไซน์ ทีเรีย จำกัด"></div>
+        <div id="pfErr" class="form-error" style="display:none"></div>
+        <div class="modal-btns">
+          <button type="button" class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+          <button type="submit" id="pfSubmit" class="modal-btn modal-btn-primary">สร้างโปรเจกต์</button>
+        </div>
+      </form>`;
+    Modal.show(html, 'modal-lg');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(() => { const el = document.getElementById('pfName'); if (el) el.focus(); }, 100);
+  }
+
+  function showPfError(msg) {
+    const el = document.getElementById('pfErr');
+    if (!el) return;
+    el.textContent = msg; el.style.display = 'block';
+  }
+
+  async function submitCreateProject(event) {
+    event.preventDefault();
+    const name = document.getElementById('pfName').value.trim();
+    if (!name) { showPfError('ต้องระบุชื่อโครงการ'); return; }
+    const start = document.getElementById('pfStart').value;
+    const end = document.getElementById('pfEnd').value;
+    if (start && end && start >= end) { showPfError('วันสิ้นสุดต้องอยู่หลังวันเริ่ม'); return; }
+
+    const btn = document.getElementById('pfSubmit');
+    btn.disabled = true; btn.textContent = 'กำลังสร้าง...';
+    const data = {
+      name: name,
+      client: document.getElementById('pfClient').value.trim(),
+      quote_no: document.getElementById('pfQuote').value.trim(),
+      start_date: start, end_date: end,
+      total_value: parseFloat(document.getElementById('pfValue').value) || 0,
+      contractor: document.getElementById('pfContractor').value.trim()
+    };
+    try {
+      const res = await API.createProject(data);
+      if (!res || !res.ok) { showPfError((res && res.error) || 'สร้างโปรเจกต์ไม่สำเร็จ'); btn.disabled = false; btn.textContent = 'สร้างโปรเจกต์'; return; }
+      Modal.close();
+      Modal.toast('สร้างโปรเจกต์ "' + name + '" สำเร็จ');
+      await loadProjects();
+    } catch (err) {
+      showPfError('เกิดข้อผิดพลาด: ' + err.message);
+      btn.disabled = false; btn.textContent = 'สร้างโปรเจกต์';
+    }
+  }
+
+  loadProjects();
+  </script>
+</body>
+</html>
