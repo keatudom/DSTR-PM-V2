@@ -3,6 +3,8 @@
 > อ่าน `BLUEPRINT.md` ก่อนทุก session (กติกา §2 + พิธีตัดยอด §4 บังคับใช้ทุกหน้า)
 > จบแต่ละ session: อัปเดตตาราง "บันทึกผล" ท้ายไฟล์นี้ + /handoff
 
+**สถานะรวม (อัปเดต 2026-07-17):** S0 ✅ · S1 ✅โค้ด/⏳รอ UAT+ตัดยอด · S2a ✅ · S2b-1 ✅ · **→ ถัดไป: S2b-2** · S2c/S3/S4/S5/S6/S7/S8 ยังไม่เริ่ม · ยังไม่มีหน้าไหนตัดยอดเลย (ผู้ใช้จริงยังเห็นดีไซน์เดิมทั้งหมด)
+
 ---
 
 ## S0 — ฐานราก (ไม่มีหน้าใหม่ แต่ทุกหน้ายืนบนนี้)
@@ -44,13 +46,39 @@
 - โครงหน้า `v3/dashboard.html` ตาม `v3-mockups/project-detail.html`: project header + tabs + sidebar scope 'project'
 - แท็บภาพรวม: progress รวม (สูตร effort-based เดิม — ห้ามเปลี่ยนวิธีคิด %), Gantt mini, การ์ดสถิติ
 
-**S2b: FF list + tasks + รูป**
+**S2b-1: FF list + tasks + รูป — ✅ ทำแล้ว (commit 259596d)**
 - รายการ FF + subtask expand/collapse ตาม mockup + logic ติ๊ก task เดิม (รวม upload/ลบรูป task)
 - แยกงานเพิ่ม (addonFFs F-21/F-22) ให้เห็นชัดเหมือนเดิม
 
-**S2c: แท็บที่เหลือ + ตัดยอด**
-- ความเสี่ยง (R-1/2/3), มูลค่าวัสดุคงคลัง, ประเมินผู้รับเหมา, Phase E/F (การเงินเจ้าบ้าน ถ้าอยู่ในหน้านี้), ฯลฯ ตาม inventory จาก S2a
-- ครบแล้ว → พิธีตัดยอด §4
+**S2b-2: FF Detail overlay + FF Wizard** (ตอนนี้เป็น stub `_soon()` ที่ `v3/dashboard.html` L731-732 — ต้องแทนด้วยของจริง)
+
+พอร์ตจาก `dashboard.html` เดิม 2 ก้อน (กติกา §2.2: ยก logic ทั้งก้อน เขียนใหม่เฉพาะ render):
+1. **FF Detail overlay (full-screen)** — ฟังก์ชันต้นทาง: `openFFDetail` L3707, `closeFFDetail` L3727, `renderFFDHeader` L3736, `renderFFDGraph` L3778 (กราฟ progress), `renderFFDDesignSection` L3817 (รูปแบบ/design), `renderFFDTasksSection` L3828, `renderFFDGallerySection` L3838, `loadFFDPhotosBundle` L3848, `renderFFDPhotoGrid` L3874
+   - ⚠️ `renderFFSubtasks` ตัวที่พอร์ตแล้วใน S2b-1 ต้องรองรับบริบทที่ 2: เรียกใน overlay ด้วย `_inOverlay=true` → ซ่อน CTA (ดู inventory ข้อควรระวัง #1)
+   - ⚠️ z-index: หน้าเดิมใช้ overlay 9000 < Modal 9500 < lightbox 9999 · design-system ใช้ modal=100, S2b-1 ตั้ง lightbox=9999 ไปแล้ว → เคาะสเกลเดียวให้จบ: overlay ต้องต่ำกว่า Modal, lightbox สูงสุด (ทดสอบเปิดซ้อนกันจริง)
+   - ⚠️ `window._tpPhotos` เป็น global ใช้ร่วมระหว่าง task modal + FF overlay — ห้ามแยกเป็นตัวแปรคนละชุด
+2. **FF Wizard (สร้าง/แก้/ลบ FF หลายตัว)** — `FFW.*` L3903-4211, `openFFWizardModal` L4209, `confirmCloneFromTemplate` L4339 (+ `cloneFromTemplate('bow-house')` L4354 — hardcode ตั้งใจ คงไว้)
+   - API ที่ต้องยังเรียกครบ: `createFFBatch` `updateFF` `deleteFF` `cloneFromTemplate`
+   - จุดเข้า: ปุ่ม "เพิ่มงานแรก" ใน empty state (v3 L557) + จุดที่ตอนนี้ชี้ `_soon()`
+
+**DoD S2b-2:** เปิด FF F-01 → overlay ขึ้นครบ header/กราฟ/design/tasks/gallery · ติ๊กงานใน overlay แล้ว list ข้างหลัง sync · เปิด wizard สร้าง FF ทดสอบ (บนโปรเจกต์ test — **อย่า** ยิง create จริงใส่ bow-house) · Playwright 0 console error · อัปเดต ☐→☑ ใน `dashboard-inventory.md`
+
+**S2c: แท็บการเงิน + ความเสี่ยง/ประเมิน + Price Editor + ตัดยอด**
+
+แทน "soon-box" 2 แท็บ (v3 L259-265) ด้วยของจริง:
+1. **แท็บการเงิน** (เรื่องเงิน — เลขทุกตัวต้องตรงหน้าเดิม 100%):
+   - งวดงานผู้รับเหมา: `renderNgwdGrid` L2146, `isPaymentReady` L2228, `getPaymentProgress` L2257, `showPaymentModal` L2283, `markPaymentInvoiced` L2344, `markPaymentPaid` L2358, `resetPayment` L2371 (payment 4 งวด 50/22.5/22.5/5% = hardcode ตั้งใจ คงไว้)
+   - Progress vs Payment (ฝั่งเจ้าบ้าน): `renderPaymentProgress` L2952
+   - Client Finance (สัญญา CT004/005/006): `renderClientFinance` L3031 + `CF.*` L3125-3411 ทั้งชุด (CRUD สัญญา/งวด milestone/อัปโหลด-ลบสลิป/ไฟล์สัญญา) + helper `cfBaht`/`cfOpenLink` L2940
+   - 🔧 แทน native dialog ระหว่างพอร์ต (inventory L43): `prompt()` L2345 เลขใบแจ้งหนี้ · `confirm()` L2361 จ่ายเงิน · `confirm()` L2374 reset → ใช้ `Modal.confirm`/`Modal.show` ให้หมด
+2. **แท็บความเสี่ยง/ประเมิน:**
+   - Risk: `riskBand`/`riskBandLabel`/`riskEffBand` L2490-2515, `renderRiskHeatmap` L2516, `renderRisks` L2545, `RM.*` L2611-2806 (CRUD + score badge), `confirmCloneRisksFromDirek` L2807 (`direk-template` = hardcode ตั้งใจ คงไว้)
+   - ประเมินผู้รับเหมา: `gradeFromTotal`/`gradeBadge`/`_evContractorTeams` L3412-3432, `renderEvals` L3433, `_evGradeColor` L3475, `EV.*` L3479-3706
+3. **Price Editor (ตั้งราคาวัสดุ):** `PE.*` L1351-1424 — เสียบเข้า inventory card ที่ S2a ทำไว้แบบ read-only (v3 L442 มีข้อความ "ฟีเจอร์ตั้งราคาจะมาในเฟสถัดไป" → เอาออกเมื่อ PE ใช้ได้)
+4. **กวาดท้าย:** ไล่ `dashboard-inventory.md` ทุกแถวต้อง ☑ · เช็ค 36 API methods ยังถูกเรียกครบ · `alert()` L822 (BOQ เร็วๆนี้) → Modal.toast
+5. **พิธีตัดยอด §4 ทั้งหน้า dashboard** — ก่อนตัดยอดต้องเทียบเลขเงิน side-by-side (งวดงาน + สัญญาเจ้าบ้านทั้ง 3 ฉบับ) กับหน้าเดิมบนข้อมูลจริง bow-house · **ตัดยอด dashboard ควรทำหลัง/พร้อม S1 ตัดยอด** (dashboard ใหม่ลิงก์กลับ projects ใหม่ — อย่าให้ผู้ใช้เด้งสลับดีไซน์เก่า-ใหม่ไปมา)
+
+**⏳ ค้างข้ามเซสชัน (ไม่ใช่โค้ด):** S1 ยังไม่ตัดยอด — รอ UAT มือถือจริงบน GitHub Pages (โดยเฉพาะ Google login) → เจ้าของงานเคาะแล้วค่อยตัดยอด index+projects (แนะนำ: ตัดยอดรวบพร้อม dashboard หลัง S2c เพื่อให้ 3 หน้าไปด้วยกัน — เคาะโดยเจ้าของงาน)
 
 ---
 
