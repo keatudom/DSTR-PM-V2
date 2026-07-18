@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>วัสดุ / สโตร์ — DSTR PM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<link rel="manifest" href="../manifest.json">
+<meta name="theme-color" content="#0f172a">
+<style>
+  .mat-subhdr { display:flex; justify-content:space-between; align-items:flex-start; gap:var(--space-3); margin-bottom:var(--space-4); }
+  .mat-subhdr h1 { font-size:var(--text-2xl); }
+  .mat-subhdr-sub { color:var(--color-slate-500); font-size:var(--text-sm); margin-top:2px; }
+
+  /* AI alert banner */
+  .mat-ai-bnr { display:flex; align-items:center; gap:var(--space-3); background:var(--color-warning-50); border:1px solid #fde68a; border-radius:var(--radius-lg); padding:var(--space-3) var(--space-4); margin-bottom:var(--space-4); cursor:pointer; }
+  .mat-ai-bnr-i { font-size:20px; }
+  .mat-ai-bnr-tx { flex:1; font-size:var(--text-sm); color:var(--color-warning-700); line-height:1.5; }
+
+  /* Tabs */
+  .mat-tabs { display:flex; gap:6px; overflow-x:auto; margin-bottom:var(--space-4); padding-bottom:2px; }
+  .mat-tab { display:inline-flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-600); border-radius:var(--radius-full); font-size:var(--text-xs); font-weight:500; cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .mat-tab i { width:14px; height:14px; }
+  .mat-tab.on { background:var(--color-blue-600); color:#fff; border-color:var(--color-blue-600); }
+  .mat-tab-pane { display:none; }
+  .mat-tab-pane.on { display:block; }
+  .mat-soon { text-align:center; padding:var(--space-8); color:var(--color-slate-400); }
+  .mat-soon i { width:40px; height:40px; color:var(--color-slate-300); margin-bottom:var(--space-2); }
+
+  /* Stock filter */
+  .stk-filter { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:var(--space-3); }
+  .stk-f-btn { padding:6px 12px; border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-600); border-radius:var(--radius-full); font-size:var(--text-xs); font-weight:500; cursor:pointer; font-family:inherit; }
+  .stk-f-btn.on { background:var(--color-slate-700); color:#fff; border-color:var(--color-slate-700); }
+
+  /* Stock card */
+  .stk-card { border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); margin-bottom:var(--space-2); background:#fff; overflow:hidden; }
+  .stk-card.zero { border-color:#fecaca; } .stk-card.low { border-color:#fde68a; }
+  .stk-card-main { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3); cursor:pointer; }
+  .stk-card-icon { font-size:24px; flex-shrink:0; }
+  .stk-card-bd { flex:1; min-width:0; }
+  .stk-card-nm { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .stk-card-meta { font-size:11px; color:var(--color-slate-500); margin-top:2px; }
+  .stk-card-stk { font-size:var(--text-xl); font-weight:700; color:var(--color-slate-900); white-space:nowrap; }
+  .stk-card-unit { font-size:11px; color:var(--color-slate-400); font-weight:400; }
+  .stk-card.zero .stk-card-stk { color:var(--color-error-600); } .stk-card.low .stk-card-stk { color:var(--color-warning-700); }
+  .stk-status-0,.stk-status-1,.stk-status-2,.stk-status-3 { font-size:var(--text-sm); font-weight:700; white-space:nowrap; }
+  .stk-status-0 { color:var(--color-error-600); } .stk-status-1 { color:var(--color-warning-700); } .stk-status-2 { color:var(--color-blue-700); } .stk-status-3 { color:var(--color-success-700); }
+  .mode-badge { font-size:9px; padding:1px 6px; border-radius:var(--radius-full); font-weight:600; }
+  .mode-badge.status { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .mode-badge.count { background:var(--color-blue-50); color:var(--color-blue-700); }
+  .stk-status-btns { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; padding:0 var(--space-3) var(--space-2); }
+  .ssb { display:flex; flex-direction:column; align-items:center; gap:1px; padding:6px 2px; border:1px solid var(--color-slate-200); background:#fff; border-radius:var(--radius-md); font-size:9px; color:var(--color-slate-600); cursor:pointer; font-family:inherit; }
+  .ssb-ic { font-size:13px; }
+  .ssb.on.s3 { background:var(--color-success-50); border-color:var(--color-success-500); color:var(--color-success-700); }
+  .ssb.on.s2 { background:var(--color-blue-50); border-color:var(--color-blue-500); color:var(--color-blue-700); }
+  .ssb.on.s1 { background:var(--color-warning-50); border-color:var(--color-warning-500); color:var(--color-warning-700); }
+  .ssb.on.s0 { background:var(--color-error-50); border-color:var(--color-error-500); color:var(--color-error-700); }
+  .ssb.saving { opacity:0.5; }
+  .stk-card-acts { display:flex; gap:6px; padding:0 var(--space-3) var(--space-3); }
+  .stk-act { flex:1; padding:7px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); font-size:var(--text-xs); font-weight:500; cursor:pointer; font-family:inherit; color:var(--color-slate-600); }
+  .stk-act.del:hover { background:var(--color-error-50); color:var(--color-error-700); border-color:#fecaca; }
+  .empty { text-align:center; color:var(--color-slate-400); font-size:var(--text-sm); padding:var(--space-8); }
+  .empty-i { font-size:32px; margin-bottom:var(--space-2); }
+
+  /* Material detail gallery */
+  .mat-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(80px,1fr)); gap:6px; }
+  .mat-gallery-item { aspect-ratio:1; border-radius:var(--radius-md); overflow:hidden; background:var(--color-slate-100); cursor:pointer; }
+  .mat-gallery-item img { width:100%; height:100%; object-fit:cover; }
+  .mat-gallery-item.add { display:flex; align-items:center; justify-content:center; border:2px dashed var(--color-slate-300); background:#fff; font-size:24px; color:var(--color-blue-600); }
+  .modal-info-row { display:flex; gap:var(--space-2); font-size:var(--text-sm); padding:2px 0; }
+  .modal-info-key { color:var(--color-slate-500); min-width:80px; }
+  .modal-info-val { color:var(--color-slate-800); font-weight:500; }
+</style>
+</head>
+<body>
+  <div class="app-container">
+    <main class="main-content">
+      <div id="loadingScreen" class="loading-center" style="min-height:60vh"><div class="spinner"></div> กำลังโหลดข้อมูลวัสดุ...</div>
+
+      <div class="page-content" id="mainContent" style="display:none">
+        <div class="mat-subhdr">
+          <div>
+            <h1>วัสดุ / สโตร์</h1>
+            <div class="mat-subhdr-sub" id="hdrSub">กำลังโหลด...</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openNewMaterialModal('')"><i data-lucide="plus"></i> เพิ่มวัสดุ</button>
+        </div>
+
+        <div id="aiBnr" style="display:none"></div>
+
+        <div class="mat-tabs">
+          <button class="mat-tab on" id="matTab-stock" onclick="switchTab('stock', this)"><i data-lucide="boxes"></i> Stock</button>
+          <button class="mat-tab" id="matTab-rcv" onclick="switchTab('rcv', this)"><i data-lucide="package-plus"></i> รับ</button>
+          <button class="mat-tab" id="matTab-wdr" onclick="switchTab('wdr', this)"><i data-lucide="package-minus"></i> เบิก</button>
+          <button class="mat-tab" id="matTab-cnt" onclick="switchTab('cnt', this)"><i data-lucide="clipboard-list"></i> นับ</button>
+          <button class="mat-tab" id="matTab-hist" onclick="switchTab('hist', this)"><i data-lucide="history"></i> ประวัติ</button>
+        </div>
+
+        <!-- TAB: Stock -->
+        <div id="tab-stock" class="mat-tab-pane on">
+          <div class="stk-filter" id="stkFilter">
+            <button class="stk-f-btn on" onclick="setStockFilter('all',this)">ทั้งหมด</button>
+            <button class="stk-f-btn" onclick="setStockFilter('low',this)">⚠ เหลือน้อย</button>
+            <button class="stk-f-btn" onclick="setStockFilter('ไม้แผ่น',this)">ไม้แผ่น</button>
+            <button class="stk-f-btn" onclick="setStockFilter('ไฟฟ้า',this)">ไฟฟ้า</button>
+            <button class="stk-f-btn" onclick="setStockFilter('ฮาร์ดแวร์',this)">ฮาร์ดแวร์</button>
+            <button class="stk-f-btn" onclick="setStockFilter('กาว',this)">กาว</button>
+            <button class="stk-f-btn" onclick="setStockFilter('วัสดุสิ้นเปลือง',this)">สิ้นเปลือง</button>
+          </div>
+          <div id="stockList"></div>
+        </div>
+
+        <!-- TAB: รับ/เบิก/นับ (Chapter 2) -->
+        <div id="tab-rcv" class="mat-tab-pane"><div class="card card-body mat-soon"><i data-lucide="package-plus"></i><h4>รับวัสดุเข้า</h4><p class="text-sm">กำลังพัฒนา (Chapter 2)</p></div></div>
+        <div id="tab-wdr" class="mat-tab-pane"><div class="card card-body mat-soon"><i data-lucide="package-minus"></i><h4>เบิกวัสดุ</h4><p class="text-sm">กำลังพัฒนา (Chapter 2)</p></div></div>
+        <div id="tab-cnt" class="mat-tab-pane"><div class="card card-body mat-soon"><i data-lucide="clipboard-list"></i><h4>นับสต๊อก</h4><p class="text-sm">กำลังพัฒนา (Chapter 2)</p></div></div>
+        <!-- TAB: ประวัติ (Chapter 3) -->
+        <div id="tab-hist" class="mat-tab-pane"><div class="card card-body mat-soon"><i data-lucide="history"></i><h4>ประวัติธุรกรรม</h4><p class="text-sm">กำลังพัฒนา (Chapter 3)</p></div></div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/state.js"></script>
+  <script src="../js/modal.js"></script>
+  <script src="../vendor/lucide/lucide.min.js"></script>
+  <script src="../js/shell.js"></script>
+  <script>
+  if (!Auth.requireAuth('admin')) { /* redirect */ }
+  Shell.render({ page: 'materials', title: 'วัสดุ / สโตร์', scope: 'project' });
+
+  const matState = {
+    materials:[], contractors:[], teams:[], ffs:[], alerts:[],
+    stockFilter:'all', parsedItems:[], parsedClarif:[], cntSelectedStatus:null, countPhotos:[],
+  };
+
+  async function loadAll(){
+    try{
+      const [matsRes, ctrsRes, teamsRes, ffsRes, alertsRes] = await Promise.all([
+        API.callRead('get_materials'), API.callRead('get_contractors'), API.callRead('get_teams'), API.callRead('get_ff_list'), API.callRead('get_ai_alerts'),
+      ]);
+      matState.materials=(matsRes.ok&&matsRes.data)?matsRes.data:[];
+      matState.contractors=(ctrsRes.ok&&ctrsRes.data)?ctrsRes.data:[];
+      matState.teams=(teamsRes.ok&&teamsRes.data)?teamsRes.data:[];
+      matState.ffs=(ffsRes.ok&&ffsRes.data)?ffsRes.data:[];
+      matState.alerts=(alertsRes.ok&&alertsRes.data)?alertsRes.data:[];
+      let projName='Bow House';
+      try{ const pjRes=await API.getProjects(); if(pjRes&&pjRes.ok&&Array.isArray(pjRes.data)){ const p=pjRes.data.find(p=>p.project_id===state.projectId); if(p&&p.name) projName=p.name; } }catch(e){}
+      document.getElementById('hdrSub').textContent=`${projName} · ${matState.materials.length} รายการ`;
+      renderAlerts(); renderStock();
+      document.getElementById('loadingScreen').style.display='none';
+      document.getElementById('mainContent').style.display='block';
+      if(window.lucide) lucide.createIcons();
+    }catch(err){ document.getElementById('loadingScreen').innerHTML='❌ โหลดข้อมูลไม่สำเร็จ<br><small>'+err.message+'</small>'; }
+  }
+
+  function switchTab(name,btn){
+    document.querySelectorAll('.mat-tab').forEach(t=>t.classList.remove('on'));
+    document.querySelectorAll('.mat-tab-pane').forEach(p=>p.classList.remove('on'));
+    if(btn) btn.classList.add('on');
+    const pane=document.getElementById('tab-'+name); if(pane) pane.classList.add('on');
+    if(window.lucide) lucide.createIcons();
+  }
+
+  // ── AI Alerts ──
+  function renderAlerts(){
+    const bnr=document.getElementById('aiBnr');
+    const critical=matState.alerts.filter(a=>a.severity==='high'||a.severity==='medium');
+    if(critical.length===0){ bnr.style.display='none'; return; }
+    const msgs=critical.slice(0,3).map(a=>a.mat_name).join(', ');
+    const more=critical.length>3?` +${critical.length-3}`:'';
+    bnr.className='mat-ai-bnr';
+    bnr.innerHTML=`<div class="mat-ai-bnr-i">⚠️</div><div class="mat-ai-bnr-tx"><strong>${critical.length} รายการต้องการความสนใจ${more}</strong><br>${escapeHtml(msgs)}</div>`;
+    bnr.style.display='flex'; bnr.onclick=showAlertsModal;
+  }
+  function showAlertsModal(){
+    Modal.show(`<div class="modal-title">🚨 AI Alerts</div><div class="modal-desc">${matState.alerts.length} รายการที่ต้องสนใจ</div><div style="max-height:55vh;overflow-y:auto;margin-top:8px;text-align:left">${matState.alerts.map(a=>`<div style="border-left:3px solid ${a.severity==='high'?'var(--color-error-500)':'var(--color-warning-500)'};padding:8px 12px;margin-bottom:6px;background:var(--color-slate-50);border-radius:6px"><div style="font-size:12px;font-weight:600;color:var(--color-slate-800)">${escapeHtml(a.mat_name)}</div><div style="font-size:11px;color:var(--color-slate-500);margin-top:2px">${escapeHtml(a.message||'')}</div></div>`).join('')}</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button></div>`);
+  }
+
+  // ── Stock ──
+  function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function getCategoryIcon(cat){ return { 'ไม้แผ่น':'🪵','ไฟฟ้า':'⚡','ฮาร์ดแวร์':'🔩','กาว':'🧴','วัสดุสิ้นเปลือง':'📋' }[cat]||'📦'; }
+  function modeBadgeHtml(mode){ return mode==='STATUS'?'<span class="mode-badge status">🚦 สถานะ</span>':'<span class="mode-badge count">🔢 นับ</span>'; }
+  function setStockFilter(f,btn){ matState.stockFilter=f; document.querySelectorAll('.stk-f-btn').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderStock(); }
+  function renderStock(){
+    let items=matState.materials.slice();
+    const f=matState.stockFilter;
+    if(f==='low') items=items.filter(m=>{ if(m.tracking_mode==='STATUS') return Number(m.current_stock)<=1; const s=Number(m.current_stock||0),min=Number(m.min_stock_alert||0); return s===0||(min>0&&s<=min); });
+    else if(f!=='all') items=items.filter(m=>m.category===f);
+    if(items.length===0){ document.getElementById('stockList').innerHTML='<div class="empty"><div class="empty-i">📦</div>ไม่มีรายการ</div>'; return; }
+    let html='';
+    items.forEach(m=>{
+      const stock=Number(m.current_stock||0), min=Number(m.min_stock_alert||0);
+      const isStatus=m.tracking_mode==='STATUS';
+      const badge=modeBadgeHtml(m.tracking_mode);
+      let cardClass='', stockHtml='', statusRow='';
+      if(isStatus){
+        const lbl=['🔴 หมด','🟡 ใกล้หมด','🔵 ใช้ได้','🟢 เต็ม'][stock]||'?';
+        stockHtml=`<div class="stk-status-${stock}">${lbl}</div>`;
+        if(stock===0)cardClass='zero'; else if(stock===1)cardClass='low';
+        const sdef=[{v:3,ic:'🟢',t:'เต็ม'},{v:2,ic:'🔵',t:'ใช้ได้'},{v:1,ic:'🟡',t:'ใกล้หมด'},{v:0,ic:'🔴',t:'หมด'}];
+        statusRow=`<div class="stk-status-btns" onclick="event.stopPropagation()">`+sdef.map(s=>`<button class="ssb s${s.v} ${stock===s.v?'on':''}" data-mat="${escapeHtml(m.id)}" data-v="${s.v}" onclick="quickSetStatus('${escapeHtml(m.id)}',${s.v},this)"><span class="ssb-ic">${s.ic}</span><span>${s.t}</span></button>`).join('')+`</div>`;
+      } else {
+        if(stock===0)cardClass='zero'; else if(min>0&&stock<=min)cardClass='low';
+        stockHtml=`<div class="stk-card-stk">${stock}<span class="stk-card-unit"> ${escapeHtml(m.unit||'')}</span></div>`;
+      }
+      html+=`<div class="stk-card ${cardClass}" data-mat="${escapeHtml(m.id)}"><div class="stk-card-main" onclick="showMatDetail('${escapeHtml(m.id)}')"><div class="stk-card-icon">${getCategoryIcon(m.category)}</div><div class="stk-card-bd"><div class="stk-card-nm">${escapeHtml(m.name)} ${badge}</div><div class="stk-card-meta">${escapeHtml(m.category||'')} · ${escapeHtml(m.id)}${m.spec?' · '+escapeHtml(m.spec):''}${m.size?' · '+escapeHtml(m.size):''}</div></div>${stockHtml}</div>${statusRow}<div class="stk-card-acts" onclick="event.stopPropagation()"><button class="stk-act edit" onclick="openEditMaterialModal('${escapeHtml(m.id)}')">✏️ แก้ไข</button><button class="stk-act del" onclick="openDeleteMaterialModal('${escapeHtml(m.id)}')">🗑 ลบ</button></div></div>`;
+    });
+    document.getElementById('stockList').innerHTML=html;
+  }
+  async function quickSetStatus(matId,v,btn){
+    const m=matState.materials.find(x=>x.id===matId); if(!m) return;
+    const prev=Number(m.current_stock||0); if(prev===v) return;
+    const lbls=['🔴 หมด','🟡 ใกล้หมด','🔵 ใช้ได้','🟢 เต็ม'];
+    const group=btn.parentNode;
+    m.current_stock=v;
+    group.querySelectorAll('.ssb').forEach(b=>{ b.classList.toggle('on',Number(b.dataset.v)===v); b.classList.add('saving'); });
+    Modal.toast('กำลังบันทึก '+lbls[v]+'...');
+    try{
+      await API.changeMaterialStatus(matId,v);
+      setTimeout(()=>{ Modal.toast('✓ '+m.name+' → '+lbls[v]); group.querySelectorAll('.ssb').forEach(b=>b.classList.remove('saving')); renderStock(); },1200);
+    }catch(err){ m.current_stock=prev; group.querySelectorAll('.ssb').forEach(b=>{ b.classList.toggle('on',Number(b.dataset.v)===prev); b.classList.remove('saving'); }); Modal.toast('❌ บันทึกไม่สำเร็จ — คืนค่าเดิม'); }
+  }
+
+  async function showMatDetail(matId){
+    const m=matState.materials.find(x=>x.id===matId); if(!m) return;
+    const isStatus=m.tracking_mode==='STATUS';
+    const stock=Number(m.current_stock||0);
+    const stockDisplay=isStatus?['🔴 หมด','🟡 ใกล้หมด','🔵 ใช้ได้','🟢 เต็ม'][stock]:(stock+' '+(m.unit||''));
+    const renderModal=(photos)=>{
+      let galleryHtml='<div class="mat-gallery">';
+      photos.forEach(p=>{ galleryHtml+=`<div class="mat-gallery-item" onclick="viewPhoto('${escapeHtml(p.drive_url)}','${escapeHtml(p.photo_id)}','${escapeHtml(matId)}')"><img src="${escapeHtml(p.thumbnail)}" alt="${escapeHtml(p.caption||'')}" loading="lazy" onerror="this.src='${escapeHtml(p.drive_url)}'"></div>`; });
+      galleryHtml+=`<div class="mat-gallery-item add" onclick="document.getElementById('matPhotoInput_${escapeHtml(matId)}').click()">+</div></div><input id="matPhotoInput_${escapeHtml(matId)}" type="file" accept="image/*" style="display:none" onchange="onMatPhotoSelected(event,'${escapeHtml(matId)}')">`;
+      const modeTxt=isStatus?'🚦 นับสถานะ':'🔢 นับจำนวน';
+      Modal.show(`<div class="modal-title">${escapeHtml(m.name)} ${modeBadgeHtml(m.tracking_mode)}</div><div class="modal-desc">${escapeHtml(m.id)} · ${escapeHtml(m.category||'')}</div><div class="modal-info" style="text-align:left">
+        <div class="modal-info-row"><span class="modal-info-key">หน่วย:</span><span class="modal-info-val">${escapeHtml(m.unit||'')}</span></div>
+        <div class="modal-info-row"><span class="modal-info-key">สต๊อก:</span><span class="modal-info-val">${stockDisplay}</span></div>
+        <div class="modal-info-row"><span class="modal-info-key">โหมด:</span><span class="modal-info-val">${modeTxt}</span></div>
+        ${m.spec?`<div class="modal-info-row"><span class="modal-info-key">สเปก:</span><span class="modal-info-val">${escapeHtml(m.spec)}</span></div>`:''}
+        ${m.size?`<div class="modal-info-row"><span class="modal-info-key">ขนาด:</span><span class="modal-info-val">${escapeHtml(m.size)}</span></div>`:''}
+        ${m.default_supplier_id?`<div class="modal-info-row"><span class="modal-info-key">ซัพพลายเออร์:</span><span class="modal-info-val">${escapeHtml(m.default_supplier_id)}</span></div>`:''}
+        ${Number(m.default_price)>0?`<div class="modal-info-row"><span class="modal-info-key">ราคา/หน่วย:</span><span class="modal-info-val">${Number(m.default_price).toLocaleString()} ฿</span></div>`:''}
+        ${!isStatus&&m.min_stock_alert?`<div class="modal-info-row"><span class="modal-info-key">เตือนที่:</span><span class="modal-info-val">${escapeHtml(m.min_stock_alert)} ${escapeHtml(m.unit||'')}</span></div>`:''}
+        ${m.notes?`<div class="modal-info-row"><span class="modal-info-key">หมายเหตุ:</span><span class="modal-info-val">${escapeHtml(m.notes)}</span></div>`:''}
+      </div><div style="margin-top:14px"><div style="font-size:11px;font-weight:600;color:var(--color-slate-600);margin-bottom:6px">📷 รูปอ้างอิง ${photos.length>0?`(${photos.length})`:''}</div>${galleryHtml}</div>
+      <div class="modal-btns" style="margin-top:14px"><button class="modal-btn modal-btn-warn" onclick="openDeleteMaterialModal('${escapeHtml(matId)}')">🗑 ลบ</button><button class="modal-btn modal-btn-primary" onclick="openEditMaterialModal('${escapeHtml(matId)}')">✏️ แก้ไข</button></div>
+      <div style="margin-top:8px;text-align:center"><button style="background:none;border:none;color:var(--color-slate-400);font-size:12px;font-family:inherit;cursor:pointer;padding:4px" onclick="Modal.close()">ปิด</button></div>`);
+    };
+    renderModal([]);
+    try{ const res=await API.callRead('get_material_photos',{ mat_id:matId }); if(res.ok&&res.data) renderModal(res.data); }catch(err){}
+  }
+
+  function compressImage(file,maxDim=1280,quality=0.8){
+    return new Promise((resolve,reject)=>{ const rd=new FileReader(); rd.onload=(e)=>{ const img=new Image(); img.onload=()=>{ let w=img.width,h=img.height; if(w>h&&w>maxDim){h=h*(maxDim/w);w=maxDim;} else if(h>maxDim){w=w*(maxDim/h);h=maxDim;} const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); resolve(c.toDataURL('image/jpeg',quality)); }; img.onerror=reject; img.src=e.target.result; }; rd.onerror=reject; rd.readAsDataURL(file); });
+  }
+  async function onMatPhotoSelected(e,matId){
+    const file=e.target.files[0]; if(!file) return;
+    Modal.toast('📷 กำลังอัปโหลดรูป...');
+    try{ const base64=await compressImage(file); await API.callPost('upload_photo',{ image_base64:base64, linked_to:'material', link_id:matId, caption:'', uploaded_by:'admin' }); Modal.toast('✓ อัปโหลดแล้ว'); setTimeout(()=>{ Modal.close(); showMatDetail(matId); },1000); }
+    catch(err){ Modal.toast('❌ '+err.message); }
+    e.target.value='';
+  }
+  function viewPhoto(url,photoId,matId){
+    Modal.show(`<div style="text-align:center"><img src="${escapeHtml(url)}" style="max-width:100%;max-height:60vh;border-radius:8px;object-fit:contain;background:#000"></div><div class="modal-btns"><button class="modal-btn modal-btn-warn" onclick="deleteThisPhoto('${escapeHtml(photoId)}','${escapeHtml(matId)}')">🗑 ลบ</button><button class="modal-btn modal-btn-primary" onclick="Modal.close();showMatDetail('${escapeHtml(matId)}')">ปิด</button></div>`);
+  }
+  async function deleteThisPhoto(photoId,matId){
+    const ok=await Modal.confirm({icon:'🗑️',iconClass:'warn',title:'ยืนยันลบรูปนี้?',confirmText:'ลบ',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'});
+    if(!ok) return;
+    Modal.toast('กำลังลบ...');
+    try{ await API.callPost('delete_photo',{ photo_id:photoId }); Modal.toast('✓ ลบแล้ว'); setTimeout(()=>{ Modal.close(); showMatDetail(matId); },1000); }
+    catch(err){ Modal.toast('❌ '+err.message); }
+  }
+
+  // ── Chapter 2/3 stubs (รับ/เบิก/นับ + เพิ่ม/แก้/ลบวัสดุ + สแกนบิล + ประวัติ) ──
+  function _matSoon(){ Modal.toast('🚧 ส่วนนี้กำลังพัฒนา — ใช้ที่หน้าเดิมก่อน'); }
+  function openNewMaterialModal(){ _matSoon(); }
+  function openEditMaterialModal(){ _matSoon(); }
+  function openDeleteMaterialModal(){ _matSoon(); }
+
+  loadAll();
+  </script>
+</body>
+</html>
