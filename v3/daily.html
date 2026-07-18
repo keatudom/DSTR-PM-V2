@@ -146,6 +146,114 @@
   .dr-pill-i { font-size:16px; }
   .dr-pill-t { font-size:var(--text-xs); font-weight:600; }
   .dr-pill-c { min-width:20px; height:20px; padding:0 5px; border-radius:var(--radius-full); background:var(--color-blue-500); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+
+  /* ════ Chapter 2: modals ════ */
+  .dr-comp-tool.has-photo { border-color:var(--color-success-500); background:var(--color-success-50); }
+  /* AI confirm */
+  .aic-card { background:var(--color-slate-50); border:1px solid var(--color-slate-200); border-radius:var(--radius-md); padding:var(--space-3); margin:var(--space-3) 0; text-align:left; max-height:50vh; overflow-y:auto; }
+  .aic-section { margin-bottom:var(--space-3); }
+  .aic-h { font-size:11px; font-weight:700; color:var(--color-slate-600); margin-bottom:4px; }
+  .aic-tags { display:flex; gap:5px; flex-wrap:wrap; }
+  .aic-tag { font-size:11px; padding:2px 8px; border-radius:var(--radius-full); font-weight:500; }
+  .aic-conf { font-size:10px; padding:2px 8px; border-radius:var(--radius-full); font-weight:600; }
+  .aic-conf.h { background:var(--color-success-50); color:var(--color-success-700); }
+  .aic-conf.m { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .aic-conf.l { background:var(--color-error-50); color:var(--color-error-700); }
+  .aic-amb { margin-top:8px; padding:8px; background:#fff; border:1px solid var(--color-slate-200); border-radius:var(--radius-md); }
+  .aic-amb-q { font-size:11px; color:var(--color-slate-600); margin-bottom:6px; }
+  .aic-amb-opts { display:flex; gap:5px; flex-wrap:wrap; }
+  .aic-amb-opt { font-size:11px; padding:5px 10px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); cursor:pointer; font-family:inherit; }
+  .aic-amb-opt.on { background:var(--color-blue-600); color:#fff; border-color:var(--color-blue-600); }
+  /* Unknowns */
+  .uk-item { border:1px solid var(--color-slate-200); border-radius:var(--radius-md); padding:10px; margin-top:8px; text-align:left; }
+  .uk-item-name { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); }
+  .uk-hint { font-size:10px; color:var(--color-warning-700); }
+  .uk-mat-note { font-size:11px; color:var(--color-slate-500); margin:6px 0; line-height:1.5; }
+  .uk-item-row { display:flex; gap:6px; margin:8px 0; }
+  .uk-input, .uk-select { padding:8px 10px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; }
+  .uk-input { flex:1; } .uk-select { flex-shrink:0; }
+  .uk-item-acts { display:flex; gap:6px; }
+  .uk-btn { flex:1; padding:8px; border-radius:var(--radius-md); font-size:var(--text-xs); font-weight:600; cursor:pointer; font-family:inherit; border:none; }
+  .uk-btn-add { background:var(--color-blue-600); color:#fff; }
+  .uk-btn-skip { background:var(--color-slate-100); color:var(--color-slate-600); }
+  .uk-done { font-size:var(--text-xs); color:var(--color-success-700); padding:6px; }
+  .uk-skipped { font-size:var(--text-xs); color:var(--color-slate-400); padding:6px; }
+  /* Task tick */
+  .tk-list { display:flex; flex-direction:column; gap:6px; margin:var(--space-3) 0; text-align:left; }
+  .tk-opt { display:flex; gap:8px; align-items:flex-start; padding:10px; border:1px solid var(--color-slate-200); border-radius:var(--radius-md); cursor:pointer; }
+  .tk-opt input { margin-top:3px; }
+  .tk-opt-name { font-size:var(--text-sm); font-weight:500; color:var(--color-slate-800); }
+  .tk-opt-meta { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; font-size:10px; }
+  .tk-opt-ff { background:var(--color-blue-50); color:var(--color-blue-700); padding:1px 6px; border-radius:var(--radius-full); }
+  .tk-opt-pct { background:var(--color-success-50); color:var(--color-success-700); padding:1px 6px; border-radius:var(--radius-full); }
+  .tk-opt-why { color:var(--color-slate-500); }
+  .tk-note { font-size:11px; color:var(--color-slate-500); background:var(--color-slate-50); border-radius:var(--radius-md); padding:8px 10px; margin:var(--space-2) 0; line-height:1.5; text-align:left; }
+  /* Material picker */
+  .dr-mp-wrap { text-align:left; }
+  .dr-mp-search { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; margin-bottom:8px; }
+  .dr-mp-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .dr-mp-chip { padding:5px 12px; border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-600); border-radius:var(--radius-full); font-size:11px; cursor:pointer; font-family:inherit; }
+  .dr-mp-chip.on { background:var(--color-slate-700); color:#fff; border-color:var(--color-slate-700); }
+  .dr-mp-list { max-height:50vh; overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
+  .dr-mp-row { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--color-slate-200); border-radius:var(--radius-md); cursor:pointer; min-height:48px; }
+  .dr-mp-row:hover { border-color:var(--color-blue-400); background:var(--color-slate-50); }
+  .dr-mp-row-ic { font-size:20px; }
+  .dr-mp-row-bd { flex:1; min-width:0; }
+  .dr-mp-row-nm { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); }
+  .dr-mp-row-meta { font-size:10px; color:var(--color-slate-500); display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
+  .dr-mp-mode { padding:1px 5px; border-radius:var(--radius-full); }
+  .dr-mp-mode.status { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .dr-mp-mode.count { background:var(--color-blue-50); color:var(--color-blue-700); }
+  .dr-mp-row-stk { font-size:var(--text-sm); font-weight:700; color:var(--color-slate-700); white-space:nowrap; }
+  .dr-mp-row-stk.zero { color:var(--color-error-600); } .dr-mp-row-stk.low { color:var(--color-warning-700); }
+  .dr-mp-empty { text-align:center; color:var(--color-slate-400); font-size:var(--text-xs); padding:var(--space-6); line-height:1.6; }
+  /* Withdraw qty */
+  .dr-wd-mat { background:var(--color-slate-50); border-radius:var(--radius-md); padding:10px; margin:var(--space-2) 0; text-align:left; }
+  .dr-wd-mat-nm { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); }
+  .dr-wd-mat-sub { font-size:11px; color:var(--color-slate-500); margin-top:2px; }
+  .dr-wd-lb { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-600); margin-bottom:6px; text-align:left; }
+  .dr-wd-status { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .dr-wd-sb { padding:10px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); font-size:var(--text-sm); cursor:pointer; font-family:inherit; }
+  .dr-wd-sb.on { background:var(--color-blue-600); color:#fff; border-color:var(--color-blue-600); }
+  .dr-wd-qty { display:flex; align-items:center; gap:8px; }
+  .dr-wd-step { width:44px; height:44px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); font-size:20px; font-weight:600; color:var(--color-slate-700); cursor:pointer; font-family:inherit; }
+  .dr-wd-input { flex:1; text-align:center; padding:10px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-lg); font-weight:700; font-family:inherit; }
+  .dr-wd-unit { font-size:var(--text-sm); color:var(--color-slate-500); }
+  /* Material AI list */
+  .mt-list { display:flex; flex-direction:column; gap:6px; margin:var(--space-3) 0; text-align:left; max-height:45vh; overflow-y:auto; }
+  .mt-item { border:1px solid var(--color-slate-200); border-radius:var(--radius-md); padding:10px; }
+  .mt-item-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .mt-type { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-700); }
+  .mt-item-name { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); }
+  .mt-item-detail { font-size:11px; color:var(--color-slate-600); margin-top:2px; }
+  .mt-miss { font-size:10px; color:var(--color-warning-700); margin-top:4px; }
+  /* Stock warning */
+  .sw-list { display:flex; flex-direction:column; gap:6px; margin:var(--space-3) 0; text-align:left; }
+  .sw-item { border-radius:var(--radius-md); padding:8px 10px; }
+  .sw-item.sw-err { background:var(--color-error-50); border:1px solid #fecaca; }
+  .sw-item.sw-warn { background:var(--color-warning-50); border:1px solid #fde68a; }
+  .sw-item-h { font-size:var(--text-xs); font-weight:600; }
+  .sw-item-m { font-size:11px; color:var(--color-slate-600); margin-top:2px; }
+  /* Summary panel */
+  .dr-summ-panel { display:none; width:300px; max-width:80vw; background:#fff; border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); box-shadow:var(--shadow-xl); padding:var(--space-3); margin-bottom:8px; }
+  .dr-summ-panel.on { display:block; }
+  .dr-summ-tx { font-size:var(--text-xs); color:var(--color-slate-700); line-height:1.6; white-space:pre-wrap; max-height:40vh; overflow-y:auto; }
+  .dr-summ-loading { font-size:var(--text-xs); color:var(--color-slate-400); text-align:center; padding:var(--space-4); }
+  .dr-summ-edit { width:100%; box-sizing:border-box; min-height:120px; padding:8px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-xs); font-family:inherit; }
+  .dr-summ-acts { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+  .dr-summ-act { flex:1; padding:7px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .dr-summ-act-save { background:var(--color-blue-600); color:#fff; border-color:var(--color-blue-600); }
+  .dr-summ-saved { font-size:10px; color:var(--color-success-700); margin-top:6px; }
+  /* Report modal */
+  .dr-rep-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:var(--space-3) 0; }
+  .dr-rep-stat { background:var(--color-slate-50); border-radius:var(--radius-md); padding:10px; text-align:center; }
+  .dr-rep-stat-v { font-size:var(--text-xl); font-weight:700; color:var(--color-slate-900); }
+  .dr-rep-stat-l { font-size:10px; color:var(--color-slate-500); margin-top:2px; }
+  .dr-rep-meta { display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:11px; color:var(--color-slate-500); margin-bottom:8px; }
+  .dr-rep-badge { background:var(--color-success-50); color:var(--color-success-700); padding:2px 8px; border-radius:var(--radius-full); font-weight:600; }
+  .dr-rep-body { font-size:var(--text-xs); color:var(--color-slate-700); line-height:1.6; white-space:pre-wrap; text-align:left; max-height:40vh; overflow-y:auto; background:var(--color-slate-50); border-radius:var(--radius-md); padding:var(--space-3); }
+  .dr-rep-empty { text-align:center; color:var(--color-slate-400); font-size:var(--text-sm); padding:var(--space-6); line-height:1.7; }
+  .dr-rep-empty-i { font-size:28px; margin-bottom:var(--space-2); }
 </style>
 </head>
 <body>
@@ -245,8 +353,18 @@
     </main>
   </div>
 
-  <!-- Sticky summary pill (Chapter 2) -->
+  <!-- Sticky summary (AI สรุปวัน) -->
   <div class="dr-sticky-wrap" id="stickyWrap" style="display:none">
+    <div class="dr-summ-panel" id="summPanel">
+      <div id="summBox"></div>
+      <div class="dr-summ-acts" id="summActs" style="display:none">
+        <button class="dr-summ-act" onclick="toggleEditSummary()" id="editBtn">✏️ แก้</button>
+        <button class="dr-summ-act" onclick="copySummary()">📋 Copy</button>
+        <button class="dr-summ-act" onclick="genSummary(true)">🔄 ใหม่</button>
+        <button class="dr-summ-act dr-summ-act-save" onclick="saveSummary()" id="saveBtn">💾 บันทึก</button>
+      </div>
+      <div class="dr-summ-saved" id="summSaved" style="display:none"></div>
+    </div>
     <div class="dr-pill" id="stickyBar" onclick="toggleSummary()">
       <div class="dr-pill-i">🤖</div><div class="dr-pill-t">สรุปวันนี้</div><div class="dr-pill-c" id="stickyCount">0</div>
     </div>
@@ -291,6 +409,9 @@
     checkins:{}, teamBusy:{}, selFF:null, selTeams:[], ffExpanded:false, teamDefaultApplied:null,
     optimistic:{}, materials:[], matLoaded:false, recognition:null, recording:false,
     pendingPhoto:null, pendingPhotoUrl:null, pendingPhotoDriveId:null,
+    pendingLog:null, taskCandidates:null, selectedTaskId:null,
+    matItems:null, matRawText:'', matPicker:{onPick:null,q:'',cat:'all'}, wdDraft:null,
+    unknownCtrs:null, unknownMats:null, summExpanded:false, summText:'', summEditing:false,
   };
 
   async function loadAll(){
@@ -521,20 +642,490 @@
   function toggleTagsMore(){ document.getElementById('tagsExtra').classList.toggle('show'); }
   function quickInsert(text){ const ta=document.getElementById('logInput'); ta.value+=(ta.value&&!ta.value.endsWith(' ')?' ':'')+text; ta.focus(); }
 
-  // ── Chapter 2 stubs (submit log / AI parse / เบิกวัสดุ / สรุป / รายงาน / รูป / เสียง) ──
-  function _ch2(){ Modal.toast('🚧 ส่วนนี้กำลังพัฒนา (Chapter 2) — ใช้ที่หน้าเดิมก่อน'); }
-  function submitLog(){ _ch2(); }
-  function onPhotoClick(){ _ch2(); }
-  function onPhotoSelected(){ _ch2(); }
-  function removePhoto(){ _ch2(); }
-  function onMicClick(){ _ch2(); }
-  function openMaterialDraw(){ _ch2(); }
-  function toggleSummary(){ _ch2(); }
-  function genSummary(){ _ch2(); }
-  function openReportModal(){ _ch2(); }
-  function deleteLog(){ _ch2(); }
-  function untickTask(){ _ch2(); }
-  function retryOptimisticLog(){ _ch2(); }
+  // ══════════════════ Chapter 2: เสียง / รูป ══════════════════
+  function onMicClick(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){ Modal.toast('❌ เบราว์เซอร์ไม่รองรับ Voice (ลองใช้ Chrome)'); return; }
+    if(drState.recording){ if(drState.recognition) drState.recognition.stop(); return; }
+    const recognition=new SR();
+    recognition.lang='th-TH'; recognition.continuous=false; recognition.interimResults=false;
+    const btn=document.getElementById('micBtn');
+    btn.classList.add('rec'); drState.recording=true; drState.recognition=recognition;
+    recognition.onresult=(e)=>{ const text=e.results[0][0].transcript; const ta=document.getElementById('logInput'); if(ta.value.trim()) ta.value=ta.value.trim()+' '+text; else ta.value=text; Modal.toast('✓ บันทึกเสียงแล้ว'); };
+    recognition.onerror=(e)=>{ Modal.toast('❌ Voice error: '+e.error); };
+    recognition.onend=()=>{ btn.classList.remove('rec'); drState.recording=false; };
+    try{ recognition.start(); Modal.toast('🎤 พูดได้เลย...'); }
+    catch(e){ btn.classList.remove('rec'); drState.recording=false; Modal.toast('❌ '+e.message); }
+  }
+  function onPhotoClick(){ document.getElementById('photoInput').click(); }
+  function onPhotoSelected(e){
+    const file=e.target.files&&e.target.files[0]; if(!file) return;
+    if(file.size>25*1024*1024){ Modal.toast('❌ รูปใหญ่เกิน 25MB'); e.target.value=''; return; }
+    if(!/^image\//.test(file.type)){ Modal.toast('❌ ไฟล์นี้ไม่ใช่รูปภาพ'); e.target.value=''; return; }
+    Modal.toast('📷 กำลังเตรียมรูป...');
+    compressImage(file,1600,0.8).then(dataUrl=>{
+      drState.pendingPhoto=dataUrl;
+      document.getElementById('photoPreviewImg').src=dataUrl;
+      document.getElementById('photoPreview').style.display='block';
+      const camBtn=document.querySelector('.dr-comp-tool[title="ถ่ายรูป"]'); if(camBtn) camBtn.classList.add('has-photo');
+    }).catch(()=>{ Modal.toast('❌ เปิดรูปไม่สำเร็จ'); });
+    e.target.value='';
+  }
+  function compressImage(file,maxDim,quality){
+    return new Promise((resolve,reject)=>{ const rd=new FileReader(); rd.onerror=()=>reject(new Error('read failed'));
+      rd.onload=ev=>{ const img=new Image(); img.onerror=()=>reject(new Error('decode failed'));
+        img.onload=()=>{ let w=img.naturalWidth,h=img.naturalHeight;
+          if(w>maxDim||h>maxDim){ if(w>=h){h=Math.round(h*maxDim/w);w=maxDim;}else{w=Math.round(w*maxDim/h);h=maxDim;} }
+          const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
+          try{ resolve(c.toDataURL('image/jpeg',quality)); }catch(err){ reject(err); } };
+        img.src=ev.target.result; };
+      rd.readAsDataURL(file); });
+  }
+  function removePhoto(){
+    drState.pendingPhoto=null;
+    document.getElementById('photoPreview').style.display='none';
+    document.getElementById('photoPreviewImg').src='';
+    const camBtn=document.querySelector('.dr-comp-tool[title="ถ่ายรูป"]'); if(camBtn) camBtn.classList.remove('has-photo');
+  }
+
+  // ══════════════════ Chapter 2: บันทึก log (structured + AI) ══════════════════
+  async function submitLog(){
+    const text=document.getElementById('logInput').value.trim();
+    if(drState.selFF){
+      if(!text){ const ff=(drState.ffs||[]).find(f=>f.code===drState.selFF); await submitStructuredLog('ทำงานที่ '+drState.selFF+(ff&&ff.name?' ('+String(ff.name).slice(0,24)+')':'')); }
+      else await submitStructuredLog(text);
+      return;
+    }
+    if(!text){ Modal.toast('เลือก F หรือพิมพ์ข้อความก่อน'); return; }
+    const btn=document.getElementById('logSubmitBtn');
+    btn.disabled=true; btn.innerHTML='<span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:middle"></span> AI...';
+    try{
+      const parseRes=await API.callPost('parse_activity_text',{ text });
+      showAiConfirmModal(text, parseRes.ok?parseRes.data:null);
+    }catch(err){ showAiConfirmModal(text,null); }
+    finally{ btn.disabled=false; btn.innerHTML='บันทึก →'; }
+  }
+
+  async function submitStructuredLog(text){
+    const matKeywords=['เบิก','รับของ','รับเข้า','นับสต๊อก','นับ'];
+    if(matKeywords.some(k=>text.indexOf(k)>=0)){ document.getElementById('logInput').value=''; await checkMaterialSuggestion(text); return; }
+    const selFF=drState.selFF, selTeams=drState.selTeams.slice();
+    let photoUrl='', photoFailed=false, photoDriveId='';
+    if(drState.pendingPhoto){
+      Modal.toast('📷 กำลังอัปโหลดรูป... (อาจใช้เวลา 5-15 วินาที)');
+      let upRes=null;
+      for(let a=1;a<=2;a++){ try{ upRes=await API.uploadLogPhoto(drState.pendingPhoto); if(upRes&&upRes.ok&&upRes.photo_url) break; }catch(e){ upRes={ok:false,error:e.message}; } if(a===1) Modal.toast('📷 ลองอัพรูปใหม่อีกครั้ง...'); }
+      if(upRes&&upRes.ok&&upRes.photo_url){ photoUrl=upRes.photo_url; photoDriveId=upRes.drive_id||''; drState.pendingPhotoUrl=upRes.photo_url; drState.pendingPhotoDriveId=upRes.drive_id; }
+      else photoFailed=true;
+    }
+    const payload={ text, source:getReporterSource(), auto_tag:'false', tags_ff:selFF, tags_team:selTeams.join(','), photo_url:photoUrl, date:drState.date };
+    const tmpId='tmp_'+Date.now();
+    drState.optimistic[tmpId]={ log_id:tmpId, text, type:'manual', tags_ff:selFF?[selFF]:[], tags_team:selTeams.slice(), tags_ctr:[], tags_issue:[], photo_url:photoUrl, timestamp:new Date().toISOString(), _opt:'pending', _payload:payload };
+    renderFeed();
+    Modal.toast(photoFailed?'⏳ กำลังบันทึก (รูปไม่ขึ้น)...':'⏳ กำลังบันทึก...');
+    document.getElementById('logInput').value=''; removePhoto();
+    try{
+      const res=await API.callWrite('add_activity_log',payload);
+      if(!res.ok) throw new Error(res.error||'Save failed');
+      if(drState.optimistic[tmpId]) drState.optimistic[tmpId]._opt='ok';
+      renderFeed();
+      Modal.toast(photoFailed?'✓ บันทึกแล้ว (รูปไม่ขึ้น — ลองถ่ายใหม่ทีหลังได้)':(photoUrl?'✓ บันทึก log + รูปแล้ว':'✓ บันทึกแล้ว'), photoFailed?4000:2000);
+      setTimeout(()=>{ delete drState.optimistic[tmpId]; refresh(); },1400);
+      checkTaskSuggestion(text, selFF?[selFF]:[]);
+    }catch(err){
+      if(drState.optimistic[tmpId]) drState.optimistic[tmpId]._opt='failed';
+      renderFeed();
+      Modal.toast('❌ บันทึกไม่สำเร็จ — แตะ "ลองใหม่" ในรายการ',4000);
+    }
+  }
+
+  async function retryOptimisticLog(tmpId){
+    const item=drState.optimistic[tmpId];
+    if(!item||item._opt!=='failed') return;
+    if(item._matItem){ return drRetryWithdraw(tmpId); }
+    item._opt='pending'; renderFeed(); Modal.toast('⏳ กำลังลองใหม่...');
+    try{
+      const res=await API.callWrite('add_activity_log',item._payload);
+      if(!res.ok) throw new Error(res.error||'Save failed');
+      item._opt='ok'; renderFeed(); Modal.toast('✓ บันทึกแล้ว');
+      setTimeout(()=>{ delete drState.optimistic[tmpId]; refresh(); },1400);
+    }catch(err){ item._opt='failed'; renderFeed(); Modal.toast('❌ ยังไม่สำเร็จ — เช็คเน็ตแล้วลองอีกครั้ง',4000); }
+  }
+
+  function showAiConfirmModal(text,ai){
+    drState.pendingLog={ text, ai, resolvedTags:{} };
+    let confLevel='', confText='';
+    if(ai&&ai.confidence!==undefined){ const c=Number(ai.confidence); if(c>=0.85){confLevel='h';confText='แม่นยำ '+Math.round(c*100)+'%';} else if(c>=0.7){confLevel='m';confText='ปานกลาง '+Math.round(c*100)+'%';} else {confLevel='l';confText='ไม่แน่ใจ '+Math.round(c*100)+'%';} }
+    let tagsHtml='';
+    if(ai){
+      if(ai.summary) tagsHtml+=`<div class="aic-section"><div class="aic-h">🧠 AI เข้าใจว่า</div><div style="font-size:11.5px;color:var(--color-slate-700);line-height:1.5;font-style:italic">"${escapeHtml(ai.summary)}"</div></div>`;
+      const ffTags=ai.tags_ff||[];
+      if(ffTags.length){ tagsHtml+='<div class="aic-section"><div class="aic-h">🏠 FF Items</div><div class="aic-tags">'; ffTags.forEach(f=>{ const ff=drState.ffs.find(x=>x.code===f); tagsHtml+=`<span class="aic-tag dr-tag-ff">${escapeHtml(f)}${ff?': '+escapeHtml(ff.name).slice(0,25):''}</span>`; }); tagsHtml+='</div></div>'; }
+      const ctrTags=ai.tags_ctr||[];
+      if(ctrTags.length){ tagsHtml+='<div class="aic-section"><div class="aic-h">👤 ช่าง</div><div class="aic-tags">'; ctrTags.forEach(c=>{ const ctr=drState.contractors.find(x=>x.id===c); tagsHtml+=`<span class="aic-tag dr-tag-ctr">${ctr?escapeHtml(ctr.name):escapeHtml(c)}</span>`; }); tagsHtml+='</div></div>'; }
+      const issueTags=ai.tags_issue||[];
+      if(issueTags.length){ tagsHtml+='<div class="aic-section"><div class="aic-h">⚠️ ปัญหา/สถานการณ์</div><div class="aic-tags">'; issueTags.forEach(i=>{ tagsHtml+=`<span class="aic-tag dr-tag-issue">${escapeHtml(i)}</span>`; }); tagsHtml+='</div></div>'; }
+      const amb=ai.ambiguous||[];
+      if(amb.length){
+        tagsHtml+='<div class="aic-h" style="margin-top:10px;color:var(--color-warning-700)">❓ ต้องระบุเพิ่ม</div>';
+        amb.forEach((a,idx)=>{ tagsHtml+=`<div class="aic-amb"><div class="aic-amb-q">"${escapeHtml(a.term)}" — ${escapeHtml(a.reason||'มีหลายความหมาย')}</div><div class="aic-amb-opts" data-amb="${idx}">`;
+          (a.options||[]).forEach(opt=>{ const ff=drState.ffs.find(x=>x.code===opt); tagsHtml+=`<button class="aic-amb-opt" onclick="resolveAmbiguous(${idx},'${opt}',this)">${escapeHtml(opt)}${ff?' '+escapeHtml(ff.name).slice(0,20):''}</button>`; });
+          tagsHtml+=`<button class="aic-amb-opt" onclick="resolveAmbiguous(${idx},'__skip__',this)" style="color:var(--color-slate-500)">ข้าม</button></div></div>`; });
+      }
+    } else tagsHtml='<div class="aic-section" style="color:var(--color-slate-500);font-size:11px">⚠️ AI ไม่สามารถวิเคราะห์ได้ — บันทึกแบบไม่มี tag</div>';
+    Modal.show(`<div class="modal-title">🤖 ยืนยันก่อนบันทึก</div>
+      <div class="modal-desc">${confText?`<span class="aic-conf ${confLevel}">${confText}</span> `:''}AI วิเคราะห์ tags ให้แล้ว — กดยืนยันถ้าถูก</div>
+      <div class="aic-card"><div class="aic-section"><div class="aic-h">📝 ข้อความ</div><div style="font-size:12px;color:var(--color-slate-800);line-height:1.5">${escapeHtml(text)}</div></div>${tagsHtml}</div>
+      <div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="cancelLog()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="confirmLog()">✓ ยืนยันบันทึก</button></div>`, 'pay-modal');
+  }
+  function resolveAmbiguous(idx,choice,btn){ if(!drState.pendingLog) return; btn.parentElement.querySelectorAll('.aic-amb-opt').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); drState.pendingLog.resolvedTags['amb_'+idx]=choice; }
+  function cancelLog(){ drState.pendingLog=null; Modal.close(); }
+  async function confirmLog(){
+    if(!drState.pendingLog) return;
+    const { text, ai, resolvedTags }=drState.pendingLog;
+    let tags_ff=(ai&&ai.tags_ff)?ai.tags_ff.slice():[];
+    let tags_ctr=(ai&&ai.tags_ctr)?ai.tags_ctr.slice():[];
+    let tags_issue=(ai&&ai.tags_issue)?ai.tags_issue.slice():[];
+    let tags_phase=(ai&&ai.tags_phase)?ai.tags_phase:'';
+    if(ai&&ai.ambiguous){ ai.ambiguous.forEach((a,idx)=>{ const choice=resolvedTags['amb_'+idx]; if(choice&&choice!=='__skip__'){ if(choice.match(/^F-/)) tags_ff.push(choice); else if(choice.match(/^C\d/)) tags_ctr.push(choice); } }); }
+    tags_ff=[...new Set(tags_ff)]; tags_ctr=[...new Set(tags_ctr)]; tags_issue=[...new Set(tags_issue)];
+    Modal.close();
+    const matKeywords=['เบิก','รับของ','รับเข้า','นับสต๊อก','นับ'];
+    if(matKeywords.some(k=>text.indexOf(k)>=0)){ document.getElementById('logInput').value=''; drState.pendingLog=null; await checkMaterialSuggestion(text); return; }
+    Modal.toast('กำลังบันทึก...');
+    try{
+      let photoUrl='', photoFailed=false;
+      if(drState.pendingPhoto){
+        Modal.toast('📷 กำลังอัปโหลดรูป... (อาจใช้เวลา 5-15 วินาที)');
+        let upRes=null;
+        for(let a=1;a<=2;a++){ try{ upRes=await API.uploadLogPhoto(drState.pendingPhoto); if(upRes&&upRes.ok&&upRes.photo_url) break; }catch(e){ upRes={ok:false,error:e.message}; } if(a===1) Modal.toast('📷 ลองอัพรูปใหม่อีกครั้ง...'); }
+        if(upRes&&upRes.ok&&upRes.photo_url){ photoUrl=upRes.photo_url; drState.pendingPhotoUrl=upRes.photo_url; drState.pendingPhotoDriveId=upRes.drive_id; } else photoFailed=true;
+      }
+      const payload={ text, source:getReporterSource(), auto_tag:'false', tags_ff:tags_ff.join(','), tags_ctr:tags_ctr.join(','), tags_issue:tags_issue.join(','), tags_phase, photo_url:photoUrl, date:drState.date };
+      const res=await API.callWrite('add_activity_log',payload);
+      if(!res.ok) throw new Error(res.error||'Save failed');
+      Modal.toast(photoFailed?'✓ บันทึก log แล้ว (รูปไม่ขึ้น — ลองถ่ายใหม่ทีหลังได้)':(photoUrl?'✓ บันทึก log + รูปแล้ว':'✓ บันทึกแล้ว'), photoFailed?4000:2000);
+      document.getElementById('logInput').value=''; drState.pendingLog=null; removePhoto();
+      setTimeout(()=>refresh(),1200);
+      const foundUnknown=await checkUnknowns(text);
+      if(!foundUnknown) checkTaskSuggestion(text,tags_ff);
+    }catch(err){ Modal.toast('❌ '+err.message); }
+  }
+
+  // ── ช่าง/วัสดุใหม่ที่ AI ไม่รู้จัก ──
+  async function checkUnknowns(text){
+    try{
+      const res=await API.callPost('detect_unknowns',{ text });
+      if(!res.ok||!res.data) return false;
+      const ctrs=res.data.unknown_contractors||[], mats=res.data.unknown_materials||[];
+      if(ctrs.length===0&&mats.length===0) return false;
+      showUnknownsModal(ctrs,mats); return true;
+    }catch(e){ return false; }
+  }
+  function showUnknownsModal(contractors,materials){
+    drState.unknownCtrs=contractors; drState.unknownMats=materials;
+    let html='<div class="modal-title">🆕 พบรายการใหม่</div><div class="modal-desc">AI พบช่าง/วัสดุที่ยังไม่มีในระบบ</div>';
+    if(contractors.length>0){
+      html+='<div class="aic-h" style="margin-top:6px">👷 ช่างที่ไม่รู้จัก</div>';
+      contractors.forEach((c,idx)=>{ const roleHint=c.is_likely_role?'<span class="uk-hint">⚠️ อาจเป็นตำแหน่ง ไม่ใช่ชื่อคน</span>':'';
+        html+=`<div class="uk-item" id="ukCtr${idx}"><div class="uk-item-name">${escapeHtml(c.mentioned)}</div>${roleHint}<div class="uk-item-row"><input type="text" class="uk-input" id="ukCtrName${idx}" value="${escapeHtml(c.mentioned)}" placeholder="ชื่อช่าง"><select class="uk-select" id="ukCtrType${idx}"><option ${c.suggested_type==='ช่างไม้'?'selected':''}>ช่างไม้</option><option ${c.suggested_type==='ช่างสี'?'selected':''}>ช่างสี</option><option ${c.suggested_type==='ช่างไฟ'?'selected':''}>ช่างไฟ</option><option ${c.suggested_type==='ช่างทั่วไป'?'selected':''}>ช่างทั่วไป</option></select></div><div class="uk-item-acts"><button class="uk-btn uk-btn-add" onclick="addContractor(${idx})">+ เพิ่มช่างนี้</button><button class="uk-btn uk-btn-skip" onclick="skipUnknownCtr(${idx})">ข้าม</button></div></div>`; });
+    }
+    if(materials.length>0){
+      html+='<div class="aic-h" style="margin-top:10px">📦 วัสดุที่ไม่รู้จัก</div>';
+      materials.forEach((m,idx)=>{ html+=`<div class="uk-item"><div class="uk-item-name">${escapeHtml(m.mentioned)}</div><div class="uk-mat-note">💡 วัสดุต้องกรอกข้อมูลละเอียด (หน่วย/ราคา/สต๊อก) — เพิ่มที่หน้า Materials</div><div class="uk-item-acts"><button class="uk-btn uk-btn-add" onclick="gotoAddMaterial('${escapeHtml(m.mentioned)}')">+ สร้างที่หน้า Materials</button></div></div>`; });
+    }
+    html+='<div class="modal-btns"><button class="modal-btn modal-btn-primary" onclick="finishUnknowns()">เสร็จแล้ว</button></div>';
+    Modal.show(html,'pay-modal');
+  }
+  async function addContractor(idx){
+    const name=document.getElementById('ukCtrName'+idx).value.trim();
+    const type=document.getElementById('ukCtrType'+idx).value;
+    if(!name){ Modal.toast('กรุณาใส่ชื่อช่าง'); return; }
+    try{
+      const res=await API.callWrite('create_contractor',{ name, type, role:'CONTRACTOR' });
+      if(!res.ok) throw new Error(res.error||'Add failed');
+      Modal.toast('✓ เพิ่มช่าง "'+name+'" แล้ว');
+      const el=document.getElementById('ukCtr'+idx); if(el) el.innerHTML='<div class="uk-done">✓ เพิ่ม "'+escapeHtml(name)+'" แล้ว</div>';
+      const pid=(typeof state!=='undefined'&&state.projectId)?state.projectId:'bow-house';
+      localStorage.removeItem('dstr_contractors_'+pid); localStorage.removeItem('dstr_cache_time');
+    }catch(err){ Modal.toast('❌ '+err.message); }
+  }
+  function skipUnknownCtr(idx){ const el=document.getElementById('ukCtr'+idx); if(el) el.innerHTML='<div class="uk-skipped">— ข้ามแล้ว</div>'; }
+  function gotoAddMaterial(name){ const pid=(typeof state!=='undefined'&&state.projectId)?state.projectId:'bow-house'; window.open('materials.html?project='+encodeURIComponent(pid),'_blank'); Modal.toast('เปิดหน้า Materials — เพิ่ม "'+name+'" ที่นั่น'); }
+  function finishUnknowns(){ Modal.close(); drState.unknownCtrs=null; drState.unknownMats=null; refresh(); }
+
+  // ── เสนอติ๊ก task อัตโนมัติ ──
+  async function checkTaskSuggestion(text,tags_ff){
+    try{
+      const ffCode=drState.selFF||((tags_ff&&tags_ff[0])||'');
+      const res=await API.callRead('suggest_task_from_log',{ text, tags_ff:(tags_ff||[]).join(','), ff_code:ffCode });
+      if(!res.ok||!res.data||!res.data.has_suggestion) return;
+      const candidates=res.data.candidates||[];
+      if(candidates.length===0) return;
+      showTaskTickModal(candidates,res.data.confidence);
+    }catch(e){}
+  }
+  function showTaskTickModal(candidates,confidence){
+    drState.taskCandidates=candidates; drState.selectedTaskId=candidates[0].task_id;
+    let confClass='h', confText=''; const c=Number(confidence);
+    if(c>=0.85){confClass='h';confText='มั่นใจสูง '+Math.round(c*100)+'%';} else if(c>=0.65){confClass='m';confText='น่าจะใช่ '+Math.round(c*100)+'%';} else {confClass='l';confText='ไม่ค่อยมั่นใจ '+Math.round(c*100)+'%';}
+    let listHtml='';
+    candidates.forEach((t,idx)=>{ const pct=Math.round(t.confidence*100); listHtml+=`<label class="tk-opt"><input type="radio" name="tkTask" value="${t.task_id}" ${idx===0?'checked':''} onchange="drState.selectedTaskId='${t.task_id}'"><div class="tk-opt-body"><div class="tk-opt-name">${escapeHtml(t.task_name)}</div><div class="tk-opt-meta"><span class="tk-opt-ff">${escapeHtml(t.ff_code)}</span><span class="tk-opt-pct">${pct}%</span>${t.why?'<span class="tk-opt-why">'+escapeHtml(t.why)+'</span>':''}</div></div></label>`; });
+    Modal.show(`<div class="modal-title">🎯 AI พบงานที่น่าจะเสร็จ</div><div class="modal-desc"><span class="aic-conf ${confClass}">${confText}</span> จากบันทึกของคุณ AI คิดว่า task นี้ทำเสร็จแล้ว</div><div class="tk-list">${listHtml}</div><div class="tk-note">💡 เลือก task ที่ถูกต้อง แล้วกดยืนยัน — หรือข้ามถ้าไม่ใช่</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ข้าม</button><button class="modal-btn modal-btn-primary" onclick="confirmTaskTick()">✓ ติ๊กว่าเสร็จ</button></div>`,'pay-modal');
+  }
+  async function confirmTaskTick(){
+    const taskId=drState.selectedTaskId; if(!taskId){ Modal.close(); return; }
+    const task=(drState.taskCandidates||[]).find(t=>t.task_id===taskId);
+    Modal.close(); Modal.toast('กำลังติ๊ก task...');
+    try{
+      const payload={ task_id:taskId, done_date:drState.date };
+      if(drState.pendingPhotoUrl){ payload.photo_url=drState.pendingPhotoUrl; payload.photo_drive_id=drState.pendingPhotoDriveId||''; }
+      const res=await API.callWrite('confirm_task_tick',payload);
+      if(!res.ok) throw new Error(res.error||'Tick failed');
+      Modal.toast('✓ ติ๊ก "'+(task?task.task_name:'task')+'" เสร็จแล้ว'+(drState.pendingPhotoUrl?' + แนบรูปเข้างาน':''));
+      drState.taskCandidates=null; drState.selectedTaskId=null; drState.pendingPhotoUrl=null; drState.pendingPhotoDriveId=null;
+      setTimeout(()=>refresh(),1200);
+    }catch(err){ Modal.toast('❌ '+err.message); }
+  }
+
+  // ══════════════════ Chapter 2: เบิกวัสดุ (structured) ══════════════════
+  const DR_MAT_STATUS_LBL=['🔴 หมด','🟡 ใกล้หมด','🔵 ใช้ได้','🟢 เต็ม'];
+  function drMatIcon(cat){ return { 'ไม้แผ่น':'🪵','ไฟฟ้า':'⚡','ฮาร์ดแวร์':'🔩','กาว':'🧴','วัสดุสิ้นเปลือง':'📋' }[cat]||'📦'; }
+  async function ensureMaterials(){
+    if(drState.matLoaded&&drState.materials.length) return true;
+    try{ const res=await API.callRead('get_materials',{ mode:'', category:'' }); if(res.ok&&Array.isArray(res.data)){ drState.materials=res.data; drState.matLoaded=true; return true; } }catch(e){}
+    return false;
+  }
+  async function openMaterialDraw(){
+    Modal.toast('📦 กำลังโหลดรายการวัสดุ...');
+    const ok=await ensureMaterials();
+    if(!ok||!drState.materials.length){ Modal.toast('❌ โหลดรายการวัสดุไม่สำเร็จ — ลองพิมพ์ "เบิก..." ให้ AI ช่วยแทน',4000); return; }
+    openMatPicker(onDrawMatPicked);
+  }
+  function openMatPicker(onPick){
+    drState.matPicker={ onPick, q:'', cat:'all' };
+    const cats=['all'].concat(Array.from(new Set(drState.materials.map(m=>m.category).filter(Boolean))));
+    const chipHtml=cats.map(c=>`<button class="dr-mp-chip ${c==='all'?'on':''}" onclick="setMatPickerCat('${escapeHtml(String(c)).replace(/'/g,'&#39;')}',this)">${c==='all'?'ทั้งหมด':escapeHtml(String(c))}</button>`).join('');
+    Modal.show(`<div class="modal-title">📦 เลือกวัสดุที่จะเบิก</div><div class="dr-mp-wrap"><input id="drMpSearch" class="dr-mp-search" type="text" placeholder="🔍 ค้นหาชื่อ / รหัส / สเปก" oninput="onMatPickerSearch(this.value)" autocomplete="off"><div class="dr-mp-chips">${chipHtml}</div><div id="drMpList" class="dr-mp-list"></div></div><div class="modal-btns" style="margin-top:12px"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button></div>`,'pay-modal');
+    renderMatPickerList();
+    setTimeout(()=>{ const s=document.getElementById('drMpSearch'); if(s) s.focus(); },80);
+  }
+  function onMatPickerSearch(v){ drState.matPicker.q=String(v||'').trim().toLowerCase(); renderMatPickerList(); }
+  function setMatPickerCat(cat,btn){ drState.matPicker.cat=cat; document.querySelectorAll('.dr-mp-chip').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderMatPickerList(); }
+  function renderMatPickerList(){
+    const p=drState.matPicker;
+    let list=drState.materials.filter(m=>m.active!==false);
+    if(p.cat!=='all') list=list.filter(m=>m.category===p.cat);
+    if(p.q) list=list.filter(m=>[m.id,m.name,m.spec,m.size,m.category].map(x=>String(x||'').toLowerCase()).join(' ').indexOf(p.q)>=0);
+    const el=document.getElementById('drMpList'); if(!el) return;
+    if(list.length===0){ el.innerHTML='<div class="dr-mp-empty">ไม่พบวัสดุที่ตรงกับคำค้น<br>ลองพิมพ์คำอื่น หรือเพิ่มวัสดุที่หน้า Materials</div>'; return; }
+    el.innerHTML=list.map(m=>{
+      const isStatus=m.tracking_mode==='STATUS';
+      const stk=Number(m.current_stock||0), min=Number(m.min_stock_alert||0);
+      let stkCls='', stkTxt;
+      if(isStatus){ stkTxt=DR_MAT_STATUS_LBL[stk]||'?'; if(stk===0)stkCls='zero'; else if(stk===1)stkCls='low'; }
+      else{ if(stk===0)stkCls='zero'; else if(min>0&&stk<=min)stkCls='low'; stkTxt=stk+' <small>'+escapeHtml(m.unit||'')+'</small>'; }
+      const modeBadge=isStatus?'<span class="dr-mp-mode status">🚦 สถานะ</span>':'<span class="dr-mp-mode count">🔢 นับ</span>';
+      const sub=[m.id,m.spec,m.size].filter(Boolean).map(x=>escapeHtml(String(x))).join(' · ');
+      return `<div class="dr-mp-row" onclick="pickMaterial('${escapeHtml(String(m.id)).replace(/'/g,'&#39;')}')"><div class="dr-mp-row-ic">${drMatIcon(m.category)}</div><div class="dr-mp-row-bd"><div class="dr-mp-row-nm">${escapeHtml(m.name||m.id)}</div><div class="dr-mp-row-meta">${sub} ${modeBadge}</div></div><div class="dr-mp-row-stk ${stkCls}">${stkTxt}</div></div>`;
+    }).join('');
+  }
+  function pickMaterial(matId){ const m=drState.materials.find(x=>String(x.id)===String(matId)); if(!m) return; const cb=drState.matPicker.onPick; if(typeof cb==='function') cb(m); }  /* ไม่ Modal.close() — cb เรียก Modal.show แทนกล่องเดิม (กัน race timer เคลียร์ 200ms) */
+  function onDrawMatPicked(m){ drState.wdDraft={ mat:m, qty:1 }; showWithdrawQtyModal(); }
+  function showWithdrawQtyModal(){
+    const d=drState.wdDraft; if(!d||!d.mat) return;
+    const m=d.mat, isStatus=m.tracking_mode==='STATUS';
+    const selFF=drState.selFF, ff=selFF?(drState.ffs||[]).find(f=>f.code===selFF):null;
+    const teamNames=(drState.selTeams||[]).map(id=>{ const t=(drState.teams||[]).find(x=>x.team_id===id); return t?(t.name||id):id; });
+    let echoHtml;
+    if(selFF||teamNames.length){ const parts=[]; if(selFF) parts.push(`<span class="dr-echo-pill dr-echo-ff">🏠 ${escapeHtml(selFF)}${ff&&ff.name?': '+escapeHtml(String(ff.name).slice(0,18)):''}</span>`); teamNames.forEach(n=>parts.push(`<span class="dr-echo-pill dr-echo-team">👥 ${escapeHtml(n)}</span>`)); echoHtml=`<div class="dr-comp-echo" style="padding:8px 0 0">ผูกเข้า: ${parts.join(' ')}</div>`; }
+    else echoHtml=`<div class="dr-comp-echo empty" style="padding:8px 0 0">ยังไม่เลือก F/ทีม — เลือกใน composer ก่อนกดเบิกได้ (ไม่บังคับ)</div>`;
+    const sub=[m.id,m.spec,m.size].filter(Boolean).map(x=>escapeHtml(String(x))).join(' · ');
+    let bodyHtml;
+    if(isStatus){ const cur=Number(m.current_stock||0); bodyHtml=`<div class="dr-wd-lb">วัสดุนี้ใช้ "สถานะ" (ไม่ใช่จำนวน) — เลือกสถานะปัจจุบันหลังเบิก</div><div class="dr-wd-status">${[3,2,1,0].map(v=>`<button class="dr-wd-sb ${v===cur?'on':''}" data-v="${v}" onclick="drSelectWdStatus(${v},this)">${DR_MAT_STATUS_LBL[v]}</button>`).join('')}</div>`; }
+    else bodyHtml=`<div class="dr-wd-lb">จำนวนที่เบิก</div><div class="dr-wd-qty"><button class="dr-wd-step" onclick="drAdjustWdQty(-1)">−</button><input id="drWdQty" class="dr-wd-input" type="number" inputmode="decimal" min="0" step="1" value="1" oninput="drOnWdQtyInput(this.value)"><span class="dr-wd-unit">${escapeHtml(m.unit||'หน่วย')}</span><button class="dr-wd-step" onclick="drAdjustWdQty(1)">+</button></div><div class="dr-wd-lb" style="margin-top:6px;color:var(--color-slate-400);font-weight:500">คงเหลือในระบบ: <b>${Number(m.current_stock||0)}</b> ${escapeHtml(m.unit||'')}</div>`;
+    Modal.show(`<div class="modal-title">📤 เบิก ${escapeHtml(m.name||m.id)}</div><div class="dr-wd-mat"><div class="dr-wd-mat-nm">${drMatIcon(m.category)} ${escapeHtml(m.name||m.id)}</div><div class="dr-wd-mat-sub">${sub}</div></div>${bodyHtml}${echoHtml}<div class="modal-btns" style="margin-top:14px"><button class="modal-btn modal-btn-cancel" onclick="drBackToMatPicker()">← เปลี่ยนวัสดุ</button><button class="modal-btn modal-btn-primary" onclick="drSubmitWithdraw()">ถัดไป →</button></div>`,'pay-modal');
+  }
+  function drBackToMatPicker(){ drState.wdDraft=null; openMatPicker(onDrawMatPicked); }
+  function drAdjustWdQty(delta){ const inp=document.getElementById('drWdQty'); if(!inp) return; let v=Number(inp.value||0)+delta; if(v<0)v=0; inp.value=v; drState.wdDraft.qty=v; }
+  function drOnWdQtyInput(v){ let n=Number(v); if(isNaN(n)||n<0)n=0; drState.wdDraft.qty=n; }
+  function drSelectWdStatus(v,btn){ drState.wdDraft.qty=v; drState.wdDraft.isStatusPick=true; btn.parentNode.querySelectorAll('.dr-wd-sb').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); }
+  async function drSubmitWithdraw(){
+    const d=drState.wdDraft; if(!d||!d.mat){ Modal.close(); return; }
+    const m=d.mat, isStatus=m.tracking_mode==='STATUS';
+    if(!isStatus){ const qInp=document.getElementById('drWdQty'); if(qInp) d.qty=Number(qInp.value||0); if(!d.qty||d.qty<=0){ Modal.toast('กรอกจำนวนที่จะเบิกก่อน'); return; } }
+    const teamNames=(drState.selTeams||[]).map(id=>{ const t=(drState.teams||[]).find(x=>x.team_id===id); return t?(t.name||id):id; });
+    const ffCode=drState.selFF||'';
+    const noteParts=['[เบิก-เลือกจากรายการ]']; if(teamNames.length) noteParts.push('ทีม: '+teamNames.join(', '));
+    const rawNote=noteParts.join(' ');
+    let item;
+    if(isStatus) item={ type:'นับ', material_id:m.id, material_name:m.name, quantity:d.qty, unit:m.unit||'', ff_code:ffCode, raw_text:rawNote+' (สถานะ: '+(DR_MAT_STATUS_LBL[d.qty]||d.qty)+')' };
+    else item={ type:'เบิก', material_id:m.id, material_name:m.name, quantity:d.qty, unit:m.unit||'', ff_code:ffCode, raw_text:rawNote };
+    Modal.toast('🔍 ตรวจสอบสต๊อก...');   /* ไม่ Modal.close() — showWithdrawConfirmCard เรียก Modal.show แทนกล่อง qty เดิม (กัน race) */
+    let warnings=[];
+    if(!isStatus){ try{ const chk=await API.callRead('check_stock_for_items',{ items:JSON.stringify([item]) }); if(chk.ok&&chk.data&&chk.data.has_warnings) warnings=chk.data.warnings||[]; }catch(e){} }
+    showWithdrawConfirmCard(item,warnings);
+  }
+  function showWithdrawConfirmCard(item,warnings){
+    const errors=(warnings||[]).filter(w=>w.level==='error'), warns=(warnings||[]).filter(w=>w.level==='warning');
+    const isStatus=item.type==='นับ';
+    const ffCode=item.ff_code, ff=ffCode?(drState.ffs||[]).find(f=>f.code===ffCode):null;
+    const teamNames=(drState.selTeams||[]).map(id=>{ const t=(drState.teams||[]).find(x=>x.team_id===id); return t?(t.name||id):id; });
+    let echoParts=[];
+    if(ffCode) echoParts.push(`<span class="dr-echo-pill dr-echo-ff">🏠 ${escapeHtml(ffCode)}${ff&&ff.name?': '+escapeHtml(String(ff.name).slice(0,18)):''}</span>`);
+    teamNames.forEach(n=>echoParts.push(`<span class="dr-echo-pill dr-echo-team">👥 ${escapeHtml(n)}</span>`));
+    const qtyLine=isStatus?'ตั้งสถานะเป็น <b>'+escapeHtml(DR_MAT_STATUS_LBL[item.quantity]||String(item.quantity))+'</b>':'เบิก <b>'+escapeHtml(String(item.quantity))+'</b> '+escapeHtml(item.unit||'');
+    let warnHtml='';
+    errors.forEach(w=>{ warnHtml+=`<div class="sw-item sw-err"><div class="sw-item-h">🔴 ${escapeHtml(w.material_name||'')}</div><div class="sw-item-m">${escapeHtml(w.message||'')}</div></div>`; });
+    warns.forEach(w=>{ warnHtml+=`<div class="sw-item sw-warn"><div class="sw-item-h">🟡 ${escapeHtml(w.material_name||'')}</div><div class="sw-item-m">${escapeHtml(w.message||'')}</div></div>`; });
+    if(warnHtml) warnHtml='<div class="sw-list" style="margin-top:8px">'+warnHtml+'</div>';
+    let btnsHtml;
+    if(errors.length){ warnHtml+='<div class="tk-note" style="background:var(--color-error-50);color:var(--color-error-700)">⚠️ เบิกเกินสต๊อก — "บังคับเบิก" จะทำให้สต๊อกติดลบ</div>'; btnsHtml=`<button class="modal-btn modal-btn-cancel" onclick="drCancelWithdraw()">ยกเลิก</button><button class="modal-btn" style="background:var(--color-error-500);color:#fff" onclick="drConfirmWithdraw(true)">บังคับเบิก</button>`; }
+    else btnsHtml=`<button class="modal-btn modal-btn-cancel" onclick="drCancelWithdraw()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="drConfirmWithdraw(false)">✓ ยืนยันเบิก</button>`;
+    drState.matItems=[item];
+    Modal.show(`<div class="modal-title">📤 ยืนยันการเบิก</div><div class="modal-desc">ตรวจให้ชัดก่อน — การเบิกจะตัดสต๊อกจริง</div><div class="dr-wd-mat"><div class="dr-wd-mat-nm">${drMatIcon(item.material_name)} ${escapeHtml(item.material_name||item.material_id)}</div><div class="dr-wd-mat-sub">${qtyLine}</div></div>${echoParts.length?`<div class="dr-comp-echo" style="padding:6px 0 0">ผูกเข้า: ${echoParts.join(' ')}</div>`:''}${warnHtml}<div class="tk-note">💡 ยืนยันแล้วระบบจะปรับสต๊อก + บันทึกลง Timeline</div><div class="modal-btns">${btnsHtml}</div>`,'pay-modal');
+  }
+  function drCancelWithdraw(){ Modal.close(); drState.matItems=null; drState.wdDraft=null; }
+  async function drConfirmWithdraw(force){
+    const items=(drState.matItems||[]).map(it=>Object.assign({},it,force?{force:true}:{}));
+    if(!items.length){ Modal.close(); return; }
+    const item=items[0]; Modal.close();
+    const isStatus=item.type==='นับ';
+    const optText=isStatus?'📦 ปรับสถานะ '+(item.material_name||item.material_id)+' → '+(DR_MAT_STATUS_LBL[item.quantity]||item.quantity):'📤 เบิก '+(item.material_name||item.material_id)+' '+item.quantity+' '+(item.unit||'');
+    const tmpId='tmpm_'+Date.now();
+    drState.optimistic[tmpId]={ log_id:tmpId, text:optText, type:'manual', tags_ff:item.ff_code?[item.ff_code]:[], tags_team:(drState.selTeams||[]).slice(), tags_ctr:[], tags_issue:[], timestamp:new Date().toISOString(), _opt:'pending', _matItem:item };
+    renderFeed(); Modal.toast('⏳ กำลังบันทึกการเบิก...');
+    try{
+      const res=await API.callWrite('confirm_material_log',{ items:JSON.stringify(items) });
+      if(!res.ok) throw new Error(res.error||'Confirm failed');
+      if(drState.optimistic[tmpId]) drState.optimistic[tmpId]._opt='ok';
+      renderFeed(); Modal.toast('✓ บันทึกการเบิกแล้ว — สต๊อกอัปเดต');
+      drState.matItems=null; drState.wdDraft=null;
+      setTimeout(()=>{ delete drState.optimistic[tmpId]; refresh(); },1400);
+    }catch(err){ if(drState.optimistic[tmpId]) drState.optimistic[tmpId]._opt='failed'; renderFeed(); Modal.toast('❌ เบิกไม่สำเร็จ — แตะ "ลองใหม่" ในรายการ',4000); }
+  }
+  async function drRetryWithdraw(tmpId){
+    const it=drState.optimistic[tmpId]; if(!it||it._opt!=='failed'||!it._matItem) return;
+    it._opt='pending'; renderFeed(); Modal.toast('⏳ กำลังลองเบิกใหม่...');
+    try{ const res=await API.callWrite('confirm_material_log',{ items:JSON.stringify([it._matItem]) }); if(!res.ok) throw new Error(res.error||'Confirm failed'); it._opt='ok'; renderFeed(); Modal.toast('✓ บันทึกการเบิกแล้ว'); setTimeout(()=>{ delete drState.optimistic[tmpId]; refresh(); },1400); }
+    catch(err){ it._opt='failed'; renderFeed(); Modal.toast('❌ ยังไม่สำเร็จ — เช็คเน็ตแล้วลองอีกครั้ง',4000); }
+  }
+
+  // ── material intent จากพิมพ์ (AI parse) ──
+  async function checkMaterialSuggestion(text){
+    drState.matRawText=text;
+    try{
+      Modal.toast('🤖 AI ตรวจรายการวัสดุ...');
+      const res=await API.callPost('parse_material_log',{ text });
+      if(!res.ok||!res.data){ await saveFallbackLog(text); return; }
+      const items=res.data.items||[], needsClari=res.data.needs_clarification||[];
+      if(items.length===0&&needsClari.length===0){ await saveFallbackLog(text); return; }
+      showMaterialModal(items,needsClari);
+    }catch(e){ await saveFallbackLog(text); }
+  }
+  async function saveFallbackLog(text){
+    try{ const res=await API.callWrite('add_activity_log',{ text, source:getReporterSource(), auto_tag:'true', date:drState.date }); if(res.ok){ Modal.toast('✓ บันทึกแล้ว'); setTimeout(()=>refresh(),1200); } }catch(e){}
+  }
+  function showMaterialModal(items,needsClari){
+    drState.matItems=items; drState.matRawText=drState.matRawText||'';
+    const typeIcon={ 'รับ':'📥','เบิก':'📤','นับ':'🔢' };
+    let itemsHtml='';
+    items.forEach(it=>{ const icon=typeIcon[it.type]||'📦'; const conf=it.confidence==='high'?'สูง':it.confidence==='medium'?'กลาง':'ต่ำ'; const confCls=it.confidence==='high'?'h':it.confidence==='medium'?'m':'l'; const missing=(it.missing||[]).length>0?'<div class="mt-miss">⚠️ ขาด: '+it.missing.join(', ')+'</div>':'';
+      itemsHtml+=`<div class="mt-item"><div class="mt-item-head"><span class="mt-type">${icon} ${escapeHtml(it.type||'')}</span><span class="aic-conf ${confCls}">${conf}</span></div><div class="mt-item-name">${escapeHtml(it.material_name||it.material_id||'')}</div><div class="mt-item-detail">จำนวน <b>${escapeHtml(String(it.quantity||'?'))}</b> ${escapeHtml(it.unit||'')}${it.contractor_name?' · 👤 '+escapeHtml(it.contractor_name):''}${it.ff_code?' · '+escapeHtml(it.ff_code):''}</div>${missing}</div>`; });
+    let clariHtml=needsClari.length>0?'<div class="tk-note" style="background:var(--color-warning-50);color:var(--color-warning-700)">❓ บางรายการไม่ชัด — '+needsClari.length+' รายการต้องระบุเพิ่มที่หน้า Materials</div>':'';
+    Modal.show(`<div class="modal-title">📦 AI พบรายการวัสดุ</div><div class="modal-desc">AI แปลงบันทึกเป็นรายการ ${items.length} รายการ — ตรวจสอบก่อนยืนยัน</div><div class="mt-list">${itemsHtml}</div>${clariHtml}<div class="tk-note">💡 ยืนยันแล้วระบบจะอัพเดทสต๊อก + บันทึกลง Timeline</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="skipMaterialModal()">ข้าม (บันทึกเป็นโน้ต)</button>${items.length>0?'<button class="modal-btn modal-btn-primary" onclick="confirmMaterialItems()">✓ ยืนยันรายการ</button>':''}</div>`,'pay-modal');
+  }
+  function skipMaterialModal(){ Modal.close(); if(drState.matRawText) saveFallbackLog(drState.matRawText); drState.matItems=null; drState.matRawText=''; }
+  async function confirmMaterialItems(){
+    const items=drState.matItems||[]; if(items.length===0){ Modal.close(); return; }
+    Modal.close(); Modal.toast('🔍 ตรวจสอบสต๊อก...');
+    try{ const chk=await API.callRead('check_stock_for_items',{ items:JSON.stringify(items) }); if(chk.ok&&chk.data&&chk.data.has_warnings){ showStockWarningModal(chk.data.warnings,items); return; } }catch(e){}
+    await doConfirmMaterial(items);
+  }
+  function showStockWarningModal(warnings,items){
+    const errors=warnings.filter(w=>w.level==='error'), warns=warnings.filter(w=>w.level==='warning');
+    let html='<div class="modal-title">⚠️ ตรวจพบข้อควรระวัง</div><div class="modal-desc">AI เช็คสต๊อกแล้วพบประเด็นที่ต้องดู</div><div class="sw-list">';
+    errors.forEach(w=>{ html+=`<div class="sw-item sw-err"><div class="sw-item-h">🔴 ${escapeHtml(w.material_name)}</div><div class="sw-item-m">${escapeHtml(w.message)}</div></div>`; });
+    warns.forEach(w=>{ html+=`<div class="sw-item sw-warn"><div class="sw-item-h">🟡 ${escapeHtml(w.material_name)}</div><div class="sw-item-m">${escapeHtml(w.message)}</div></div>`; });
+    html+='</div>';
+    if(errors.length>0){ html+='<div class="tk-note" style="background:var(--color-error-50);color:var(--color-error-700)">⚠️ มีรายการเบิกเกินสต๊อก — ยืนยันแบบ "บังคับ" จะทำให้สต๊อกติดลบ</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="cancelMaterialConfirm()">ยกเลิก</button><button class="modal-btn" style="background:var(--color-error-500);color:#fff" onclick="forceMaterial()">บังคับเบิก</button></div>'; }
+    else html+='<div class="tk-note">รายการเหล่านี้ทำได้ แค่ทำให้สต๊อกเหลือน้อย</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="cancelMaterialConfirm()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="proceedMaterial()">เข้าใจแล้ว ดำเนินการ</button></div>';
+    Modal.show(html,'pay-modal');
+  }
+  function cancelMaterialConfirm(){ Modal.close(); if(drState.matRawText) saveFallbackLog(drState.matRawText); drState.matItems=null; drState.matRawText=''; }
+  async function proceedMaterial(){ Modal.close(); await doConfirmMaterial(drState.matItems||[]); }
+  async function forceMaterial(){ Modal.close(); await doConfirmMaterial((drState.matItems||[]).map(it=>Object.assign({},it,{force:true}))); }
+  async function doConfirmMaterial(items){
+    if(items.length===0) return; Modal.toast('กำลังบันทึกรายการวัสดุ...');
+    try{ const res=await API.callWrite('confirm_material_log',{ items:JSON.stringify(items) }); if(!res.ok) throw new Error(res.error||'Confirm failed'); Modal.toast('✓ บันทึก '+items.length+' รายการวัสดุแล้ว'); drState.matItems=null; drState.matRawText=''; setTimeout(()=>refresh(),1200); }
+    catch(err){ Modal.toast('❌ '+err.message); }
+  }
+
+  // ══════════════════ Chapter 2: สรุป AI + รายงาน ══════════════════
+  async function toggleSummary(){
+    if(drState.summExpanded){ document.getElementById('summPanel').classList.remove('on'); document.getElementById('stickyBar').classList.remove('expanded'); drState.summExpanded=false; return; }
+    drState.summExpanded=true; document.getElementById('summPanel').classList.add('on'); document.getElementById('stickyBar').classList.add('expanded');
+    if(!drState.summText) await genSummary(false);
+  }
+  async function genSummary(force){
+    const box=document.getElementById('summBox'), acts=document.getElementById('summActs'), saved=document.getElementById('summSaved');
+    box.innerHTML='<div class="dr-summ-loading">🤖 AI กำลังสรุป...</div>'; acts.style.display='none'; saved.style.display='none'; drState.summEditing=false;
+    try{
+      const res=await API.callPost('generate_daily_summary_v2',{ date:drState.date });
+      if(!res.ok||!res.data) throw new Error(res.error||'AI failed');
+      drState.summText=res.data.summary||'(ไม่มีข้อมูลให้สรุป)';
+      box.innerHTML='<div class="dr-summ-tx">'+escapeHtml(drState.summText)+'</div>'; acts.style.display='flex';
+      checkSavedSummary();
+    }catch(err){ box.innerHTML='<div style="color:var(--color-error-700);font-size:11px;text-align:center;padding:10px">❌ '+err.message+'</div>'; }
+  }
+  async function checkSavedSummary(){
+    try{ const res=await API.callRead('get_saved_summary',{ date:drState.date }); if(res.ok&&res.data&&res.data.exists){ const saved=document.getElementById('summSaved'); const t=fmtLogTime(res.data.saved_at); saved.innerHTML='✓ บันทึกแล้วใน Daily Report'+(t?' · '+t:''); saved.style.display='block'; } }catch(e){}
+  }
+  function toggleEditSummary(){
+    const box=document.getElementById('summBox');
+    if(drState.summEditing){ const ta=document.getElementById('summEditArea'); if(ta){ drState.summText=ta.value; box.innerHTML='<div class="dr-summ-tx">'+escapeHtml(drState.summText)+'</div>'; } drState.summEditing=false; document.getElementById('editBtn').innerHTML='✏️ แก้'; }
+    else{ box.innerHTML='<textarea class="dr-summ-edit" id="summEditArea">'+escapeHtml(drState.summText)+'</textarea>'; drState.summEditing=true; document.getElementById('editBtn').innerHTML='✓ เสร็จ'; }
+  }
+  async function saveSummary(){
+    if(drState.summEditing){ const ta=document.getElementById('summEditArea'); if(ta) drState.summText=ta.value; drState.summEditing=false; document.getElementById('editBtn').innerHTML='✏️ แก้'; document.getElementById('summBox').innerHTML='<div class="dr-summ-tx">'+escapeHtml(drState.summText)+'</div>'; }
+    if(!drState.summText||!drState.summText.trim()){ Modal.toast('ไม่มีสรุปให้บันทึก'); return; }
+    const btn=document.getElementById('saveBtn'); btn.innerHTML='⏳'; btn.disabled=true;
+    try{ const res=await API.callWrite('save_ai_summary',{ date:drState.date, summary:drState.summText, author:'Admin' }); if(!res.ok) throw new Error(res.error||'Save failed'); Modal.toast('✓ บันทึกเข้า Daily Report แล้ว'); const saved=document.getElementById('summSaved'); saved.innerHTML='✓ บันทึกแล้วใน Daily Report · เมื่อสักครู่'; saved.style.display='block'; }
+    catch(err){ Modal.toast('❌ '+err.message); }
+    finally{ btn.innerHTML='💾 บันทึก'; btn.disabled=false; }
+  }
+  function copySummary(){ if(!drState.summText) return; navigator.clipboard.writeText(drState.summText).then(()=>{ Modal.toast('✓ Copy แล้ว'); }); }
+
+  async function openReportModal(){
+    const dateLabel=formatThaiDate(new Date(drState.date))+' · '+thaiDayName(drState.date);
+    Modal.show(`<div class="modal-title">📄 รายงานประจำวัน</div><div class="modal-desc">${dateLabel}</div><div class="dr-rep-empty"><div class="dr-summ-loading">⏳ กำลังโหลดรายงาน...</div></div>`,'pay-modal');
+    try{
+      const res=await API.callRead('get_saved_summary',{ date:drState.date });
+      const stats=drState.stats||{};
+      let html=`<div class="modal-title">📄 รายงานประจำวัน</div><div class="modal-desc">${dateLabel}</div><div class="dr-rep-stats"><div class="dr-rep-stat"><div class="dr-rep-stat-v">${stats.tasks_done||0}</div><div class="dr-rep-stat-l">✓ งานเสร็จ</div></div><div class="dr-rep-stat"><div class="dr-rep-stat-v">${stats.contractors_involved||0}</div><div class="dr-rep-stat-l">👷 ช่าง</div></div><div class="dr-rep-stat"><div class="dr-rep-stat-v">${stats.logs_total||0}</div><div class="dr-rep-stat-l">📋 events</div></div></div>`;
+      if(res.ok&&res.data&&res.data.exists){ const d=res.data; const savedTime=String(d.saved_at||'').slice(0,16).replace('T',' '); html+=`<div class="dr-rep-meta"><span class="dr-rep-badge">✓ บันทึกแล้ว</span><span>โดย ${escapeHtml(d.author||'Admin')}</span>${savedTime?'<span>· '+savedTime+'</span>':''}</div><div class="dr-rep-body">${escapeHtml(d.summary)}</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button><button class="modal-btn modal-btn-primary" onclick="copyReportText(${JSON.stringify(d.summary).replace(/"/g,'&quot;')})">📋 Copy</button></div>`; }
+      else html+=`<div class="dr-rep-empty"><div class="dr-rep-empty-i">📭</div>ยังไม่มีรายงานที่บันทึกสำหรับวันนี้<br><span style="font-size:11px">กดปุ่ม 🤖 สรุปวันนี้ แล้วกด 💾 บันทึก</span></div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button><button class="modal-btn modal-btn-primary" onclick="Modal.close();openSummaryFromReport()">🤖 สรุปเลย</button></div>`;
+      Modal.show(html,'pay-modal');
+    }catch(err){ Modal.show(`<div class="modal-title">📄 รายงานประจำวัน</div><div class="dr-rep-empty">❌ โหลดไม่สำเร็จ: ${err.message}</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button></div>`,'pay-modal'); }
+  }
+  function copyReportText(text){ navigator.clipboard.writeText(text).then(()=>{ Modal.toast('✓ Copy รายงานแล้ว'); }); }
+  function openSummaryFromReport(){ if(!drState.summExpanded) toggleSummary(); }
+
+  // ── ลบ / ยกเลิกติ๊ก (แทน native confirm ด้วย Modal.confirm) ──
+  async function deleteLog(logId){
+    const ok=await Modal.confirm({icon:'🗑️',iconClass:'warn',title:'ลบบันทึกนี้?',confirmText:'ลบ',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'});
+    if(!ok) return;
+    Modal.toast('กำลังลบ...');
+    try{ const res=await API.callRead('delete_activity_log',{ log_id:logId }); if(!res||!res.ok) throw new Error((res&&res.error)||'ลบไม่สำเร็จ'); Modal.toast('✓ ลบแล้ว'); setTimeout(()=>refresh(),800); }
+    catch(err){ Modal.toast('❌ '+err.message); }
+  }
+  async function untickTask(logId,taskId){
+    const ok=await Modal.confirm({icon:'↩️',iconClass:'warn',title:'ยกเลิกการติ๊ก task นี้?',desc:'Task จะกลับเป็น "ยังไม่เสร็จ" และ log นี้จะถูกลบ',confirmText:'ยกเลิกการติ๊ก',cancelText:'ไม่',confirmClass:'modal-btn-warn'});
+    if(!ok) return;
+    Modal.toast('กำลังยกเลิก...');
+    try{ const res=await API.callRead('untick_task_from_log',{ log_id:logId, task_id:taskId }); if(!res||!res.ok) throw new Error((res&&res.error)||'ยกเลิกไม่สำเร็จ'); Modal.toast('✓ ยกเลิกการติ๊กแล้ว — task กลับเป็นไม่เสร็จ'); setTimeout(()=>refresh(),1200); }
+    catch(err){ Modal.toast('❌ '+err.message); }
+  }
 
   document.addEventListener('keydown', e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ const ta=document.getElementById('logInput'); if(document.activeElement===ta) submitLog(); } });
 

@@ -6,7 +6,10 @@
 
 ## 📌 Progress (แบ่ง chapter)
 - **Chapter 1 ✅ (commit ถัดไป)** — HTML skin + CSS design tokens + โหลด/refresh + stats + **เช็คอินทีม (ขั้น1) เต็ม** + **picker F/ทีม (ขั้น3) เต็ม** + feed แสดงผล (read-only) + role picker + date nav · verified: 18 FF/3 ทีม/11 log โหลด, default ทีมเช็คอิน preselect, picker เลือก/ยกเลิก/กาง, mobile, 0 error · ⚠️ ยังไม่เทสต์ toggle เช็คอินจริง (เขียน DB — เลี่ยงตอน dev, ทดสอบตอน UAT)
-- **Chapter 2 ⏳ (ถัดไป)** — stub `_ch2()` ที่ต้องแทนของจริง: `submitLog` (+AI parse `showAiConfirmModal`/`confirmLog`/`resolveAmbiguous`/unknowns/task-tick) · เบิกวัสดุ (`openMaterialDraw`+picker+withdraw ทั้งชุด) · รูป (`onPhotoClick`/`onPhotoSelected`/`compressImage`/`removePhoto`) · เสียง (`onMicClick`) · สรุป AI (`toggleSummary`/`genSummary`/save/copy + checkSavedSummary) · รายงาน (`openReportModal`) · `deleteLog`/`untickTask`/`retryOptimisticLog`
+- **Chapter 2 ✅ (commit ถัดไป)** — แทน stub ครบ: `submitLog`+`submitStructuredLog`+AI parse (`showAiConfirmModal`/`confirmLog`/`resolveAmbiguous`/`checkUnknowns`/`showUnknownsModal`+add/skip ช่าง/task-tick) · **เบิกวัสดุครบชุด** (`openMaterialDraw`→picker→qty(COUNT/STATUS)→check_stock→confirm card→`drConfirmWithdraw` optimistic+retry) · material intent จากพิมพ์ (`checkMaterialSuggestion`/`showMaterialModal`/stock warning/force) · รูป (`compressImage` 1600/0.8) · เสียง (Web Speech) · สรุป AI (sticky panel `genSummary`/edit/save/copy) · รายงาน (`openReportModal`) · `deleteLog`/`untickTask` (→ Modal.confirm แทน native) · verified: withdraw flow จนถึงการ์ดยืนยัน + AI parse modal + report + summary(806 ตัวอักษร) ทำงาน, mobile, 0 error · ⚠️ path ที่เขียน DB (ยืนยันบันทึก/เบิก/ลบ) เลี่ยงตอน dev → UAT
+  - 🐛 **แก้ระหว่างทาง:** `Modal.close()`→`Modal.show()` แบบ synchronous ชนกัน (close มี timer เคลียร์ box 200ms → ทับ modal ใหม่หาย) · เอา close ที่ซ้ำซ้อนออกจาก `pickMaterial` + `drSubmitWithdraw` (Modal.show แทนกล่องเดียวอยู่แล้ว) → memory `project-v3-modal-close-race`
+
+**เหลือก่อนตัดยอด S4:** UAT มือถือจริง (กดเช็คอิน/บันทึก/เบิก จริง) → ตัดยอด 1 commit → คลิปสอนใหม่ + แจ้ง LINE ช่าง
 
 ## Flow หลัก 4 ขั้น (หัวใจ — ห้ามเปลี่ยนลำดับ)
 1. **เช็คอินทีม** — chips ทีม + ปุ่ม −/+ ปรับจำนวนคน (`teamChips` / `renderTeamChips` L977, `toggleTeamCheckin` L1018, `adjustTeamQty` L1061)
