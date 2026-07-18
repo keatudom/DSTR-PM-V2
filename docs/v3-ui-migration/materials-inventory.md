@@ -6,7 +6,7 @@
 
 ## 📌 Progress
 - **Chapter 1 ✅ (commit ถัดไป)** — โครง+แท็บ + **Stock tab เต็ม** (filter/list COUNT+STATUS/quick-set สถานะ optimistic/badge นับ-สถานะ) + **รายละเอียดวัสดุ** (modal + gallery รูป: view/add/delete) + alerts banner+modal · แท็บ รับ/เบิก/นับ/ประวัติ = stub soon-box · verified: 89 วัสดุ(17 STATUS+72 COUNT), filter, detail+รูป, alerts 21, mobile, 0 error · ⚠️ quickSetStatus/upload/delete รูป = เขียน DB เลี่ยงตอน dev
-- **Chapter 2 ⏳** — ธุรกรรม 3 แท็บ + CRUD วัสดุ + สแกนบิล AI:
+- **Chapter 2 ✅ (commit ถัดไป)** — ธุรกรรม 3 แท็บ (รับ/เบิก/นับ COUNT+STATUS) + material picker + populateSelects + สแกนบิล AI + CRUD วัสดุ (เพิ่ม/แก้/ลบ 2 ระดับ) · verified mobile: picker 89 วัสดุ, ฟอร์มสลับ COUNT/STATUS, dropdown ทีม4/FF19, new-material modal (prefill+2โหมด), 0 error · แทน native confirm (selectNmMode/doDeleteMaterial)→Modal.confirm · pickMaterial เอา Modal.close ออก (กัน race) · ⚠️ submit ทุกตัว = เขียน DB เลี่ยงตอน dev → UAT · รายละเอียดฟังก์ชันเดิม:
   - รับ: `submitReceive` L2280 (COUNT+STATUS `setRcvStatus`/`onReceiveMatChange`) · สแกนบิล AI: `onBillSelected` L1644/`renderBillScanResult`/`updateBillItem`/`confirmBillScan`/`cancelBillScan`
   - เบิก: `submitWithdraw` L2323 (+dropdown ทีม/FF `populateSelects` L1809)
   - นับ: `submitCount` L2362 (COUNT+STATUS `setCntStatus`/`onCountMatChange` + รูป `onCountPhotoSelected`/`renderCountPhotoPreviews`/`removeCountPhoto`)

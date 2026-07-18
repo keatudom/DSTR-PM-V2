@@ -73,6 +73,85 @@
   .modal-info-row { display:flex; gap:var(--space-2); font-size:var(--text-sm); padding:2px 0; }
   .modal-info-key { color:var(--color-slate-500); min-width:80px; }
   .modal-info-val { color:var(--color-slate-800); font-weight:500; }
+
+  /* ════ Chapter 2: forms ════ */
+  .mf-form { display:flex; flex-direction:column; gap:var(--space-3); }
+  .mf-grp { display:flex; flex-direction:column; gap:4px; }
+  .mf-row { display:grid; grid-template-columns:1fr 1fr; gap:var(--space-2); }
+  .mf-lb { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-600); }
+  .mf-in { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; color:var(--color-slate-900); background:#fff; }
+  .mf-in:focus { outline:none; border-color:var(--color-blue-500); box-shadow:0 0 0 2px var(--color-blue-100); }
+  .mf-submit { margin-top:var(--space-2); padding:12px; background:var(--color-blue-600); color:#fff; border:none; border-radius:var(--radius-md); font-size:var(--text-sm); font-weight:600; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .mf-submit:hover { background:var(--color-blue-700); }
+  .mf-submit i { width:16px; height:16px; }
+  .mat-pick-btn { display:flex; align-items:center; justify-content:space-between; width:100%; padding:10px 12px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; color:var(--color-slate-800); cursor:pointer; text-align:left; }
+  .mat-pick-btn.placeholder { color:var(--color-slate-400); }
+  .mpb-caret { font-size:11px; color:var(--color-slate-400); flex-shrink:0; }
+  .bill-scan-btn { display:flex; align-items:center; justify-content:center; gap:6px; padding:12px; background:var(--color-slate-900); color:#fff; border:none; border-radius:var(--radius-md); font-size:var(--text-sm); font-weight:600; cursor:pointer; font-family:inherit; }
+  .bill-scan-btn i { width:17px; height:17px; }
+  .bill-divider { text-align:center; font-size:11px; color:var(--color-slate-400); position:relative; }
+  .rcv-status-btns { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; }
+  .rsb { padding:10px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); font-size:var(--text-sm); font-weight:600; cursor:pointer; font-family:inherit; color:var(--color-slate-700); }
+  .rsb.on.s3 { background:var(--color-success-50); border-color:var(--color-success-500); color:var(--color-success-700); }
+  .rsb.on.s2 { background:var(--color-blue-50); border-color:var(--color-blue-500); color:var(--color-blue-700); }
+  .rsb.on.s1 { background:var(--color-warning-50); border-color:var(--color-warning-500); color:var(--color-warning-700); }
+  .rsb.on.s0 { background:var(--color-error-50); border-color:var(--color-error-500); color:var(--color-error-700); }
+  .nm-hint { font-size:11px; color:var(--color-slate-500); line-height:1.5; }
+  .nm-req { color:var(--color-error-600); }
+  .photo-btn { display:flex; align-items:center; justify-content:center; gap:6px; padding:12px; border:1px dashed var(--color-slate-300); background:#fff; border-radius:var(--radius-md); font-size:var(--text-sm); color:var(--color-slate-600); cursor:pointer; font-family:inherit; }
+  .photo-btn.has-photo { border-color:var(--color-success-500); color:var(--color-success-700); background:var(--color-success-50); }
+  .photo-previews { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .photo-thumb { position:relative; width:64px; height:64px; border-radius:var(--radius-md); overflow:hidden; }
+  .photo-thumb img { width:100%; height:100%; object-fit:cover; }
+  .photo-thumb-x { position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,0.6); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
+  /* New material modal */
+  .nm-prefill { font-size:11px; color:var(--color-blue-700); background:var(--color-blue-50); border-radius:var(--radius-md); padding:8px 10px; margin-bottom:var(--space-2); line-height:1.5; text-align:left; }
+  .nm-mode { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .nm-mode-opt { padding:10px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); cursor:pointer; font-family:inherit; text-align:center; }
+  .nm-mode-opt.on { border-color:var(--color-blue-500); background:var(--color-blue-50); }
+  .nm-mode-ic { font-size:20px; }
+  .nm-mode-nm { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-800); margin-top:2px; }
+  .nm-mode-ds { font-size:9px; color:var(--color-slate-500); }
+
+  /* Material picker (bottom sheet) */
+  .mp-wrap { text-align:left; }
+  .mp-search { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; margin-bottom:8px; }
+  .mp-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .mp-chip { padding:5px 12px; border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-600); border-radius:var(--radius-full); font-size:11px; cursor:pointer; font-family:inherit; }
+  .mp-chip.on { background:var(--color-slate-700); color:#fff; border-color:var(--color-slate-700); }
+  .mp-list { max-height:45vh; overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
+  .mp-row { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--color-slate-200); border-radius:var(--radius-md); cursor:pointer; min-height:48px; }
+  .mp-row:hover { border-color:var(--color-blue-400); background:var(--color-slate-50); }
+  .mp-row-ic { font-size:20px; }
+  .mp-row-bd { flex:1; min-width:0; }
+  .mp-row-nm { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); }
+  .mp-row-meta { font-size:10px; color:var(--color-slate-500); display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
+  .mp-row-stk { font-size:var(--text-sm); font-weight:700; color:var(--color-slate-700); white-space:nowrap; }
+  .mp-row-stk.zero { color:var(--color-error-600); } .mp-row-stk.low { color:var(--color-warning-700); }
+  .mp-empty { text-align:center; color:var(--color-slate-400); font-size:var(--text-xs); padding:var(--space-6); line-height:1.6; }
+  .mp-add { width:100%; padding:10px; border:1px dashed var(--color-blue-400); background:var(--color-blue-50); color:var(--color-blue-700); border-radius:var(--radius-md); font-size:var(--text-xs); font-weight:600; cursor:pointer; font-family:inherit; margin-top:8px; }
+
+  /* Bill scan */
+  .bs-preview-img { max-width:100%; max-height:150px; border-radius:var(--radius-md); display:block; margin:var(--space-2) auto; }
+  .bs-info-box { background:var(--color-slate-50); border-radius:var(--radius-md); padding:10px; margin:var(--space-2) 0; text-align:left; }
+  .bs-info-row { display:flex; justify-content:space-between; font-size:11px; color:var(--color-slate-600); padding:1px 0; }
+  .bs-item { border:1px solid var(--color-slate-200); border-radius:var(--radius-md); padding:8px; margin-bottom:6px; text-align:left; }
+  .bs-item.err { border-color:#fecaca; background:var(--color-error-50); } .bs-item.warn { border-color:#fde68a; background:var(--color-warning-50); }
+  .bs-item-r { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+  .bs-item-conf { font-size:10px; font-weight:700; padding:1px 6px; border-radius:var(--radius-full); }
+  .bs-conf-h { background:var(--color-success-50); color:var(--color-success-700); } .bs-conf-m { background:var(--color-warning-50); color:var(--color-warning-700); } .bs-conf-l { background:var(--color-error-50); color:var(--color-error-700); }
+  .bs-item-raw { font-size:var(--text-xs); color:var(--color-slate-700); }
+  .bs-item-matched { font-size:11px; color:var(--color-slate-600); margin-bottom:4px; }
+  .bs-item-edit { display:grid; grid-template-columns:1fr; gap:4px; }
+  .bs-item-edit select, .bs-item-edit input { padding:7px 9px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-xs); font-family:inherit; }
+  @media(min-width:420px){ .bs-item-edit { grid-template-columns:2fr 1fr 1fr; } }
+
+  /* Delete material modal */
+  .del-opt { width:100%; padding:12px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); font-size:var(--text-sm); font-weight:600; cursor:pointer; font-family:inherit; }
+  .del-opt.deact { background:var(--color-warning-50); border-color:var(--color-warning-500); color:var(--color-warning-700); }
+  .del-opt.hard { background:none; border:none; color:var(--color-error-600); }
+  .del-opt-hint { font-size:11px; color:var(--color-slate-500); margin:6px 0; line-height:1.5; text-align:center; }
 </style>
 </head>
 <body>
@@ -113,10 +192,82 @@
           <div id="stockList"></div>
         </div>
 
-        <!-- TAB: รับ/เบิก/นับ (Chapter 2) -->
-        <div id="tab-rcv" class="mat-tab-pane"><div class="card card-body mat-soon"><i data-lucide="package-plus"></i><h4>รับวัสดุเข้า</h4><p class="text-sm">กำลังพัฒนา (Chapter 2)</p></div></div>
-        <div id="tab-wdr" class="mat-tab-pane"><div class="card card-body mat-soon"><i data-lucide="package-minus"></i><h4>เบิกวัสดุ</h4><p class="text-sm">กำลังพัฒนา (Chapter 2)</p></div></div>
-        <div id="tab-cnt" class="mat-tab-pane"><div class="card card-body mat-soon"><i data-lucide="clipboard-list"></i><h4>นับสต๊อก</h4><p class="text-sm">กำลังพัฒนา (Chapter 2)</p></div></div>
+        <!-- TAB: รับ (Receive) -->
+        <div id="tab-rcv" class="mat-tab-pane">
+          <div class="card card-body mf-form">
+            <button class="bill-scan-btn" onclick="document.getElementById('billInput').click()"><i data-lucide="scan-line"></i> สแกนบิลด้วย AI</button>
+            <input id="billInput" type="file" accept="image/*" style="display:none" onchange="onBillSelected(event)">
+            <div class="bill-divider">หรือกรอกเอง</div>
+            <div class="mf-grp">
+              <label class="mf-lb">วัสดุ</label>
+              <input type="hidden" id="rcvMat">
+              <button type="button" id="rcvMatBtn" class="mat-pick-btn placeholder" onclick="openMatPicker(onRcvMatPicked)"><span id="rcvMatLabel">— เลือกวัสดุ —</span><span class="mpb-caret">🔍 ▾</span></button>
+            </div>
+            <div id="rcvCountFields" class="mf-row">
+              <div class="mf-grp"><label class="mf-lb">จำนวน</label><input id="rcvQty" type="number" min="1" class="mf-in" placeholder="0"></div>
+              <div class="mf-grp"><label class="mf-lb">ราคา/หน่วย</label><input id="rcvPrice" type="number" min="0" class="mf-in" placeholder="0 (ถ้าทราบ)"></div>
+            </div>
+            <div id="rcvStatusFields" class="mf-grp" style="display:none">
+              <label class="mf-lb">รับเข้าแล้วสถานะเป็น</label>
+              <div class="rcv-status-btns">
+                <button type="button" class="rsb s3" data-v="3" onclick="setRcvStatus(3,this)">🟢 เต็ม</button>
+                <button type="button" class="rsb s2" data-v="2" onclick="setRcvStatus(2,this)">🔵 ใช้ได้</button>
+                <button type="button" class="rsb s1" data-v="1" onclick="setRcvStatus(1,this)">🟡 ใกล้หมด</button>
+                <button type="button" class="rsb s0" data-v="0" onclick="setRcvStatus(0,this)">🔴 หมด</button>
+              </div>
+              <div id="rcvStatusSel" class="nm-hint">ยังไม่เลือก</div>
+            </div>
+            <div class="mf-grp"><label class="mf-lb">เลขที่ใบเสร็จ/ใบส่งของ</label><input id="rcvReceipt" type="text" class="mf-in" placeholder="เช่น IV6905126"></div>
+            <div class="mf-grp"><label class="mf-lb">หมายเหตุ</label><input id="rcvNotes" type="text" class="mf-in" placeholder="(ไม่บังคับ)"></div>
+            <button class="mf-submit" onclick="submitReceive()"><i data-lucide="package-plus"></i> บันทึกการรับ</button>
+          </div>
+        </div>
+        <!-- TAB: เบิก (Withdraw) -->
+        <div id="tab-wdr" class="mat-tab-pane">
+          <div class="card card-body mf-form">
+            <div class="mf-grp">
+              <label class="mf-lb">วัสดุ</label>
+              <input type="hidden" id="wdrMat">
+              <button type="button" id="wdrMatBtn" class="mat-pick-btn placeholder" onclick="openMatPicker(onWdrMatPicked)"><span id="wdrMatLabel">— เลือกวัสดุ —</span><span class="mpb-caret">🔍 ▾</span></button>
+            </div>
+            <div class="mf-row">
+              <div class="mf-grp"><label class="mf-lb">ผู้เบิก (ทีม)</label><select id="wdrCtr" class="mf-in"></select></div>
+              <div class="mf-grp"><label class="mf-lb">จำนวน</label><input id="wdrQty" type="number" min="1" class="mf-in" placeholder="0"></div>
+            </div>
+            <div class="mf-grp"><label class="mf-lb">FF Code (งานที่ใช้)</label><select id="wdrFF" class="mf-in"></select></div>
+            <div class="mf-grp"><label class="mf-lb">หมายเหตุ</label><input id="wdrNotes" type="text" class="mf-in" placeholder="(ไม่บังคับ)"></div>
+            <button class="mf-submit" onclick="submitWithdraw()"><i data-lucide="package-minus"></i> บันทึกการเบิก</button>
+          </div>
+        </div>
+        <!-- TAB: นับ (Count) -->
+        <div id="tab-cnt" class="mat-tab-pane">
+          <div class="card card-body mf-form">
+            <div class="mf-grp">
+              <label class="mf-lb">วัสดุ</label>
+              <input type="hidden" id="cntMat">
+              <button type="button" id="cntMatBtn" class="mat-pick-btn placeholder" onclick="openMatPicker(onCntMatPicked)"><span id="cntMatLabel">— เลือกวัสดุ —</span><span class="mpb-caret">🔍 ▾</span></button>
+            </div>
+            <div id="cntCountInput" class="mf-grp"><label class="mf-lb">จำนวนที่นับได้</label><input id="cntQty" type="number" min="0" class="mf-in" placeholder="0"></div>
+            <div id="cntStatusInput" class="mf-grp" style="display:none">
+              <label class="mf-lb">สถานะปัจจุบัน</label>
+              <div class="rcv-status-btns">
+                <button type="button" class="rsb s3" onclick="setCntStatus(3)">🟢 เต็ม</button>
+                <button type="button" class="rsb s2" onclick="setCntStatus(2)">🔵 ใช้ได้</button>
+                <button type="button" class="rsb s1" onclick="setCntStatus(1)">🟡 ใกล้หมด</button>
+                <button type="button" class="rsb s0" onclick="setCntStatus(0)">🔴 หมด</button>
+              </div>
+              <div id="cntStatusSel" class="nm-hint">ยังไม่เลือก</div>
+            </div>
+            <div class="mf-grp"><label class="mf-lb">หมายเหตุ</label><input id="cntNotes" type="text" class="mf-in" placeholder="(ไม่บังคับ)"></div>
+            <div class="mf-grp">
+              <label class="mf-lb">📷 แนบรูป (ไม่บังคับ)</label>
+              <button id="cntPhotoBtn" type="button" class="photo-btn" onclick="document.getElementById('cntPhotoInput').click()"><span>📷</span> ถ่ายรูป/เลือกรูป</button>
+              <input id="cntPhotoInput" type="file" accept="image/*" style="display:none" onchange="onCountPhotoSelected(event)" multiple>
+              <div id="cntPhotoPrev" class="photo-previews"></div>
+            </div>
+            <button class="mf-submit" onclick="submitCount()"><i data-lucide="clipboard-list"></i> บันทึกการนับ</button>
+          </div>
+        </div>
         <!-- TAB: ประวัติ (Chapter 3) -->
         <div id="tab-hist" class="mat-tab-pane"><div class="card card-body mat-soon"><i data-lucide="history"></i><h4>ประวัติธุรกรรม</h4><p class="text-sm">กำลังพัฒนา (Chapter 3)</p></div></div>
 
@@ -153,7 +304,7 @@
       let projName='Bow House';
       try{ const pjRes=await API.getProjects(); if(pjRes&&pjRes.ok&&Array.isArray(pjRes.data)){ const p=pjRes.data.find(p=>p.project_id===state.projectId); if(p&&p.name) projName=p.name; } }catch(e){}
       document.getElementById('hdrSub').textContent=`${projName} · ${matState.materials.length} รายการ`;
-      renderAlerts(); renderStock();
+      renderAlerts(); renderStock(); populateSelects();
       document.getElementById('loadingScreen').style.display='none';
       document.getElementById('mainContent').style.display='block';
       if(window.lucide) lucide.createIcons();
@@ -277,11 +428,232 @@
     catch(err){ Modal.toast('❌ '+err.message); }
   }
 
-  // ── Chapter 2/3 stubs (รับ/เบิก/นับ + เพิ่ม/แก้/ลบวัสดุ + สแกนบิล + ประวัติ) ──
-  function _matSoon(){ Modal.toast('🚧 ส่วนนี้กำลังพัฒนา — ใช้ที่หน้าเดิมก่อน'); }
-  function openNewMaterialModal(){ _matSoon(); }
-  function openEditMaterialModal(){ _matSoon(); }
-  function openDeleteMaterialModal(){ _matSoon(); }
+  function escapeAttr(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ══════════════════ Chapter 2: populate selects ══════════════════
+  function populateSelects(){
+    ['rcv','wdr','cnt'].forEach(syncMatPickLabel);
+    const teamOpts=matState.teams.map(t=>`<option value="${escapeAttr(t.team_id)}">${escapeHtml(t.name)}${t.type?' ('+escapeHtml(t.type)+')':''}</option>`).join('');
+    const wdrCtr=document.getElementById('wdrCtr'); if(wdrCtr) wdrCtr.innerHTML='<option value="">— เลือก —</option>'+teamOpts;
+    const ffOpts=matState.ffs.map(f=>`<option value="${escapeAttr(f.code)}">${escapeHtml(f.code)} - ${escapeHtml(f.name)}</option>`).join('');
+    const wdrFF=document.getElementById('wdrFF'); if(wdrFF) wdrFF.innerHTML='<option value="">— เลือก FF —</option>'+ffOpts;
+  }
+
+  // ══════════════════ Chapter 2: material picker ══════════════════
+  matState.picker={ onPick:null, q:'', cat:'all', filterMode:'' };
+  function openMatPicker(onPick,opts){
+    opts=opts||{};
+    matState.picker={ onPick, q:'', cat:'all', filterMode:opts.filterMode||'' };
+    const cats=['all'].concat(Array.from(new Set(matState.materials.map(m=>m.category).filter(Boolean))));
+    const chipHtml=cats.map(c=>`<button class="mp-chip ${c==='all'?'on':''}" data-cat="${escapeAttr(c)}" onclick="setMatPickerCat('${escapeAttr(c).replace(/'/g,'&#39;')}',this)">${c==='all'?'ทั้งหมด':escapeHtml(String(c))}</button>`).join('');
+    Modal.show(`<div class="modal-title">เลือกวัสดุ</div><div class="mp-wrap"><input id="mpSearch" class="mp-search" type="text" placeholder="🔍 ค้นหาชื่อ / รหัส / สเปก" oninput="onMatPickerSearch(this.value)" autocomplete="off"><div class="mp-chips">${chipHtml}</div><div id="mpList" class="mp-list"></div><button class="mp-add" id="mpAddBtn" onclick="addMaterialFromPicker()">➕ เพิ่มวัสดุใหม่</button></div><div class="modal-btns" style="margin-top:12px"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button></div>`,'pay-modal');
+    renderMatPickerList();
+    setTimeout(()=>{ const s=document.getElementById('mpSearch'); if(s) s.focus(); },80);
+  }
+  function onMatPickerSearch(v){ matState.picker.q=String(v||'').trim().toLowerCase(); renderMatPickerList(); }
+  function setMatPickerCat(cat,btn){ matState.picker.cat=cat; document.querySelectorAll('.mp-chip').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderMatPickerList(); }
+  function renderMatPickerList(){
+    const p=matState.picker;
+    let list=matState.materials.filter(m=>m.active!==false);
+    if(p.filterMode){ const want=p.filterMode==='STATUS'?'STATUS':'COUNT'; list=list.filter(m=>(m.tracking_mode==='STATUS'?'STATUS':'COUNT')===want); }
+    if(p.cat!=='all') list=list.filter(m=>m.category===p.cat);
+    if(p.q) list=list.filter(m=>[m.id,m.name,m.spec,m.size,m.category].map(x=>String(x||'').toLowerCase()).join(' ').indexOf(p.q)>=0);
+    const el=document.getElementById('mpList'); if(!el) return;
+    if(list.length===0){ el.innerHTML='<div class="mp-empty">ไม่พบวัสดุที่ตรงกับคำค้น<br>กด "➕ เพิ่มวัสดุใหม่" ด้านล่างได้เลย</div>'; }
+    else el.innerHTML=list.map(m=>{
+      const isStatus=m.tracking_mode==='STATUS'; const stk=Number(m.current_stock||0), min=Number(m.min_stock_alert||0);
+      let stkCls='', stkTxt;
+      if(isStatus){ stkTxt=['🔴 หมด','🟡 ใกล้หมด','🔵 ใช้ได้','🟢 เต็ม'][stk]||'?'; if(stk===0)stkCls='zero'; else if(stk===1)stkCls='low'; }
+      else{ if(stk===0)stkCls='zero'; else if(min>0&&stk<=min)stkCls='low'; stkTxt=stk+' <small>'+escapeHtml(m.unit||'')+'</small>'; }
+      const sub=[m.id,m.spec,m.size].filter(Boolean).map(x=>escapeHtml(String(x))).join(' · ');
+      return `<div class="mp-row" onclick="pickMaterial('${escapeAttr(m.id).replace(/'/g,'&#39;')}')"><div class="mp-row-ic">${getCategoryIcon(m.category)}</div><div class="mp-row-bd"><div class="mp-row-nm">${escapeHtml(m.name)}</div><div class="mp-row-meta">${sub} ${modeBadgeHtml(m.tracking_mode)}</div></div><div class="mp-row-stk ${stkCls}">${stkTxt}</div></div>`;
+    }).join('');
+    const addBtn=document.getElementById('mpAddBtn'); if(addBtn) addBtn.textContent=p.q?`➕ เพิ่ม "${p.q}" เป็นวัสดุใหม่`:'➕ เพิ่มวัสดุใหม่';
+  }
+  function pickMaterial(matId){ const m=matState.materials.find(x=>x.id===matId); if(!m) return; const cb=matState.picker.onPick; if(typeof cb==='function') cb(m); }  /* ไม่ Modal.close() — cb→Modal.show แทน (กัน race timer 200ms) */
+  function addMaterialFromPicker(){ const q=matState.picker.q; const cb=matState.picker.onPick; openNewMaterialModal(q||'',function(created){ if(typeof cb==='function') cb(created); Modal.toast('✓ เลือก "'+created.name+'" แล้ว'); }); }
+  function setMatPickField(prefix,m){ const inp=document.getElementById(prefix+'Mat'); const btn=document.getElementById(prefix+'MatBtn'); const lbl=document.getElementById(prefix+'MatLabel'); if(inp) inp.value=m.id; if(lbl) lbl.textContent=m.id+' · '+m.name; if(btn) btn.classList.remove('placeholder'); }
+  function syncMatPickLabel(prefix){ const inp=document.getElementById(prefix+'Mat'); const lbl=document.getElementById(prefix+'MatLabel'); const btn=document.getElementById(prefix+'MatBtn'); if(!inp||!lbl) return; const m=matState.materials.find(x=>x.id===inp.value); if(m){ lbl.textContent=m.id+' · '+m.name; if(btn) btn.classList.remove('placeholder'); } else { inp.value=''; lbl.textContent='— เลือกวัสดุ —'; if(btn) btn.classList.add('placeholder'); } }
+  function onRcvMatPicked(m){ setMatPickField('rcv',m); onReceiveMatChange(); }
+  function onWdrMatPicked(m){ setMatPickField('wdr',m); }
+  function onCntMatPicked(m){ setMatPickField('cnt',m); onCountMatChange(); }
+
+  // ══════════════════ Chapter 2: รับ / เบิก / นับ ══════════════════
+  function onReceiveMatChange(){
+    const matId=document.getElementById('rcvMat').value; const m=matState.materials.find(x=>x.id===matId);
+    const isStatus=m&&m.tracking_mode==='STATUS';
+    document.getElementById('rcvCountFields').style.display=isStatus?'none':'grid';
+    document.getElementById('rcvStatusFields').style.display=isStatus?'block':'none';
+    matState.rcvSelectedStatus=null;
+    const sel=document.getElementById('rcvStatusSel'); if(sel) sel.textContent='ยังไม่เลือก';
+    document.querySelectorAll('#rcvStatusFields .rsb').forEach(b=>b.classList.remove('on'));
+  }
+  function setRcvStatus(v,btn){ matState.rcvSelectedStatus=v; document.querySelectorAll('#rcvStatusFields .rsb').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); document.getElementById('rcvStatusSel').innerHTML='✓ เลือก: <strong>'+['🔴 หมด','🟡 ใกล้หมด','🔵 ใช้ได้','🟢 เต็ม'][v]+'</strong>'; }
+  async function submitReceive(){
+    const matId=document.getElementById('rcvMat').value; if(!matId){ Modal.toast('กรุณาเลือกวัสดุ'); return; }
+    const m=matState.materials.find(x=>x.id===matId); const isStatus=m&&m.tracking_mode==='STATUS';
+    let data;
+    if(isStatus){ if(matState.rcvSelectedStatus===null||matState.rcvSelectedStatus===undefined){ Modal.toast('กรุณาเลือกสถานะหลังรับเข้า'); return; } data={ material_id:matId, new_stock:matState.rcvSelectedStatus, receipt_no:document.getElementById('rcvReceipt').value, notes:document.getElementById('rcvNotes').value }; }
+    else { data={ material_id:matId, quantity:document.getElementById('rcvQty').value, unit_price:document.getElementById('rcvPrice').value||0, receipt_no:document.getElementById('rcvReceipt').value, notes:document.getElementById('rcvNotes').value }; if(!data.quantity){ Modal.toast('กรุณาใส่จำนวน'); return; } }
+    Modal.toast('กำลังบันทึก...');
+    await API.callWrite('receive_material',data);
+    setTimeout(async()=>{ Modal.toast('✓ บันทึกการรับแล้ว'); document.getElementById('rcvQty').value=''; document.getElementById('rcvPrice').value=''; document.getElementById('rcvReceipt').value=''; document.getElementById('rcvNotes').value=''; matState.rcvSelectedStatus=null; await loadAll(); },1500);
+  }
+  async function submitWithdraw(){
+    const data={ material_id:document.getElementById('wdrMat').value, quantity:document.getElementById('wdrQty').value, contractor_id:document.getElementById('wdrCtr').value, ff_code:document.getElementById('wdrFF').value, notes:document.getElementById('wdrNotes').value };
+    if(!data.material_id||!data.quantity||!data.contractor_id){ Modal.toast('กรุณาเลือกวัสดุ ผู้เบิก และจำนวน'); return; }
+    Modal.toast('กำลังบันทึก...');
+    await API.callWrite('withdraw_material',data);
+    setTimeout(async()=>{ Modal.toast('✓ บันทึกการเบิกแล้ว'); document.getElementById('wdrQty').value=''; document.getElementById('wdrNotes').value=''; await loadAll(); },1500);
+  }
+  function onCountMatChange(){
+    const matId=document.getElementById('cntMat').value; const m=matState.materials.find(x=>x.id===matId); if(!m) return;
+    const isStatus=m.tracking_mode==='STATUS';
+    document.getElementById('cntCountInput').style.display=isStatus?'none':'block';
+    document.getElementById('cntStatusInput').style.display=isStatus?'block':'none';
+    matState.cntSelectedStatus=null; document.getElementById('cntStatusSel').textContent='ยังไม่เลือก';
+    document.querySelectorAll('#cntStatusInput .rsb').forEach(b=>b.classList.remove('on'));
+  }
+  function setCntStatus(v){ matState.cntSelectedStatus=v; document.querySelectorAll('#cntStatusInput .rsb').forEach(b=>b.classList.toggle('on', Number(b.textContent.includes('เต็ม')?3:b.textContent.includes('ใช้ได้')?2:b.textContent.includes('ใกล้')?1:0)===v)); document.getElementById('cntStatusSel').innerHTML='✓ เลือก: <strong>'+['🔴 หมด','🟡 ใกล้หมด','🔵 ใช้ได้','🟢 เต็ม'][v]+'</strong>'; }
+  async function submitCount(){
+    const matId=document.getElementById('cntMat').value; if(!matId){ Modal.toast('กรุณาเลือกวัสดุ'); return; }
+    const m=matState.materials.find(x=>x.id===matId); const isStatus=m.tracking_mode==='STATUS';
+    let newStock;
+    if(isStatus){ if(matState.cntSelectedStatus===null){ Modal.toast('กรุณาเลือกสถานะ'); return; } newStock=matState.cntSelectedStatus; }
+    else { newStock=document.getElementById('cntQty').value; if(newStock===''){ Modal.toast('กรุณาใส่จำนวน'); return; } }
+    Modal.toast('กำลังบันทึก...');
+    await API.callWrite('count_material',{ material_id:matId, new_stock:newStock, notes:document.getElementById('cntNotes').value, trigger_source:'manual' });
+    const photos=matState.countPhotos||[];
+    if(photos.length>0){ setTimeout(async()=>{ Modal.toast('📷 กำลังอัปโหลด '+photos.length+' รูป...'); for(const b64 of photos){ try{ await API.callWrite('upload_photo',{ image_base64:b64, linked_to:'count', link_id:matId+'_'+Date.now(), caption:'นับสต๊อก', uploaded_by:'admin' }); }catch(e){} } },1800); }
+    setTimeout(async()=>{ Modal.toast('✓ บันทึกการนับแล้ว'); document.getElementById('cntQty').value=''; document.getElementById('cntNotes').value=''; matState.cntSelectedStatus=null; matState.countPhotos=[]; renderCountPhotoPreviews(); document.getElementById('cntStatusSel').textContent='ยังไม่เลือก'; await loadAll(); }, photos.length>0?3500:1500);
+  }
+  async function onCountPhotoSelected(e){
+    const files=Array.from(e.target.files||[]); if(!files.length) return;
+    Modal.toast('กำลังประมวลผลรูป...');
+    for(const f of files){ try{ const base64=await compressImage(f,1600,0.8); matState.countPhotos.push(base64); }catch(err){} }
+    renderCountPhotoPreviews(); e.target.value=''; Modal.toast('✓ เพิ่มรูปแล้ว');
+  }
+  function renderCountPhotoPreviews(){
+    const prev=document.getElementById('cntPhotoPrev'); if(!prev) return;
+    prev.innerHTML=matState.countPhotos.map((b64,i)=>`<div class="photo-thumb"><img src="${b64}"><div class="photo-thumb-x" onclick="removeCountPhoto(${i})">✕</div></div>`).join('');
+    const btn=document.getElementById('cntPhotoBtn');
+    if(btn){ if(matState.countPhotos.length>0){ btn.classList.add('has-photo'); btn.innerHTML=`<span>✓</span> ${matState.countPhotos.length} รูป · เพิ่มเพิ่ม`; } else { btn.classList.remove('has-photo'); btn.innerHTML='<span>📷</span> ถ่ายรูป/เลือกรูป'; } }
+  }
+  function removeCountPhoto(idx){ matState.countPhotos.splice(idx,1); renderCountPhotoPreviews(); }
+
+  // ══════════════════ Chapter 2: สแกนบิล AI ══════════════════
+  matState.scannedBill=null;
+  async function onBillSelected(e){
+    const file=e.target.files[0]; if(!file) return; e.target.value='';
+    const previewUrl=URL.createObjectURL(file);
+    Modal.show(`<div class="modal-title">🤖 AI กำลังอ่านบิล</div><div class="modal-desc">กรุณารอสักครู่...</div><img src="${previewUrl}" class="bs-preview-img"><div style="text-align:center;padding:20px"><div class="spinner"></div><div style="font-size:12px;color:var(--color-slate-500);margin-top:8px">กำลังวิเคราะห์ด้วย Gemini Vision...</div></div>`);
+    try{ const base64=await compressImage(file,1600,0.85); const res=await API.callPost('scan_bill',{ image_base64:base64, uploaded_by:'admin' }); if(!res.ok) throw new Error(res.error||'AI failed'); matState.scannedBill=res.data; renderBillScanResult(res.data,previewUrl); }
+    catch(err){ Modal.show(`<div class="modal-icon warn">⚠️</div><div class="modal-title">อ่านบิลไม่สำเร็จ</div><div class="modal-desc">${escapeHtml(err.message)}<br>กรุณาลองอีกครั้ง หรือกรอกข้อมูลเอง</div><div class="modal-btns"><button class="modal-btn modal-btn-primary" onclick="Modal.close()">ปิด</button></div>`); }
+  }
+  function renderBillScanResult(data,previewUrl){
+    const items=data.items||[];
+    if(items.length===0){ Modal.show(`<div class="modal-icon warn">⚠️</div><div class="modal-title">AI ไม่พบรายการในบิล</div><div class="modal-desc">ลองถ่ายใหม่ให้ชัดขึ้น หรือกรอกข้อมูลเอง</div><div class="modal-btns"><button class="modal-btn modal-btn-primary" onclick="Modal.close()">ปิด</button></div>`); return; }
+    const matOpts=matState.materials.map(m=>`<option value="${escapeAttr(m.id)}">${escapeHtml(m.id)} - ${escapeHtml(m.name)}</option>`).join('');
+    let itemsHtml='';
+    items.forEach((item,i)=>{
+      const conf=Number(item.match_confidence||0); let confClass='bs-conf-l'; if(conf>=0.85)confClass='bs-conf-h'; else if(conf>=0.7)confClass='bs-conf-m';
+      const itemClass=!item.matched_material_id?'err':(item.needs_review?'warn':'');
+      itemsHtml+=`<div class="bs-item ${itemClass}" data-idx="${i}"><div class="bs-item-r"><span class="bs-item-conf ${confClass}">${Math.round(conf*100)}%</span><span class="bs-item-raw">📄 ${escapeHtml(item.raw_name||'')}</span></div>${item.matched_material_id?`<div class="bs-item-matched">→ <strong>${escapeHtml(item.matched_material_name||'')}</strong></div>`:'<div class="bs-item-matched" style="color:var(--color-error-600)">❌ ไม่พบใน Master List</div>'}<div class="bs-item-edit"><select data-field="material_id" onchange="updateBillItem(${i},'material_id',this.value)"><option value="">— เลือก —</option>${matOpts}</select><input type="number" min="0" step="0.01" placeholder="จำนวน" value="${item.quantity||''}" data-field="quantity" onchange="updateBillItem(${i},'quantity',this.value)"><input type="number" min="0" placeholder="ราคา/หน่วย" value="${item.unit_price||''}" data-field="unit_price" onchange="updateBillItem(${i},'unit_price',this.value)"></div></div>`;
+    });
+    Modal.show(`<div class="modal-title">🤖 AI พบ ${items.length} รายการ</div><div class="modal-desc">ตรวจสอบและแก้ไขก่อนยืนยัน</div><img src="${escapeAttr(previewUrl||data.bill_thumbnail||'')}" class="bs-preview-img"><div class="bs-info-box"><div class="bs-info-row"><span>เลขที่บิล:</span><strong>${escapeHtml(data.invoice_no||'-')}</strong></div><div class="bs-info-row"><span>วันที่:</span><strong>${escapeHtml(data.date||'-')}</strong></div><div class="bs-info-row"><span>ร้านค้า:</span><strong>${escapeHtml(data.supplier||'-')}</strong></div><div class="bs-info-row"><span>ยอดรวม:</span><strong>${(data.total||0).toLocaleString()} ฿</strong></div></div><div style="max-height:35vh;overflow-y:auto">${itemsHtml}</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="cancelBillScan()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="confirmBillScan()">✓ ยืนยัน ${items.length} รายการ</button></div>`,'pay-modal');
+    setTimeout(()=>{ items.forEach((item,i)=>{ const card=document.querySelector(`.bs-item[data-idx="${i}"]`); if(!card) return; const sel=card.querySelector('select'); if(sel&&item.matched_material_id) sel.value=item.matched_material_id; }); },50);
+  }
+  function updateBillItem(idx,field,value){ if(!matState.scannedBill||!matState.scannedBill.items[idx]) return; matState.scannedBill.items[idx][field]=(field==='quantity'||field==='unit_price')?Number(value):value; if(field==='material_id') matState.scannedBill.items[idx].matched_material_id=value; }
+  function cancelBillScan(){ matState.scannedBill=null; Modal.close(); }
+  async function confirmBillScan(){
+    if(!matState.scannedBill) return;
+    const items=matState.scannedBill.items.filter(i=>i.matched_material_id&&i.quantity>0).map(i=>({ material_id:i.matched_material_id, quantity:i.quantity, unit_price:i.unit_price||0, notes:'สแกนบิล: '+(i.raw_name||'') }));
+    if(items.length===0){ Modal.toast('❌ ไม่มีรายการที่พร้อมบันทึก (ต้องเลือกวัสดุ + ใส่จำนวน)'); return; }
+    Modal.toast('กำลังบันทึก '+items.length+' รายการ...');
+    const res=await API.callPost('confirm_bill_items',{ bill_photo_id:matState.scannedBill.bill_photo_id, invoice_no:matState.scannedBill.invoice_no, items:JSON.stringify(items) });
+    Modal.toast(res.ok?'✓ บันทึกสำเร็จ '+items.length+' รายการ':'⚠️ '+(res.error||'ดูใน Sheets'));
+    setTimeout(async()=>{ Modal.close(); matState.scannedBill=null; await loadAll(); },1500);
+  }
+
+  // ══════════════════ Chapter 2: เพิ่ม/แก้/ลบ วัสดุ ══════════════════
+  const NM_CATEGORIES=['ไม้แผ่น','ไม้โครง','ไฟฟ้า','ฮาร์ดแวร์','กาว','วัสดุสิ้นเปลือง','อื่นๆ'];
+  matState.nm={ mode:'COUNT', onCreated:null, edit:null, origMode:null };
+  function openNewMaterialModal(prefillName,onCreated){ renderMaterialModal(null,prefillName,onCreated); }
+  function openEditMaterialModal(matId){ const m=matState.materials.find(x=>x.id===matId); if(!m){ Modal.toast('ไม่พบวัสดุ'); return; } renderMaterialModal(m,'',null); }
+  function renderMaterialModal(mat,prefillName,onCreated){
+    const isEdit=!!mat;
+    const startMode=isEdit?(mat.tracking_mode==='STATUS'?'STATUS':'COUNT'):'COUNT';
+    matState.nm={ mode:startMode, onCreated:onCreated||null, edit:isEdit?mat:null, origMode:isEdit?startMode:null, hasStock:isEdit?(Number(mat.current_stock||0)>0):false };
+    const v=(x)=>(x===undefined||x===null)?'':x;
+    const nmVal=isEdit?v(mat.name):(prefillName||'');
+    const catList=NM_CATEGORIES.slice();
+    if(isEdit&&mat.category&&catList.indexOf(mat.category)<0) catList.unshift(mat.category);
+    const catOpts=catList.map(c=>`<option value="${escapeAttr(c)}" ${isEdit&&mat.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('');
+    const noteBox=isEdit?`<div class="nm-prefill">✏️ แก้ไขวัสดุ <strong>${escapeHtml(mat.id)}</strong> — เปลี่ยนเฉพาะที่ต้องการ</div>`:(prefillName?`<div class="nm-prefill">💡 เพิ่มวัสดุจากที่พิมพ์ไว้ — ตรวจสอบ/แก้ไขให้ถูกต้องก่อนบันทึก</div>`:'');
+    Modal.show(`<div class="modal-title">${isEdit?'✏️ แก้ไขวัสดุ':'➕ เพิ่มวัสดุใหม่'}</div><div class="modal-desc">${isEdit?'ปรับข้อมูลวัสดุแล้วบันทึก':'กรอกข้อมูลวัสดุเพื่อเพิ่มเข้าระบบ'}</div>${noteBox}<div class="mf-form" style="text-align:left">
+      <div class="mf-grp"><label class="mf-lb">ชื่อวัสดุ <span class="nm-req">*</span></label><input id="nmName" type="text" class="mf-in" placeholder="เช่น ไม้ HMR 18 มิล" value="${escapeAttr(nmVal)}"></div>
+      <div class="mf-row"><div class="mf-grp"><label class="mf-lb">หน่วย <span class="nm-req">*</span></label><input id="nmUnit" type="text" class="mf-in" placeholder="แผ่น / กล่อง / เส้น" value="${isEdit?escapeAttr(v(mat.unit)):''}"></div><div class="mf-grp"><label class="mf-lb">หมวด</label><select id="nmCat" class="mf-in">${catOpts}</select></div></div>
+      <div class="mf-row"><div class="mf-grp"><label class="mf-lb">สเปก</label><input id="nmSpec" type="text" class="mf-in" placeholder="เช่น เกรด A, กันชื้น" value="${isEdit?escapeAttr(v(mat.spec)):''}"></div><div class="mf-grp"><label class="mf-lb">ขนาด</label><input id="nmSize" type="text" class="mf-in" placeholder="เช่น 18 มิล, 4x8" value="${isEdit?escapeAttr(v(mat.size)):''}"></div></div>
+      <div class="mf-grp"><label class="mf-lb">ซัพพลายเออร์ <span style="color:var(--color-slate-400);font-weight:400">(ไม่บังคับ)</span></label><input id="nmSupplier" type="text" class="mf-in" placeholder="ชื่อร้าน/ผู้ขาย" value="${isEdit?escapeAttr(v(mat.default_supplier_id)):''}"></div>
+      <div class="mf-grp"><label class="mf-lb">โหมดติดตามสต๊อก <span class="nm-req">*</span></label><div class="nm-mode"><button type="button" class="nm-mode-opt ${startMode==='COUNT'?'on':''}" id="nmModeCount" onclick="selectNmMode('COUNT')"><div class="nm-mode-ic">🔢</div><div class="nm-mode-nm">นับจำนวน</div><div class="nm-mode-ds">นับเป็นตัวเลข เช่น 25 แผ่น</div></button><button type="button" class="nm-mode-opt ${startMode==='STATUS'?'on':''}" id="nmModeStatus" onclick="selectNmMode('STATUS')"><div class="nm-mode-ic">🚦</div><div class="nm-mode-nm">นับสถานะ</div><div class="nm-mode-ds">เต็ม/ใช้ได้/ใกล้หมด/หมด</div></button></div><div class="nm-hint" id="nmModeHint">เลือกให้ถูกตั้งแต่แรก — มีผลกับวิธีนับสต๊อกของวัสดุนี้</div></div>
+      <div class="mf-row" id="nmCountFields">${isEdit?'':`<div class="mf-grp"><label class="mf-lb">สต๊อกเริ่มต้น</label><input id="nmStock" type="number" min="0" class="mf-in" placeholder="0"></div>`}<div class="mf-grp" ${isEdit?'style="grid-column:1/-1"':''}><label class="mf-lb">ราคา/หน่วย <span style="color:var(--color-slate-400);font-weight:400">(ไม่บังคับ)</span></label><input id="nmPrice" type="number" min="0" class="mf-in" placeholder="0 (ถ้าทราบ)" value="${isEdit&&Number(mat.default_price)>0?Number(mat.default_price):''}"></div></div>
+      <div class="mf-grp" id="nmAlertGrp"><label class="mf-lb">แจ้งเตือนเมื่อต่ำกว่า</label><input id="nmAlert" type="number" min="0" class="mf-in" placeholder="0 (ไม่บังคับ)" value="${isEdit&&Number(mat.min_stock_alert)>0?Number(mat.min_stock_alert):''}"><div class="nm-hint">ระบบจะเตือนเมื่อสต๊อกเหลือน้อยกว่าจำนวนนี้ (เฉพาะโหมดนับจำนวน)</div></div>
+      <div class="mf-grp"><label class="mf-lb">หมายเหตุ</label><input id="nmNotes" type="text" class="mf-in" placeholder="(ไม่บังคับ)" value="${isEdit?escapeAttr(v(mat.notes)):''}"></div>
+      <button class="mf-submit" id="nmSubmit" onclick="submitNewMaterial()">${isEdit?'💾 บันทึกการแก้ไข':'➕ เพิ่มวัสดุนี้'}</button>
+    </div>`,'pay-modal');
+    selectNmMode(startMode,true);
+  }
+  async function selectNmMode(mode,silent){
+    const nm=matState.nm;
+    if(!silent&&nm.edit&&nm.hasStock&&nm.origMode&&mode!==nm.origMode){
+      const ok=await Modal.confirm({icon:'⚠️',iconClass:'warn',title:'เปลี่ยนโหมดวัสดุที่มีสต๊อก?',desc:'วัสดุนี้มีสต๊อกอยู่ — เปลี่ยนโหมด'+(mode==='STATUS'?'เป็น "สถานะ" จะตีความตัวเลขสต๊อกเดิมเป็นสถานะ 0-3':'เป็น "นับจำนวน" จะตีความสถานะเดิมเป็นจำนวน'),confirmText:'ยืนยันเปลี่ยน',cancelText:'ไม่',confirmClass:'modal-btn-warn'});
+      if(!ok) return;
+    }
+    nm.mode=mode;
+    document.getElementById('nmModeCount').classList.toggle('on',mode==='COUNT');
+    document.getElementById('nmModeStatus').classList.toggle('on',mode==='STATUS');
+    const stockInput=document.getElementById('nmStock'), alertGrp=document.getElementById('nmAlertGrp'), hint=document.getElementById('nmModeHint');
+    if(mode==='STATUS'){ if(stockInput){ stockInput.value=''; stockInput.disabled=true; stockInput.placeholder='— (ใช้สถานะ)'; } if(alertGrp) alertGrp.style.display='none'; }
+    else { if(stockInput){ stockInput.disabled=false; stockInput.placeholder='0'; } if(alertGrp) alertGrp.style.display='block'; }
+    if(hint&&nm.edit&&nm.origMode&&mode!==nm.origMode) hint.innerHTML='<span style="color:var(--color-warning-700)">⚠️ เปลี่ยนจากโหมดเดิม — ระบบจะตีความสต๊อกใหม่</span>';
+    else if(hint) hint.textContent='เลือกให้ถูกตั้งแต่แรก — มีผลกับวิธีนับสต๊อกของวัสดุนี้';
+  }
+  async function submitNewMaterial(){
+    const isEdit=!!matState.nm.edit;
+    const name=document.getElementById('nmName').value.trim(), unit=document.getElementById('nmUnit').value.trim();
+    if(!name){ Modal.toast('กรุณาใส่ชื่อวัสดุ'); return; }
+    if(!unit){ Modal.toast('กรุณาใส่หน่วย'); return; }
+    const dup=matState.materials.find(m=>String(m.name||'').trim().toLowerCase()===name.toLowerCase()&&(!isEdit||m.id!==matState.nm.edit.id));
+    if(dup){ Modal.toast('⚠️ มีวัสดุชื่อนี้แล้ว: '+dup.id); return; }
+    const mode=matState.nm.mode;
+    const fields={ name, unit, category:document.getElementById('nmCat').value, spec:document.getElementById('nmSpec').value.trim(), size:document.getElementById('nmSize').value.trim(), default_supplier_id:document.getElementById('nmSupplier').value.trim(), tracking_mode:mode, default_price:document.getElementById('nmPrice').value||0, min_stock_alert:mode==='STATUS'?0:(document.getElementById('nmAlert').value||0), notes:document.getElementById('nmNotes').value.trim() };
+    const btn=document.getElementById('nmSubmit'); btn.disabled=true; btn.innerHTML='<span class="spinner" style="width:13px;height:13px;border-width:2px;display:inline-block;vertical-align:middle"></span> กำลังบันทึก...';
+    try{
+      if(isEdit){ const res=await API.updateMaterial(matState.nm.edit.id,fields); if(!res.ok) throw new Error(res.error||'บันทึกไม่สำเร็จ'); Modal.toast('✓ บันทึกการแก้ไข "'+name+'" แล้ว'); Modal.close(); await loadAll(); return; }
+      const stockEl=document.getElementById('nmStock');
+      const payload=Object.assign({},fields,{ current_stock:mode==='STATUS'?0:((stockEl&&stockEl.value)||0) });
+      const res=await API.callWrite('create_material',payload); if(!res.ok) throw new Error(res.error||'บันทึกไม่สำเร็จ');
+      Modal.toast('✓ เพิ่มวัสดุ "'+name+'" แล้ว'); const onCreated=matState.nm.onCreated; Modal.close(); await loadAll();
+      if(typeof onCreated==='function'){ const created=matState.materials.find(m=>String(m.name||'').trim().toLowerCase()===name.toLowerCase()); if(created) onCreated(created); }
+    }catch(err){ Modal.toast('❌ '+err.message); btn.disabled=false; btn.innerHTML=isEdit?'💾 บันทึกการแก้ไข':'➕ เพิ่มวัสดุนี้'; }
+  }
+  function openDeleteMaterialModal(matId){
+    const m=matState.materials.find(x=>x.id===matId); if(!m){ Modal.toast('ไม่พบวัสดุ'); return; }
+    Modal.show(`<div class="modal-icon warn">🗑</div><div class="modal-title">ลบ "${escapeHtml(m.name)}" ออกจากรายการ?</div><div class="modal-desc">${escapeHtml(m.id)} · ${escapeHtml(m.category||'')}<br>วัสดุจะหายจากทุกรายการ/ช่องเลือก — ประวัติเบิก-รับ-นับยังเก็บไว้ให้รายงาน (กู้คืนได้)</div><button class="del-opt deact" onclick="doDeactivateMaterial('${escapeAttr(matId).replace(/'/g,'&#39;')}')">🗑 ลบออกจากรายการ</button><div class="del-opt-hint">นี่คือสิ่งที่ต้องการในกรณีทั่วไป — วัสดุหายจากหน้าจอทันที</div><button class="del-opt hard" onclick="doDeleteMaterial('${escapeAttr(matId).replace(/'/g,'&#39;')}')">⚠️ ลบถาวรทิ้งทั้งหมด</button><div class="del-opt-hint">ใช้เฉพาะวัสดุที่สร้างผิด/ยังไม่เคยมีการเบิก-รับ — ถ้าเคยใช้แล้วระบบจะให้ "ลบออกจากรายการ" แทน</div><div class="modal-btns" style="margin-top:18px"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button></div>`);
+  }
+  async function doDeactivateMaterial(matId){
+    const m=matState.materials.find(x=>x.id===matId); Modal.toast('กำลังปิดใช้งาน...');
+    try{ const res=await API.deactivateMaterial(matId); if(!res.ok) throw new Error(res.error||'ไม่สำเร็จ'); Modal.close(); Modal.toast('✓ ปิดใช้งาน "'+(m?m.name:matId)+'" แล้ว'); setTimeout(loadAll,1200); }
+    catch(err){ Modal.toast('❌ '+err.message); }
+  }
+  async function doDeleteMaterial(matId){
+    const m=matState.materials.find(x=>x.id===matId);
+    const ok=await Modal.confirm({icon:'⚠️',iconClass:'danger',title:'ลบถาวร?',desc:'ยืนยันลบ "'+(m?m.name:matId)+'" ถาวร? กู้คืนไม่ได้',confirmText:'ลบถาวร',cancelText:'ยกเลิก',confirmClass:'modal-btn-danger'});
+    if(!ok) return;
+    Modal.toast('กำลังลบ...');
+    try{ const res=await API.deleteMaterial(matId); if(res&&res.ok){ Modal.close(); Modal.toast('✓ ลบ "'+(m?m.name:matId)+'" ถาวรแล้ว'); setTimeout(loadAll,1200); } else Modal.toast('⚠️ '+((res&&res.error)||'ลบถาวรไม่ได้ — วัสดุนี้มีประวัติการเคลื่อนไหว ใช้ "ปิดใช้งาน" แทน'),4000); }
+    catch(err){ Modal.toast('❌ '+err.message); }
+  }
 
   loadAll();
   </script>
