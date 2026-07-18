@@ -182,6 +182,70 @@
   .modal-info-row { display:flex; gap:var(--space-2); font-size:var(--text-sm); padding:2px 0; }
   .modal-info-key { color:var(--color-slate-500); min-width:64px; }
   .modal-info-val { color:var(--color-slate-800); font-weight:500; }
+
+  /* ── FF Detail overlay (S2b-2) ──
+     z-index scale: bottomnav 30 < ffd-overlay 50 < modal 100 < toast 120 < lightbox 9999 */
+  .ffd-overlay { position:fixed; inset:0; z-index:50; background:var(--color-slate-50); overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .ffd-hdr { background:#fff; border-bottom:1px solid var(--color-slate-200); padding:var(--space-4); position:sticky; top:0; z-index:1; }
+  .ffd-hdr-top { display:flex; align-items:center; gap:var(--space-3); margin-bottom:var(--space-2); }
+  .ffd-hdr-code { font-size:var(--text-xs); font-weight:700; padding:2px 8px; border-radius:var(--radius-full); background:var(--color-blue-50); color:var(--color-blue-700); white-space:nowrap; }
+  .ffd-hdr-name { flex:1; font-size:var(--text-base); font-weight:600; color:var(--color-slate-900); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ffd-hdr-x { width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:var(--radius-md); color:var(--color-slate-500); cursor:pointer; flex-shrink:0; }
+  .ffd-hdr-x:hover { background:var(--color-slate-100); color:var(--color-slate-800); }
+  .ffd-meta { display:flex; gap:var(--space-4); font-size:var(--text-xs); color:var(--color-slate-500); flex-wrap:wrap; }
+  .ffd-meta span { display:flex; align-items:center; gap:4px; }
+  .ffd-meta i { width:13px; height:13px; }
+  .ffd-meta strong { color:var(--color-slate-800); font-weight:600; }
+  .ffd-kpi { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-2); margin-top:var(--space-3); }
+  .ffd-kpi-c { background:var(--color-slate-50); border-radius:var(--radius-md); padding:var(--space-2); text-align:center; }
+  .ffd-kpi-l { font-size:10px; color:var(--color-slate-500); }
+  .ffd-kpi-v { font-size:var(--text-lg); font-weight:700; color:var(--color-slate-900); font-variant-numeric:tabular-nums; }
+  .ffd-kpi-v.var-bad { color:var(--color-error-700); }
+  .ffd-kpi-v.var-warn { color:var(--color-warning-700); }
+  .ffd-kpi-v.var-ok { color:var(--color-success-700); }
+  .ffd-body { padding:var(--space-4) var(--space-4) 80px; max-width:900px; margin:0 auto; }
+  .ffd-sec { background:#fff; border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:var(--space-4); margin-bottom:var(--space-3); }
+  .ffd-sec-h { display:flex; align-items:center; gap:6px; font-size:var(--text-sm); font-weight:600; color:var(--color-slate-700); margin-bottom:var(--space-3); }
+  .ffd-sec-h i { width:16px; height:16px; color:var(--color-slate-400); }
+  .ffd-sec-hint { font-size:var(--text-xs); color:var(--color-slate-400); font-weight:400; margin-left:auto; }
+  .ffd-graph { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-2); padding-top:var(--space-2); }
+  .ffd-col { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .ffd-bars { display:flex; gap:5px; height:100px; align-items:flex-end; }
+  .ffd-bar { width:18px; border-radius:3px 3px 0 0; position:relative; min-height:2px; }
+  .ffd-bar.plan { background:var(--color-slate-300); }
+  .ffd-bar.actual.p1 { background:#1e293b; } .ffd-bar.actual.p2 { background:#3b82f6; }
+  .ffd-bar.actual.p3 { background:#10b981; } .ffd-bar.actual.p4 { background:#b45309; }
+  .ffd-bar-v { position:absolute; top:-14px; left:50%; transform:translateX(-50%); font-size:9px; color:var(--color-slate-500); font-variant-numeric:tabular-nums; }
+  .ffd-col-l { font-size:10px; font-weight:600; color:var(--color-slate-800); text-align:center; margin-top:2px; }
+  .ffd-col-w { font-size:9px; color:var(--color-slate-400); }
+  .ffd-legend { display:flex; gap:var(--space-4); justify-content:center; margin-top:var(--space-3); font-size:10px; color:var(--color-slate-500); }
+  .ffd-legend-d { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:middle; margin-right:4px; }
+  .ffd-empty { font-size:var(--text-xs); color:var(--color-slate-400); padding:var(--space-3) 0; text-align:center; line-height:1.6; }
+
+  /* ── FF Wizard (S2b-2) ── */
+  .ffw-modal { max-width:720px !important; }
+  .ffw-input { width:100%; padding:9px 10px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; color:var(--color-slate-900); background:#fff; }
+  .ffw-input:focus { outline:none; border-color:var(--color-blue-500); box-shadow:0 0 0 2px var(--color-blue-100); }
+  .ffw-lb { font-size:10px; color:var(--color-slate-500); font-weight:600; margin-bottom:3px; display:block; text-transform:uppercase; letter-spacing:0.04em; }
+  .ffw-card { border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:var(--space-3); margin-bottom:var(--space-3); background:var(--color-slate-50); }
+  .ffw-card-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-3); }
+  .ffw-card-title { font-size:var(--text-sm); font-weight:600; color:var(--color-blue-700); }
+  .ffw-row { display:grid; grid-template-columns:1fr 1fr; gap:var(--space-2); margin-bottom:var(--space-2); }
+  .ffw-task-list { margin-top:var(--space-3); padding-top:var(--space-3); border-top:1px dashed var(--color-slate-300); }
+  .ffw-task-row { display:grid; grid-template-columns:1fr 90px 32px; gap:6px; margin-bottom:6px; align-items:center; }
+  .ffw-task-actions { display:flex; gap:6px; margin-top:var(--space-2); flex-wrap:wrap; }
+  .ffw-btn-sm { display:inline-flex; align-items:center; gap:4px; padding:7px 12px; font-size:var(--text-xs); font-family:inherit; font-weight:500; border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-700); border-radius:var(--radius-md); cursor:pointer; }
+  .ffw-btn-sm:hover { background:var(--color-slate-100); }
+  .ffw-btn-sm i { width:13px; height:13px; }
+  .ffw-btn-x { width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:none; background:var(--color-error-50); color:var(--color-error-700); border-radius:var(--radius-md); cursor:pointer; font-family:inherit; flex-shrink:0; }
+  .ffw-btn-x:hover { background:#fecaca; }
+  .ffw-btn-x i { width:14px; height:14px; }
+  .ffw-add-ff { width:100%; padding:10px; border:1px dashed var(--color-slate-300); background:#fff; color:var(--color-slate-500); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; font-weight:500; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .ffw-add-ff:hover { border-color:var(--color-blue-500); color:var(--color-blue-700); }
+  .ffw-add-ff i { width:15px; height:15px; }
+  .ffw-err { background:var(--color-error-50); color:var(--color-error-700); border:1px solid #fecaca; border-radius:var(--radius-md); padding:var(--space-3); font-size:var(--text-xs); line-height:1.7; margin-top:var(--space-3); text-align:left; }
+  .ffw-code-tag { background:var(--color-blue-50); color:var(--color-blue-700); padding:2px 8px; border-radius:var(--radius-full); font-size:11px; font-weight:700; }
+  @media(max-width:768px){ .ffd-meta{ gap:var(--space-3); } .ffw-task-row{ grid-template-columns:1fr 80px 32px; } }
 </style>
 </head>
 <body>
@@ -269,6 +333,9 @@
     </main>
   </div>
 
+  <!-- FF Detail overlay (full-screen) — วางนอก .app-container เพื่อทับ shell ทั้งใบ -->
+  <div id="ffdOverlay" class="ffd-overlay" style="display:none"></div>
+
   <!-- Notification panel -->
   <div class="nf-overlay" id="nfOverlay" onclick="NF.close()"></div>
   <div class="nf-panel" id="nfPanel">
@@ -340,7 +407,7 @@
       loadLatestReport();
 
       renderAll();
-      document.getElementById('addFFBtn').onclick=()=>openFFDetailStub();
+      document.getElementById('addFFBtn').onclick=()=>FFW.open();
       document.getElementById('loadingScreen').style.display='none';
       document.getElementById('mainContent').style.display='block';
       if(window.lucide) lucide.createIcons();
@@ -670,7 +737,10 @@
     closeTaskPhoto();
     const task=state.data.tasks.find(t=>String(t.id)===String(taskId));
     if(task) task.photoCount=Math.max(0,(Number(task.photoCount)||0)-1);
-    if(document.getElementById('tpGallery')) loadTaskPhotos(taskId);
+    // รีเฟรชกล่องรูปที่ยังเปิดอยู่ (overlay มาก่อน — ใน overlay ไม่มี #tpGallery)
+    const ov=document.getElementById('ffdOverlay');
+    if(ov&&ov.style.display!=='none'&&task) openFFDetail(task.ffCode);
+    else if(document.getElementById('tpGallery')) loadTaskPhotos(taskId);
     if(state.openFFs.size>0) renderWeightList();
     Modal.toast('✓ ลบรูปแล้ว');
   }
@@ -728,13 +798,413 @@
     _spUploading[taskId]=false;
   }
 
-  // ── S2b-2 stubs (FF detail overlay + wizard — เฟสถัดไป) ──
-  function _soon(){ Modal.toast('🚧 ส่วนนี้กำลังพัฒนา (S2b-2) — ใช้ที่หน้าเดิมก่อน'); }
-  function openFFDetail(){ _soon(); }
-  function openFFDetailStub(){ _soon(); }
-  function openFFWizardModal(){ _soon(); }
-  function confirmCloneFromTemplate(){ _soon(); }
-  const FFW={ openEdit:_soon, confirmDelete:_soon, open:_soon };
+  // ══════════════════ S2b-2: FF DETAIL OVERLAY ══════════════════
+  // full-screen overlay ทับ dashboard · อ่านอย่างเดียว (ยกเว้นติ๊ก task/รูป ที่ reuse ของเดิม)
+  function openFFDetail(ffCode){
+    const ff=state.data.ffs.find(f=>f.code===ffCode);
+    if(!ff){ Modal.toast('ไม่พบ F นี้'); return; }
+    const ov=document.getElementById('ffdOverlay');
+    ov.style.display='block'; ov.scrollTop=0;
+    document.body.style.overflow='hidden';   // กัน scroll background
+    ov.innerHTML=renderFFDHeader(ff)+'<div class="ffd-body">'
+      +renderFFDGraph(ff)+renderFFDDesignSection(ffCode)
+      +renderFFDTasksSection(ffCode)+renderFFDGallerySection(ffCode)+'</div>';
+    if(window.lucide) lucide.createIcons();
+    loadFFDPhotosBundle(ffCode);   // lazy: โหลดรูปรวม (design + gallery ใช้ data ก้อนเดียว)
+  }
+  function closeFFDetail(){
+    const ov=document.getElementById('ffdOverlay'); if(!ov) return;
+    ov.style.display='none'; ov.innerHTML=''; document.body.style.overflow='';
+  }
+
+  function renderFFDHeader(ff){
+    const prog=calcFFProgressWeighted(ff.code);
+    const plan=calcFFPlanByGantt(ff.code, project);
+    const variance=Math.round((prog.pct-plan.overall)*10)/10;
+    let vCls='var-ok', vTxt='ตามแผน';
+    if(variance<-15){ vCls='var-bad'; vTxt='ล่าช้ามาก'; }
+    else if(variance<-5){ vCls='var-warn'; vTxt='ใกล้ล่าช้า'; }
+    else if(variance>5){ vCls='var-ok'; vTxt='เร็วกว่าแผน'; }
+    const planTxt=plan.hasGantt?plan.overall+'%':'—';
+    const varTxt=plan.hasGantt?((variance>0?'+':'')+variance+'%'):'—';
+    return `<div class="ffd-hdr">
+      <div class="ffd-hdr-top">
+        <span class="ffd-hdr-code">${escapeHtml(ff.code)}</span>
+        <div class="ffd-hdr-name">${escapeHtml(ff.name||'-')}</div>
+        <span class="ffd-hdr-x" onclick="closeFFDetail()" title="ปิด"><i data-lucide="x" style="width:20px;height:20px"></i></span>
+      </div>
+      <div class="ffd-meta">
+        <span><i data-lucide="map-pin"></i>Zone <strong>${escapeHtml(ff.zone||'-')}</strong></span>
+        ${ff.area?`<span><i data-lucide="home"></i><strong>${escapeHtml(ff.area)}</strong></span>`:''}
+        <span><i data-lucide="banknote"></i><strong>${fmt(ff.price||0)}</strong></span>
+        ${ff.scopeType?`<span><i data-lucide="file-text"></i>${escapeHtml(ff.scopeType)}</span>`:''}
+      </div>
+      <div class="ffd-kpi">
+        <div class="ffd-kpi-c"><div class="ffd-kpi-l">ทำได้</div><div class="ffd-kpi-v">${prog.pct}%</div></div>
+        <div class="ffd-kpi-c"><div class="ffd-kpi-l">แผน ณ วันนี้</div><div class="ffd-kpi-v">${planTxt}</div></div>
+        <div class="ffd-kpi-c"><div class="ffd-kpi-l">${vTxt}</div><div class="ffd-kpi-v ${vCls}">${varTxt}</div></div>
+      </div>
+    </div>`;
+  }
+
+  function renderFFDGraph(ff){
+    const plan=calcFFPlanByGantt(ff.code, project);
+    const pl={p1:'งวด 1',p2:'งวด 2',p3:'งวด 3',p4:'งวด 4'};
+    let cols='';
+    ['p1','p2','p3','p4'].forEach(p=>{
+      const tasks=state.data.tasks.filter(t=>t.ffCode===ff.code&&t.phase===p);
+      const total=tasks.length, done=tasks.filter(t=>t.status==='Done').length;
+      const actualPct=total>0?Math.round((done/total)*1000)/10:0;
+      const ph=plan.phases.find(x=>x.phase===p);
+      const planPct=ph?ph.planPct:0;
+      const weeks=(ph&&ph.startWeek)?('W'+ph.startWeek+'-'+ph.endWeek):'';
+      cols+=`<div class="ffd-col">
+        <div class="ffd-bars">
+          <div class="ffd-bar plan" style="height:${Math.max(2,planPct)}%"><span class="ffd-bar-v">${planPct}</span></div>
+          <div class="ffd-bar actual ${p}" style="height:${Math.max(2,actualPct)}%"><span class="ffd-bar-v">${actualPct}</span></div>
+        </div>
+        <div class="ffd-col-l">${pl[p]}</div>
+        <div class="ffd-col-w">${weeks} · ${done}/${total}</div>
+      </div>`;
+    });
+    const hint=plan.hasGantt?`สัปดาห์ที่ ${Math.floor(plan.currentWeek)}`:'ไม่มีแผน Gantt';
+    return `<div class="ffd-sec">
+      <div class="ffd-sec-h"><i data-lucide="bar-chart-3"></i> แผน vs ทำได้ รายงวด<span class="ffd-sec-hint">${hint}</span></div>
+      <div class="ffd-graph">${cols}</div>
+      <div class="ffd-legend">
+        <span><span class="ffd-legend-d" style="background:#cbd5e1"></span>แผน</span>
+        <span><span class="ffd-legend-d" style="background:#1e293b"></span>ทำได้จริง</span>
+      </div>
+    </div>`;
+  }
+
+  // แบบ/รูปทรง = reuse task photos ที่ caption ขึ้นต้น "[แบบ:" (ไม่มีตารางแยกใน backend)
+  function renderFFDDesignSection(ffCode){
+    return `<div class="ffd-sec">
+      <div class="ffd-sec-h"><i data-lucide="ruler"></i> แบบ/รูปทรง <span class="ffd-sec-hint">รูปที่มี caption [แบบ:..]</span></div>
+      <div id="ffdDesignBox"><div class="tp-skel"><div class="tp-skel-c skeleton"></div><div class="tp-skel-c skeleton"></div><div class="tp-skel-c skeleton"></div></div></div>
+    </div>`;
+  }
+  // _inOverlay=true → renderFFSubtasks ซ่อน CTA (กันวนซ้ำในตัวเอง)
+  function renderFFDTasksSection(ffCode){
+    return `<div class="ffd-sec">
+      <div class="ffd-sec-h"><i data-lucide="clipboard-list"></i> งานรายงวด</div>
+      ${renderFFSubtasks(ffCode, true)}
+    </div>`;
+  }
+  function renderFFDGallerySection(ffCode){
+    return `<div class="ffd-sec">
+      <div class="ffd-sec-h"><i data-lucide="images"></i> รูปงานรวม</div>
+      <div id="ffdGalleryBox"><div class="tp-skel"><div class="tp-skel-c skeleton"></div><div class="tp-skel-c skeleton"></div><div class="tp-skel-c skeleton"></div></div></div>
+    </div>`;
+  }
+
+  async function loadFFDPhotosBundle(ffCode){
+    const tasks=state.data.tasks.filter(t=>t.ffCode===ffCode);
+    const candidates=tasks.filter(t=>(Number(t.photoCount)||0)>0);
+    let allPhotos=[];
+    if(candidates.length>0){
+      try{
+        const results=await Promise.all(candidates.map(t=>API.getTaskPhotos(t.id).catch(()=>null)));
+        results.forEach((r,i)=>{ if(r&&r.ok&&Array.isArray(r.data)) r.data.forEach(p=>allPhotos.push(Object.assign({},p,{_task_name:candidates[i].name}))); });
+      }catch(e){}
+    }
+    const design=allPhotos.filter(p=>String(p.caption||'').indexOf('[แบบ:')===0);
+    const others=allPhotos.filter(p=>String(p.caption||'').indexOf('[แบบ:')!==0);
+    renderFFDPhotoGrid('ffdDesignBox', design, 'ยังไม่มีรูปแบบ — แนบรูปแล้วใส่ caption ขึ้นต้น [แบบ:ref] / [แบบ:shop] / [แบบ:render]');
+    renderFFDPhotoGrid('ffdGalleryBox', others, 'ยังไม่มีรูปงานใน F นี้ — เพิ่มผ่าน chip 📷 ของแต่ละงาน');
+  }
+
+  function renderFFDPhotoGrid(boxId, photos, emptyMsg){
+    const box=document.getElementById(boxId); if(!box) return;   // overlay ปิดไปแล้ว
+    if(!photos||!photos.length){ box.innerHTML=`<div class="ffd-empty">${emptyMsg}</div>`; return; }
+    window._tpPhotos=photos;   // lightbox อ้าง global ตัวเดียวกับ task modal (อย่าแยก)
+    let cells='';
+    photos.forEach((p,i)=>{ const th=tpThumbUrl(p);
+      cells+= th ? `<div class="tp-cell" onclick="openTaskPhoto(${i})"><img src="${tpEsc(th)}" alt="รูปงาน" loading="lazy" onerror="this.parentNode.innerHTML='&lt;div class=\\'tp-ph\\'&gt;🖼️ เปิดไม่ได้&lt;/div&gt;'"></div>`
+        : `<div class="tp-cell"><div class="tp-ph"><span class="tp-ph-ic">🖼️</span>เปิดไม่ได้</div></div>`; });
+    box.innerHTML='<div class="tp-grid">'+cells+'</div>';
+  }
+
+  // ══════════════════ S2b-2: FF WIZARD (สร้าง/แก้/ลบ FF) ══════════════════
+  const FFW={
+    state:null,   // { projectId, projectName, ffs:[{uid,code,zone,name,price,tasks:[{uid,name,phase}]}] }
+    _esc(s){ return escapeHtml(s); },
+    _nextUid(){ return Math.floor(Math.random()*1e9); },
+    // code ที่ใช้ไปแล้ว: ใน DB โปรเจกต์นี้ + ในฟอร์ม (ยกเว้นแถวที่กำลัง render)
+    _usedCodes(excludeFFUid){
+      const used=new Set();
+      if(state.data&&Array.isArray(state.data.ffs)) state.data.ffs.forEach(f=>f.code&&used.add(f.code));
+      FFW.state.ffs.forEach(f=>{ if(f.uid!==excludeFFUid&&f.code) used.add(f.code); });
+      return used;
+    },
+    _ffCodeOptions(currentCode, ffUid){
+      const used=FFW._usedCodes(ffUid);
+      const opts=['<option value="">— เลือก —</option>'];
+      for(let i=1;i<=50;i++){
+        const code='F-'+String(i).padStart(2,'0');
+        const isSel=code===currentCode;
+        if(used.has(code)&&!isSel) continue;
+        opts.push(`<option value="${code}" ${isSel?'selected':''}>${code}</option>`);
+      }
+      return opts.join('');
+    },
+    _zoneOptions(current){
+      let opts='<option value="">— เลือก —</option>';
+      for(let i=1;i<=5;i++){ const z='Zone '+i; opts+=`<option value="${z}" ${z===current?'selected':''}>${z}</option>`; }
+      return opts;
+    },
+    _phaseOptions(current){
+      let opts='';
+      for(let i=1;i<=4;i++) opts+=`<option value="${i}" ${i===current?'selected':''}>งวด ${i}</option>`;
+      return opts;
+    },
+    renderBody(){
+      const totalTasks=FFW.state.ffs.reduce((s,f)=>s+f.tasks.length,0);
+      let html='';
+      FFW.state.ffs.forEach((ff,idx)=>{
+        html+=`<div class="ffw-card">
+          <div class="ffw-card-hdr">
+            <span class="ffw-card-title">FF #${idx+1}</span>
+            ${FFW.state.ffs.length>1?`<button class="ffw-btn-x" title="ลบ FF นี้" onclick="FFW.removeFF(${ff.uid})"><i data-lucide="x"></i></button>`:''}
+          </div>
+          <div class="ffw-row">
+            <div><label class="ffw-lb">FF Code</label>
+              <select class="ffw-input" onchange="FFW.updateFF(${ff.uid},'code',this.value)">${FFW._ffCodeOptions(ff.code,ff.uid)}</select></div>
+            <div><label class="ffw-lb">Zone</label>
+              <select class="ffw-input" onchange="FFW.updateFF(${ff.uid},'zone',this.value)">${FFW._zoneOptions(ff.zone)}</select></div>
+          </div>
+          <div class="ffw-row">
+            <div style="grid-column:1 / span 2"><label class="ffw-lb">ชื่อ FF</label>
+              <input class="ffw-input" type="text" placeholder="เช่น ตู้เสื้อผ้า ห้องนอน 1" value="${FFW._esc(ff.name)}" oninput="FFW.updateFF(${ff.uid},'name',this.value)"></div>
+          </div>
+          <div class="ffw-row">
+            <div><label class="ffw-lb">ราคา (บาท)</label>
+              <input class="ffw-input" type="number" min="0" placeholder="0" value="${ff.price||''}" oninput="FFW.updateFF(${ff.uid},'price',this.value)"></div>
+            <div></div>
+          </div>
+          <div class="ffw-task-list">
+            <label class="ffw-lb" style="margin-bottom:8px">งานย่อย ${ff.tasks.length?'('+ff.tasks.length+')':''}</label>
+            ${ff.tasks.map(t=>`<div class="ffw-task-row">
+              <input class="ffw-input" type="text" placeholder="ชื่องาน" value="${FFW._esc(t.name)}" oninput="FFW.updateTask(${ff.uid},${t.uid},'name',this.value)">
+              <select class="ffw-input" onchange="FFW.updateTask(${ff.uid},${t.uid},'phase',parseInt(this.value,10))">${FFW._phaseOptions(t.phase)}</select>
+              <button class="ffw-btn-x" title="ลบงาน" onclick="FFW.removeTask(${ff.uid},${t.uid})"><i data-lucide="x"></i></button>
+            </div>`).join('')}
+            <div class="ffw-task-actions">
+              <button class="ffw-btn-sm" onclick="FFW.addTask(${ff.uid})"><i data-lucide="plus"></i> เพิ่มงานย่อย</button>
+              <button class="ffw-btn-sm" onclick="FFW.applyTemplate(${ff.uid})" title="ใส่ template 4 งาน (งวด 1-4)"><i data-lucide="clipboard-list"></i> ใส่ template</button>
+            </div>
+          </div>
+        </div>`;
+      });
+      document.getElementById('ffwBody').innerHTML=html;
+      const sb=document.getElementById('ffwSubmit');
+      if(sb) sb.textContent='บันทึก '+FFW.state.ffs.length+' FF'+(totalTasks>0?' + '+totalTasks+' งาน':'');
+      if(window.lucide) lucide.createIcons();
+    },
+    addFF(){
+      FFW.state.ffs.push({uid:FFW._nextUid(),code:'',zone:'Zone 1',name:'',price:0,tasks:[]});
+      FFW.renderBody();
+    },
+    removeFF(uid){
+      FFW.state.ffs=FFW.state.ffs.filter(f=>f.uid!==uid);
+      if(FFW.state.ffs.length===0) FFW.addFF(); else FFW.renderBody();
+    },
+    updateFF(uid,field,value){
+      const ff=FFW.state.ffs.find(f=>f.uid===uid); if(!ff) return;
+      ff[field]=value;
+      if(field==='code') FFW.renderBody();   // code เปลี่ยน → dropdown ตัวอื่นต้องอัปเดตตัวเลือก
+    },
+    addTask(ffUid){
+      const ff=FFW.state.ffs.find(f=>f.uid===ffUid); if(!ff) return;
+      const lastPhase=ff.tasks.length?ff.tasks[ff.tasks.length-1].phase:0;
+      ff.tasks.push({uid:FFW._nextUid(),name:'',phase:Math.min(4,lastPhase+1)||1});
+      FFW.renderBody();
+    },
+    removeTask(ffUid,taskUid){
+      const ff=FFW.state.ffs.find(f=>f.uid===ffUid); if(!ff) return;
+      ff.tasks=ff.tasks.filter(t=>t.uid!==taskUid);
+      FFW.renderBody();
+    },
+    updateTask(ffUid,taskUid,field,value){
+      const ff=FFW.state.ffs.find(f=>f.uid===ffUid); if(!ff) return;
+      const t=ff.tasks.find(t=>t.uid===taskUid); if(!t) return;
+      t[field]=value;   // ไม่ rerender — รักษา focus ช่องที่กำลังพิมพ์
+    },
+    applyTemplate(ffUid){
+      const ff=FFW.state.ffs.find(f=>f.uid===ffUid); if(!ff) return;
+      ff.tasks=[
+        {uid:FFW._nextUid(),name:'ออกแบบ + Approve',phase:1},
+        {uid:FFW._nextUid(),name:'สั่งวัสดุ + ขึ้นโครง',phase:2},
+        {uid:FFW._nextUid(),name:'ติดตั้งหน้างาน',phase:3},
+        {uid:FFW._nextUid(),name:'ตรวจรับ + ส่งมอบ',phase:4},
+      ];
+      FFW.renderBody();
+    },
+    validate(){
+      const errs=[];
+      if(FFW.state.ffs.length===0){ errs.push('ต้องมี FF อย่างน้อย 1 รายการ'); return errs; }
+      FFW.state.ffs.forEach((ff,i)=>{
+        const label='FF #'+(i+1);
+        if(!ff.code) errs.push(label+': เลือก FF Code');
+        if(!ff.name||!ff.name.trim()) errs.push(label+': ใส่ชื่อ FF');
+        ff.tasks.forEach((t,ti)=>{ if(!t.name||!t.name.trim()) errs.push(label+' งานย่อย #'+(ti+1)+': ชื่องานว่าง'); });
+      });
+      return errs;
+    },
+    showErr(msg){
+      const el=document.getElementById('ffwErr'); if(!el) return;
+      el.innerHTML=msg; el.style.display='block';
+    },
+    open(projectId, projectName){
+      // ไม่ส่ง arg มา (เช่น CTA จาก empty state) → ใช้โปรเจกต์ที่เปิดอยู่ ห้าม fallback เป็นค่า hardcode
+      const pid=projectId||state.projectId;
+      const pname=projectName||(project&&project.name)||pid;
+      FFW.state={projectId:pid, projectName:pname,
+        ffs:[{uid:FFW._nextUid(),code:'',zone:'Zone 1',name:'',price:0,tasks:[]}]};
+      Modal.show(`<div class="modal-title" style="text-align:left;font-size:17px;margin-bottom:4px">เพิ่ม FF เข้าโครงการ</div>
+        <div style="text-align:left;color:var(--color-slate-500);font-size:13px;margin-bottom:16px">${FFW._esc(pname)}</div>
+        <div id="ffwBody"></div>
+        <button class="ffw-add-ff" onclick="FFW.addFF()"><i data-lucide="plus"></i> เพิ่ม FF อีกรายการ</button>
+        <div id="ffwErr" class="ffw-err" style="display:none"></div>
+        <div class="modal-btns" style="margin-top:16px">
+          <button type="button" class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+          <button type="button" id="ffwSubmit" class="modal-btn modal-btn-primary" onclick="FFW.submit()">บันทึก</button>
+        </div>`, 'ffw-modal');
+      FFW.renderBody();
+    },
+    async submit(){
+      const errs=FFW.validate();
+      if(errs.length){ FFW.showErr('❌ '+errs.join('<br>❌ ')); return; }
+      const btn=document.getElementById('ffwSubmit');
+      const origText=btn.textContent;
+      btn.disabled=true; btn.textContent='กำลังบันทึก...';
+      const items=FFW.state.ffs.map(ff=>({
+        code:ff.code, name:ff.name.trim(), zone:ff.zone||'',
+        price:parseFloat(ff.price)||0,
+        tasks:ff.tasks.map(t=>({name:t.name.trim(), phase:t.phase}))
+      }));
+      try{
+        const savedPid=state.projectId;
+        state.projectId=FFW.state.projectId;   // API อ่าน projectId จาก state
+        let res;
+        try{ res=await API.createFFBatch(items); } finally { state.projectId=savedPid; }
+        if(!res||!res.ok){
+          FFW.showErr('❌ '+((res&&res.error)||'บันทึกไม่สำเร็จ'));
+          btn.disabled=false; btn.textContent=origText; return;
+        }
+        const d=res.data||{};
+        const ok=d.created_count||0, fail=d.failed_count||0, tasks=d.tasks_created||0;
+        if(fail>0){
+          const errLines=(d.failed||[]).map(f=>'· '+(f.code||'?')+': '+f.error).join('<br>');
+          FFW.showErr('สำเร็จ '+ok+' / ล้มเหลว '+fail+'<br>'+errLines);
+          btn.disabled=false; btn.textContent=origText; return;
+        }
+        Modal.close();
+        Modal.toast('✓ สร้าง '+ok+' FF'+(tasks?' + '+tasks+' งาน':'')+' สำเร็จ — กำลังรีโหลด');
+        setTimeout(()=>loadData(),600);
+      }catch(err){
+        FFW.showErr('❌ '+err.message);
+        btn.disabled=false; btn.textContent=origText;
+      }
+    }
+  };
+
+  // ── แก้ไข / ลบ FF (จากปุ่มในแถว FF list) ──
+  FFW.openEdit=function(ffCode){
+    const ff=state.data&&state.data.ffs&&state.data.ffs.find(f=>f.code===ffCode);
+    if(!ff){ Modal.toast('ไม่พบ FF: '+ffCode); return; }
+    Modal.show(`<div class="modal-title" style="text-align:left;font-size:17px;margin-bottom:4px">แก้ไข FF</div>
+      <div style="text-align:left;font-size:13px;margin-bottom:16px">
+        <span class="ffw-code-tag">${FFW._esc(ff.code)}</span>
+        <span style="font-size:11px;color:var(--color-slate-400);margin-left:8px">(เปลี่ยน code ไม่ได้ — ลบแล้วสร้างใหม่ถ้าจำเป็น)</span>
+      </div>
+      <div class="ffw-row">
+        <div><label class="ffw-lb">Zone</label><select id="ffeZone" class="ffw-input">${FFW._zoneOptions(ff.zone)}</select></div>
+        <div><label class="ffw-lb">ราคา (บาท)</label><input id="ffePrice" class="ffw-input" type="number" min="0" value="${ff.price||0}"></div>
+      </div>
+      <div class="ffw-row">
+        <div style="grid-column:1 / span 2"><label class="ffw-lb">ชื่อ FF</label>
+          <input id="ffeName" class="ffw-input" type="text" value="${FFW._esc(ff.name)}"></div>
+      </div>
+      <div id="ffeErr" class="ffw-err" style="display:none"></div>
+      <div class="modal-btns" style="margin-top:18px">
+        <button type="button" class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+        <button type="button" id="ffeSubmit" class="modal-btn modal-btn-primary" onclick="FFW.submitEdit('${FFW._esc(ff.code)}')">บันทึก</button>
+      </div>`, 'ffw-modal');
+    setTimeout(()=>{ const el=document.getElementById('ffeName'); if(el) el.focus(); },100);
+  };
+
+  FFW.submitEdit=async function(ffCode){
+    const name=document.getElementById('ffeName').value.trim();
+    const err=document.getElementById('ffeErr');
+    if(!name){ err.textContent='ชื่อ FF ต้องไม่ว่าง'; err.style.display='block'; return; }
+    const btn=document.getElementById('ffeSubmit');
+    btn.disabled=true; btn.textContent='กำลังบันทึก...';
+    try{
+      const res=await API.updateFF({code:ffCode, name:name,
+        zone:document.getElementById('ffeZone').value,
+        price:parseFloat(document.getElementById('ffePrice').value)||0});
+      if(!res||!res.ok){
+        err.textContent='❌ '+((res&&res.error)||'แก้ไขไม่สำเร็จ'); err.style.display='block';
+        btn.disabled=false; btn.textContent='บันทึก'; return;
+      }
+      Modal.close(); Modal.toast('✓ แก้ไข '+ffCode+' สำเร็จ');
+      setTimeout(()=>loadData(),400);
+    }catch(e){
+      err.textContent='❌ '+e.message; err.style.display='block';
+      btn.disabled=false; btn.textContent='บันทึก';
+    }
+  };
+
+  FFW.confirmDelete=async function(ffCode){
+    const ff=state.data&&state.data.ffs&&state.data.ffs.find(f=>f.code===ffCode);
+    const taskCount=(state.data&&state.data.tasks)?state.data.tasks.filter(t=>t.ffCode===ffCode).length:0;
+    const ok=await Modal.confirm({
+      icon:'🗑️', iconClass:'warn', title:'ลบ FF: '+ffCode+'?',
+      desc:(ff?ff.name+' — ':'')+'จะลบงานที่ผูกอยู่ทั้งหมด '+taskCount+' รายการด้วย',
+      info:'การลบนี้ย้อนกลับไม่ได้ — ข้อมูลสต็อก/รูปอื่นไม่ถูกแตะ',
+      confirmText:'ลบ FF + '+taskCount+' งาน', cancelText:'ยกเลิก', confirmClass:'modal-btn-warn'
+    });
+    if(!ok) return;
+    try{
+      const res=await API.deleteFF(ffCode);
+      if(!res||!res.ok){ Modal.toast('❌ ลบไม่สำเร็จ: '+((res&&res.error)||'unknown')); return; }
+      const d=res.data||{};
+      Modal.toast('✓ ลบ '+ffCode+' สำเร็จ'+(d.tasks_deleted?' (+ '+d.tasks_deleted+' งาน)':''));
+      setTimeout(()=>loadData(),400);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+
+  // backward compat — CTA ใน empty state เรียกชื่อนี้
+  function openFFWizardModal(projectId, projectName){ return FFW.open(projectId, projectName); }
+
+  // ── Clone template — copy FF + tasks จาก bow-house (hardcode ต้นแบบ = ตั้งใจ) ──
+  async function confirmCloneFromTemplate(targetProjectId, projectName){
+    const ok=await Modal.confirm({
+      icon:'📋', iconClass:'info', title:'ใช้ template จาก Bow House?',
+      desc:'จะคัดลอก FF ทั้งหมด และงานของแต่ละ FF มาที่ "'+projectName+'"',
+      info:'ทุกรายการจะเริ่มที่สถานะ "ยังไม่เริ่ม" — ลบ/แก้ไขทีหลังได้',
+      confirmText:'คัดลอก', cancelText:'ยกเลิก', confirmClass:'modal-btn-primary'
+    });
+    if(!ok) return;
+    Modal.toast('⏳ กำลังคัดลอก...');
+    try{
+      const res=await API.cloneFromTemplate(targetProjectId, 'bow-house', true);
+      if(!res||!res.ok){ Modal.toast('❌ คัดลอกไม่สำเร็จ: '+((res&&res.error)||'unknown')); return; }
+      const d=res.data||{};
+      Modal.toast('✅ คัดลอก FF '+(d.ff_cloned||0)+' รายการ + งาน '+(d.tasks_cloned||0)+' รายการ');
+      setTimeout(()=>loadData(),600);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  }
+
+  // Esc = ปิดชั้นบนสุดทีละชั้น (lightbox → overlay)
+  document.addEventListener('keydown', e=>{
+    if(e.key!=='Escape') return;
+    if(document.getElementById('tpLightbox')){ closeTaskPhoto(); return; }
+    const ov=document.getElementById('ffdOverlay');
+    if(ov&&ov.style.display!=='none') closeFFDetail();
+  });
 
   loadData();
   </script>

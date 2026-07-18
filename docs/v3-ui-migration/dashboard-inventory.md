@@ -16,7 +16,7 @@
 | 6 | AI Daily Report card | `#drReportCard` | `loadLatestReport` L1228 | S2a |
 | 7 | Donut gauge + forecast | `#gaugeRow` | `renderGauge` L1536 | S2a |
 | 8 | Inventory value (+ Price Editor) | `#invSummary` | `renderInventory` L1294, `PE.*` L1351 | S2a (แสดง) / S2c (PE) |
-| 9 | Weight/Progress list + subtasks | `#weightList #zoneTabs` | `renderWeightList` L1587, `renderFFSubtasks` L1683 | S2b |
+| 9 | ☑ Weight/Progress list + subtasks | `#weightList #zoneTabs` | `renderWeightList` L1587, `renderFFSubtasks` L1683 | S2b-1 ✅ |
 | 10 | Payment grid (งวดงาน) | `#ngwdGrid` | `renderNgwdGrid` L2146 | S2c |
 | 11 | Progress vs Payment (เจ้าบ้าน) | `#ppBody` | `renderPaymentProgress` L2952 | S2c |
 | 12 | Client Finance (สัญญาเจ้าบ้าน) | `#cfBody` | `renderClientFinance` L3031 + `CF.*` | S2c |
@@ -25,8 +25,8 @@
 | 15 | Contractor Evaluation | `#evList` | `renderEvals` L3433, `EV.*` | S2c |
 | — | FAB floating menu | `#fab #fabMenu` | `toggleFab` L1467 | S2a |
 | — | Bottom nav | `.bnav` | static | S2a (→ shell) |
-| — | FF Detail overlay (full-screen) | `#ffdOverlay` | `openFFDetail` L3707, `renderFFD*` | S2b |
-| — | FF Wizard modal (multi-FF create/edit) | Modal | `FFW.*` L3903-4211 | S2b |
+| — | ☑ FF Detail overlay (full-screen) | `#ffdOverlay` | `openFFDetail` L3707, `renderFFD*` | S2b-2 ✅ |
+| — | ☑ FF Wizard modal (multi-FF create/edit/delete) | Modal | `FFW.*` L3903-4211 | S2b-2 ✅ |
 
 ## 36 API methods (parity — ทุกตัวต้องยังเรียกได้)
 
@@ -56,4 +56,4 @@
 1. `renderFFSubtasks` reuse 2 บริบท (list มี CTA / overlay `_inOverlay=true` ซ่อน CTA L1688)
 2. Task photo flow decouple จาก progress 100% (รูปล้ม≠task กระทบ) — รักษาไว้
 3. `window._tpPhotos` global ใช้ร่วม lightbox ทั้ง task modal + FF overlay
-4. z-index: overlay 9000 < Modal 9500 < lightbox 9999 (design-system ใช้ modal=100 — ต้อง reconcile ตอน S2b: overlay/lightbox ต้องสูงกว่า modal)
+4. z-index: **reconcile แล้วใน S2b-2** — สเกลใหม่บน design-system: bottomnav 30 < **ffd-overlay 50** < modal 100 < toast 120 < **lightbox 9999**. (ต่างจากหน้าเดิมที่ overlay=9000; หน้าใหม่ overlay ตั้งใจให้ *ต่ำกว่า* modal เพื่อให้ popup ยืนยัน/แก้ไขเด้งทับ overlay ได้ — ทดสอบซ้อนจริงด้วย elementFromPoint ผ่านทั้ง 3 ชั้น)
