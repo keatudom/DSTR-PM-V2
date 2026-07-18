@@ -4,6 +4,10 @@
 > หน้าเสี่ยงสูงสุด (🔴 ช่างใช้ทุกวัน) · ไม่มี mockup → ออกแบบผิวเองตาม design system · **flow การกรอกต้องเดิมเป๊ะ**
 > ⚠️ **ห้ามเปลี่ยน `checkin_action` กลับเป็น `action`** (memory `project-cf-action-param-collision`) — L1038, L1079
 
+## 📌 Progress (แบ่ง chapter)
+- **Chapter 1 ✅ (commit ถัดไป)** — HTML skin + CSS design tokens + โหลด/refresh + stats + **เช็คอินทีม (ขั้น1) เต็ม** + **picker F/ทีม (ขั้น3) เต็ม** + feed แสดงผล (read-only) + role picker + date nav · verified: 18 FF/3 ทีม/11 log โหลด, default ทีมเช็คอิน preselect, picker เลือก/ยกเลิก/กาง, mobile, 0 error · ⚠️ ยังไม่เทสต์ toggle เช็คอินจริง (เขียน DB — เลี่ยงตอน dev, ทดสอบตอน UAT)
+- **Chapter 2 ⏳ (ถัดไป)** — stub `_ch2()` ที่ต้องแทนของจริง: `submitLog` (+AI parse `showAiConfirmModal`/`confirmLog`/`resolveAmbiguous`/unknowns/task-tick) · เบิกวัสดุ (`openMaterialDraw`+picker+withdraw ทั้งชุด) · รูป (`onPhotoClick`/`onPhotoSelected`/`compressImage`/`removePhoto`) · เสียง (`onMicClick`) · สรุป AI (`toggleSummary`/`genSummary`/save/copy + checkSavedSummary) · รายงาน (`openReportModal`) · `deleteLog`/`untickTask`/`retryOptimisticLog`
+
 ## Flow หลัก 4 ขั้น (หัวใจ — ห้ามเปลี่ยนลำดับ)
 1. **เช็คอินทีม** — chips ทีม + ปุ่ม −/+ ปรับจำนวนคน (`teamChips` / `renderTeamChips` L977, `toggleTeamCheckin` L1018, `adjustTeamQty` L1061)
 2. **(อยู่ใน composer)** เลือก F + ทีมที่ทำ — `ffChips`/`selTeamChips` (`renderFFChips` L1111, `selectFF` L1144, `renderSelTeamChips` L1170, `toggleSelTeam` L1191)

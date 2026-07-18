@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>บันทึกประจำวัน — DSTR PM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<link rel="manifest" href="../manifest.json">
+<meta name="theme-color" content="#0f172a">
+<style>
+  /* ── Daily sub-header (role + report + date) ── */
+  .dr-subhdr { display:flex; justify-content:space-between; align-items:center; gap:var(--space-3); flex-wrap:wrap; margin-bottom:var(--space-4); }
+  .dr-subhdr h1 { font-size:var(--text-2xl); }
+  .dr-subhdr-date { color:var(--color-slate-500); font-size:var(--text-sm); margin-top:2px; }
+  .dr-subhdr-btns { display:flex; gap:var(--space-2); flex-wrap:wrap; }
+  .dr-hdr-role, .dr-hdr-report { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-700); border-radius:var(--radius-md); font-size:var(--text-xs); font-weight:500; font-family:inherit; cursor:pointer; min-height:40px; }
+  .dr-hdr-role:hover, .dr-hdr-report:hover { border-color:var(--color-blue-500); }
+  .dr-hdr-report i { width:15px; height:15px; }
+
+  /* ── Date bar ── */
+  .dr-date-bar { display:flex; align-items:center; gap:var(--space-2); margin-bottom:var(--space-4); }
+  .dr-date-nav { width:40px; height:40px; display:flex; align-items:center; justify-content:center; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); cursor:pointer; color:var(--color-slate-600); font-family:inherit; }
+  .dr-date-nav:hover:not(:disabled) { border-color:var(--color-blue-500); color:var(--color-blue-600); }
+  .dr-date-nav:disabled { opacity:0.4; cursor:not-allowed; }
+  .dr-date-nav i { width:16px; height:16px; }
+  #reportDate { flex:1; padding:9px 10px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; color:var(--color-slate-800); }
+
+  /* ── Stats ── */
+  .dr-stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-2); }
+  .dr-stat-c { background:var(--color-slate-50); border:1px solid var(--color-slate-200); border-radius:var(--radius-md); padding:var(--space-3) var(--space-2); text-align:center; }
+  .dr-stat-v { font-size:var(--text-xl); font-weight:700; color:var(--color-slate-900); font-variant-numeric:tabular-nums; }
+  .dr-stat-l { font-size:10px; color:var(--color-slate-500); display:flex; align-items:center; justify-content:center; gap:3px; margin-top:2px; }
+  .dr-stat-l i { width:12px; height:12px; }
+
+  /* ── Team check-in ── */
+  .dr-card-h { display:flex; align-items:center; gap:6px; font-size:var(--text-sm); font-weight:600; color:var(--color-slate-700); margin-bottom:var(--space-3); }
+  .dr-card-h i { width:17px; height:17px; color:var(--color-slate-400); }
+  .dr-card-h .cnt { margin-left:auto; font-size:var(--text-xs); color:var(--color-slate-400); font-weight:500; }
+  .dr-team-chips { display:flex; flex-direction:column; gap:var(--space-2); }
+  .dr-team-empty, .dr-pick-empty { font-size:var(--text-xs); color:var(--color-slate-400); padding:var(--space-2); }
+  .dr-team-chip { display:flex; align-items:stretch; gap:var(--space-2); border:1px solid var(--color-slate-200); border-radius:var(--radius-md); background:#fff; overflow:hidden; }
+  .dr-team-chip.on { border-color:var(--color-success-500); background:var(--color-success-50); }
+  .dr-team-chip.busy { opacity:0.6; pointer-events:none; }
+  .dr-team-chip-main { flex:1; text-align:left; padding:10px 12px; background:none; border:none; cursor:pointer; font-family:inherit; min-height:52px; }
+  .dr-team-chip-nm { display:block; font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); }
+  .dr-team-chip-sub { display:block; font-size:11px; color:var(--color-slate-500); margin-top:2px; }
+  .dr-team-chip.on .dr-team-chip-sub { color:var(--color-success-700); }
+  .dr-team-qty { display:flex; align-items:center; gap:2px; padding:6px; }
+  .dr-team-qty-btn { width:36px; height:36px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); font-size:18px; font-weight:600; color:var(--color-slate-700); cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; }
+  .dr-team-qty-btn:disabled { opacity:0.35; cursor:not-allowed; }
+  .dr-team-qty-v { min-width:42px; text-align:center; font-size:var(--text-base); font-weight:700; color:var(--color-slate-900); }
+  .dr-team-qty-v small { display:block; font-size:9px; font-weight:400; color:var(--color-slate-400); }
+
+  /* ── Composer ── */
+  .dr-comp-strip { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--color-blue-700); background:var(--color-blue-50); border-radius:var(--radius-md); padding:8px 10px; margin-bottom:var(--space-3); line-height:1.4; }
+  .dr-comp-pulse { width:8px; height:8px; border-radius:50%; background:var(--color-blue-500); flex-shrink:0; animation:drPulse 1.5s infinite; }
+  @keyframes drPulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .dr-pick-grp { margin-bottom:var(--space-3); }
+  .dr-pick-lb { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-600); margin-bottom:6px; display:flex; align-items:center; gap:4px; }
+  .dr-pick-lb i { width:14px; height:14px; color:var(--color-slate-400); }
+  .dr-pick-req { font-size:10px; font-weight:400; color:var(--color-slate-400); }
+  .dr-pick-chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .dr-chip { padding:7px 13px; border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-700); border-radius:var(--radius-full); font-size:var(--text-xs); font-weight:500; cursor:pointer; font-family:inherit; min-height:34px; }
+  .dr-chip:hover { border-color:var(--color-blue-400); }
+  .dr-chip-ff.on { background:var(--color-blue-600); color:#fff; border-color:var(--color-blue-600); }
+  .dr-chip-team.on { background:var(--color-slate-700); color:#fff; border-color:var(--color-slate-700); }
+  .dr-chip-more { color:var(--color-blue-600); border-style:dashed; }
+  .dr-comp-ta { width:100%; box-sizing:border-box; min-height:70px; padding:10px 12px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; resize:vertical; margin:var(--space-2) 0; }
+  .dr-comp-ta:focus { outline:none; border-color:var(--color-blue-500); box-shadow:0 0 0 2px var(--color-blue-100); }
+  .dr-photo-preview { position:relative; display:inline-block; margin-bottom:var(--space-2); }
+  .dr-photo-preview img { max-height:120px; border-radius:var(--radius-md); }
+  .dr-photo-remove { position:absolute; top:6px; right:6px; width:26px; height:26px; border-radius:50%; background:rgba(0,0,0,0.6); color:#fff; border:none; cursor:pointer; font-family:inherit; }
+  .dr-comp-tags { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:var(--space-2); }
+  .dr-comp-tag-lb { font-size:10px; color:var(--color-slate-400); }
+  .dr-comp-tag { padding:5px 10px; border:1px solid var(--color-slate-200); background:var(--color-slate-50); border-radius:var(--radius-full); font-size:11px; cursor:pointer; font-family:inherit; }
+  .dr-comp-tag:hover { background:var(--color-slate-100); }
+  .dr-comp-extra { display:none; gap:6px; }
+  .dr-comp-extra.show { display:inline-flex; }
+  .dr-comp-foot { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .dr-comp-tool { width:42px; height:42px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; }
+  .dr-comp-tool i { width:18px; height:18px; color:var(--color-slate-600); }
+  .dr-comp-tool.mic.rec { background:var(--color-error-50); border-color:var(--color-error-500); }
+  .dr-comp-mat { display:inline-flex; align-items:center; gap:5px; padding:0 14px; height:42px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); font-size:var(--text-xs); font-weight:600; color:var(--color-slate-700); cursor:pointer; font-family:inherit; }
+  .dr-comp-mat i { width:16px; height:16px; }
+  .dr-comp-send { margin-left:auto; padding:0 20px; height:42px; background:var(--color-blue-600); color:#fff; border:none; border-radius:var(--radius-md); font-size:var(--text-sm); font-weight:600; cursor:pointer; font-family:inherit; }
+  .dr-comp-send:hover { background:var(--color-blue-700); }
+  .dr-comp-echo { font-size:11px; color:var(--color-slate-600); margin-top:var(--space-2); line-height:1.5; }
+  .dr-comp-echo.empty { color:var(--color-slate-400); }
+  .dr-echo-pill { display:inline-block; padding:2px 8px; border-radius:var(--radius-full); font-weight:600; margin-right:4px; }
+  .dr-echo-ff { background:var(--color-blue-50); color:var(--color-blue-700); }
+  .dr-echo-team { background:var(--color-slate-100); color:var(--color-slate-700); }
+
+  /* ── Timeline ── */
+  .dr-tl-h { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-700); margin:var(--space-6) 0 var(--space-3); display:flex; align-items:center; gap:6px; }
+  .dr-tl-h i { width:16px; height:16px; color:var(--color-slate-400); }
+  .dr-tl-filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:var(--space-3); }
+  .dr-tl-f { padding:6px 12px; border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-600); border-radius:var(--radius-full); font-size:var(--text-xs); font-weight:500; cursor:pointer; font-family:inherit; }
+  .dr-tl-f.on { background:var(--color-slate-700); color:#fff; border-color:var(--color-slate-700); }
+  .dr-period { display:flex; align-items:center; font-size:var(--text-xs); font-weight:600; color:var(--color-slate-500); text-transform:uppercase; letter-spacing:0.03em; margin:var(--space-4) 0 var(--space-2); }
+  .dr-empty { text-align:center; color:var(--color-slate-400); font-size:var(--text-sm); padding:var(--space-8) var(--space-4); line-height:1.6; }
+  .dr-empty-i { font-size:32px; margin-bottom:var(--space-2); }
+  .dr-log { display:flex; gap:var(--space-3); padding:var(--space-3); border:1px solid var(--color-slate-200); border-radius:var(--radius-md); margin-bottom:var(--space-2); background:#fff; }
+  .dr-log.auto { background:var(--color-slate-50); }
+  .dr-log.pending { opacity:0.6; }
+  .dr-log.failed { border-color:var(--color-error-500); background:var(--color-error-50); }
+  .dr-log-time { font-size:11px; color:var(--color-slate-400); white-space:nowrap; font-variant-numeric:tabular-nums; padding-top:2px; min-width:52px; }
+  .dr-log-bd { flex:1; min-width:0; }
+  .dr-log-txt { font-size:var(--text-sm); color:var(--color-slate-800); line-height:1.5; word-break:break-word; }
+  .dr-log-photo img { max-width:140px; max-height:140px; border-radius:var(--radius-md); margin-top:6px; cursor:pointer; }
+  .dr-log-linked { font-size:10px; color:var(--color-success-700); margin-top:4px; }
+  .dr-log-tags { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
+  .dr-log-tag { font-size:10px; padding:2px 7px; border-radius:var(--radius-full); font-weight:500; }
+  .dr-tag-ff { background:var(--color-blue-50); color:var(--color-blue-700); }
+  .dr-tag-team { background:var(--color-slate-100); color:var(--color-slate-700); }
+  .dr-tag-ctr { background:#f3e8ff; color:#7c3aed; }
+  .dr-tag-issue { background:var(--color-error-50); color:var(--color-error-700); }
+  .dr-tag-phase { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .dr-tag-auto { background:var(--color-slate-100); color:var(--color-slate-500); }
+  .dr-log-saved-tag { font-size:10px; padding:2px 7px; border-radius:var(--radius-full); background:var(--color-success-50); color:var(--color-success-700); font-weight:600; }
+  .dr-log-failtag { font-size:10px; padding:2px 7px; border-radius:var(--radius-full); background:var(--color-error-50); color:var(--color-error-700); font-weight:600; }
+  .dr-log-retry { margin-top:6px; padding:5px 12px; border:1px solid var(--color-error-500); background:#fff; color:var(--color-error-700); border-radius:var(--radius-md); font-size:11px; cursor:pointer; font-family:inherit; }
+  .dr-log-role { font-size:10px; padding:1px 6px; border-radius:var(--radius-full); font-weight:600; margin-right:5px; }
+  .dr-role-pm { background:#e0e7ff; color:#4338ca; } .dr-role-eng { background:var(--color-warning-50); color:var(--color-warning-700); } .dr-role-fm { background:var(--color-blue-50); color:var(--color-blue-700); }
+  .dr-log-acts { display:flex; gap:4px; flex-shrink:0; }
+  .dr-log-act { width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:var(--radius-md); background:var(--color-slate-100); cursor:pointer; font-size:13px; }
+  .dr-log-act:hover { background:var(--color-slate-200); }
+  .dr-log-act-del:hover { background:var(--color-error-50); }
+
+  /* ── Role picker modal ── */
+  .dr-role-opts { display:flex; flex-direction:column; gap:8px; margin:var(--space-3) 0; }
+  .dr-role-opt { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--color-slate-200); border-radius:var(--radius-md); background:#fff; cursor:pointer; font-family:inherit; text-align:left; }
+  .dr-role-opt.on { border-color:var(--color-blue-500); background:var(--color-blue-50); }
+  .dr-role-opt-ic { font-size:24px; }
+  .dr-role-opt-bd { flex:1; }
+  .dr-role-opt-n { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); }
+  .dr-role-opt-d { font-size:11px; color:var(--color-slate-500); }
+  .dr-role-opt-check { color:var(--color-blue-600); font-weight:700; }
+
+  /* ── Sticky summary pill ── */
+  .dr-sticky-wrap { position:fixed; right:var(--space-4); bottom:calc(var(--space-4) + 60px); z-index:40; display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+  @media(min-width:769px){ .dr-sticky-wrap { bottom:var(--space-4); } }
+  .dr-pill { display:flex; align-items:center; gap:8px; padding:10px 16px; background:var(--color-slate-900); color:#fff; border-radius:var(--radius-full); box-shadow:var(--shadow-lg); cursor:pointer; }
+  .dr-pill-i { font-size:16px; }
+  .dr-pill-t { font-size:var(--text-xs); font-weight:600; }
+  .dr-pill-c { min-width:20px; height:20px; padding:0 5px; border-radius:var(--radius-full); background:var(--color-blue-500); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+</style>
+</head>
+<body>
+  <div class="app-container">
+    <main class="main-content">
+      <div id="loadingScreen" class="loading-center" style="min-height:60vh"><div class="spinner"></div> กำลังโหลด Daily Feed...</div>
+
+      <div class="page-content" id="mainContent" style="display:none">
+
+        <!-- Sub-header: role + report -->
+        <div class="dr-subhdr">
+          <div>
+            <h1>บันทึกประจำวัน</h1>
+            <div class="dr-subhdr-date" id="hdrDate">วันที่</div>
+          </div>
+          <div class="dr-subhdr-btns">
+            <button class="dr-hdr-role" id="hdrRoleBtn" onclick="openRolePicker()" title="เลือกบทบาทผู้รายงาน">
+              <span id="hdrRoleIcon">👷</span><span id="hdrRoleLabel">โฟร์แมน</span>
+              <span style="opacity:0.6;font-size:9px">▾</span>
+            </button>
+            <button class="dr-hdr-report" onclick="openReportModal()"><i data-lucide="file-text"></i> รายงาน</button>
+          </div>
+        </div>
+
+        <!-- Date bar -->
+        <div class="dr-date-bar">
+          <button class="dr-date-nav" onclick="dateNav(-1)"><i data-lucide="chevron-left"></i></button>
+          <input id="reportDate" type="date">
+          <button class="dr-date-nav" onclick="dateNav(1)" id="dateNext"><i data-lucide="chevron-right"></i></button>
+          <button class="dr-date-nav" onclick="dateToday()" title="วันนี้"><i data-lucide="calendar"></i></button>
+        </div>
+
+        <!-- Stats -->
+        <div class="card card-body" style="margin-bottom:var(--space-4)">
+          <div class="dr-card-h"><i data-lucide="bar-chart-3"></i> ภาพรวม <span class="cnt" id="logCountTxt">0 events</span></div>
+          <div class="dr-stats-grid">
+            <div class="dr-stat-c"><div class="dr-stat-v" id="statTasks">0</div><div class="dr-stat-l"><i data-lucide="check-circle-2"></i> งานเสร็จ</div></div>
+            <div class="dr-stat-c"><div class="dr-stat-v" id="statRcv">0</div><div class="dr-stat-l"><i data-lucide="package-plus"></i> รับ</div></div>
+            <div class="dr-stat-c"><div class="dr-stat-v" id="statWdr">0</div><div class="dr-stat-l"><i data-lucide="package-minus"></i> เบิก</div></div>
+            <div class="dr-stat-c"><div class="dr-stat-v" id="statCtr">0</div><div class="dr-stat-l"><i data-lucide="users"></i> ทีมวันนี้</div></div>
+          </div>
+        </div>
+
+        <!-- Team check-in -->
+        <div class="card card-body" style="margin-bottom:var(--space-4)">
+          <div class="dr-card-h"><i data-lucide="user-check"></i> ทีมเข้าวันนี้ <span class="cnt" id="teamBarCnt">0 ทีม</span></div>
+          <div class="dr-team-chips" id="teamChips"><div class="dr-team-empty">กำลังโหลดทีม...</div></div>
+        </div>
+
+        <!-- Composer -->
+        <div class="card card-body" style="margin-bottom:var(--space-4)">
+          <div class="dr-comp-strip"><div class="dr-comp-pulse"></div><span>เลือก F + ทีม → พิมพ์เพิ่ม → บันทึก (ไม่เลือก = AI ช่วยแท็กให้)</span></div>
+          <div class="dr-pick-grp">
+            <div class="dr-pick-lb"><i data-lucide="home"></i> ทำงานที่ F ไหน? <span class="dr-pick-req">(แตะเลือก)</span></div>
+            <div class="dr-pick-chips" id="ffChips"><div class="dr-pick-empty">กำลังโหลด F...</div></div>
+          </div>
+          <div class="dr-pick-grp">
+            <div class="dr-pick-lb"><i data-lucide="users"></i> ทีมไหนทำ? <span class="dr-pick-req">(เลือกได้หลายทีม)</span></div>
+            <div class="dr-pick-chips" id="selTeamChips"><div class="dr-pick-empty">กำลังโหลดทีม...</div></div>
+          </div>
+          <textarea id="logInput" class="dr-comp-ta" placeholder="พิมพ์รายละเอียดเพิ่ม (ไม่บังคับ) — เลือก F/ทีมด้านบนแล้วกดบันทึกได้เลย"></textarea>
+          <div id="photoPreview" class="dr-photo-preview" style="display:none">
+            <img id="photoPreviewImg" src="" alt="รูปแนบ"><button class="dr-photo-remove" onclick="removePhoto()">✕</button>
+          </div>
+          <div class="dr-comp-tags">
+            <span class="dr-comp-tag-lb">ทางลัด</span>
+            <button class="dr-comp-tag" onclick="quickInsert('🌧️ ฝนตก ')">🌧️ ฝน</button>
+            <button class="dr-comp-tag" onclick="quickInsert('⚠️ ปัญหา: ')">⚠️ ปัญหา</button>
+            <button class="dr-comp-tag" id="tagsMore" onclick="toggleTagsMore()">⋯</button>
+            <span class="dr-comp-extra" id="tagsExtra">
+              <button class="dr-comp-tag" onclick="quickInsert('⏸️ พักงาน ')">⏸️ พัก</button>
+              <button class="dr-comp-tag" onclick="quickInsert('🌅 เริ่มงาน ')">🌅 เริ่ม</button>
+              <button class="dr-comp-tag" onclick="quickInsert('🌆 ปิดงาน ')">🌆 ปิด</button>
+            </span>
+          </div>
+          <div class="dr-comp-foot">
+            <button class="dr-comp-tool" title="ถ่ายรูป" onclick="onPhotoClick()"><i data-lucide="camera"></i></button>
+            <button class="dr-comp-tool mic" id="micBtn" title="พูด" onclick="onMicClick()"><i data-lucide="mic"></i></button>
+            <button class="dr-comp-mat" title="เบิกวัสดุ" onclick="openMaterialDraw()"><i data-lucide="package"></i> เบิกวัสดุ</button>
+            <button class="dr-comp-send" id="logSubmitBtn" onclick="submitLog()">บันทึก →</button>
+          </div>
+          <div class="dr-comp-echo empty" id="compEcho">ยังไม่เลือก — บันทึกแบบให้ AI ช่วยแท็ก</div>
+          <input id="photoInput" type="file" accept="image/*" style="display:none" onchange="onPhotoSelected(event)">
+        </div>
+
+        <!-- Timeline -->
+        <div class="dr-tl-h"><i data-lucide="clock"></i> Timeline</div>
+        <div class="dr-tl-filters">
+          <button class="dr-tl-f on" onclick="setFilter('all',this)">ทั้งหมด</button>
+          <button class="dr-tl-f" onclick="setFilter('manual',this)">มือ</button>
+          <button class="dr-tl-f" onclick="setFilter('auto',this)">อัตโนมัติ</button>
+          <button class="dr-tl-f" onclick="setFilter('issue',this)">ปัญหา</button>
+        </div>
+        <div id="timeline"></div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Sticky summary pill (Chapter 2) -->
+  <div class="dr-sticky-wrap" id="stickyWrap" style="display:none">
+    <div class="dr-pill" id="stickyBar" onclick="toggleSummary()">
+      <div class="dr-pill-i">🤖</div><div class="dr-pill-t">สรุปวันนี้</div><div class="dr-pill-c" id="stickyCount">0</div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/state.js"></script>
+  <script src="../js/modal.js"></script>
+  <script src="../vendor/lucide/lucide.min.js"></script>
+  <script src="../js/shell.js"></script>
+  <script>
+  if (!Auth.requireAuth('admin')) { /* redirect */ }
+  Shell.render({ page: 'daily', title: 'บันทึกประจำวัน', scope: 'project' });
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function formatThaiDate(d){ const m=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']; return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()+543}`; }
+  function thaiDayName(dStr){ if(!dStr) return ''; const d=new Date(dStr); if(isNaN(d)) return ''; return ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์'][d.getDay()]; }
+
+  // ── บทบาทผู้รายงาน ──
+  const REPORTER_ROLES = {
+    PM:            { code:'PM',            label:'PM',      short:'PM',      icon:'👔', desc:'Project Manager — ผู้จัดการโครงการ',  cls:'dr-role-pm'  },
+    SITE_ENGINEER: { code:'SITE_ENGINEER', label:'วิศวกร',   short:'ENG',     icon:'🦺', desc:'Site Engineer — วิศวกรหน้างาน',         cls:'dr-role-eng' },
+    FOREMAN:       { code:'FOREMAN',       label:'โฟร์แมน', short:'FOREMAN', icon:'👷', desc:'Foreman — หัวหน้าช่าง/โฟร์แมนหน้างาน', cls:'dr-role-fm'  },
+  };
+  const REPORTER_ROLE_KEY = 'dstr_daily_reporter_role';
+  function getReporterSource(){ const c=localStorage.getItem(REPORTER_ROLE_KEY); return (c&&REPORTER_ROLES[c])?c:'FOREMAN'; }
+  function setReporterRole(code){ if(!REPORTER_ROLES[code]) return; localStorage.setItem(REPORTER_ROLE_KEY,code); renderRoleHeader(); }
+  function renderRoleHeader(){ const r=REPORTER_ROLES[getReporterSource()]; const l=document.getElementById('hdrRoleLabel'),i=document.getElementById('hdrRoleIcon'); if(l)l.textContent=r.label; if(i)i.textContent=r.icon; }
+  function openRolePicker(){
+    const cur=getReporterSource();
+    const opts=Object.values(REPORTER_ROLES).map(r=>`<button class="dr-role-opt ${r.code===cur?'on':''}" onclick="pickRole('${r.code}')"><div class="dr-role-opt-ic">${r.icon}</div><div class="dr-role-opt-bd"><div class="dr-role-opt-n">${r.label}</div><div class="dr-role-opt-d">${r.desc}</div></div>${r.code===cur?'<div class="dr-role-opt-check">✓</div>':''}</button>`).join('');
+    Modal.show(`<div class="modal-title">เลือกบทบาทผู้รายงาน</div><div class="modal-desc">บทบาทจะถูกบันทึกกับทุก log ที่คุณกรอก — เปลี่ยนได้ตลอด</div><div class="dr-role-opts">${opts}</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button></div>`);
+  }
+  function pickRole(code){ setReporterRole(code); Modal.close(); const r=REPORTER_ROLES[code]; Modal.toast(`✓ เปลี่ยนบทบาทเป็น ${r.icon} ${r.label}`); }
+  function roleBadgeHtml(source){ const r=REPORTER_ROLES[source]; if(!r) return ''; return `<span class="dr-log-role ${r.cls}">${r.icon} ${r.short}</span>`; }
+
+  const drState = {
+    date: new Date().toISOString().slice(0,10),
+    logs:[], stats:null, filter:'all', contractors:[], ffs:[], teams:[],
+    checkins:{}, teamBusy:{}, selFF:null, selTeams:[], ffExpanded:false, teamDefaultApplied:null,
+    optimistic:{}, materials:[], matLoaded:false, recognition:null, recording:false,
+    pendingPhoto:null, pendingPhotoUrl:null, pendingPhotoDriveId:null,
+  };
+
+  async function loadAll(){
+    try{
+      document.getElementById('reportDate').value=drState.date;
+      document.getElementById('reportDate').onchange=(e)=>{ drState.date=e.target.value; refresh(); };
+      updateHeaderDate(); renderRoleHeader();
+      const _cpid=(typeof state!=='undefined'&&state.projectId)?state.projectId:'bow-house';
+      const cachedCtrs=localStorage.getItem('dstr_contractors_'+_cpid);
+      const cachedFFs=localStorage.getItem('dstr_ffs_'+_cpid);
+      const cachedTeams=localStorage.getItem('dstr_teams_'+_cpid);
+      const cacheValid=(Date.now()-parseInt(localStorage.getItem('dstr_cache_time')||'0'))<3600000;
+      if(cachedCtrs&&cachedFFs&&cacheValid){ drState.contractors=JSON.parse(cachedCtrs); drState.ffs=JSON.parse(cachedFFs); }
+      if(cachedTeams&&cacheValid){ drState.teams=JSON.parse(cachedTeams); }
+      const skipRefs=cacheValid&&cachedCtrs&&cachedFFs&&cachedTeams;
+      const res=await API.callRead('get_daily_bundle',{ date:drState.date, skip_refs:skipRefs?'true':'false' });
+      if(!res.ok) throw new Error(res.error||'Bundle load failed');
+      const b=res.data||{};
+      if(b.contractors){ drState.contractors=b.contractors; localStorage.setItem('dstr_contractors_'+_cpid,JSON.stringify(b.contractors)); }
+      if(b.ffs){ drState.ffs=b.ffs; localStorage.setItem('dstr_ffs_'+_cpid,JSON.stringify(b.ffs)); localStorage.setItem('dstr_cache_time',String(Date.now())); }
+      if(b.teams){ drState.teams=b.teams; localStorage.setItem('dstr_teams_'+_cpid,JSON.stringify(b.teams)); }
+      drState.stats=b.stats; drState.logs=b.feed||[];
+      hydrateCheckins(b.stats);
+      if(drState.selFF===null){ const lastFF=localStorage.getItem('dstr_last_ff'); if(lastFF&&(drState.ffs||[]).some(f=>f.code===lastFF)) drState.selFF=lastFF; }
+      if(b.stats) renderStats(b.stats);
+      renderFeed(); renderTeamChips(); applyTeamDefault(); renderFFChips(); renderSelTeamChips(); updateComposerEcho();
+      const today=new Date().toISOString().slice(0,10);
+      document.getElementById('dateNext').disabled=drState.date>=today;
+      document.getElementById('loadingScreen').style.display='none';
+      document.getElementById('mainContent').style.display='block';
+      document.getElementById('stickyWrap').style.display='flex';
+      if(window.lucide) lucide.createIcons();
+    }catch(err){
+      document.getElementById('loadingScreen').innerHTML='โหลดไม่สำเร็จ: '+err.message;
+    }
+  }
+
+  async function refresh(){
+    const today=new Date().toISOString().slice(0,10);
+    document.getElementById('dateNext').disabled=drState.date>=today;
+    updateHeaderDate();
+    try{
+      const res=await API.callRead('get_daily_bundle',{ date:drState.date, skip_refs:'true' });
+      if(res.ok&&res.data){
+        drState.stats=res.data.stats; drState.logs=res.data.feed||[];
+        if(res.data.teams) drState.teams=res.data.teams;
+        hydrateCheckins(res.data.stats);
+        if(res.data.stats) renderStats(res.data.stats);
+        renderFeed(); renderTeamChips(); applyTeamDefault(); renderSelTeamChips(); updateComposerEcho();
+        if(window.lucide) lucide.createIcons();
+      }
+    }catch(e){ console.error('Refresh failed:',e); }
+  }
+
+  function updateHeaderDate(){ const d=new Date(drState.date); document.getElementById('hdrDate').textContent='วันที่ '+formatThaiDate(d)+' · '+thaiDayName(drState.date); }
+  function dateNav(delta){ const d=new Date(drState.date); d.setDate(d.getDate()+delta); const today=new Date().toISOString().slice(0,10); const nd=d.toISOString().slice(0,10); if(delta>0&&nd>today) return; drState.date=nd; document.getElementById('reportDate').value=drState.date; refresh(); }
+  function dateToday(){ drState.date=new Date().toISOString().slice(0,10); document.getElementById('reportDate').value=drState.date; refresh(); }
+
+  function renderStats(s){
+    document.getElementById('statTasks').textContent=s.tasks_done||0;
+    document.getElementById('statRcv').textContent=s.received||0;
+    document.getElementById('statWdr').textContent=s.withdrawn||0;
+    document.getElementById('statCtr').textContent=s.teams_onsite||0;
+    document.getElementById('logCountTxt').textContent=(s.logs_total||0)+' events';
+    document.getElementById('stickyCount').textContent=s.logs_total||0;
+  }
+
+  // ── Feed (read-only display) ──
+  function renderFeed(){
+    let logs=drState.logs.slice();
+    const opt=Object.values(drState.optimistic||{});
+    if(opt.length) logs=opt.concat(logs);
+    const f=drState.filter;
+    if(f==='manual') logs=logs.filter(l=>l.type==='manual');
+    else if(f==='auto') logs=logs.filter(l=>l.type==='auto');
+    else if(f==='issue') logs=logs.filter(l=>(l.tags_issue||[]).length>0);
+    if(logs.length===0){ document.getElementById('timeline').innerHTML='<div class="dr-empty"><div class="dr-empty-i">📭</div>ยังไม่มีบันทึก<br>เริ่มจากพิมพ์ด้านบนเลย!</div>'; return; }
+    const periods={ morning:[], afternoon:[], evening:[] };
+    logs.forEach(l=>{ const h=parseInt(String(l.timestamp||'').slice(11,13))||0; if(h<12)periods.morning.push(l); else if(h<17)periods.afternoon.push(l); else periods.evening.push(l); });
+    const pl={ evening:'🌆 เย็น (17:00 -)', afternoon:'🌞 บ่าย (12:00 - 17:00)', morning:'🌅 เช้า (- 12:00)' };
+    let html='';
+    ['evening','afternoon','morning'].forEach(per=>{ const items=periods[per]; if(!items.length) return; html+=`<div class="dr-period">${pl[per]}<span style="margin-left:auto;color:var(--color-slate-400);font-weight:400;text-transform:none;letter-spacing:0">${items.length} events</span></div>`; items.forEach(l=>{ html+=renderLog(l); }); });
+    document.getElementById('timeline').innerHTML=html;
+    if(window.lucide) lucide.createIcons();
+  }
+  function fmtLogTime(ts){
+    if(!ts) return ''; const s=String(ts);
+    const m=s.match(/(\d{2}):(\d{2})(?::\d{2})?(?!.*\d:\d)/);
+    if(m&&s.indexOf('T')===-1&&s.indexOf('Z')===-1&&s.indexOf('+')===-1) return m[1]+'.'+m[2]+' น.';
+    const d=new Date(s); if(isNaN(d.getTime())) return '';
+    try{ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Bangkok',hour12:false,hour:'2-digit',minute:'2-digit'}).formatToParts(d); return parts.find(p=>p.type==='hour').value+'.'+parts.find(p=>p.type==='minute').value+' น.'; }catch(e){ return ''; }
+  }
+  function renderLog(l){
+    const time=fmtLogTime(l.timestamp);
+    const isAuto=l.type==='auto';
+    const roleBadge=!isAuto?roleBadgeHtml(l.source):'';
+    const tagsHtml=[];
+    (l.tags_ff||[]).forEach(t=>tagsHtml.push(`<span class="dr-log-tag dr-tag-ff">${escapeHtml(t)}</span>`));
+    (l.tags_team||[]).forEach(t=>{ const tm=(drState.teams||[]).find(x=>x.team_id===t); tagsHtml.push(`<span class="dr-log-tag dr-tag-team">👥 ${escapeHtml(tm?(tm.name||t):t)}</span>`); });
+    (l.tags_ctr||[]).forEach(t=>{ const c=drState.contractors.find(x=>x.id===t); tagsHtml.push(`<span class="dr-log-tag dr-tag-ctr">👤 ${escapeHtml(c?c.name:t)}</span>`); });
+    (l.tags_issue||[]).forEach(t=>tagsHtml.push(`<span class="dr-log-tag dr-tag-issue">⚠️ ${escapeHtml(t)}</span>`));
+    if(l.tags_phase) tagsHtml.push(`<span class="dr-log-tag dr-tag-phase">${escapeHtml(l.tags_phase)}</span>`);
+    if(isAuto) tagsHtml.push('<span class="dr-log-tag dr-tag-auto">🤖 auto</span>');
+    const optState=l._opt;
+    if(optState==='pending') tagsHtml.push('<span class="dr-log-tag" style="background:var(--color-warning-50);color:var(--color-warning-700)">⏳ กำลังบันทึก</span>');
+    else if(optState==='ok') tagsHtml.push('<span class="dr-log-saved-tag">✓ บันทึกแล้ว</span>');
+    else if(optState==='failed') tagsHtml.push('<span class="dr-log-failtag">❌ ไม่สำเร็จ</span>');
+    if(optState){
+      const retryBtn=optState==='failed'?`<button class="dr-log-retry" onclick="retryOptimisticLog('${l.log_id}')">↻ ลองใหม่</button>`:'';
+      const photoH=l.photo_url?`<div class="dr-log-photo"><img src="${escapeHtml(l.photo_url)}" alt="รูปประกอบ" loading="lazy"></div>`:'';
+      return `<div class="dr-log ${optState==='pending'?'pending':''}${optState==='failed'?' failed':''}"><div class="dr-log-time">${time}</div><div class="dr-log-bd"><div class="dr-log-txt">${roleBadge}${escapeHtml(l.text)}</div>${photoH}${tagsHtml.length?'<div class="dr-log-tags">'+tagsHtml.join('')+'</div>':''}${retryBtn}</div></div>`;
+    }
+    const meta=l.meta||{};
+    const isTaskDone=meta.event==='task_done'&&meta.task_id;
+    const actionsHtml=isTaskDone
+      ? `<div class="dr-log-acts"><div class="dr-log-act" title="ยกเลิกการติ๊ก task" onclick="untickTask('${l.log_id}','${meta.task_id}')">↩️</div><div class="dr-log-act dr-log-act-del" title="ลบ log นี้" onclick="deleteLog('${l.log_id}')">✕</div></div>`
+      : `<div class="dr-log-acts"><div class="dr-log-act dr-log-act-del" title="ลบ log นี้" onclick="deleteLog('${l.log_id}')">✕</div></div>`;
+    const photoHtml=l.photo_url?`<div class="dr-log-photo"><img src="${escapeHtml(l.photo_url)}" onclick="window.open('${escapeHtml(l.photo_url)}','_blank')" alt="รูปประกอบ" loading="lazy"></div>`:'';
+    const linkedHtml=(isTaskDone&&l.photo_url)?'<div class="dr-log-linked">🔗 รูปนี้ผูกกับงานแล้ว ✓</div>':'';
+    return `<div class="dr-log ${isAuto?'auto':''}"><div class="dr-log-time">${time}</div><div class="dr-log-bd"><div class="dr-log-txt">${roleBadge}${escapeHtml(l.text)}</div>${photoHtml}${linkedHtml}${tagsHtml.length?'<div class="dr-log-tags">'+tagsHtml.join('')+'</div>':''}</div>${actionsHtml}</div>`;
+  }
+
+  // ── ขั้น 1: เช็คอินทีม ──
+  function hydrateCheckins(stats){ const list=(stats&&stats.teams_onsite_list)||[]; const map={}; list.forEach(t=>{ if(!t||!t.team_id) return; map[t.team_id]=Number(t.worker_count)||0; }); drState.checkins=map; }
+  function renderTeamChips(){
+    const wrap=document.getElementById('teamChips'); if(!wrap) return;
+    const teams=drState.teams||[];
+    if(!teams.length){ wrap.innerHTML='<div class="dr-team-empty">ยังไม่มีทีมในระบบ</div>'; document.getElementById('teamBarCnt').textContent='0 ทีม'; return; }
+    let onCount=0, html='';
+    teams.forEach(tm=>{
+      const id=tm.team_id;
+      const isOn=Object.prototype.hasOwnProperty.call(drState.checkins,id);
+      const cnt=isOn?(drState.checkins[id]||0):0;
+      const busy=drState.teamBusy[id]?' busy':'';
+      if(isOn) onCount++;
+      const sub=isOn?'✓ เข้างานแล้ว':(tm.type?escapeHtml(tm.type):(tm.lead_name?escapeHtml(tm.lead_name):'แตะเพื่อเช็คอิน'));
+      const qtyLabel=cnt>0?cnt:'–';
+      html+=`<div class="dr-team-chip${isOn?' on':''}${busy}" id="teamChip_${id}"><button class="dr-team-chip-main" onclick="toggleTeamCheckin('${id}')" title="${escapeHtml(tm.name||id)}"><span class="dr-team-chip-nm">${escapeHtml(tm.name||id)}</span><span class="dr-team-chip-sub">${sub}</span></button><div class="dr-team-qty"><button class="dr-team-qty-btn" onclick="adjustTeamQty('${id}',-1)" ${cnt<=1?'disabled':''} aria-label="ลดคน">−</button><span class="dr-team-qty-v">${qtyLabel}<small>คน</small></span><button class="dr-team-qty-btn" onclick="adjustTeamQty('${id}',1)" aria-label="เพิ่มคน">+</button></div></div>`;
+    });
+    wrap.innerHTML=html;
+    document.getElementById('teamBarCnt').textContent=onCount+' ทีม';
+  }
+  async function toggleTeamCheckin(teamId){
+    if(drState.teamBusy[teamId]) return;
+    const wasOn=Object.prototype.hasOwnProperty.call(drState.checkins,teamId);
+    const prevCnt=drState.checkins[teamId];
+    const team=(drState.teams||[]).find(t=>t.team_id===teamId)||{};
+    const nm=team.name||teamId;
+    drState.teamBusy[teamId]=true;
+    if(wasOn) delete drState.checkins[teamId]; else drState.checkins[teamId]=1;
+    renderTeamChips();
+    Modal.toast(wasOn?'⏳ กำลังยกเลิก '+nm+'...':'⏳ กำลังเช็คอิน '+nm+'...');
+    try{
+      const params={ team_id:teamId, checkin_action:wasOn?'out':'in', date:drState.date };
+      if(!wasOn) params.worker_count=1;
+      const res=await API.teamCheckin(params);
+      if(!res||!res.ok) throw new Error((res&&res.error)||'เช็คอินไม่สำเร็จ');
+      if(!wasOn){ const wc=res.data&&res.data.worker_count; drState.checkins[teamId]=Number(wc)||1; }
+      syncTeamStat();
+      Modal.toast(wasOn?'✓ ยกเลิก '+nm+' แล้ว':'✓ เช็คอิน '+nm+' แล้ว');
+    }catch(err){
+      if(wasOn) drState.checkins[teamId]=prevCnt; else delete drState.checkins[teamId];
+      Modal.toast('❌ '+nm+': '+err.message+' (ลองแตะใหม่)',4000);
+    }finally{ delete drState.teamBusy[teamId]; renderTeamChips(); }
+  }
+  async function adjustTeamQty(teamId,delta){
+    if(drState.teamBusy[teamId]) return;
+    if(!Object.prototype.hasOwnProperty.call(drState.checkins,teamId)) return;
+    const prev=Number(drState.checkins[teamId])||1;
+    const next=prev+delta;
+    if(next<1) return;
+    const team=(drState.teams||[]).find(t=>t.team_id===teamId)||{};
+    const nm=team.name||teamId;
+    drState.teamBusy[teamId]=true; drState.checkins[teamId]=next; renderTeamChips();
+    try{
+      const res=await API.teamCheckin({ team_id:teamId, worker_count:next, checkin_action:'in', date:drState.date });
+      if(!res||!res.ok) throw new Error((res&&res.error)||'อัปเดตไม่สำเร็จ');
+      const wc=res.data&&res.data.worker_count; drState.checkins[teamId]=Number(wc)||next;
+      Modal.toast('✓ '+nm+' '+drState.checkins[teamId]+' คน');
+    }catch(err){ drState.checkins[teamId]=prev; Modal.toast('❌ ปรับจำนวนไม่สำเร็จ — '+err.message,4000); }
+    finally{ delete drState.teamBusy[teamId]; renderTeamChips(); }
+  }
+  function syncTeamStat(){ const n=Object.keys(drState.checkins).length; if(drState.stats) drState.stats.teams_onsite=n; const el=document.getElementById('statCtr'); if(el) el.textContent=n; }
+
+  // ── ขั้น 3: picker เลือก F + ทีม ──
+  const FF_VISIBLE_COUNT=8;
+  function renderFFChips(){
+    const wrap=document.getElementById('ffChips'); if(!wrap) return;
+    const ffs=drState.ffs||[];
+    if(!ffs.length){ wrap.innerHTML='<div class="dr-pick-empty">ยังไม่มี F ในระบบ</div>'; return; }
+    const selIdx=drState.selFF?ffs.findIndex(f=>f.code===drState.selFF):-1;
+    if(selIdx>=FF_VISIBLE_COUNT) drState.ffExpanded=true;
+    const showAll=drState.ffExpanded;
+    const list=showAll?ffs:ffs.slice(0,FF_VISIBLE_COUNT);
+    let html='';
+    list.forEach(f=>{ const on=drState.selFF===f.code?' on':''; html+=`<button class="dr-chip dr-chip-ff${on}" onclick="selectFF('${f.code}')" title="${escapeHtml(f.name||f.code)}">${escapeHtml(f.code)}</button>`; });
+    if(!showAll&&ffs.length>FF_VISIBLE_COUNT) html+=`<button class="dr-chip dr-chip-more" onclick="expandFFChips()">ดูทั้งหมด (${ffs.length})</button>`;
+    wrap.innerHTML=html;
+  }
+  function expandFFChips(){ drState.ffExpanded=true; renderFFChips(); }
+  function selectFF(code){ drState.selFF=(drState.selFF===code)?null:code; if(drState.selFF) localStorage.setItem('dstr_last_ff',drState.selFF); renderFFChips(); updateComposerEcho(); }
+  function applyTeamDefault(){
+    if(drState.teamDefaultApplied===drState.date) return;
+    const checkedIn=Object.keys(drState.checkins||{});
+    drState.selTeams=checkedIn.length>=1?checkedIn.slice():[];
+    drState.teamDefaultApplied=drState.date;
+  }
+  function renderSelTeamChips(){
+    const wrap=document.getElementById('selTeamChips'); if(!wrap) return;
+    const teams=drState.teams||[];
+    if(!teams.length){ wrap.innerHTML='<div class="dr-pick-empty">ยังไม่มีทีมในระบบ</div>'; return; }
+    drState.selTeams=drState.selTeams.filter(id=>teams.some(t=>t.team_id===id));
+    let html='';
+    teams.forEach(tm=>{ const id=tm.team_id; const on=drState.selTeams.indexOf(id)>=0?' on':''; const checked=Object.prototype.hasOwnProperty.call(drState.checkins,id)?' ✓':''; html+=`<button class="dr-chip dr-chip-team${on}" onclick="toggleSelTeam('${id}')" title="${escapeHtml(tm.name||id)}">${escapeHtml(tm.name||id)}${checked}</button>`; });
+    wrap.innerHTML=html;
+  }
+  function toggleSelTeam(id){ const i=drState.selTeams.indexOf(id); if(i>=0) drState.selTeams.splice(i,1); else drState.selTeams.push(id); drState.teamDefaultApplied=drState.date; renderSelTeamChips(); updateComposerEcho(); }
+  function updateComposerEcho(){
+    const el=document.getElementById('compEcho'); if(!el) return;
+    const parts=[];
+    if(drState.selFF){ const ff=(drState.ffs||[]).find(f=>f.code===drState.selFF); parts.push(`<span class="dr-echo-pill dr-echo-ff">🏠 ${escapeHtml(drState.selFF)}${ff&&ff.name?': '+escapeHtml(String(ff.name).slice(0,18)):''}</span>`); }
+    drState.selTeams.forEach(id=>{ const tm=(drState.teams||[]).find(t=>t.team_id===id); parts.push(`<span class="dr-echo-pill dr-echo-team">👥 ${escapeHtml(tm?(tm.name||id):id)}</span>`); });
+    if(parts.length){ el.classList.remove('empty'); el.innerHTML='บันทึกเข้า: '+parts.join(' '); }
+    else{ el.classList.add('empty'); el.innerHTML='ยังไม่เลือก — บันทึกแบบให้ AI ช่วยแท็ก'; }
+  }
+
+  function setFilter(f,btn){ drState.filter=f; document.querySelectorAll('.dr-tl-f').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderFeed(); }
+  function toggleTagsMore(){ document.getElementById('tagsExtra').classList.toggle('show'); }
+  function quickInsert(text){ const ta=document.getElementById('logInput'); ta.value+=(ta.value&&!ta.value.endsWith(' ')?' ':'')+text; ta.focus(); }
+
+  // ── Chapter 2 stubs (submit log / AI parse / เบิกวัสดุ / สรุป / รายงาน / รูป / เสียง) ──
+  function _ch2(){ Modal.toast('🚧 ส่วนนี้กำลังพัฒนา (Chapter 2) — ใช้ที่หน้าเดิมก่อน'); }
+  function submitLog(){ _ch2(); }
+  function onPhotoClick(){ _ch2(); }
+  function onPhotoSelected(){ _ch2(); }
+  function removePhoto(){ _ch2(); }
+  function onMicClick(){ _ch2(); }
+  function openMaterialDraw(){ _ch2(); }
+  function toggleSummary(){ _ch2(); }
+  function genSummary(){ _ch2(); }
+  function openReportModal(){ _ch2(); }
+  function deleteLog(){ _ch2(); }
+  function untickTask(){ _ch2(); }
+  function retryOptimisticLog(){ _ch2(); }
+
+  document.addEventListener('keydown', e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ const ta=document.getElementById('logInput'); if(document.activeElement===ta) submitLog(); } });
+
+  loadAll();
+  </script>
+</body>
+</html>
