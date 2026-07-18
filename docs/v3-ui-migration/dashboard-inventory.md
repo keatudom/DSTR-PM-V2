@@ -15,14 +15,14 @@
 | 5 | KPIs (actual/plan/variance/เบิก) | `#kpiGrid` | `renderKPIs` L1493 | S2a |
 | 6 | AI Daily Report card | `#drReportCard` | `loadLatestReport` L1228 | S2a |
 | 7 | Donut gauge + forecast | `#gaugeRow` | `renderGauge` L1536 | S2a |
-| 8 | Inventory value (+ Price Editor) | `#invSummary` | `renderInventory` L1294, `PE.*` L1351 | S2a (แสดง) / S2c (PE) |
+| 8 | ☑ Inventory value (+ Price Editor) | `#invSummary` | `renderInventory` L1294, `PE.*` L1351 | S2a (แสดง) ✅ / S2c (PE) ✅ |
 | 9 | ☑ Weight/Progress list + subtasks | `#weightList #zoneTabs` | `renderWeightList` L1587, `renderFFSubtasks` L1683 | S2b-1 ✅ |
-| 10 | Payment grid (งวดงาน) | `#ngwdGrid` | `renderNgwdGrid` L2146 | S2c |
-| 11 | Progress vs Payment (เจ้าบ้าน) | `#ppBody` | `renderPaymentProgress` L2952 | S2c |
-| 12 | Client Finance (สัญญาเจ้าบ้าน) | `#cfBody` | `renderClientFinance` L3031 + `CF.*` | S2c |
+| 10 | ☑ Payment grid (งวดงาน) | `#ngwdGrid` | `renderNgwdGrid` L2146 | S2c ✅ |
+| 11 | ☑ Progress vs Payment (เจ้าบ้าน) | `#ppBody` | `renderPaymentProgress` L2952 | S2c ✅ |
+| 12 | ☑ Client Finance (สัญญาเจ้าบ้าน) | `#cfBody` | `renderClientFinance` L3031 + `CF.*` | S2c ✅ |
 | 13 | Timeline / Gantt (20 สัปดาห์) | `#timeline` | `renderTimeline` L2387 | S2a |
-| 14 | Risk management (heatmap+CRUD) | `#riskHeatmap #riskList` | `renderRisks` L2545, `RM.*` | S2c |
-| 15 | Contractor Evaluation | `#evList` | `renderEvals` L3433, `EV.*` | S2c |
+| 14 | ☑ Risk management (heatmap+CRUD) | `#riskHeatmap #riskList` | `renderRisks` L2545, `RM.*` | S2c ✅ |
+| 15 | ☑ Contractor Evaluation | `#evList` | `renderEvals` L3433, `EV.*` | S2c ✅ |
 | — | FAB floating menu | `#fab #fabMenu` | `toggleFab` L1467 | S2a |
 | — | Bottom nav | `.bnav` | static | S2a (→ shell) |
 | — | ☑ FF Detail overlay (full-screen) | `#ffdOverlay` | `openFFDetail` L3707, `renderFFD*` | S2b-2 ✅ |
@@ -41,6 +41,7 @@
 
 ## Modals: 11 × Modal.show · 7 × Modal.confirm · ~50 × Modal.toast
 ⚠️ **native dialog ที่ควรแทนด้วย Modal ตอนทำใหม่:** `confirm()` L1881(ลบรูป)/L2361(จ่ายเงิน)/L2374(reset) · `prompt()` L2345(เลขใบแจ้งหนี้) · `alert()` L822(BOQ เร็วๆนี้)
+> ✅ **S2c แทนครบแล้ว:** จ่ายเงิน+reset → `Modal.confirm` · เลขใบแจ้งหนี้ → modal input (`_doInvoice`). `alert()` BOQ ไม่มีในหน้าใหม่ (ไม่มีปุ่มนั้น)
 
 ## 🔴 Hardcode `?project=bow-house` — บั๊กจริง (โครงการอื่นกดเด้งเข้าบ้านโบว์) ต้องแก้เป็น state.projectId
 - Hub cards + daily card: **L790, 796, 803, 809, 828, 846**

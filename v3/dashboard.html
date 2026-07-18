@@ -246,6 +246,193 @@
   .ffw-err { background:var(--color-error-50); color:var(--color-error-700); border:1px solid #fecaca; border-radius:var(--radius-md); padding:var(--space-3); font-size:var(--text-xs); line-height:1.7; margin-top:var(--space-3); text-align:left; }
   .ffw-code-tag { background:var(--color-blue-50); color:var(--color-blue-700); padding:2px 8px; border-radius:var(--radius-full); font-size:11px; font-weight:700; }
   @media(max-width:768px){ .ffd-meta{ gap:var(--space-3); } .ffw-task-row{ grid-template-columns:1fr 80px 32px; } }
+
+  /* ════ S2c: Payment grid ════ */
+  .ngwd-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-3); }
+  @media(max-width:768px){ .ngwd-grid{ grid-template-columns:1fr 1fr; } }
+  .ngwd-c { padding:var(--space-3); border-radius:var(--radius-lg); border:1px solid var(--color-slate-200); background:var(--color-slate-50); cursor:pointer; position:relative; transition:border-color .15s; }
+  .ngwd-c:hover { border-color:var(--color-slate-300); }
+  .ngwd-c.has-ready { border-color:var(--color-success-500); background:var(--color-success-50); }
+  .ngwd-t { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-500); }
+  .ngwd-a { font-size:var(--text-lg); font-weight:700; margin:4px 0; font-variant-numeric:tabular-nums; }
+  .ngwd-p { font-size:10px; color:var(--color-slate-400); }
+  .ngwd-s { font-size:9px; padding:3px 8px; border-radius:var(--radius-full); display:inline-block; margin-top:6px; font-weight:600; }
+  .ngwd-s.s-paid { background:var(--color-blue-50); color:var(--color-blue-700); }
+  .ngwd-s.s-active { background:var(--color-success-50); color:var(--color-success-700); }
+  .ngwd-s.s-pending { background:var(--color-slate-100); color:var(--color-slate-500); }
+  .ngwd-tap-hint { font-size:9px; color:var(--color-slate-400); margin-top:6px; }
+  .ngwd-extra-banner { font-size:var(--text-xs); font-weight:700; color:var(--color-warning-700); background:var(--color-warning-50); border:1px solid #fde68a; border-radius:var(--radius-md); padding:6px 12px; margin:14px 0 10px; }
+
+  /* ════ S2c: Payment modal ════ */
+  .pay-modal { max-width:520px !important; }
+  .pay-list { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; max-height:55vh; overflow-y:auto; }
+  .pay-item { border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:10px 12px; background:var(--color-slate-50); }
+  .pay-item-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px; }
+  .pay-item-title { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-800); flex:1; text-align:left; }
+  .pay-item-pill { font-size:10px; padding:3px 8px; border-radius:var(--radius-full); font-weight:500; flex-shrink:0; }
+  .pp-pending { background:var(--color-slate-100); color:var(--color-slate-500); }
+  .pp-ready { background:var(--color-success-50); color:var(--color-success-700); }
+  .pp-invoiced { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .pp-paid { background:var(--color-blue-50); color:var(--color-blue-700); }
+  .pay-item-detail { font-size:11px; color:var(--color-slate-500); margin-bottom:8px; text-align:left; }
+  .pay-item-detail strong { color:var(--color-slate-900); }
+  .pay-progress { display:flex; align-items:center; gap:6px; margin-bottom:8px; font-size:11px; color:var(--color-slate-500); }
+  .pay-progress-bar { flex:1; height:5px; background:var(--color-slate-100); border-radius:var(--radius-full); overflow:hidden; }
+  .pay-progress-fill { height:100%; border-radius:var(--radius-full); }
+  .pay-item-actions { display:flex; gap:6px; margin-top:8px; }
+  .pay-action-btn { flex:1; padding:8px 10px; border-radius:var(--radius-md); font-size:11px; font-weight:600; cursor:pointer; border:none; font-family:inherit; }
+  .pa-paid { background:var(--color-success-600); color:#fff; }
+  .pa-invoice { background:var(--color-warning-600); color:#fff; }
+  .pa-reset { background:var(--color-slate-200); color:var(--color-slate-700); }
+  .pay-info-line { font-size:11px; color:var(--color-slate-600); margin-top:4px; text-align:left; }
+
+  /* ════ S2c: Progress vs Payment ════ */
+  .pp-card { border-left:4px solid var(--color-blue-500); }
+  .cf-card { border-left:4px solid var(--color-success-500); }
+  .pp-cmp { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .pp-col { flex:1; min-width:130px; background:var(--color-slate-50); border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:11px 12px; }
+  .pp-col-l { font-size:11px; color:var(--color-slate-500); }
+  .pp-col-v { font-size:var(--text-2xl); font-weight:800; line-height:1.1; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .pp-col-s { font-size:11px; color:var(--color-slate-400); margin-top:2px; }
+  .pp-prog .pp-col-v { color:var(--color-blue-600); }
+  .pp-pay .pp-col-v { color:var(--color-success-700); }
+  .pp-gap .pp-col-v.over { color:var(--color-error-600); }
+  .pp-gap .pp-col-v.under { color:var(--color-success-700); }
+  .pp-stack { height:14px; border-radius:7px; overflow:hidden; display:flex; background:var(--color-slate-100); margin:4px 0 6px; }
+  .pp-stack-prog { background:var(--color-blue-600); }
+  .pp-stack-gap { background:#fca5a5; }
+  .pp-legend { font-size:11px; color:var(--color-slate-500); display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px; }
+  .pp-legend i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:middle; }
+  .pp-note { font-size:11.5px; color:var(--color-slate-600); background:var(--color-blue-50); border:1px solid #bfdbfe; border-radius:var(--radius-lg); padding:9px 11px; line-height:1.55; margin-bottom:12px; }
+  .pp-head-mini { font-size:11px; color:var(--color-slate-400); display:flex; justify-content:flex-end; gap:14px; margin-bottom:2px; }
+  .pp-row { display:flex; align-items:center; gap:8px; padding:9px 0; border-top:1px solid var(--color-slate-100); }
+  .pp-row-name { font-size:12.5px; font-weight:600; color:var(--color-slate-800); flex:1; min-width:90px; }
+  .pp-row-bars { flex:2; min-width:140px; }
+  .pp-mini { height:7px; border-radius:var(--radius-full); background:var(--color-slate-100); overflow:hidden; margin:2px 0; }
+  .pp-mini-prog { height:100%; background:var(--color-blue-600); }
+  .pp-mini-pay { height:100%; background:var(--color-success-600); }
+  .pp-row-num { font-size:11px; color:var(--color-slate-500); min-width:120px; text-align:right; white-space:nowrap; }
+  .pp-row-num b.p { color:var(--color-blue-600); } .pp-row-num b.m { color:var(--color-success-700); }
+
+  /* ════ S2c: Client Finance ════ */
+  .cf-btn { font-size:var(--text-xs); font-weight:600; padding:7px 12px; border-radius:var(--radius-md); border:none; cursor:pointer; font-family:inherit; }
+  .cf-btn-primary { background:var(--color-success-600); color:#fff; }
+  .cf-btn-secondary { background:var(--color-success-50); color:var(--color-success-700); border:1px solid #b6e6d2; }
+  .cf-empty { font-size:var(--text-xs); color:var(--color-slate-500); padding:14px; text-align:center; line-height:1.6; background:var(--color-slate-50); border:1px dashed var(--color-slate-300); border-radius:var(--radius-lg); }
+  .cf-summary { background:var(--color-slate-50); border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:12px; margin-bottom:12px; }
+  .cf-sum-title { font-size:var(--text-base); font-weight:700; color:var(--color-slate-900); margin-bottom:4px; }
+  .cf-sum-row { display:flex; justify-content:space-between; font-size:var(--text-xs); color:var(--color-slate-600); margin-top:3px; }
+  .cf-sum-amt { font-weight:700; color:var(--color-success-700); }
+  .cf-bar { height:8px; background:var(--color-slate-200); border-radius:var(--radius-full); overflow:hidden; margin-top:8px; }
+  .cf-bar-fill { height:100%; background:var(--color-success-600); }
+  .cf-file-row, .cf-slip-row { display:flex; align-items:center; gap:6px; font-size:var(--text-xs); margin-top:6px; }
+  .cf-file-name, .cf-slip-name { color:var(--color-blue-700); cursor:pointer; text-decoration:underline; word-break:break-all; }
+  .cf-file-del, .cf-slip-del { color:var(--color-error-600); cursor:pointer; font-weight:700; margin-left:auto; }
+  .cf-ms { border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:10px 12px; margin-bottom:8px; }
+  .cf-ms-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .cf-ms-name { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); cursor:pointer; }
+  .cf-ms-cond { font-size:11px; color:var(--color-slate-500); margin-top:2px; }
+  .cf-ms-amt { font-size:var(--text-sm); font-weight:700; color:var(--color-slate-900); white-space:nowrap; }
+  .cf-badge { font-size:11px; font-weight:600; padding:2px 8px; border-radius:var(--radius-full); white-space:nowrap; }
+  .cf-badge-paid { background:var(--color-success-50); color:var(--color-success-700); }
+  .cf-badge-pending { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .cf-slip-wrap { margin-top:8px; padding-top:8px; border-top:1px dashed var(--color-slate-200); }
+  .cf-slip-btn { font-size:11px; color:var(--color-success-700); background:var(--color-success-50); border:1px solid #b6e6d2; border-radius:var(--radius-md); padding:5px 10px; cursor:pointer; margin-top:6px; font-family:inherit; }
+  .cf-input { width:100%; box-sizing:border-box; padding:9px 10px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; margin-bottom:8px; }
+  .cf-input:focus { outline:none; border-color:var(--color-blue-500); box-shadow:0 0 0 2px var(--color-blue-100); }
+  .cf-lbl { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-600); margin-bottom:3px; display:block; text-align:left; }
+
+  /* ════ S2c: Risk ════ */
+  .risk-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
+  .risk-sum-pill { border-radius:var(--radius-md); padding:10px; text-align:center; background:var(--color-slate-50); border:1px solid var(--color-slate-200); }
+  .risk-sum-pill .n { display:block; font-size:var(--text-xl); font-weight:700; color:var(--color-slate-900); }
+  .risk-sum-pill .l { font-size:10px; color:var(--color-slate-500); }
+  .risk-sum-pill.zero { opacity:0.5; }
+  .risk-sum-pill.b-4 { background:#fef2f2; border-color:#fecaca; } .risk-sum-pill.b-4 .n { color:var(--color-error-600); }
+  .risk-sum-pill.b-3 { background:#fff7ed; border-color:#fed7aa; } .risk-sum-pill.b-3 .n { color:#ea580c; }
+  .risk-sum-pill.b-2 { background:var(--color-warning-50); border-color:#fde68a; } .risk-sum-pill.b-2 .n { color:var(--color-warning-700); }
+  .risk-sum-pill.b-1 { background:var(--color-success-50); border-color:#a7f3d0; } .risk-sum-pill.b-1 .n { color:var(--color-success-700); }
+  .risk-sum-cap { font-size:11px; color:var(--color-slate-500); margin-bottom:12px; line-height:1.5; }
+  .risk-btn { font-size:var(--text-xs); font-weight:600; padding:7px 12px; border-radius:var(--radius-md); border:none; cursor:pointer; font-family:inherit; }
+  .risk-btn-primary { background:var(--color-blue-600); color:#fff; }
+  .risk-btn-secondary { background:var(--color-slate-100); color:var(--color-slate-700); border:1px solid var(--color-slate-300); margin-left:6px; }
+  .risk-empty-msg, .ev-empty-msg { font-size:var(--text-xs); color:var(--color-slate-500); padding:16px; text-align:center; line-height:1.6; background:var(--color-slate-50); border:1px dashed var(--color-slate-300); border-radius:var(--radius-lg); }
+  .risk-toprisks-h, .ev-toprisks-h { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-500); margin:4px 0 8px; }
+  .risk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+  .risk-c { padding:12px; border-radius:var(--radius-lg); background:var(--color-slate-50); border:1px solid var(--color-slate-200); border-left:3px solid var(--color-slate-400); cursor:pointer; transition:box-shadow .12s; }
+  .risk-c:hover { box-shadow:var(--shadow-md); }
+  .risk-c.s-h { border-left-color:var(--color-error-500); }
+  .risk-c.s-m { border-left-color:var(--color-warning-500); }
+  .risk-c.s-l { border-left-color:var(--color-success-500); }
+  .risk-cat { font-size:9px; font-weight:600; text-transform:uppercase; color:var(--color-slate-500); letter-spacing:0.03em; }
+  .risk-desc { font-size:var(--text-xs); font-weight:500; color:var(--color-slate-800); margin:4px 0; }
+  .risk-meta { display:flex; gap:6px; font-size:9px; flex-wrap:wrap; margin-top:5px; }
+  .risk-tag { padding:2px 7px; border-radius:var(--radius-full); background:#fff; border:1px solid var(--color-slate-200); color:var(--color-slate-600); font-weight:500; }
+  .risk-sev-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:var(--radius-full); white-space:nowrap; }
+  .risk-sev-badge.b-4 { background:#fef2f2; color:var(--color-error-600); }
+  .risk-sev-badge.b-3 { background:#fff7ed; color:#ea580c; }
+  .risk-sev-badge.b-2 { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .risk-sev-badge.b-1 { background:var(--color-success-50); color:var(--color-success-700); }
+  .risk-sev-badge.b-0 { background:var(--color-slate-100); color:var(--color-slate-500); }
+
+  /* ════ S2c: Risk/Eval form ════ */
+  .rm-form, .ev-form { display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto; text-align:left; }
+  .rm-row { display:flex; flex-direction:column; gap:3px; }
+  .rm-row label { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-600); }
+  .rm-row input, .rm-row textarea, .rm-row select { width:100%; box-sizing:border-box; padding:9px 10px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; }
+  .rm-row input:focus, .rm-row textarea:focus, .rm-row select:focus { outline:none; border-color:var(--color-blue-500); box-shadow:0 0 0 2px var(--color-blue-100); }
+  .rm-row textarea { min-height:52px; resize:vertical; }
+  .ev-form-hint { font-size:11px; color:var(--color-slate-600); background:var(--color-slate-50); border:1px solid var(--color-slate-200); border-radius:var(--radius-md); padding:8px 10px; line-height:1.5; }
+  .rm-chip-row { display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--color-slate-500); }
+  .rm-chips { display:flex; gap:6px; }
+  .rm-affected { display:flex; gap:12px; flex-wrap:wrap; font-size:var(--text-xs); color:var(--color-slate-700); }
+  .rm-affected label { display:flex; align-items:center; gap:4px; font-weight:400; cursor:pointer; }
+  .ev-chip { width:40px; height:40px; display:flex; align-items:center; justify-content:center; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-weight:600; font-size:var(--text-sm); cursor:pointer; background:#fff; color:var(--color-slate-600); }
+  .ev-chip.sel, .ev-chip.acc { background:var(--color-blue-600); color:#fff; border-color:var(--color-blue-600); }
+
+  /* ════ S2c: Eval ════ */
+  .ev-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }
+  .ev-c { padding:12px; border-radius:var(--radius-lg); background:var(--color-slate-50); border:1px solid var(--color-slate-200); border-left:3px solid var(--color-slate-400); cursor:pointer; transition:box-shadow .12s; }
+  .ev-c:hover { box-shadow:var(--shadow-md); }
+  .ev-c-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .ev-team { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); }
+  .ev-date { font-size:10px; color:var(--color-slate-400); margin-top:2px; }
+  .ev-total { font-size:var(--text-lg); font-weight:700; color:var(--color-slate-900); font-variant-numeric:tabular-nums; }
+  .ev-meta { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .ev-tag { font-size:9px; padding:2px 7px; border-radius:var(--radius-full); background:#fff; border:1px solid var(--color-slate-200); color:var(--color-slate-600); font-weight:500; }
+  .ev-kpi-row { border:1px solid var(--color-slate-200); border-radius:var(--radius-md); padding:10px; }
+  .ev-kpi-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .ev-kpi-name { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-800); }
+  .ev-kpi-name .wt { font-size:10px; color:var(--color-slate-400); font-weight:500; }
+  .ev-kpi-stat { font-size:11px; font-weight:600; }
+  .ev-item { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:4px 0; }
+  .ev-item-name { font-size:var(--text-xs); color:var(--color-slate-600); flex:1; }
+  .ev-seg { display:flex; gap:2px; flex-shrink:0; }
+  .ev-seg-btn { padding:5px 9px; font-size:10px; font-family:inherit; border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-500); cursor:pointer; }
+  .ev-seg-btn:first-child { border-radius:var(--radius-md) 0 0 var(--radius-md); }
+  .ev-seg-btn:last-child { border-radius:0 var(--radius-md) var(--radius-md) 0; }
+  .ev-seg-btn.on-pass { background:var(--color-success-600); color:#fff; border-color:var(--color-success-600); }
+  .ev-seg-btn.on-fail { background:var(--color-error-600); color:#fff; border-color:var(--color-error-600); }
+  .ev-seg-btn.on-skip { background:var(--color-slate-400); color:#fff; border-color:var(--color-slate-400); }
+  .ev-total-bar { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--color-slate-50); border-radius:var(--radius-lg); margin-top:10px; }
+  .ev-total-bar .lbl { font-size:var(--text-xs); font-weight:600; color:var(--color-slate-600); }
+  .ev-total-bar .lbl small { font-weight:400; color:var(--color-slate-400); }
+  .ev-total-num { font-size:var(--text-xl); font-weight:700; color:var(--color-slate-900); font-variant-numeric:tabular-nums; }
+  .grade-badge { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:var(--radius-full); font-size:var(--text-xs); font-weight:700; color:#fff; }
+  .grade-badge.sm { width:20px; height:20px; font-size:10px; }
+  .grade-A { background:#10b981; } .grade-B { background:#3b82f6; } .grade-C { background:#f59e0b; } .grade-D { background:#ea580c; } .grade-F { background:#dc2626; }
+
+  /* ════ S2c: Price Editor ════ */
+  .pe-form { max-height:55vh; overflow-y:auto; text-align:left; }
+  .pe-cat { font-size:var(--text-xs); font-weight:700; color:var(--color-slate-600); background:var(--color-slate-50); padding:6px 10px; border-radius:var(--radius-md); margin:10px 0 6px; }
+  .pe-row { display:flex; align-items:center; gap:8px; padding:5px 0; }
+  .pe-name { flex:1; font-size:var(--text-xs); color:var(--color-slate-700); }
+  .pe-name small { display:block; font-size:10px; color:var(--color-slate-400); }
+  .pe-input-wrap { display:flex; align-items:center; gap:6px; }
+  .pe-input-wrap input { width:100px; padding:7px 9px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; text-align:right; }
+  .pe-input-wrap input.pm { background:var(--color-warning-50); border-color:#fde68a; }
+  .pe-pm-badge { font-size:9px; color:var(--color-warning-700); white-space:nowrap; }
+  .pe-bar { font-size:11px; color:var(--color-slate-500); padding:8px 0; text-align:center; }
 </style>
 </head>
 <body>
@@ -322,11 +509,51 @@
         </div>
         <!-- TAB: การเงิน (S2c) -->
         <div class="tab-panel" id="panel-finance">
-          <div class="card card-body soon-box"><i data-lucide="wallet"></i><h4>งวดงาน · การเงินเจ้าบ้าน · เบิกจ่าย</h4><p class="text-sm">กำลังพัฒนาในเฟส S2c</p></div>
+          <!-- งวดงานผู้รับเหมา -->
+          <div class="card card-body" style="margin-bottom:var(--space-6)">
+            <h3 class="card-title mb-4"><i data-lucide="receipt" style="width:18px;height:18px;vertical-align:-3px"></i> สรุปงวดงานและการเบิก (ผู้รับเหมา)</h3>
+            <div class="ngwd-grid" id="ngwdGrid"></div>
+            <div id="ngwdExtraWrap" style="display:none">
+              <div class="ngwd-extra-banner"><i data-lucide="plus-circle" style="width:15px;height:15px;vertical-align:-2px"></i> งวดเบิกสัญญางานเพิ่ม — เบิกแยกจากสัญญาหลัก</div>
+              <div class="ngwd-grid" id="ngwdGridExtra"></div>
+            </div>
+          </div>
+
+          <!-- ความคืบหน้า vs การเบิก (เจ้าบ้าน) -->
+          <div class="card card-body pp-card" style="margin-bottom:var(--space-6)">
+            <h3 class="card-title mb-4"><i data-lucide="scale" style="width:18px;height:18px;vertical-align:-3px"></i> ความคืบหน้างาน vs การเบิกเงิน</h3>
+            <div id="ppBody"></div>
+          </div>
+
+          <!-- สัญญาเจ้าบ้าน (เงินเข้า) -->
+          <div class="card card-body cf-card">
+            <div class="flex justify-between items-center mb-4" style="flex-wrap:wrap;gap:var(--space-3)">
+              <h3 class="card-title"><i data-lucide="file-signature" style="width:18px;height:18px;vertical-align:-3px"></i> สัญญาเจ้าบ้าน <span class="badge badge-success">เงินเข้า</span></h3>
+              <div id="cfHeaderActions"></div>
+            </div>
+            <div id="cfBody"></div>
+          </div>
         </div>
         <!-- TAB: ความเสี่ยง/ประเมิน (S2c) -->
         <div class="tab-panel" id="panel-risk">
-          <div class="card card-body soon-box"><i data-lucide="shield-alert"></i><h4>ความเสี่ยง · ประเมินผู้รับเหมา</h4><p class="text-sm">กำลังพัฒนาในเฟส S2c</p></div>
+          <!-- Risk Management -->
+          <div class="card card-body" style="margin-bottom:var(--space-6)">
+            <div class="flex justify-between items-center mb-4" style="flex-wrap:wrap;gap:var(--space-3)">
+              <h3 class="card-title"><i data-lucide="shield-alert" style="width:18px;height:18px;vertical-align:-3px"></i> การจัดการความเสี่ยง</h3>
+              <div id="riskHeaderActions"></div>
+            </div>
+            <div id="riskHeatmap"></div>
+            <div id="riskList"></div>
+          </div>
+
+          <!-- ประเมินผู้รับเหมา -->
+          <div class="card card-body">
+            <div class="flex justify-between items-center mb-4" style="flex-wrap:wrap;gap:var(--space-3)">
+              <h3 class="card-title"><i data-lucide="clipboard-check" style="width:18px;height:18px;vertical-align:-3px"></i> ประเมินผู้รับเหมา</h3>
+              <div id="evHeaderActions"></div>
+            </div>
+            <div id="evList"></div>
+          </div>
         </div>
 
       </div>
@@ -363,12 +590,13 @@
 
   // extended state
   state.materials=[]; state.contractors=[]; state.teams=[]; state.alerts=[]; state.inventory=null;
+  state.evals=[]; state.evalConfig=null; state.clientFinance=null;
   if(state.zone===undefined) state.zone='all';
   if(state.sortMode===undefined) state.sortMode='code';
   if(!state.openFFs) state.openFFs=new Set();
   if(!state.recentUncheck) state.recentUncheck={};
 
-  function renderAll(){ renderHeader(); renderKPIs(); renderGauge(); renderInventory(); renderTimeline(); renderFilters(); renderWeightList(); if(window.lucide) lucide.createIcons(); }
+  function renderAll(){ renderHeader(); renderKPIs(); renderGauge(); renderInventory(); renderTimeline(); renderFilters(); renderWeightList(); renderNgwdGrid(); renderClientFinance(); renderRisks(); renderEvals(); if(window.lucide) lucide.createIcons(); }
 
   function switchTab(name){
     document.querySelectorAll('.tab[data-tab]').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
@@ -401,7 +629,10 @@
       buildWeights();
 
       API.getInventorySummary().then(res=>{ if(res.ok&&res.data){state.inventory=res.data; renderInventory();} }).catch(()=>{});
-      API.getClientFinance().then(res=>{ if(res.ok&&res.data){state.clientFinance=res.data; renderKPIs();} }).catch(()=>{});
+      API.getClientFinance().then(res=>{ if(res.ok&&res.data){state.clientFinance=res.data; renderClientFinance(); renderKPIs();} }).catch(()=>{});
+      API.getTeams().then(res=>{ if(res.ok&&Array.isArray(res.data)) state.teams=res.data; }).catch(()=>{});
+      API.getEvals().then(res=>{ if(res.ok&&Array.isArray(res.data)){ state.evals=res.data; renderEvals(); } }).catch(()=>{});
+      API.getEvalConfig().then(res=>{ if(res.ok&&res.data) state.evalConfig=res.data; }).catch(()=>{});
       NF.load();
       API.callRead('get_ai_alerts').then(res=>{ if(res.ok&&res.data){state.alerts=res.data; renderAiAlertsBanner();} }).catch(()=>{});
       loadLatestReport();
@@ -505,12 +736,17 @@
     if(!inv){ el.innerHTML='<div class="inv-empty">กำลังโหลด...</div>'; return; }
     const t=inv.totals||{received:0,issued:0,balance:0}; const meta=inv.meta||{materials:0};
     if(!t.received&&!t.issued&&!t.balance){
-      el.innerHTML = meta.materials>0
-        ? `<div class="inv-warn bad">มีวัสดุ <b>${meta.materials}</b> รายการ แต่ยังไม่ได้ใส่ราคาต่อหน่วย — ตั้งราคาที่หน้าเดิมก่อน (ฟีเจอร์ตั้งราคาจะมาในเฟสถัดไป)</div>`
-        : '<div class="inv-empty">ยังไม่มีวัสดุในโครงการนี้</div>';
+      if(meta.materials>0){
+        el.innerHTML = `<div class="inv-warn bad" style="margin-bottom:10px">มีวัสดุ <b>${meta.materials}</b> รายการ แต่ยังไม่ได้ใส่ <b>ราคาต่อหน่วย</b> — ระบบจึงคิดมูลค่าเป็นเงินไม่ได้ (มีราคาจาก Sheet ของ PM เติมไว้ให้แล้ว — แค่ตรวจแล้วบันทึก)</div>`+
+          `<button class="inv-setprice-btn" onclick="PE.open()"><i data-lucide="pencil" style="width:13px;height:13px;vertical-align:-2px"></i> ตั้งราคาวัสดุ (เติมจาก PM ให้แล้ว)</button>`;
+      } else {
+        el.innerHTML = '<div class="inv-empty">ยังไม่มีวัสดุในโครงการนี้</div>';
+      }
+      if(window.lucide) lucide.createIcons();
       return;
     }
-    let html=`<div class="inv-cards">
+    let html=`<div class="flex justify-end mb-3"><button class="inv-setprice-btn" onclick="PE.open()"><i data-lucide="pencil" style="width:13px;height:13px;vertical-align:-2px"></i> แก้ราคาวัสดุ</button></div>
+    <div class="inv-cards">
       <div class="inv-card received"><div class="lbl">ซื้อเข้ามา</div><div class="val">${fmt(t.received)}</div><div class="unit">บาท</div></div>
       <div class="inv-card issued"><div class="lbl">เบิกใช้ไป</div><div class="val">${fmt(t.issued)}</div><div class="unit">บาท</div></div>
       <div class="inv-card balance"><div class="lbl">ค้างสต๊อก</div><div class="val">${fmt(t.balance)}</div><div class="unit">บาท</div></div>
@@ -527,6 +763,7 @@
       cats.forEach(c=>{ html+=`<div class="inv-cat-row"><div title="${escapeHtmlAttr(c.category)}">${escapeHtml(c.category)}</div><div class="r">${fmt(c.received)}</div><div class="i">${fmt(c.issued)}</div><div class="b">${fmt(c.balance)}</div></div>`; });
     }
     el.innerHTML=html;
+    if(window.lucide) lucide.createIcons();
   }
 
   function renderTimeline(){
@@ -797,6 +1034,775 @@
     } else { _spSetChip(taskId,'failed'); Modal.toast('❌ อัปไม่สำเร็จ — งานไม่กระทบ · แตะ chip เพื่อลองใหม่',4500); }
     _spUploading[taskId]=false;
   }
+
+  // ══════════════════ S2c: PAYMENT GRID (งวดงานผู้รับเหมา) ══════════════════
+  function renderNgwdGrid(){
+    if(!state.data||!state.data.payments) return;
+    const milestones=[
+      {key:'งวด 1', label:'งวด 1', sub:'มัดจำสั่งผลิต', pct:'50%', color:'#1e293b'},
+      {key:'งวด 2', label:'งวด 2', sub:'วัสดุเข้า+โครง', pct:'22.5%', color:'#3b82f6'},
+      {key:'งวด 3', label:'งวด 3', sub:'ติดตั้งเฟอร์นิเจอร์', pct:'22.5%', color:'#10b981'},
+      {key:'งวด 4', label:'งวด 4', sub:'ส่งมอบงาน', pct:'5%', color:'#b45309'}
+    ];
+    const cardHtml=(m,total,statusClass,statusText,hasReady,onclickKey)=>`<div class="ngwd-c${hasReady?' has-ready':''}" onclick="showPaymentModal('${onclickKey}')">
+      <div class="ngwd-t">${m.label}</div>
+      <div class="ngwd-a" style="color:${m.color}">${fmt(total)} ฿</div>
+      <div class="ngwd-p">${m.pct}${m.pct&&m.sub?' · ':''}${m.sub}</div>
+      <span class="ngwd-s ${statusClass}">${statusText}</span>
+      <div class="ngwd-tap-hint">แตะเพื่อจัดการ</div>
+    </div>`;
+    const statusOf=(items,key)=>{
+      const allPaid=items.length>0&&items.every(i=>i.status==='Paid');
+      const readyCount=items.filter(i=>i.status!=='Paid'&&i.status!=='Invoiced'&&isPaymentReady(i,key)).length;
+      const anyInvoiced=items.some(i=>i.status==='Invoiced');
+      let statusClass='s-pending', statusText='รอดำเนินการ';
+      if(allPaid){ statusClass='s-paid'; statusText='ชำระแล้ว ✓'; }
+      else if(anyInvoiced){ statusClass='s-active'; statusText='รอชำระ'; }
+      else if(readyCount>0){ statusClass='s-active'; statusText=`พร้อมเบิก ${readyCount} รายการ`; }
+      return { statusClass, statusText, hasReady: readyCount>0&&!allPaid };
+    };
+    let html='';
+    milestones.forEach(m=>{
+      const items=state.data.payments.filter(p=>p.milestone===m.key);
+      const total=items.reduce((s,i)=>s+i.amount,0);
+      const st=statusOf(items,m.key);
+      html+=cardHtml(m,total,st.statusClass,st.statusText,st.hasReady,m.key);
+    });
+    document.getElementById('ngwdGrid').innerHTML=html;
+
+    // งวดของสัญญางานเพิ่ม (milestone ที่ไม่ใช่ "งวด 1..4")
+    const mainKeys=milestones.map(m=>m.key);
+    const extraKeys=[];
+    state.data.payments.forEach(p=>{ if(mainKeys.indexOf(p.milestone)===-1&&extraKeys.indexOf(p.milestone)===-1) extraKeys.push(p.milestone); });
+    let extraHtml='';
+    extraKeys.forEach(key=>{
+      const items=state.data.payments.filter(p=>p.milestone===key);
+      const total=items.reduce((s,i)=>s+i.amount,0);
+      const st=statusOf(items,key);
+      const parts=key.split(' - ');
+      const numMatch=key.match(/งวด\s*(\d)/);
+      const color=numMatch?((CONFIG.PHASE_COLORS||{})['p'+numMatch[1]]||'#1e293b'):'#1e293b';
+      const pctTxt=(items[0]&&items[0].pct!==''&&items[0].pct!==undefined)?items[0].pct+'%':'';
+      const m={label:parts[0], sub:parts.slice(1).join(' - '), pct:pctTxt, color};
+      const safeKey=key.replace(/'/g,"\\'");
+      extraHtml+=cardHtml(m,total,st.statusClass,st.statusText,st.hasReady,safeKey);
+    });
+    const extraWrap=document.getElementById('ngwdExtraWrap');
+    if(extraWrap){ extraWrap.style.display=extraKeys.length?'':'none'; document.getElementById('ngwdGridExtra').innerHTML=extraHtml; }
+    if(window.lucide) lucide.createIcons();
+  }
+
+  function isPaymentReady(payment, milestoneKey){
+    if(payment.status==='Paid'||payment.status==='Invoiced') return false;
+    const numMatch=String(milestoneKey).match(/งวด\s*(\d)/);
+    const num=numMatch?Number(numMatch[1]):0;
+    if(num===1) return false;
+    const ffMatch=(payment.sub||'').match(/F[A-Z]?-\d+/g)||[];
+    if(ffMatch.length===0){
+      if(num===4){ const allTasks=state.data.tasks; return allTasks.length>0&&allTasks.every(t=>t.status==='Done'); }
+      return false;
+    }
+    let upToPhase='p2';
+    if(/ส่งมอบ/.test(String(milestoneKey))||num===4) upToPhase='p4';
+    else if(num===3) upToPhase='p3';
+    const phaseOrder=['p1','p2','p3','p4'];
+    const requiredPhases=phaseOrder.slice(0,phaseOrder.indexOf(upToPhase)+1);
+    for(const ffCode of ffMatch){
+      const ffTasks=state.data.tasks.filter(t=>t.ffCode===ffCode&&requiredPhases.includes(t.phase));
+      if(ffTasks.length===0) return false;
+      if(!ffTasks.every(t=>t.status==='Done')) return false;
+    }
+    return true;
+  }
+
+  function getPaymentProgress(payment, milestoneKey){
+    const numMatch=String(milestoneKey).match(/งวด\s*(\d)/);
+    const num=numMatch?Number(numMatch[1]):0;
+    if(num===1) return { done:payment.status==='Paid'?1:0, total:1, pct:payment.status==='Paid'?100:0 };
+    const ffMatch=(payment.sub||'').match(/F[A-Z]?-\d+/g)||[];
+    let upToPhase='p2';
+    if(/ส่งมอบ/.test(String(milestoneKey))||num===4) upToPhase='p4';
+    else if(num===3) upToPhase='p3';
+    const phaseOrder=['p1','p2','p3','p4'];
+    const requiredPhases=phaseOrder.slice(0,phaseOrder.indexOf(upToPhase)+1);
+    const relevantTasks=ffMatch.length===0
+      ? state.data.tasks.filter(t=>requiredPhases.includes(t.phase))
+      : state.data.tasks.filter(t=>ffMatch.includes(t.ffCode)&&requiredPhases.includes(t.phase));
+    const done=relevantTasks.filter(t=>t.status==='Done').length;
+    return { done, total:relevantTasks.length, pct:relevantTasks.length>0?Math.round(done/relevantTasks.length*100):0 };
+  }
+
+  function showPaymentModal(milestoneKey){
+    const items=state.data.payments.filter(p=>p.milestone===milestoneKey);
+    const total=items.reduce((s,i)=>s+i.amount,0);
+    const paid=items.filter(i=>i.status==='Paid').reduce((s,i)=>s+i.amount,0);
+    let listHtml='';
+    items.forEach(p=>{
+      const prog=getPaymentProgress(p,milestoneKey);
+      const ready=isPaymentReady(p,milestoneKey);
+      let pillClass='pp-pending', pillText='ยังไม่พร้อม';
+      if(p.status==='Paid'){ pillClass='pp-paid'; pillText='✓ ชำระแล้ว'; }
+      else if(p.status==='Invoiced'){ pillClass='pp-invoiced'; pillText='📄 ออกใบแจ้งหนี้แล้ว'; }
+      else if(ready){ pillClass='pp-ready'; pillText='✅ พร้อมเบิก'; }
+      let progColor='var(--color-slate-300)';
+      if(prog.pct===100) progColor='#10b981'; else if(prog.pct>=50) progColor='#f59e0b'; else if(prog.pct>0) progColor='#3b82f6';
+      let actionsHtml='';
+      if(milestoneKey==='งวด 1'){
+        actionsHtml=p.status!=='Paid'
+          ? `<div class="pay-item-actions"><button class="pay-action-btn pa-paid" onclick="markPaymentPaid('${p.id}')">ทำเครื่องหมายชำระแล้ว</button></div>`
+          : `<div class="pay-item-actions"><button class="pay-action-btn pa-reset" onclick="resetPayment('${p.id}')">ย้อนกลับ</button></div>`;
+      } else {
+        if(p.status==='Pending'&&ready) actionsHtml=`<div class="pay-item-actions"><button class="pay-action-btn pa-invoice" onclick="markPaymentInvoiced('${p.id}')">📄 ออกใบแจ้งหนี้</button></div>`;
+        else if(p.status==='Invoiced') actionsHtml=`<div class="pay-item-actions"><button class="pay-action-btn pa-reset" onclick="resetPayment('${p.id}')">ย้อนกลับ</button><button class="pay-action-btn pa-paid" onclick="markPaymentPaid('${p.id}')">✓ ชำระแล้ว</button></div>`;
+        else if(p.status==='Paid') actionsHtml=`<div class="pay-item-actions"><button class="pay-action-btn pa-reset" onclick="resetPayment('${p.id}')">ย้อนกลับ</button></div>`;
+      }
+      let infoHtml='';
+      if(p.receipt) infoHtml+=`<div class="pay-info-line">เลขใบ: <strong>${escapeHtml(p.receipt)}</strong></div>`;
+      if(p.paidDate) infoHtml+=`<div class="pay-info-line">ชำระเมื่อ: <strong>${escapeHtml(p.paidDate)}</strong></div>`;
+      listHtml+=`<div class="pay-item">
+        <div class="pay-item-head"><div class="pay-item-title">${escapeHtml(p.sub)}</div><span class="pay-item-pill ${pillClass}">${pillText}</span></div>
+        <div class="pay-item-detail">${p.pct}% · <strong>${fmt(p.amount)} ฿</strong></div>
+        ${milestoneKey!=='งวด 1'?`<div class="pay-progress"><span>${prog.done}/${prog.total} งาน</span><div class="pay-progress-bar"><div class="pay-progress-fill" style="width:${prog.pct}%;background:${progColor}"></div></div><span>${prog.pct}%</span></div>`:''}
+        ${infoHtml}${actionsHtml}
+      </div>`;
+    });
+    Modal.show(`<div class="modal-title" style="margin-bottom:8px">${escapeHtml(milestoneKey)} · จัดการการเบิก</div>
+      <div class="modal-desc">รวม ${fmt(total)} ฿ · ชำระแล้ว ${fmt(paid)} ฿</div>
+      <div class="pay-list">${listHtml}</div>
+      <div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button></div>`, 'pay-modal');
+  }
+
+  function markPaymentInvoiced(payId){
+    const pay=state.data.payments.find(p=>p.id===payId); if(!pay) return;
+    Modal.show(`<div class="modal-title">📄 ออกใบแจ้งหนี้</div>
+      <div class="modal-desc">${escapeHtml(pay.sub)} · ${fmt(pay.amount)} ฿</div>
+      <label class="cf-lbl">เลขใบแจ้งหนี้ (ถ้ามี)</label>
+      <input class="cf-input" id="invNoInput" placeholder="(ปล่อยว่างได้)">
+      <div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" onclick="_doInvoice('${payId}')">ออกใบแจ้งหนี้</button></div>`);
+  }
+  async function _doInvoice(payId){
+    const invoice=((document.getElementById('invNoInput')||{}).value||'').trim();
+    const pay=state.data.payments.find(p=>p.id===payId); if(!pay) return;
+    pay.status='Invoiced'; pay.receipt=invoice;
+    Modal.close(); Modal.toast('กำลังบันทึก...');
+    const result=await API.updatePayment(payId,'Invoiced',invoice);
+    if(result.ok){ Modal.toast('✓ บันทึกแล้ว'); renderNgwdGrid(); } else Modal.toast('❌ บันทึกไม่สำเร็จ');
+  }
+  async function markPaymentPaid(payId){
+    const pay=state.data.payments.find(p=>p.id===payId); if(!pay) return;
+    const ok=await Modal.confirm({icon:'💰',iconClass:'info',title:'ยืนยันการชำระเงิน?',desc:fmt(pay.amount)+' บาท สำหรับ '+escapeHtml(pay.sub),confirmText:'ชำระแล้ว',confirmClass:'modal-btn-primary'});
+    if(!ok) return;
+    pay.status='Paid'; pay.paidDate=todayStr();
+    Modal.toast('กำลังบันทึก...');
+    const result=await API.updatePayment(payId,'Paid');
+    if(result.ok){ Modal.toast('✓ บันทึกแล้ว'); renderNgwdGrid(); renderKPIs(); } else Modal.toast('❌ บันทึกไม่สำเร็จ');
+  }
+  async function resetPayment(payId){
+    const pay=state.data.payments.find(p=>p.id===payId); if(!pay) return;
+    const ok=await Modal.confirm({icon:'↩️',iconClass:'warn',title:'ย้อนกลับสถานะ?',desc:'กลับเป็น "รอดำเนินการ (Pending)"',confirmText:'ย้อนกลับ',confirmClass:'modal-btn-warn'});
+    if(!ok) return;
+    pay.status='Pending'; pay.paidDate='';
+    Modal.toast('กำลังบันทึก...');
+    const result=await API.updatePayment(payId,'Pending');
+    if(result.ok){ Modal.toast('✓ ย้อนกลับแล้ว'); renderNgwdGrid(); renderKPIs(); } else Modal.toast('❌ บันทึกไม่สำเร็จ');
+  }
+
+  // ══════════════════ S2c: PROGRESS vs PAYMENT (เจ้าบ้าน) ══════════════════
+  function cfBaht(n){ return (Number(n)||0).toLocaleString('th-TH',{maximumFractionDigits:0})+' บาท'; }
+  function cfOpenLink(url){ if(url) window.open(url,'_blank','noopener'); }
+
+  function renderPaymentProgress(){
+    const el=document.getElementById('ppBody'); if(!el||!state.data) return;
+    const prog=calcProgressByContract();
+    const pay=calcClientPaymentStats();
+    const progPct=prog.overall;
+    let topHtml='<div class="pp-cmp">';
+    topHtml+='<div class="pp-col pp-prog"><div class="pp-col-l">งานเสร็จจริง (Progress)</div><div class="pp-col-v">'+progPct+'%</div><div class="pp-col-s">ถ่วงน้ำหนักตามมูลค่า+งวด</div></div>';
+    if(pay.hasData){
+      topHtml+='<div class="pp-col pp-pay"><div class="pp-col-l">เบิกเจ้าบ้านแล้ว (Payment)</div><div class="pp-col-v">'+pay.pct+'%</div><div class="pp-col-s">'+fmt(pay.totalPaid)+' / '+fmt(pay.totalValue)+'</div></div>';
+      const gap=Math.round((pay.pct-progPct)*10)/10;
+      const over=gap>0;
+      topHtml+='<div class="pp-col pp-gap"><div class="pp-col-l">'+(over?'เบิกล้ำหน้างาน':'เบิกตามหลังงาน')+'</div><div class="pp-col-v '+(over?'over':'under')+'">'+(over?'+':'')+gap+'%</div><div class="pp-col-s">'+(over?'payment − progress':'งานนำเงิน')+'</div></div></div>';
+      const pw=Math.min(progPct,100);
+      const gw=Math.max(0,Math.min(pay.pct,100)-pw);
+      topHtml+='<div class="pp-stack"><div class="pp-stack-prog" style="width:'+pw+'%"></div><div class="pp-stack-gap" style="width:'+gw+'%"></div></div>';
+      topHtml+='<div class="pp-legend"><span><i style="background:#2563eb"></i>งานเสร็จ '+progPct+'%</span>'+(gw>0?'<span><i style="background:#fca5a5"></i>เบิกล้ำหน้างาน '+Math.round(gw*10)/10+'%</span>':'')+'</div>';
+      if(over&&gap>=10) topHtml+='<div class="pp-note">การเบิกนำหน้างานเป็นเรื่อง<b>ปกติ</b>สำหรับงวดมัดจำ/วัสดุเข้า (เก็บเงินก่อนงานเสร็จตามสัดส่วน) — ไม่ใช่ความผิดพลาด แต่ควรดูช่องว่างนี้ไว้ อย่าเบิกล้ำหน้างานจนเสี่ยงเวลาส่งมอบ</div>';
+    } else {
+      topHtml+='<div class="pp-col pp-pay"><div class="pp-col-l">เบิกเจ้าบ้านแล้ว (Payment)</div><div class="pp-col-v" style="color:var(--color-slate-400)">—</div><div class="pp-col-s">ยังไม่มีสัญญาเจ้าบ้าน</div></div></div>';
+    }
+    let rowsHtml='';
+    if(prog.hasAddon&&prog.main){
+      rowsHtml+='<div class="pp-head-mini"><span>■ งานเสร็จ</span><span>■ เบิกแล้ว</span></div>';
+      const payByNo={};
+      if(pay.hasData) pay.contracts.forEach(c=>{ payByNo[c.contract_no]=c; });
+      const renderRow=(name,p,payRow)=>{
+        const payPct=payRow?payRow.pct:null;
+        return '<div class="pp-row"><div class="pp-row-name">'+name+'</div><div class="pp-row-bars">'+
+          '<div class="pp-mini"><div class="pp-mini-prog" style="width:'+Math.min(p.pct,100)+'%"></div></div>'+
+          (payPct!==null?'<div class="pp-mini"><div class="pp-mini-pay" style="width:'+Math.min(payPct,100)+'%"></div></div>':'')+
+          '</div><div class="pp-row-num"><b class="p">'+p.pct+'%</b>'+(payPct!==null?' · <b class="m">เบิก '+payPct+'%</b>':'')+'</div></div>';
+      };
+      const proj=(CONFIG.PROJECTS||{})[state.projectId]||{};
+      rowsHtml+=renderRow('งานหลัก',prog.main,payByNo[proj.quoteNo]);
+      rowsHtml+=renderRow('งานเพิ่ม (ตู้ F-21/F-22)',prog.addon,null);
+      rowsHtml='<div style="margin-top:6px">'+rowsHtml+'<div class="pp-col-s" style="margin-top:6px">หมายเหตุ: "เบิกแล้ว %" ของงานเพิ่มมีงวดมัดจำที่เก็บก่อนเริ่มผลิต — เทียบ % ตรงๆ กับงานเสร็จไม่ได้</div></div>';
+    }
+    el.innerHTML=topHtml+rowsHtml;
+  }
+
+  // ══════════════════ S2c: CLIENT FINANCE (สัญญาเจ้าบ้าน) ══════════════════
+  function renderClientFinance(){
+    renderPaymentProgress();
+    const body=document.getElementById('cfBody');
+    const actions=document.getElementById('cfHeaderActions');
+    if(!body||!actions) return;
+    const cf=state.clientFinance||{};
+    const contracts=cf.contracts||[], milestones=cf.milestones||[], slips=cf.payment_slips||[], files=cf.contract_files||[];
+    if(!contracts.length){
+      actions.innerHTML='<button class="cf-btn cf-btn-primary" onclick="CF.openCreateContract()">+ สร้างสัญญาเจ้าบ้าน</button>';
+      body.innerHTML='<div class="cf-empty">ยังไม่มีสัญญากับเจ้าบ้านในโครงการนี้<br>กด <b>+ สร้างสัญญาเจ้าบ้าน</b> เพื่อเก็บไฟล์สัญญา งวดการชำระ และแนบหลักฐานการรับเงิน</div>';
+      return;
+    }
+    actions.innerHTML='<button class="cf-btn cf-btn-primary" onclick="CF.openCreateContract()">+ สร้างสัญญา</button>';
+    let html='';
+    contracts.forEach(c=>{
+      const cMilestones=milestones.filter(m=>String(m.contract_id)===String(c.contract_id));
+      const paidTotal=cMilestones.reduce((s,m)=>s+Number(m.paid_amount||0),0);
+      const pct=c.value>0?Math.round((paidTotal/c.value)*100):0;
+      const cFiles=files.filter(f=>String(f.contract_id)===String(c.contract_id));
+      let filesHtml='';
+      cFiles.forEach(f=>{
+        const ic=f.file_type==='pdf'?'📄':'🖼️';
+        filesHtml+='<div class="cf-file-row"><span>'+ic+'</span><span class="cf-file-name" onclick="cfOpenLink(\''+escapeHtmlAttr(f.url)+'\')">'+escapeHtml(f.name)+'</span><span class="cf-file-del" onclick="CF.deleteContractFile(\''+escapeHtmlAttr(f.file_id)+'\')">✕</span></div>';
+      });
+      html+='<div class="cf-summary">'+
+        '<div class="cf-sum-title">'+escapeHtml(c.title||'สัญญาก่อสร้าง')+(c.contract_no?' <span style="font-weight:400;color:var(--color-slate-500)">('+escapeHtml(c.contract_no)+')</span>':'')+'</div>'+
+        '<div class="cf-sum-row"><span>มูลค่าสัญญา</span><span class="cf-sum-amt">'+cfBaht(c.value)+'</span></div>'+
+        '<div class="cf-sum-row"><span>รับแล้ว</span><span class="cf-sum-amt">'+cfBaht(paidTotal)+' ('+pct+'%)</span></div>'+
+        '<div class="cf-bar"><div class="cf-bar-fill" style="width:'+Math.min(pct,100)+'%"></div></div>'+
+        '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+
+          '<button class="cf-btn cf-btn-secondary" onclick="CF.openAddMilestone(\''+escapeHtmlAttr(c.contract_id)+'\')">+ เพิ่มงวด</button>'+
+          '<button class="cf-btn cf-btn-secondary" onclick="CF.openEditContract(\''+escapeHtmlAttr(c.contract_id)+'\')">แก้สัญญา</button>'+
+        '</div>'+
+        '<div style="margin-top:6px">'+filesHtml+'<button class="cf-slip-btn" onclick="CF.openUploadContractFile(\''+escapeHtmlAttr(c.contract_id)+'\')">แนบไฟล์สัญญา</button></div>'+
+      '</div>';
+      if(!cMilestones.length){
+        html+='<div class="cf-empty">ยังไม่มีงวดการชำระ — กด <b>+ เพิ่มงวด</b></div>';
+      } else {
+        cMilestones.forEach(m=>{
+          const isPaid=['paid','done','completed'].indexOf(String(m.status||'').toLowerCase())>=0||!!m.paid_date;
+          const badge=isPaid?'<span class="cf-badge cf-badge-paid">✓ รับแล้ว</span>':'<span class="cf-badge cf-badge-pending">⏳ รอเก็บ</span>';
+          const mSlips=slips.filter(s=>String(s.milestone_id)===String(m.milestone_id));
+          let slipHtml='';
+          mSlips.forEach(s=>{
+            const ic=s.file_type==='pdf'?'📄':'🖼️';
+            slipHtml+='<div class="cf-slip-row"><span>'+ic+'</span><span class="cf-slip-name" onclick="cfOpenLink(\''+escapeHtmlAttr(s.url)+'\')">'+escapeHtml(s.name)+'</span><span class="cf-slip-del" onclick="CF.deleteSlip(\''+escapeHtmlAttr(s.slip_id)+'\')">✕</span></div>';
+          });
+          html+='<div class="cf-ms"><div class="cf-ms-head"><div style="flex:1">'+
+            '<div class="cf-ms-name" onclick="CF.openMilestone(\''+escapeHtmlAttr(m.milestone_id)+'\')">งวด '+(m.seq||'')+' · '+escapeHtml(m.name||'')+' ✏️</div>'+
+            (m.condition?'<div class="cf-ms-cond">เงื่อนไข: '+escapeHtml(m.condition)+'</div>':'')+
+            (isPaid&&m.paid_date?'<div class="cf-ms-cond">รับเมื่อ '+escapeHtml(m.paid_date)+'</div>':'')+
+            '</div><div style="text-align:right"><div class="cf-ms-amt">'+cfBaht(m.amount)+'</div><div style="margin-top:4px">'+badge+'</div></div></div>'+
+            '<div class="cf-slip-wrap">'+(slipHtml||'<div style="font-size:11px;color:var(--color-slate-400)">ยังไม่มีหลักฐานการรับเงิน</div>')+
+            '<button class="cf-slip-btn" onclick="CF.openUploadSlip(\''+escapeHtmlAttr(m.milestone_id)+'\',\''+escapeHtmlAttr(c.contract_id)+'\')">แนบสลิป/ใบเสร็จ</button></div></div>';
+        });
+      }
+    });
+    body.innerHTML=html;
+  }
+
+  const CF={};
+  CF._fileToBase64=function(file){ return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file); }); };
+  CF.openCreateContract=function(){
+    Modal.show('<div class="modal-title">💰 สร้างสัญญาเจ้าบ้าน</div>'+
+      '<div style="font-size:12px;color:var(--color-slate-500);margin-bottom:10px">สัญญาก่อสร้างระหว่างบริษัทกับเจ้าของบ้าน (ฝั่งเงินเข้า)</div>'+
+      '<label class="cf-lbl">ชื่อสัญญา *</label><input class="cf-input" id="cfTitle" placeholder="เช่น สัญญาก่อสร้างบ้าน Bow House">'+
+      '<label class="cf-lbl">เลขที่สัญญา</label><input class="cf-input" id="cfNo" placeholder="(ถ้ามี)">'+
+      '<label class="cf-lbl">มูลค่าสัญญา (บาท) *</label><input class="cf-input" id="cfValue" type="number" inputmode="numeric" placeholder="เช่น 5000000">'+
+      '<label class="cf-lbl">วันลงนาม</label><input class="cf-input" id="cfSignDate" type="date">'+
+      '<label class="cf-lbl">หมายเหตุ</label><input class="cf-input" id="cfNotes" placeholder="(ถ้ามี)">'+
+      '<div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="CF.submitContract()">บันทึก</button></div>');
+  };
+  CF.submitContract=async function(){
+    const title=document.getElementById('cfTitle').value.trim();
+    const value=Number(document.getElementById('cfValue').value||0);
+    if(!title){ Modal.toast('⚠️ กรอกชื่อสัญญาก่อน'); return; }
+    if(!value){ Modal.toast('⚠️ กรอกมูลค่าสัญญาก่อน'); return; }
+    Modal.toast('⏳ กำลังบันทึก...');
+    try{
+      const res=await API.createClientContract({ title, contract_no:document.getElementById('cfNo').value.trim(), value, sign_date:document.getElementById('cfSignDate').value||'', notes:document.getElementById('cfNotes').value.trim() });
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'unknown')); return; }
+      Modal.close(); Modal.toast('✅ สร้างสัญญาแล้ว'); setTimeout(()=>loadData(),500);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  CF.openEditContract=function(cid){
+    const c=((state.clientFinance||{}).contracts||[]).find(x=>String(x.contract_id)===String(cid));
+    if(!c){ Modal.toast('❌ ไม่พบสัญญา'); return; }
+    Modal.show('<div class="modal-title">✏️ แก้สัญญาเจ้าบ้าน</div>'+
+      '<label class="cf-lbl">ชื่อสัญญา *</label><input class="cf-input" id="cfTitle" value="'+escapeHtmlAttr(c.title)+'">'+
+      '<label class="cf-lbl">เลขที่สัญญา</label><input class="cf-input" id="cfNo" value="'+escapeHtmlAttr(c.contract_no)+'">'+
+      '<label class="cf-lbl">มูลค่าสัญญา (บาท) *</label><input class="cf-input" id="cfValue" type="number" inputmode="numeric" value="'+Number(c.value||0)+'">'+
+      '<label class="cf-lbl">วันลงนาม</label><input class="cf-input" id="cfSignDate" type="date" value="'+escapeHtmlAttr(c.sign_date)+'">'+
+      '<label class="cf-lbl">หมายเหตุ</label><input class="cf-input" id="cfNotes" value="'+escapeHtmlAttr(c.notes)+'">'+
+      '<div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="CF.submitEditContract(\''+escapeHtmlAttr(cid)+'\')">บันทึก</button></div>');
+  };
+  CF.submitEditContract=async function(cid){
+    const title=document.getElementById('cfTitle').value.trim();
+    const value=Number(document.getElementById('cfValue').value||0);
+    if(!title||!value){ Modal.toast('⚠️ กรอกชื่อ + มูลค่าสัญญา'); return; }
+    Modal.toast('⏳ กำลังบันทึก...');
+    try{
+      const res=await API.updateContract({ contract_id:cid, title, value, contract_no:document.getElementById('cfNo').value.trim(), sign_date:document.getElementById('cfSignDate').value||'', notes:document.getElementById('cfNotes').value.trim() });
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'unknown')); return; }
+      Modal.close(); Modal.toast('✅ บันทึกแล้ว'); setTimeout(()=>loadData(),500);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  CF.openAddMilestone=function(cid){
+    const existing=((state.clientFinance||{}).milestones||[]).filter(m=>String(m.contract_id)===String(cid));
+    const nextSeq=existing.length+1;
+    Modal.show('<div class="modal-title">+ เพิ่มงวดการชำระ</div>'+
+      '<label class="cf-lbl">ลำดับงวด</label><input class="cf-input" id="cfMsSeq" type="number" value="'+nextSeq+'">'+
+      '<label class="cf-lbl">ชื่องวด *</label><input class="cf-input" id="cfMsName" placeholder="เช่น มัดจำเซ็นสัญญา / เทพื้น">'+
+      '<label class="cf-lbl">เงื่อนไขการจ่าย</label><input class="cf-input" id="cfMsCond" placeholder="เช่น เมื่อเซ็นสัญญา">'+
+      '<label class="cf-lbl">จำนวนเงิน (บาท) *</label><input class="cf-input" id="cfMsAmount" type="number" inputmode="numeric" placeholder="เช่น 1500000">'+
+      '<div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="CF.submitMilestone(\''+escapeHtmlAttr(cid)+'\')">บันทึก</button></div>');
+  };
+  CF.submitMilestone=async function(cid){
+    const name=document.getElementById('cfMsName').value.trim();
+    const amount=Number(document.getElementById('cfMsAmount').value||0);
+    if(!name||!amount){ Modal.toast('⚠️ กรอกชื่องวด + จำนวนเงิน'); return; }
+    Modal.toast('⏳ กำลังบันทึก...');
+    try{
+      const res=await API.createMilestone({ contract_id:cid, seq:Number(document.getElementById('cfMsSeq').value||0), name, condition:document.getElementById('cfMsCond').value.trim(), amount, status:'pending' });
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'unknown')); return; }
+      Modal.close(); Modal.toast('✅ เพิ่มงวดแล้ว'); setTimeout(()=>loadData(),500);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  CF.openMilestone=function(mid){
+    const m=((state.clientFinance||{}).milestones||[]).find(x=>String(x.milestone_id)===String(mid));
+    if(!m){ Modal.toast('❌ ไม่พบงวด'); return; }
+    const isPaid=['paid','done','completed'].indexOf(String(m.status||'').toLowerCase())>=0||!!m.paid_date;
+    Modal.show('<div class="modal-title">✏️ งวด '+(m.seq||'')+' · '+escapeHtml(m.name||'')+'</div>'+
+      '<label class="cf-lbl">ชื่องวด</label><input class="cf-input" id="cfMsName" value="'+escapeHtmlAttr(m.name)+'">'+
+      '<label class="cf-lbl">เงื่อนไขการจ่าย</label><input class="cf-input" id="cfMsCond" value="'+escapeHtmlAttr(m.condition)+'">'+
+      '<label class="cf-lbl">จำนวนเงิน (บาท)</label><input class="cf-input" id="cfMsAmount" type="number" value="'+Number(m.amount||0)+'">'+
+      '<label class="cf-lbl">สถานะ</label><select class="cf-input" id="cfMsStatus"><option value="pending"'+(!isPaid?' selected':'')+'>⏳ รอเก็บเงิน</option><option value="paid"'+(isPaid?' selected':'')+'>✓ รับเงินแล้ว</option></select>'+
+      '<div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="CF.submitEditMilestone(\''+escapeHtmlAttr(mid)+'\',\''+escapeHtmlAttr(m.contract_id)+'\')">บันทึก</button></div>');
+  };
+  CF.submitEditMilestone=async function(mid,cid){
+    const status=document.getElementById('cfMsStatus').value;
+    const amount=Number(document.getElementById('cfMsAmount').value||0);
+    const isPaid=status==='paid';
+    Modal.toast('⏳ กำลังบันทึก...');
+    try{
+      const res=await API.updateMilestone({ milestone_id:mid, contract_id:cid, name:document.getElementById('cfMsName').value.trim(), condition:document.getElementById('cfMsCond').value.trim(), amount, status, paid_amount:isPaid?amount:0, paid_date:isPaid?new Date().toISOString().slice(0,10):'' });
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'unknown')); return; }
+      Modal.close(); Modal.toast('✅ บันทึกงวดแล้ว'); setTimeout(()=>loadData(),500);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  CF.openUploadSlip=function(mid,cid){
+    Modal.show('<div class="modal-title">📎 แนบสลิป/ใบเสร็จ</div>'+
+      '<div style="font-size:12px;color:var(--color-slate-500);margin-bottom:10px">หลักฐานการรับเงินจากเจ้าบ้าน (รูป/PDF)</div>'+
+      '<label class="cf-lbl">เลือกไฟล์</label><input type="file" class="cf-input" id="cfSlipFile" accept="image/*,application/pdf" style="padding:6px">'+
+      '<label class="cf-lbl">ชื่อ/คำอธิบาย</label><input class="cf-input" id="cfSlipName" placeholder="เช่น สลิปโอน งวด 1">'+
+      '<div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" id="cfSlipBtn" onclick="CF.doUploadSlip(\''+escapeHtmlAttr(mid)+'\',\''+escapeHtmlAttr(cid)+'\')">อัปโหลด</button></div>');
+  };
+  CF.doUploadSlip=async function(mid,cid){
+    const file=(document.getElementById('cfSlipFile').files||[])[0];
+    if(!file){ Modal.toast('⚠️ เลือกไฟล์ก่อน'); return; }
+    if(file.size>10*1024*1024){ Modal.toast('❌ ไฟล์ใหญ่เกิน 10MB'); return; }
+    const name=document.getElementById('cfSlipName').value.trim()||file.name.replace(/\.[^.]+$/,'');
+    const btn=document.getElementById('cfSlipBtn'); btn.disabled=true; btn.textContent='กำลังอัปโหลด...';
+    try{
+      const base64=await CF._fileToBase64(file);
+      const res=await API.uploadPaymentSlip({ milestone_id:mid, contract_id:cid, file_base64:base64, file_name:name });
+      if(!res||!res.ok) throw new Error((res&&res.error)||'อัปโหลดไม่สำเร็จ');
+      Modal.close(); Modal.toast('✅ แนบหลักฐานแล้ว'); setTimeout(()=>loadData(),600);
+    }catch(e){ Modal.toast('❌ '+e.message); btn.disabled=false; btn.textContent='อัปโหลด'; }
+  };
+  CF.deleteSlip=async function(slipId){
+    const ok=await Modal.confirm({icon:'🗑️',iconClass:'warn',title:'ลบหลักฐานนี้?',confirmText:'ลบ',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'});
+    if(!ok) return;
+    try{
+      const res=await API.deletePaymentSlip(slipId);
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'ลบไม่สำเร็จ')); return; }
+      Modal.toast('✅ ลบแล้ว'); setTimeout(()=>loadData(),500);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  CF.openUploadContractFile=function(cid){
+    Modal.show('<div class="modal-title">📄 แนบไฟล์สัญญา</div>'+
+      '<div style="font-size:12px;color:var(--color-slate-500);margin-bottom:10px">ไฟล์สัญญาที่เซ็นกับเจ้าบ้าน (PDF/รูป)</div>'+
+      '<label class="cf-lbl">เลือกไฟล์</label><input type="file" class="cf-input" id="cfCFile" accept="image/*,application/pdf" style="padding:6px">'+
+      '<label class="cf-lbl">ชื่อ/คำอธิบาย</label><input class="cf-input" id="cfCFileName" placeholder="เช่น สัญญาก่อสร้าง ฉบับเซ็น">'+
+      '<div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" id="cfCFileBtn" onclick="CF.doUploadContractFile(\''+escapeHtmlAttr(cid)+'\')">อัปโหลด</button></div>');
+  };
+  CF.doUploadContractFile=async function(cid){
+    const file=(document.getElementById('cfCFile').files||[])[0];
+    if(!file){ Modal.toast('⚠️ เลือกไฟล์ก่อน'); return; }
+    if(file.size>10*1024*1024){ Modal.toast('❌ ไฟล์ใหญ่เกิน 10MB'); return; }
+    const name=document.getElementById('cfCFileName').value.trim()||file.name.replace(/\.[^.]+$/,'');
+    const btn=document.getElementById('cfCFileBtn'); btn.disabled=true; btn.textContent='กำลังอัปโหลด...';
+    try{
+      const base64=await CF._fileToBase64(file);
+      const res=await API.uploadContractFile({ contract_id:cid, file_base64:base64, file_name:name });
+      if(!res||!res.ok) throw new Error((res&&res.error)||'อัปโหลดไม่สำเร็จ');
+      Modal.close(); Modal.toast('✅ แนบไฟล์สัญญาแล้ว'); setTimeout(()=>loadData(),600);
+    }catch(e){ Modal.toast('❌ '+e.message); btn.disabled=false; btn.textContent='อัปโหลด'; }
+  };
+  CF.deleteContractFile=async function(fileId){
+    const ok=await Modal.confirm({icon:'🗑️',iconClass:'warn',title:'ลบไฟล์สัญญานี้?',confirmText:'ลบ',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'});
+    if(!ok) return;
+    try{
+      const res=await API.deleteContractFile(fileId);
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'ลบไม่สำเร็จ')); return; }
+      Modal.toast('✅ ลบแล้ว'); setTimeout(()=>loadData(),500);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+
+  // ══════════════════ S2c: RISK MANAGEMENT ══════════════════
+  function riskBand(score){ const s=Number(score)||0; if(s>=16) return 4; if(s>=10) return 3; if(s>=5) return 2; if(s>=1) return 1; return 0; }
+  function riskBandLabel(b){ return ['—','ต่ำ','กลาง','สูง','สูงมาก'][b]||'—'; }
+  function riskEffBand(r){
+    const s=Number(r.score)||(Number(r.lScore||0)*Number(r.iScore||0));
+    if(s>0) return riskBand(s);
+    const sev=String(r.sev||'').toLowerCase();
+    if(sev.indexOf('critical')!==-1||sev.indexOf('วิกฤต')!==-1) return 4;
+    if(sev.indexOf('high')!==-1||sev.indexOf('สูง')!==-1) return 3;
+    if(sev.indexOf('medium')!==-1||sev.indexOf('กลาง')!==-1||sev.indexOf('ปานกลาง')!==-1) return 2;
+    if(sev.indexOf('low')!==-1||sev.indexOf('ต่ำ')!==-1) return 1;
+    return 0;
+  }
+  function renderRiskHeatmap(){
+    const risks=state.data.risks||[];
+    const counts={4:0,3:0,2:0,1:0}; let open=0;
+    risks.forEach(r=>{ if((r.status||'').toLowerCase()==='closed') return; open++; const b=riskEffBand(r); if(counts[b]!==undefined) counts[b]++; });
+    const pills=[{b:4,label:'สูงมาก'},{b:3,label:'สูง'},{b:2,label:'กลาง'},{b:1,label:'ต่ำ'}];
+    let html='<div class="risk-summary">';
+    pills.forEach(p=>{ const n=counts[p.b]; html+=`<div class="risk-sum-pill ${n>0?'b-'+p.b:'zero'}"><span class="n">${n}</span><span class="l">${p.label}</span></div>`; });
+    html+='</div>';
+    html+=`<div class="risk-sum-cap">ความเสี่ยงที่ยังเปิดอยู่ ${open} รายการ · ระดับ = โอกาสเกิด × ผลกระทบ · แตะการ์ดด้านล่างเพื่อดู/แก้ไข</div>`;
+    document.getElementById('riskHeatmap').innerHTML=html;
+  }
+  function renderRisks(){
+    const risks=state.data.risks||[];
+    const heatmapEl=document.getElementById('riskHeatmap'), listEl=document.getElementById('riskList'), actionsEl=document.getElementById('riskHeaderActions');
+    if(!listEl||!actionsEl) return;
+    let actions='<button class="risk-btn risk-btn-primary" onclick="RM.openCreate()">+ เพิ่มความเสี่ยง</button>';
+    if(risks.length===0&&state.projectId!=='direk-template') actions+='<button class="risk-btn risk-btn-secondary" onclick="confirmCloneRisksFromDirek()">ใช้ template ดิเรก</button>';
+    actionsEl.innerHTML=actions;
+    if(risks.length===0){
+      if(heatmapEl) heatmapEl.innerHTML='';
+      listEl.innerHTML='<div class="risk-empty-msg">ยังไม่มีความเสี่ยงในโครงการนี้ — กด <b>+ เพิ่มความเสี่ยง</b> หรือใช้ template ของคุณดิเรก 13 รายการ</div>';
+      return;
+    }
+    renderRiskHeatmap();
+    const sorted=risks.slice().sort((a,b)=>{
+      const ca=(a.status||'').toLowerCase()==='closed'?1:0, cb=(b.status||'').toLowerCase()==='closed'?1:0;
+      if(ca!==cb) return ca-cb;
+      return riskEffBand(b)-riskEffBand(a);
+    });
+    let html='<div class="risk-toprisks-h">รายการความเสี่ยง (เรียงตามระดับ)</div><div class="risk-grid">';
+    sorted.forEach(r=>{
+      const score=Number(r.score)||(Number(r.lScore||0)*Number(r.iScore||0));
+      const band=riskEffBand(r);
+      const cls=band>=4?'s-h':(band>=2?'s-m':'s-l');
+      const isClosed=(r.status||'').toLowerCase()==='closed';
+      const stTxt={open:'เปิดอยู่',mitigated:'มีแผนรับมือ',closed:'ปิดแล้ว'}[(r.status||'').toLowerCase()]||r.status;
+      html+=`<div class="risk-c ${cls}" style="${isClosed?'opacity:0.55;':''}" onclick="RM.openEdit('${escapeHtmlAttr(r.id)}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <div class="risk-cat">${escapeHtml(r.cat||'ทั่วไป')}</div>
+          <span class="risk-sev-badge b-${band}">${riskBandLabel(band)}${score?' · '+score:''}</span>
+        </div>
+        <div class="risk-desc">${escapeHtml(r.desc||'')}</div>
+        <div class="risk-meta">
+          ${r.owner?`<span class="risk-tag">${escapeHtml(r.owner)}</span>`:''}
+          ${r.status?`<span class="risk-tag">${escapeHtml(stTxt)}</span>`:''}
+          ${r.affectedParties?`<span class="risk-tag">${escapeHtml(r.affectedParties)}</span>`:''}
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+    listEl.innerHTML=html;
+  }
+  const RM={ state:{mode:'create',editId:null,l:3,i:3} };
+  RM.affectedOptions=['พนักงาน','องค์กร','ลูกค้า','โครงการ'];
+  RM.statusOptions=['Open','Mitigated','Closed'];
+  RM._renderScoreBadge=function(l,i){ const s=(Number(l)||0)*(Number(i)||0); const b=riskBand(s); return `<span class="risk-sev-badge b-${b}" style="font-size:13px;padding:5px 14px">ระดับ ${riskBandLabel(b)}${s?' · '+s:''}</span>`; };
+  RM._chipRow=function(type,cur,labels){
+    let chips='';
+    for(let n=1;n<=5;n++){ const sel=n===cur?' sel acc':''; chips+=`<div class="ev-chip${sel}" title="${escapeHtmlAttr(labels[n]||'')}" onclick="RM._pick('${type}',${n},this)">${n}</div>`; }
+    return `<div class="rm-chips" id="rmChips-${type}">${chips}</div>`;
+  };
+  RM._formHtml=function(prefill){
+    prefill=prefill||{};
+    let L=parseInt(prefill.lScore,10)||0, I=parseInt(prefill.iScore,10)||0;
+    if(!L||!I){ const b=prefill.id?riskEffBand(prefill):0; const guess=b===4?4:b===3?4:b===2?3:b===1?2:3; if(!L)L=guess; if(!I)I=guess; }
+    RM.state.l=L; RM.state.i=I;
+    const affectedSet=new Set((prefill.affectedParties||'').split(',').map(s=>s.trim()).filter(Boolean));
+    const affectedChecks=RM.affectedOptions.map(opt=>`<label><input type="checkbox" name="rm-affected" value="${escapeHtmlAttr(opt)}" ${affectedSet.has(opt)?'checked':''}>${opt}</label>`).join('');
+    const statusMap={Open:'เปิดอยู่',Mitigated:'มีแผนรับมือ',Closed:'ปิดแล้ว'};
+    const statusOpts=RM.statusOptions.map(s=>`<option value="${s}" ${(prefill.status||'Open')===s?'selected':''}>${statusMap[s]||s}</option>`).join('');
+    const lLabels={1:'น้อยที่สุด',2:'น้อย',3:'ปานกลาง',4:'มาก',5:'มากที่สุด'};
+    const iLabels={1:'น้อยมาก',2:'น้อย',3:'ปานกลาง',4:'สูง',5:'รุนแรง'};
+    return `<div class="modal-title">${prefill.id?'แก้ไขความเสี่ยง':'เพิ่มความเสี่ยง'}</div>
+      <div class="rm-form">
+        <div class="rm-row"><label>คำอธิบายความเสี่ยง *</label><input type="text" id="rmDesc" value="${escapeHtmlAttr(prefill.desc||'')}" placeholder="เช่น พนักงานติดตั้งล่าช้า"></div>
+        <div class="rm-row"><label>หมวด</label><input type="text" id="rmCat" value="${escapeHtmlAttr(prefill.cat||'')}" placeholder="เช่น ตารางงาน, จัดซื้อ, คุณภาพ"></div>
+        <div class="ev-form-hint">ให้คะแนน <b>โอกาสเกิด</b> และ <b>ผลกระทบ</b> อย่างละ 1–5 (กดปุ่ม) · ระบบคูณกันเป็นระดับความเสี่ยงให้อัตโนมัติ</div>
+        <div class="rm-chip-row"><span>โอกาสเกิด (1 = แทบไม่เกิด → 5 = เกิดแน่)</span>${RM._chipRow('l',L,lLabels)}</div>
+        <div class="rm-chip-row"><span>ผลกระทบ (1 = เล็กน้อย → 5 = รุนแรงมาก)</span>${RM._chipRow('i',I,iLabels)}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0"><span style="font-size:11px;color:var(--color-slate-500);font-weight:600">ระดับความเสี่ยง</span><div id="rmScoreBadge">${RM._renderScoreBadge(L,I)}</div></div>
+        <div class="rm-row"><label>ผู้ที่ได้รับผลกระทบ</label><div class="rm-affected">${affectedChecks}</div></div>
+        <div class="rm-row"><label>สาเหตุ (Causes)</label><textarea id="rmCauses" placeholder="เช่น Vendor list ไม่ครบ, พนักงานขาดประสบการณ์">${escapeHtml(prefill.causes||'')}</textarea></div>
+        <div class="rm-row"><label>แผนจัดการ (Mitigation Plan)</label><textarea id="rmMit" placeholder="เช่น จัดทำ Vendor list, อบรม, ตรวจสอบ">${escapeHtml(prefill.mitigation||'')}</textarea></div>
+        <div class="rm-row"><label>ผู้รับผิดชอบ (Owner)</label><input type="text" id="rmOwner" value="${escapeHtmlAttr(prefill.owner||'')}" placeholder="ชื่อคน หรือ ตำแหน่ง"></div>
+        <div class="rm-row"><label>สถานะ</label><select id="rmStatus">${statusOpts}</select></div>
+      </div>
+      <div class="modal-btns" style="margin-top:14px">
+        <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+        ${prefill.id?`<button class="modal-btn modal-btn-warn" onclick="RM.confirmDelete()">ลบ</button>`:''}
+        <button class="modal-btn modal-btn-primary" onclick="RM.submit()">${prefill.id?'บันทึก':'เพิ่ม'}</button>
+      </div>`;
+  };
+  RM._pick=function(type,val,chipEl){
+    RM.state[type]=val;
+    const wrap=document.getElementById('rmChips-'+type);
+    if(wrap){ wrap.querySelectorAll('.ev-chip').forEach(c=>{ c.className='ev-chip'; }); chipEl.className='ev-chip sel acc'; }
+    const badge=document.getElementById('rmScoreBadge');
+    if(badge) badge.innerHTML=RM._renderScoreBadge(RM.state.l,RM.state.i);
+  };
+  RM.openCreate=function(){ RM.state={mode:'create',editId:null}; Modal.show(RM._formHtml({lScore:3,iScore:3}), 'ffw-modal'); };
+  RM.openEdit=function(riskId){
+    const r=(state.data.risks||[]).find(x=>x.id===riskId);
+    if(!r){ Modal.toast('❌ ไม่พบ risk: '+riskId); return; }
+    RM.state={mode:'edit',editId:riskId}; Modal.show(RM._formHtml(r), 'ffw-modal');
+  };
+  RM._collect=function(){
+    const affected=[];
+    document.querySelectorAll('input[name="rm-affected"]:checked').forEach(el=>affected.push(el.value));
+    return { description:document.getElementById('rmDesc').value.trim(), category:document.getElementById('rmCat').value.trim(), likelihood_score:RM.state.l, impact_score:RM.state.i, affected_parties:affected.join(', '), causes:document.getElementById('rmCauses').value.trim(), mitigation:document.getElementById('rmMit').value.trim(), owner:document.getElementById('rmOwner').value.trim(), status:document.getElementById('rmStatus').value };
+  };
+  RM.submit=async function(){
+    const data=RM._collect();
+    if(!data.description){ Modal.toast('⚠️ กรอกคำอธิบาย Risk ก่อน'); return; }
+    Modal.toast('⏳ กำลังบันทึก...');
+    try{
+      let res;
+      if(RM.state.mode==='edit'){ data.id=RM.state.editId; res=await API.updateRisk(data); }
+      else res=await API.createRisk(data);
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'unknown error')); return; }
+      Modal.close(); Modal.toast('✅ บันทึกแล้ว'); setTimeout(()=>loadData(),400);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  RM.confirmDelete=async function(){
+    const ok=await Modal.confirm({icon:'🗑️',iconClass:'warn',title:'ลบ Risk?',desc:'จะลบ risk '+RM.state.editId+' ออกถาวร',confirmText:'ลบ',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'});
+    if(!ok) return;
+    try{
+      const res=await API.deleteRisk(RM.state.editId);
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'ลบไม่สำเร็จ')); return; }
+      Modal.toast('✅ ลบแล้ว'); setTimeout(()=>loadData(),400);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  async function confirmCloneRisksFromDirek(){
+    const ok=await Modal.confirm({icon:'📋',iconClass:'info',title:'ใช้ template ความเสี่ยง?',desc:'จะคัดลอก 13 risks ของคุณดิเรก (อุตสาหกรรม interior) เข้ามาในโปรเจกต์นี้',info:'แก้ไข/ลบทีหลังได้ — ทุกรายการจะเริ่มที่สถานะ Open',confirmText:'คัดลอก',cancelText:'ยกเลิก',confirmClass:'modal-btn-primary'});
+    if(!ok) return;
+    Modal.toast('⏳ กำลังคัดลอก...');
+    try{
+      const res=await API.cloneRisksFromTemplate(state.projectId,'direk-template');
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'unknown')); return; }
+      const d=res.data||{};
+      Modal.toast('✅ คัดลอก '+(d.risks_cloned||0)+' risks'); setTimeout(()=>loadData(),600);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  }
+
+  // ══════════════════ S2c: CONTRACTOR EVALUATION ══════════════════
+  function gradeFromTotal(t){ t=Number(t)||0; if(t>=90) return 'A'; if(t>=80) return 'B'; if(t>=70) return 'C'; if(t>=60) return 'D'; return 'F'; }
+  function gradeBadge(total,sm){ const g=gradeFromTotal(total); return `<span class="grade-badge grade-${g}${sm?' sm':''}">${g}</span>`; }
+  function _evGradeColor(g){ return {A:'#10b981',B:'#3b82f6',C:'#f59e0b',D:'#ea580c',F:'#dc2626'}[g]||'#9ca3af'; }
+  function _evContractorTeams(){
+    const teams=(state.teams||[]).filter(t=>!t.category||t.category==='contractor');
+    if(teams.length) return teams.map(t=>({id:t.team_id,name:t.name}));
+    return (state.contractors||[]).map(c=>({id:c.id,name:c.name}));
+  }
+  function renderEvals(){
+    const listEl=document.getElementById('evList'), actionsEl=document.getElementById('evHeaderActions');
+    if(!listEl||!actionsEl) return;
+    const evals=state.evals||[];
+    actionsEl.innerHTML='<button class="risk-btn risk-btn-primary" onclick="EV.openCreate()">+ ประเมิน</button>';
+    if(evals.length===0){ listEl.innerHTML='<div class="ev-empty-msg">ยังไม่มีการประเมินในโครงการนี้ — กด <b>+ ประเมิน</b> เพื่อให้คะแนนผู้รับเหมา (8 หมวด KPI)</div>'; return; }
+    const sorted=evals.slice().sort((a,b)=>String(b.evalDate).localeCompare(String(a.evalDate)));
+    let html='<div class="ev-toprisks-h">ผลการประเมิน (ล่าสุดก่อน)</div><div class="ev-grid">';
+    sorted.forEach(e=>{
+      const g=gradeFromTotal(e.total);
+      html+=`<div class="ev-c" style="border-left-color:${_evGradeColor(g)}" onclick="EV.openEdit('${escapeHtmlAttr(e.id)}')">
+        <div class="ev-c-head">
+          <div><div class="ev-team">${escapeHtml(e.teamName||e.teamId)}</div><div class="ev-date">${escapeHtml(e.evalDate||'')}${e.evaluator?' · '+escapeHtml(e.evaluator):''}</div></div>
+          <div style="display:flex;align-items:center;gap:6px"><span class="ev-total">${(Number(e.total)||0).toFixed(1)}</span>${gradeBadge(e.total)}</div>
+        </div>
+        <div class="ev-meta"><span class="ev-tag">${escapeHtml(e.status||'')}</span>${e.remark?`<span class="ev-tag">${escapeHtml(String(e.remark).slice(0,30))}</span>`:''}</div>
+      </div>`;
+    });
+    html+='</div>';
+    listEl.innerHTML=html;
+  }
+  const EV={ state:{mode:'create',editId:null} };
+  EV._kpiStat=function(def){
+    let pass=0,fail=0;
+    def.subs.forEach(s=>{ const st=EV.state.items[s.no]; if(st==='pass') pass++; else if(st==='fail') fail++; });
+    const evaluated=pass+fail;
+    return { pass, fail, evaluated, score:evaluated>0?(pass/evaluated)*10:null };
+  };
+  EV._compute=function(){
+    const cfg=state.evalConfig;
+    if(!cfg) return { kpiScores:{}, total:0, weightUsed:0 };
+    const kpiScores={}; let total=0, weightUsed=0;
+    cfg.kpis.forEach(def=>{ const st=EV._kpiStat(def); if(st.score!==null){ kpiScores[def.key]=Math.round(st.score*100)/100; total+=st.score*def.weight; weightUsed+=def.weight; } });
+    const totalScore=weightUsed>0?(total/weightUsed)*10:0;
+    return { kpiScores, total:Math.round(totalScore*100)/100, weightUsed };
+  };
+  EV._statHtml=function(st){
+    if(st.score===null) return '<span style="color:var(--color-slate-400)">ข้าม</span>';
+    const sc=st.score, color=sc>=7?'#10b981':(sc>=5?'#f59e0b':'#dc2626');
+    return `<span style="color:${color}">ผ่าน ${st.pass}/${st.evaluated} · ${sc.toFixed(1)}</span>`;
+  };
+  EV._formHtml=function(prefill){
+    prefill=prefill||{};
+    const cfg=state.evalConfig;
+    if(!cfg) return '<div style="padding:20px">⏳ กำลังโหลดเกณฑ์ประเมิน... ลองใหม่อีกครั้ง</div>';
+    EV.state.items={};
+    const prefMap=prefill.subScores||{};
+    cfg.kpis.forEach(def=>def.subs.forEach(s=>{
+      if(prefill.id) EV.state.items[s.no]=(prefMap[s.no]==='pass'||prefMap[s.no]==='fail')?prefMap[s.no]:'skip';
+      else EV.state.items[s.no]='pass';
+    }));
+    const teams=_evContractorTeams();
+    const teamOpts=teams.map(t=>`<option value="${escapeHtmlAttr(t.id)}" ${prefill.teamId===t.id?'selected':''}>${escapeHtml(t.name)}</option>`).join('');
+    const segBtn=(itemId,idx,st,label,val)=>`<button type="button" class="ev-seg-btn${st===val?' on-'+val:''}" data-v="${val}" onclick="EV._pick('${itemId}',${idx},'${val}',this)">${label}</button>`;
+    let kpiHtml='';
+    cfg.kpis.forEach((def,idx)=>{
+      let items='';
+      def.subs.forEach(s=>{
+        const st=EV.state.items[s.no];
+        items+=`<div class="ev-item"><div class="ev-item-name">${escapeHtml(s.name)}</div><div class="ev-seg" data-item="${escapeHtmlAttr(s.no)}">${segBtn(s.no,idx,st,'ผ่าน','pass')}${segBtn(s.no,idx,st,'ปัญหา','fail')}${segBtn(s.no,idx,st,'ข้าม','skip')}</div></div>`;
+      });
+      kpiHtml+=`<div class="ev-kpi-row"><div class="ev-kpi-top"><div class="ev-kpi-name">${escapeHtml(def.label)} <span class="wt">${Math.round(def.weight*100)}%</span></div><div class="ev-kpi-stat" id="evStat-${idx}">${EV._statHtml(EV._kpiStat(def))}</div></div>${items}</div>`;
+    });
+    return `<div class="modal-title">${prefill.id?'แก้ไขการประเมิน':'ประเมินผู้รับเหมา'}</div>
+      <div class="ev-form">
+        <div class="ev-form-hint">ติ๊กแต่ละข้อตามจริงหน้างาน: <b style="color:#10b981">ผ่าน</b> = ทำได้ดี · <b style="color:#dc2626">ปัญหา</b> = มีข้อบกพร่อง · <b style="color:var(--color-slate-400)">ข้าม</b> = ไม่เกี่ยวข้องงวดนี้ (ไม่นับคะแนน) · ตั้งต้น "ผ่าน" ทุกข้อ — กดเฉพาะข้อที่มีปัญหา</div>
+        <div class="rm-row"><label>ผู้รับเหมา *</label><select id="evTeam">${teamOpts||'<option value="">— ไม่มีทีม —</option>'}</select></div>
+        <div class="rm-scoring" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="rm-row"><label>วันที่ประเมิน</label><input type="date" id="evDate" value="${escapeHtmlAttr(prefill.evalDate||new Date().toISOString().slice(0,10))}"></div>
+          <div class="rm-row"><label>ผู้ประเมิน</label><input type="text" id="evEvaluator" value="${escapeHtmlAttr(prefill.evaluator||'')}" placeholder="ชื่อผู้ให้คะแนน"></div>
+        </div>
+        ${kpiHtml}
+        <div class="rm-row"><label>หมายเหตุ</label><textarea id="evRemark" placeholder="สรุป/ข้อสังเกตเพิ่มเติม">${escapeHtml(prefill.remark||'')}</textarea></div>
+      </div>
+      <div class="ev-total-bar"><span class="lbl">คะแนนรวม <small>(ถ่วงน้ำหนัก 0–100)</small></span><div style="display:flex;align-items:center;gap:8px"><span class="ev-total-num" id="evTotalNum">0.0</span><span id="evTotalGrade">${gradeBadge(0)}</span></div></div>
+      <div class="modal-btns" style="margin-top:6px">
+        <button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+        ${prefill.id?`<button class="modal-btn modal-btn-warn" onclick="EV.confirmDelete()">ลบ</button>`:''}
+        <button class="modal-btn modal-btn-primary" onclick="EV.submit()">${prefill.id?'บันทึก':'บันทึกผล'}</button>
+      </div>`;
+  };
+  EV._pick=function(itemId,idx,val,btn){
+    EV.state.items[itemId]=val;
+    const seg=btn.parentNode;
+    seg.querySelectorAll('.ev-seg-btn').forEach(b=>{ b.className='ev-seg-btn'; });
+    btn.className='ev-seg-btn on-'+val;
+    const def=state.evalConfig.kpis[idx];
+    const statEl=document.getElementById('evStat-'+idx);
+    if(statEl&&def) statEl.innerHTML=EV._statHtml(EV._kpiStat(def));
+    EV._refresh();
+  };
+  EV._refresh=function(){
+    const c=EV._compute();
+    const numEl=document.getElementById('evTotalNum'), grEl=document.getElementById('evTotalGrade');
+    if(numEl) numEl.textContent=c.total.toFixed(1);
+    if(grEl) grEl.innerHTML=gradeBadge(c.total);
+  };
+  EV.openCreate=function(){
+    if(!state.evalConfig){ Modal.toast('⏳ กำลังโหลดเกณฑ์ — ลองอีกครั้ง'); API.getEvalConfig().then(r=>{ if(r.ok) state.evalConfig=r.data; }); return; }
+    if(_evContractorTeams().length===0){ Modal.toast('⚠️ ยังไม่มีผู้รับเหมา — เพิ่มทีมในหน้า Team ก่อน'); return; }
+    EV.state={mode:'create',editId:null,items:{}}; Modal.show(EV._formHtml({}), 'ffw-modal'); setTimeout(EV._refresh,50);
+  };
+  EV.openEdit=function(evalId){
+    const e=(state.evals||[]).find(x=>x.id===evalId);
+    if(!e){ Modal.toast('❌ ไม่พบการประเมิน'); return; }
+    if(!state.evalConfig){ Modal.toast('⏳ กำลังโหลดเกณฑ์ — ลองอีกครั้ง'); return; }
+    EV.state={mode:'edit',editId:evalId,items:{}}; Modal.show(EV._formHtml(e), 'ffw-modal'); setTimeout(EV._refresh,50);
+  };
+  EV.submit=async function(){
+    const teamSel=document.getElementById('evTeam');
+    const teamId=teamSel?teamSel.value:'';
+    if(!teamId){ Modal.toast('⚠️ เลือกผู้รับเหมาก่อน'); return; }
+    const c=EV._compute();
+    if(c.weightUsed<=0){ Modal.toast('⚠️ ต้องประเมินอย่างน้อย 1 หมวด (อย่าข้ามทุกข้อ)'); return; }
+    const itemResults={};
+    Object.keys(EV.state.items).forEach(k=>{ if(EV.state.items[k]==='pass'||EV.state.items[k]==='fail') itemResults[k]=EV.state.items[k]; });
+    const teamName=teamSel.options[teamSel.selectedIndex]?teamSel.options[teamSel.selectedIndex].text:'';
+    const data={ team_id:teamId, team_name:teamName, eval_date:document.getElementById('evDate').value, evaluator:document.getElementById('evEvaluator').value.trim(), remark:document.getElementById('evRemark').value.trim(), kpi_scores:JSON.stringify(c.kpiScores), item_results:JSON.stringify(itemResults) };
+    Modal.toast('⏳ กำลังบันทึก...');
+    try{
+      let res;
+      if(EV.state.mode==='edit'){ data.id=EV.state.editId; res=await API.updateEval(data); }
+      else res=await API.createEval(data);
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'error')); return; }
+      Modal.close(); Modal.toast('✅ บันทึกผลแล้ว'); setTimeout(()=>loadData(),400);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  EV.confirmDelete=async function(){
+    const ok=await Modal.confirm({icon:'🗑️',iconClass:'warn',title:'ลบการประเมิน?',desc:'จะลบผลประเมิน '+EV.state.editId+' ออกถาวร',confirmText:'ลบ',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'});
+    if(!ok) return;
+    try{
+      const res=await API.deleteEval(EV.state.editId);
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'ลบไม่สำเร็จ')); return; }
+      Modal.toast('✅ ลบแล้ว'); setTimeout(()=>loadData(),400);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+
+  // ══════════════════ S2c: PRICE EDITOR ══════════════════
+  const PE={ PM_SUGGEST:{
+    M001:410,M002:580,M071:705,M004:1400,M005:90,M006:90,M007:18,M008:15,M009:360,M010:327,M011:12,M013:12,M015:79,M016:135,M017:170,
+    M018:300,M019:350,M020:250,M021:250,M022:450,M023:280,M024:495,M025:30,M026:2600,M027:580,M028:2020,M030:1250,M031:1330,M032:10,M034:910,
+    M035:135,M036:45,M037:25,M038:10,M040:10,M041:15,M048:15,M042:1250,M043:1250,M044:1205,M045:1205,M047:2380,M051:1000,M054:60,
+    M055:660,M057:1250,M058:1250,M059:715,M060:370,M062:980,M064:24,M065:800,M066:35,M067:39.8,M068:60,M069:440,M070:440,M072:60,M073:60,M074:71.1
+  } };
+  PE.open=function(){
+    const mats=(state.materials||[]).slice();
+    if(!mats.length){ Modal.toast('⚠️ ยังไม่มีวัสดุ'); return; }
+    const groups={};
+    mats.forEach(m=>{ const c=m.category||'ไม่ระบุหมวด'; (groups[c]=groups[c]||[]).push(m); });
+    let pmCount=0, body='';
+    Object.keys(groups).sort().forEach(cat=>{
+      body+=`<div class="pe-cat">${escapeHtml(cat)}</div>`;
+      groups[cat].forEach(m=>{
+        const cur=Number(m.default_price||0), suggest=PE.PM_SUGGEST[m.id];
+        let val='', cls='', badge='';
+        if(cur>0){ val=cur; }
+        else if(suggest!==undefined){ val=suggest; cls='pm'; badge='<span class="pe-pm-badge">จาก PM</span>'; pmCount++; }
+        body+=`<div class="pe-row"><div class="pe-name">${escapeHtml(m.name)}<small>${escapeHtml(m.unit||'')}</small></div><div class="pe-input-wrap"><input type="number" min="0" step="any" data-mid="${escapeHtmlAttr(m.id)}" value="${val}" placeholder="0" class="${cls}">${badge}</div></div>`;
+      });
+    });
+    Modal.show(`<div class="modal-title">✏️ ตั้งราคาวัสดุ (ต่อหน่วย)</div>
+      <div class="ev-form-hint">ใส่ราคาต่อหน่วยของแต่ละวัสดุ (บาท) · ช่องสีเหลือง <b>จาก PM</b> = เติมจาก Sheet ของ PM ให้แล้ว <b>ตรวจก่อนบันทึก</b> · ราคานี้ใช้คิดมูลค่าคงคลัง + ติดกับวัสดุทุกครั้งที่รับ/เบิก</div>
+      <div class="pe-form">${body}</div>
+      <div class="pe-bar">${pmCount>0?'เติมจาก PM '+pmCount+' รายการ — ตรวจแล้วกดบันทึก':'ใส่/แก้ราคาแล้วกดบันทึก'}</div>
+      <div class="modal-btns" style="margin-top:6px"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="PE.save()">บันทึกราคา</button></div>`, 'ffw-modal');
+  };
+  PE.save=async function(){
+    const map={};
+    document.querySelectorAll('.pe-form input[data-mid]').forEach(inp=>{ const v=Number(inp.value); if(inp.value!==''&&!isNaN(v)&&v>=0) map[inp.getAttribute('data-mid')]=v; });
+    if(Object.keys(map).length===0){ Modal.toast('⚠️ ยังไม่ได้ใส่ราคา'); return; }
+    Modal.toast('⏳ กำลังบันทึกราคา...');
+    try{
+      const res=await API.updateMaterialPrices(map);
+      if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'error')); return; }
+      Modal.close(); Modal.toast('✅ บันทึกราคา '+((res.data&&res.data.updated)||0)+' รายการ'); setTimeout(()=>loadData(),500);
+    }catch(e){ Modal.toast('❌ '+e.message); }
+  };
 
   // ══════════════════ S2b-2: FF DETAIL OVERLAY ══════════════════
   // full-screen overlay ทับ dashboard · อ่านอย่างเดียว (ยกเว้นติ๊ก task/รูป ที่ reuse ของเดิม)
