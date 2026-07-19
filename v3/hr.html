@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ใบลงเวลาทีม · HR — DSTR PM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<link rel="manifest" href="../manifest.json">
+<meta name="theme-color" content="#0f172a">
+<style>
+  body { background:var(--color-slate-50); }
+  .app { padding-bottom:30px; max-width:720px; margin:0 auto; }
+  .hr-hdr { background:linear-gradient(135deg,#1e293b,var(--color-blue-700)); color:#fff; padding:16px 16px 18px; border-radius:0 0 18px 18px; }
+  .hr-hdr-h { font-size:18px; font-weight:700; display:flex; align-items:center; gap:7px; }
+  .hr-hdr-sub { font-size:12.5px; opacity:0.85; margin-top:3px; }
+  .hr-back { font-size:12.5px; color:#fff; background:rgba(255,255,255,0.15); border:none; border-radius:var(--radius-full); padding:7px 14px; font-family:inherit; cursor:pointer; margin-top:8px; min-height:36px; }
+  .hr-body { padding:14px; }
+  .hr-ctrl { background:#fff; border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:13px; margin-bottom:14px; }
+  .hr-lbl { font-size:11.5px; font-weight:600; color:var(--color-slate-600); margin:0 0 6px; display:block; }
+  .hr-quick { display:flex; gap:7px; margin-bottom:11px; flex-wrap:wrap; }
+  .hr-qbtn { padding:8px 14px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-full); font-size:12.5px; font-weight:600; color:var(--color-slate-600); cursor:pointer; font-family:inherit; }
+  .hr-qbtn.on { border-color:var(--color-blue-600); background:var(--color-blue-50); color:var(--color-blue-700); }
+  .hr-row { display:flex; gap:9px; flex-wrap:wrap; align-items:flex-end; }
+  .hr-inp, .hr-sel { border:1px solid var(--color-slate-300); border-radius:var(--radius-md); padding:9px 11px; font-size:13.5px; font-family:inherit; }
+  .hr-sum { display:flex; gap:10px; margin-bottom:12px; }
+  .hr-sum-c { flex:1; background:#fff; border:1px solid var(--color-slate-200); border-radius:var(--radius-md); padding:11px; text-align:center; }
+  .hr-sum-v { font-size:21px; font-weight:700; color:var(--color-blue-700); }
+  .hr-sum-l { font-size:10.5px; color:var(--color-slate-500); margin-top:2px; }
+  .hr-print { width:100%; min-height:46px; background:var(--color-blue-700); color:#fff; border:none; border-radius:var(--radius-md); font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; margin-bottom:14px; }
+  .hr-print-hint { font-size:11px; color:var(--color-slate-500); text-align:center; margin:-8px 0 14px; }
+  .hr-person { background:#fff; border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:14px; margin-bottom:11px; }
+  .doc-letterhead { display:none; }
+  .hr-p-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
+  .hr-p-name { font-size:16px; font-weight:700; color:var(--color-slate-900); }
+  .hr-p-role { font-size:11.5px; color:var(--color-slate-500); }
+  .hr-p-days { font-size:11.5px; font-weight:700; color:var(--color-success-700); background:var(--color-success-50); padding:3px 11px; border-radius:var(--radius-full); white-space:nowrap; }
+  .hr-p-info { font-size:12.5px; color:var(--color-slate-700); background:var(--color-slate-50); border:1px solid var(--color-slate-200); border-radius:var(--radius-md); padding:9px 11px; margin-bottom:9px; }
+  .hr-p-info .row { display:flex; align-items:center; gap:7px; margin-bottom:5px; flex-wrap:wrap; }
+  .hr-p-info .row:last-child { margin-bottom:0; }
+  .id-inp { border:1px solid var(--color-slate-300); border-radius:var(--radius-md); padding:6px 9px; font-size:13px; font-family:inherit; width:190px; letter-spacing:1px; }
+  .id-save { font-size:11px; color:var(--color-blue-700); background:var(--color-blue-50); border:1px solid #bfdbfe; border-radius:var(--radius-md); padding:6px 11px; cursor:pointer; font-family:inherit; }
+  .day-row { border-top:1px solid var(--color-slate-100); padding:7px 0 4px; }
+  .day-d { font-size:12.5px; font-weight:600; color:var(--color-slate-700); margin-bottom:3px; }
+  .ent { font-size:11.5px; color:var(--color-slate-600); padding:2px 0; display:flex; gap:7px; }
+  .ent-t { font-weight:700; color:var(--color-blue-700); min-width:42px; }
+  .badge { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:var(--radius-full); }
+  .b-on { background:var(--color-success-50); color:var(--color-success-700); } .b-off { background:var(--color-warning-50); color:var(--color-warning-700); } .b-flag { background:var(--color-error-50); color:var(--color-error-700); }
+  .ent-photo img { width:44px; height:44px; border-radius:6px; object-fit:cover; vertical-align:middle; margin-left:5px; border:1px solid var(--color-slate-200); }
+  .doc-sign { display:none; }
+  .hr-empty { text-align:center; color:var(--color-slate-400); font-size:13px; padding:30px 14px; }
+  .hr-deny { text-align:center; padding:50px 20px; }
+
+  @media print {
+    @page { margin: 14mm; }
+    body { background:#fff; }
+    .hr-hdr, .hr-ctrl, .hr-sum, .hr-print, .hr-print-hint, .hr-back { display:none !important; }
+    .app { padding:0; max-width:100%; } .hr-body { padding:0; }
+    .hr-person { border:none; border-radius:0; padding:0; margin:0; page-break-after:always; }
+    .hr-person:last-child { page-break-after:auto; }
+    .doc-letterhead { display:flex; align-items:center; gap:12px; border-bottom:2.5px solid #1F3864; padding-bottom:10px; margin-bottom:12px; }
+    .doc-logo { width:54px; height:54px; border-radius:8px; }
+    .doc-co-th { font-size:16px; font-weight:700; color:#111; }
+    .doc-co-en { font-size:11px; color:#444; letter-spacing:.5px; }
+    .doc-co-addr { font-size:9.5px; color:#666; margin-top:2px; }
+    .doc-title { margin-left:auto; text-align:right; font-size:17px; font-weight:700; color:#1F3864; line-height:1.2; }
+    .doc-title span { font-size:10px; color:#666; font-weight:500; }
+    .hr-p-info { background:none; border:none; padding:0; font-size:13px; }
+    .hr-p-days { background:none; color:#000; padding:0; font-weight:600; }
+    .id-inp { border:none; border-bottom:1px solid #000; border-radius:0; padding:2px 4px; width:200px; font-size:13px; }
+    .id-save { display:none; }
+    .day-row { border-top:1px solid #ccc; page-break-inside:avoid; }
+    .ent-photo img { width:54px; height:54px; }
+    .doc-sign { display:flex; justify-content:space-between; gap:20px; margin-top:34px; padding-top:6px; page-break-inside:avoid; }
+    .doc-sign > div { flex:1; text-align:center; font-size:12px; color:#000; }
+    .doc-sign .line { margin-bottom:5px; color:#000; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hr-hdr">
+    <div class="hr-hdr-h">🗂️ ใบลงเวลาทีม (HR)</div>
+    <div class="hr-hdr-sub">ดูการเข้างานทุกคน · กรอกเลขบัตร · พิมพ์เอกสารเบิกค่าแรง</div>
+    <button class="hr-back" onclick="history.length>1?history.back():location.href='projects.html'">← กลับ</button>
+  </div>
+  <div class="hr-body">
+    <div id="hrMain" style="display:none">
+      <div class="hr-ctrl">
+        <span class="hr-lbl">ช่วงเวลา</span>
+        <div class="hr-quick" id="hrQuick">
+          <button class="hr-qbtn on" onclick="setRange('week',this)">สัปดาห์นี้</button>
+          <button class="hr-qbtn" onclick="setRange('lastweek',this)">สัปดาห์ที่แล้ว</button>
+          <button class="hr-qbtn" onclick="setRange('month',this)">เดือนนี้</button>
+        </div>
+        <div class="hr-row">
+          <div><span class="hr-lbl">ตั้งแต่</span><input type="date" class="hr-inp" id="hrFrom" onchange="customRange()"></div>
+          <div><span class="hr-lbl">ถึง</span><input type="date" class="hr-inp" id="hrTo" onchange="customRange()"></div>
+        </div>
+        <div class="hr-row" style="margin-top:10px">
+          <div style="flex:1;min-width:150px"><span class="hr-lbl">ไซต์</span><select class="hr-sel" id="hrSite" style="width:100%" onchange="load()"><option value="">ทุกไซต์</option></select></div>
+          <div style="flex:1;min-width:150px"><span class="hr-lbl">เลือกพนักงาน (แยกรายคน)</span><select class="hr-sel" id="hrPerson" style="width:100%" onchange="renderList()"><option value="">— ทุกคน —</option></select></div>
+        </div>
+      </div>
+      <div class="hr-sum">
+        <div class="hr-sum-c"><div class="hr-sum-v" id="hrCntPeople">—</div><div class="hr-sum-l">คน</div></div>
+        <div class="hr-sum-c"><div class="hr-sum-v" id="hrCntManDays">—</div><div class="hr-sum-l">วัน-คน รวม</div></div>
+        <div class="hr-sum-c"><div class="hr-sum-v" id="hrCntFlag">—</div><div class="hr-sum-l">🚩 GPS ไกล</div></div>
+      </div>
+      <button class="hr-print" onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button>
+      <div class="hr-print-hint">เอกสารแยกหน้าต่อคน · มีโลโก้บริษัท + ช่องเซ็น · เลือกพนักงานก่อนพิมพ์ = ได้เฉพาะคนนั้น</div>
+      <div id="hrList"><div class="hr-empty">กำลังโหลด...</div></div>
+    </div>
+    <div id="hrDeny" class="hr-deny" style="display:none">
+      <div style="font-size:40px">🔒</div>
+      <div style="font-size:16px;font-weight:700;color:var(--color-slate-800);margin:8px 0 4px">เฉพาะฝ่ายบุคคล (HR)</div>
+      <div style="font-size:13px;color:var(--color-slate-500)">บัญชีของคุณไม่มีสิทธิ์ดูใบลงเวลาทีม<br>ถ้าคุณคือ HR แจ้งเจ้าของงานให้ตั้งบทบาทเป็น "ฝ่ายบุคคล"</div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/api.js"></script>
+<script>
+if (!Auth.requireAuth('admin')) { /* client ถูกเด้งออก */ }
+
+var TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+var ROLE_TH = { creator:'ผู้สร้างระบบ', owner:'เจ้าของกิจการ', director:'ผู้ดูแลโครงการ', pm:'PM', hr:'ฝ่ายบุคคล', site_engineer:'วิศวกรหน้างาน', foreman:'โฟร์แมน', purchaser:'ฝ่ายจัดซื้อ', contractor:'ผู้รับเหมา', admin:'แอดมิน' };
+var DATA = null, RANGE = { from:'', to:'' };
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtTH(d){ d=(d instanceof Date)?d:new Date(d+'T00:00:00'); return d.getDate()+' '+TH_MONTHS[d.getMonth()]+' '+(d.getFullYear()+543); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function rangeFor(kind){
+  var now=new Date(), f, t;
+  if(kind==='week'||kind==='lastweek'){ var dow=(now.getDay()+6)%7, mon=new Date(now); mon.setDate(now.getDate()-dow); if(kind==='lastweek') mon.setDate(mon.getDate()-7); f=mon; t=new Date(mon); t.setDate(mon.getDate()+6); }
+  else { f=new Date(now.getFullYear(),now.getMonth(),1); t=new Date(now.getFullYear(),now.getMonth()+1,0); }
+  return { from:ymd(f), to:ymd(t) };
+}
+function setRange(kind,btn){ document.querySelectorAll('.hr-qbtn').forEach(function(b){b.classList.remove('on');}); if(btn) btn.classList.add('on'); var r=rangeFor(kind); document.getElementById('hrFrom').value=r.from; document.getElementById('hrTo').value=r.to; load(); }
+function customRange(){ document.querySelectorAll('.hr-qbtn').forEach(function(b){b.classList.remove('on');}); load(); }
+function load(){
+  RANGE.from=document.getElementById('hrFrom').value; RANGE.to=document.getElementById('hrTo').value;
+  var site=document.getElementById('hrSite').value;
+  document.getElementById('hrList').innerHTML='<div class="hr-empty">กำลังโหลด...</div>';
+  API.getAttendanceAll({ from:RANGE.from, to:RANGE.to, project_id:site }).then(function(res){
+    if(!res || res.ok===false){ document.getElementById('hrMain').style.display='none'; document.getElementById('hrDeny').style.display='block'; return; }
+    DATA = res.data||res; fillSites(DATA.projects||[]); fillPersons(DATA.staff||[]); renderList();
+  }).catch(function(){ document.getElementById('hrList').innerHTML='<div class="hr-empty">โหลดไม่สำเร็จ ลองใหม่</div>'; });
+}
+var sitesFilled=false;
+function fillSites(projects){ if(sitesFilled) return; sitesFilled=true; var sel=document.getElementById('hrSite'), cur=sel.value; sel.innerHTML='<option value="">ทุกไซต์</option>'+projects.map(function(p){ return '<option value="'+esc(p.project_id)+'">'+esc(p.name)+'</option>'; }).join(''); sel.value=cur; }
+function fillPersons(staff){ var sel=document.getElementById('hrPerson'), cur=sel.value; sel.innerHTML='<option value="">— ทุกคน —</option>'+staff.map(function(s){ return '<option value="'+esc(s.staff_name)+'">'+esc(s.staff_name)+'</option>'; }).join(''); sel.value=cur; }
+function renderList(){
+  if(!DATA) return;
+  var pick=document.getElementById('hrPerson').value;
+  var staff=(DATA.staff||[]).filter(function(s){ return !pick || s.staff_name===pick; });
+  var manDays=0, flags=0;
+  staff.forEach(function(s){ manDays+=s.days_present; s.days.forEach(function(dd){ flags+=dd.flagged_count||0; }); });
+  document.getElementById('hrCntPeople').textContent=staff.length;
+  document.getElementById('hrCntManDays').textContent=manDays;
+  document.getElementById('hrCntFlag').textContent=flags;
+  if(!staff.length){ document.getElementById('hrList').innerHTML='<div class="hr-empty">ยังไม่มีการเช็คอินในช่วงนี้</div>'; return; }
+  var period=fmtTH(RANGE.from)+' – '+fmtTH(RANGE.to);
+  document.getElementById('hrList').innerHTML=staff.map(function(s){ return personCard(s, period); }).join('');
+}
+function personCard(s, period){
+  var role=ROLE_TH[s.role]||s.role||'-';
+  var days=s.days.slice().map(function(dd){
+    var ent=dd.entries.map(function(e){
+      var b=e.location_type==='offsite'?'<span class="badge b-off">'+esc(e.off_site_reason||'นอกไซต์')+'</span>':(e.is_far?'<span class="badge b-flag">🚩 GPS ไกล</span>':'<span class="badge b-on">อยู่ไซต์</span>');
+      var ph=e.photo_url?' <a class="ent-photo" href="'+esc(e.photo_url)+'" target="_blank"><img src="'+esc(e.photo_url)+'=w200" alt="รูปเช็คอิน" loading="lazy"></a>':'';
+      return '<div class="ent"><span class="ent-t">'+esc(e.time)+'</span><span style="flex:1">'+esc(e.activity||'-')+' '+b+ph+'</span></div>';
+    }).join('');
+    return '<div class="day-row"><div class="day-d">'+fmtTH(dd.date)+'</div>'+ent+'</div>';
+  }).join('');
+  var nm=esc(s.staff_name);
+  return '<div class="hr-person">'+
+    '<div class="doc-letterhead"><img class="doc-logo" src="../icons/icon-192.png"><div><div class="doc-co-th">บริษัท ดีไซน์ ทีเรีย จำกัด</div><div class="doc-co-en">DESIGNTERIOR CO., LTD.</div><div class="doc-co-addr">89 ม.4 ต.สระสมิง อ.วารินชำราบ จ.อุบลราชธานี 34190 · เลขภาษี 0105555121538</div></div><div class="doc-title">ใบลงเวลาทำงาน<br><span>TIME SHEET</span></div></div>'+
+    '<div class="hr-p-head"><div><div class="hr-p-name">'+nm+'</div><div class="hr-p-role">ตำแหน่ง: '+esc(role)+'</div></div><div class="hr-p-days">มา '+s.days_present+' วัน</div></div>'+
+    '<div class="hr-p-info"><div class="row"><b>เลขบัตรประชาชน:</b> <input class="id-inp" value="'+esc(s.national_id||'')+'" placeholder="กรอกเพื่อใส่ในเอกสาร" maxlength="17" onkeyup="this.value=this.value.replace(/[^0-9 -]/g,\'\')"> <button class="id-save" onclick="saveId(\''+nm.replace(/'/g,"\\'")+'\', this)">💾 บันทึก</button></div><div class="row"><b>ช่วงเวลา:</b> '+period+'</div></div>'+
+    '<div class="day-list">'+days+'</div>'+
+    '<div class="doc-sign"><div><div class="line">ลงชื่อ ............................</div>พนักงาน</div><div><div class="line">ลงชื่อ ............................</div>ผู้ตรวจสอบ (ฝ่ายบุคคล)</div><div><div class="line">ลงชื่อ ............................</div>ผู้มีอำนาจอนุมัติ</div></div>'+
+  '</div>';
+}
+function saveId(name, btn){
+  var inp=btn.parentNode.querySelector('.id-inp');
+  var id=(inp.value||'').trim();
+  btn.textContent='กำลังบันทึก...'; btn.disabled=true;
+  API.setIdCard({ staff_name:name, national_id:id }).then(function(){
+    (DATA.staff||[]).forEach(function(s){ if(s.staff_name===name) s.national_id=id; });
+    btn.textContent='✓ บันทึกแล้ว'; setTimeout(function(){ btn.textContent='💾 บันทึก'; btn.disabled=false; }, 1500);
+  }).catch(function(){ btn.textContent='❌ ลองใหม่'; btn.disabled=false; });
+}
+(function(){
+  var role=Auth.getRole();
+  var allow={ hr:1, owner:1, creator:1, director:1, pm:1, admin:1 };
+  if(role && !allow[role]){ document.getElementById('hrDeny').style.display='block'; return; }
+  document.getElementById('hrMain').style.display='block';
+  var r=rangeFor('week');
+  document.getElementById('hrFrom').value=r.from; document.getElementById('hrTo').value=r.to;
+  load();
+})();
+</script>
+</body>
+</html>

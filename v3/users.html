@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>จัดการผู้ใช้ — DSTR PM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<style>
+  .um-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:var(--space-4); }
+  .um-head h1 { font-size:var(--text-2xl); }
+  .um-sub { font-size:var(--text-sm); color:var(--color-slate-500); margin-top:2px; }
+  .um-note { font-size:11.5px; color:var(--color-warning-700); background:var(--color-warning-50); border:1px solid #fde68a; border-radius:var(--radius-md); padding:10px 12px; margin-bottom:var(--space-4); line-height:1.6; }
+  .um-card { background:#fff; border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:12px; margin-bottom:10px; }
+  .um-row { display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+  .um-ava { width:40px; height:40px; border-radius:50%; background:var(--color-blue-700); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; }
+  .um-ava.off { background:var(--color-slate-400); }
+  .um-main { flex:1; min-width:180px; }
+  .um-name { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); }
+  .um-name.off { color:var(--color-slate-400); text-decoration:line-through; }
+  .um-email { font-size:12px; color:var(--color-slate-500); word-break:break-all; margin-top:2px; }
+  .um-editlink { color:var(--color-blue-700); cursor:pointer; font-weight:600; white-space:nowrap; }
+  .um-addemail { display:inline-block; margin-top:3px; color:var(--color-blue-700); cursor:pointer; font-weight:600; font-size:12px; background:var(--color-blue-50); border:1px solid #bfdbfe; border-radius:var(--radius-md); padding:3px 9px; }
+  .um-ctrl { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px; }
+  .um-select { font-size:12.5px; padding:7px 9px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); background:#fff; color:var(--color-slate-800); font-family:inherit; }
+  .um-toggle { font-size:12px; cursor:pointer; padding:6px 11px; border-radius:var(--radius-md); border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-600); font-family:inherit; }
+  .um-projects { margin-top:8px; padding-top:8px; border-top:1px dashed var(--color-slate-200); width:100%; }
+  .um-plabel { font-size:11px; color:var(--color-slate-400); margin-bottom:4px; }
+  .um-chip { display:inline-flex; align-items:center; gap:4px; font-size:11.5px; background:var(--color-blue-50); color:var(--color-blue-700); border:1px solid #bfdbfe; border-radius:var(--radius-full); padding:3px 9px; margin:0 5px 5px 0; }
+  .um-chip-x { cursor:pointer; font-weight:700; }
+  .um-addproj { font-size:11.5px; padding:5px 8px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); background:#fff; font-family:inherit; }
+  .um-empty { text-align:center; color:var(--color-slate-400); font-size:var(--text-sm); padding:30px; }
+  .um-lbl { font-size:12px; font-weight:600; color:var(--color-slate-700); margin:8px 0 4px; display:block; text-align:left; }
+  .um-input { width:100%; box-sizing:border-box; padding:9px 11px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; }
+</style>
+</head>
+<body>
+  <div class="app-container">
+    <main class="main-content">
+      <div class="page-content">
+        <div class="um-head">
+          <div>
+            <h1><i data-lucide="users" style="width:24px;height:24px;vertical-align:-4px"></i> จัดการผู้ใช้</h1>
+            <div class="um-sub">เพิ่มทีม · มอบบทบาท · ผูกเข้าโครงการ (เฉพาะเจ้าของงาน)</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="UM.openAdd()"><i data-lucide="plus"></i> เพิ่มผู้ใช้</button>
+        </div>
+        <div class="um-note">💡 บทบาท: <b>เจ้าของงาน</b> เห็น/แก้ทุกอย่าง · <b>PM</b> จัดการโครงการ+การเงิน · <b>หน้างาน</b> ติ๊กงาน/daily/เบิกของ · <b>ผู้รับเหมา</b> ดูอย่างเดียว · <b>ลูกค้า</b> หน้าลูกค้า<br>⚠️ คนจะเข้าระบบได้ก็ต่อเมื่ออีเมล Google ตรงกับที่เพิ่มไว้ที่นี่ + บัญชียัง "เปิดใช้งาน"</div>
+        <div id="umList"><div class="um-empty">กำลังโหลด...</div></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/state.js"></script>
+  <script src="../js/modal.js"></script>
+  <script src="../vendor/lucide/lucide.min.js"></script>
+  <script src="../js/shell.js"></script>
+  <script>
+  if (!Auth.requireAuth()) { /* redirect */ }
+  (function(){ var role=Auth.getRole(); if(role!=='creator'&&role!=='owner'&&role!=='admin'){ alert('หน้านี้สำหรับผู้สร้าง/เจ้าของกิจการเท่านั้น'); window.location.href='projects.html'; } })();
+  Shell.render({ page: 'users', title: 'จัดการผู้ใช้', scope: 'global' });
+
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+  var UM = {
+    users:[], projects:[],
+    ROLES:[
+      { v:'owner', t:'👑 เจ้าของกิจการ' }, { v:'director', t:'🗂️ ผู้ดูแลโครงการ' },
+      { v:'pm', t:'📋 ผู้จัดการโครงการ (PM)' }, { v:'hr', t:'🗂️ ฝ่ายบุคคล (HR) — ดูใบลงเวลา' },
+      { v:'site_engineer', t:'📐 วิศวกรหน้างาน' }, { v:'foreman', t:'👷 โฟร์แมน (หัวหน้าช่าง)' },
+      { v:'purchaser', t:'🛒 ฝ่ายจัดซื้อ' }, { v:'client', t:'🏠 เจ้าบ้าน (ลูกค้า)' }
+    ]
+  };
+  UM.projName=function(pid){ var p=UM.projects.find(function(x){ return String(x.project_id)===String(pid); }); return p?p.name:pid; };
+  UM.load=async function(){
+    try{
+      var resU=await API.getUsers(), resP=await API.getProjects();
+      UM.users=(resU&&resU.ok&&resU.data)?resU.data:[];
+      UM.projects=(resP&&resP.ok&&resP.data)?resP.data:[];
+      UM.render();
+    }catch(e){ document.getElementById('umList').innerHTML='<div class="um-empty">โหลดไม่สำเร็จ — ลองรีเฟรช</div>'; }
+  };
+  UM.render=function(){
+    var el=document.getElementById('umList');
+    if(!UM.users.length){ el.innerHTML='<div class="um-empty">ยังไม่มีผู้ใช้</div>'; return; }
+    var order={ creator:-1, owner:0, director:1, pm:2, hr:3, site_engineer:4, foreman:5, purchaser:6, contractor:7, client:8 };
+    var sorted=UM.users.slice().sort(function(a,b){ if(a.active!==b.active) return a.active?-1:1; return (order[a.auth_role]!=null?order[a.auth_role]:9)-(order[b.auth_role]!=null?order[b.auth_role]:9); });
+    el.innerHTML=sorted.map(function(u){
+      var ar=u.auth_role||'';
+      var roleOpts=(ar?'':'<option value="" selected>— ยังไม่กำหนด —</option>')+UM.ROLES.map(function(r){ return '<option value="'+r.v+'"'+(r.v===ar?' selected':'')+'>'+r.t+'</option>'; }).join('');
+      var chips=(u.assignments||[]).map(function(a){ return '<span class="um-chip">'+esc(UM.projName(a.project_id))+'<span class="um-chip-x" onclick="UM.unassign(\''+esc(a.assignment_id)+'\')">✕</span></span>'; }).join('');
+      var assignedIds=(u.assignments||[]).map(function(a){ return String(a.project_id); });
+      var addable=UM.projects.filter(function(p){ return assignedIds.indexOf(String(p.project_id))===-1; });
+      var addProj='';
+      if(addable.length) addProj='<select class="um-addproj" onchange="UM.assign(\''+esc(u.staff_id)+'\', this.value); this.value=\'\'"><option value="">+ เพิ่มโครงการ…</option>'+addable.map(function(p){ return '<option value="'+esc(p.project_id)+'">'+esc(p.name)+'</option>'; }).join('')+'</select>';
+      var avaLetter=((u.name||u.email||'?')[0]||'?').toUpperCase();
+      var showProjects=(ar==='pm'||ar==='site_engineer'||ar==='foreman');
+      var ctrlHtml=(ar==='creator')
+        ? '<span style="font-size:12.5px;font-weight:700;color:var(--color-blue-700);background:var(--color-blue-50);border:1px solid #bfdbfe;border-radius:var(--radius-full);padding:5px 13px">🔒 ผู้สร้างระบบ (Super Admin)</span>'
+        : ('<select class="um-select" onchange="UM.changeRole(\''+esc(u.staff_id)+'\', this.value)">'+roleOpts+'</select><button class="um-toggle" onclick="UM.toggleActive(\''+esc(u.staff_id)+'\','+(u.active?'false':'true')+')">'+(u.active?'🟢 เปิดใช้งาน':'⚪ ปิดอยู่')+'</button>');
+      var emailHtml;
+      if(ar==='creator') emailHtml=esc(u.email||'');
+      else if(u.email) emailHtml=esc(u.email)+' <span class="um-editlink" onclick="UM.openEdit(\''+esc(u.staff_id)+'\')">✏️ แก้</span>';
+      else emailHtml='<span class="um-addemail" onclick="UM.openEdit(\''+esc(u.staff_id)+'\')">➕ เพิ่มอีเมล Google (ให้ login ได้)</span>';
+      return '<div class="um-card"><div class="um-row"><div class="um-ava'+(u.active?'':' off')+'">'+esc(avaLetter)+'</div><div class="um-main"><div class="um-name'+(u.active?'':' off')+'">'+esc(u.name||'(ไม่มีชื่อ)')+(u.role?' <span style="font-size:11px;color:var(--color-slate-400);font-weight:400">· '+esc(u.role)+'</span>':'')+'</div><div class="um-email">'+emailHtml+'</div><div class="um-ctrl">'+ctrlHtml+'</div>'+(showProjects?'<div class="um-projects"><div class="um-plabel">โครงการที่เข้าถึงได้</div>'+(chips||'<span style="font-size:11.5px;color:var(--color-slate-400)">ยังไม่ผูกโครงการ</span> ')+addProj+'</div>':'')+'</div></div></div>';
+    }).join('');
+  };
+  UM.openAdd=function(){
+    var roleOpts=UM.ROLES.map(function(r){ return '<option value="'+r.v+'"'+(r.v==='foreman'?' selected':'')+'>'+r.t+'</option>'; }).join('');
+    Modal.show('<div class="modal-title">+ เพิ่มผู้ใช้</div><div style="font-size:12px;color:var(--color-slate-500);margin-bottom:10px">ใส่อีเมล Google ของคนในทีม → เขาจะ login ด้วย Google ได้ทันที</div><label class="um-lbl">อีเมล Google *</label><input class="um-input" id="umEmail" type="email" placeholder="name@gmail.com"><label class="um-lbl">ชื่อ *</label><input class="um-input" id="umName" placeholder="เช่น สมชาย ใจดี"><label class="um-lbl">บทบาท</label><select class="um-input" id="umRole">'+roleOpts+'</select><label class="um-lbl">ตำแหน่งงาน (ไม่บังคับ)</label><input class="um-input" id="umTitle" placeholder="เช่น Site Engineer"><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="UM.submitAdd()">บันทึก</button></div>');
+  };
+  UM.submitAdd=async function(){
+    var email=document.getElementById('umEmail').value.trim().toLowerCase(), name=document.getElementById('umName').value.trim();
+    if(!email||email.indexOf('@')===-1){ Modal.toast('⚠️ ใส่อีเมลให้ถูกต้อง'); return; }
+    if(!name){ Modal.toast('⚠️ ใส่ชื่อก่อน'); return; }
+    Modal.toast('⏳ กำลังบันทึก...');
+    try{ var res=await API.upsertUser({ email:email, name:name, auth_role:document.getElementById('umRole').value, role:document.getElementById('umTitle').value.trim() }); if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'error')); return; } Modal.close(); Modal.toast('✅ เพิ่มผู้ใช้แล้ว'); UM.load(); }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  UM.openEdit=function(staffId){
+    var u=UM.users.find(function(x){ return String(x.staff_id)===String(staffId); });
+    if(!u){ Modal.toast('❌ ไม่พบผู้ใช้'); return; }
+    if((u.auth_role||'')==='creator'){ Modal.toast('🔒 บัญชีผู้สร้างถูกล็อก'); return; }
+    var ar=u.auth_role||'';
+    var roleOpts=(ar?'':'<option value="" selected>— เลือกบทบาท —</option>')+UM.ROLES.map(function(r){ return '<option value="'+r.v+'"'+(r.v===ar?' selected':'')+'>'+r.t+'</option>'; }).join('');
+    Modal.show('<div class="modal-title">✏️ '+esc(u.name||'ผู้ใช้')+'</div><div style="font-size:12px;color:var(--color-slate-500);margin-bottom:10px">ใส่อีเมล Google + เลือกบทบาท → คนนี้จะ login ด้วย Google ได้ทันที</div><label class="um-lbl">ชื่อ</label><input class="um-input" id="umEdName" value="'+esc(u.name)+'"><label class="um-lbl">อีเมล Google *</label><input class="um-input" id="umEdEmail" type="email" value="'+esc(u.email)+'" placeholder="name@gmail.com"><label class="um-lbl">บทบาท *</label><select class="um-input" id="umEdRole">'+roleOpts+'</select><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="UM.submitEdit(\''+esc(staffId)+'\')">บันทึก</button></div>');
+  };
+  UM.submitEdit=async function(staffId){
+    var email=document.getElementById('umEdEmail').value.trim().toLowerCase(), name=document.getElementById('umEdName').value.trim(), arole=document.getElementById('umEdRole').value;
+    if(!email||email.indexOf('@')===-1){ Modal.toast('⚠️ ใส่อีเมลให้ถูกต้อง'); return; }
+    if(!arole){ Modal.toast('⚠️ เลือกบทบาทก่อน'); return; }
+    Modal.toast('⏳ กำลังบันทึก...');
+    try{ var res=await API.upsertUser({ staff_id:staffId, email:email, name:name, auth_role:arole }); if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'error')); return; } Modal.close(); Modal.toast('✅ บันทึกแล้ว — '+name+' login ด้วย Google ได้แล้ว'); UM.load(); }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  UM.changeRole=async function(staffId,newRole){
+    if(!newRole) return; Modal.toast('⏳ กำลังเปลี่ยนบทบาท...');
+    try{ var res=await API.setUserRole(staffId,newRole); if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'error')); return; } Modal.toast('✅ เปลี่ยนบทบาทแล้ว'); UM.load(); }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  UM.toggleActive=async function(staffId,makeActive){
+    var u=UM.users.find(function(x){ return String(x.staff_id)===String(staffId); }); if(!u) return;
+    if(!makeActive){ var ok=await Modal.confirm({icon:'⚠️',iconClass:'warn',title:'ปิดใช้งานบัญชี?',desc:(u.name||u.email)+' จะ login ไม่ได้',confirmText:'ปิดใช้งาน',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'}); if(!ok) return; }
+    Modal.toast('⏳ กำลังบันทึก...');
+    try{ var res=await API.upsertUser({ staff_id:staffId, email:u.email, active:makeActive }); if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'error')); return; } Modal.toast(makeActive?'✅ เปิดใช้งานแล้ว':'✅ ปิดใช้งานแล้ว'); UM.load(); }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  UM.assign=async function(staffId,projectId){
+    if(!projectId) return; Modal.toast('⏳ กำลังผูกโครงการ...');
+    try{ var res=await API.assignProjectStaff(projectId,staffId,''); if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'error')); return; } Modal.toast('✅ ผูกเข้าโครงการแล้ว'); UM.load(); }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+  UM.unassign=async function(assignmentId){
+    var ok=await Modal.confirm({icon:'🗑️',iconClass:'warn',title:'ถอดออกจากโครงการนี้?',confirmText:'ถอดออก',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'}); if(!ok) return;
+    Modal.toast('⏳ กำลังถอด...');
+    try{ var res=await API.unassignProjectStaff(assignmentId); if(!res||!res.ok){ Modal.toast('❌ '+((res&&res.error)||'error')); return; } Modal.toast('✅ ถอดออกแล้ว'); UM.load(); }catch(e){ Modal.toast('❌ '+e.message); }
+  };
+
+  UM.load();
+  if(window.lucide) lucide.createIcons();
+  </script>
+</body>
+</html>
