@@ -11,3 +11,12 @@ slice*-*.png
 inarch-home.png
 workflow-render.png
 _*.py
+
+# เครื่องมือ dev ในเครื่อง — ไม่ขึ้น repo สาธารณะ
+.agents/
+.claude/
+.wrangler/
+skills-lock.json
+# ไฟล์งานระหว่างทำคลิปสอน (ตัวจริงอยู่ tutorials/)
+tutorial_*.gif
+tutorial_*_voiced.mp4
