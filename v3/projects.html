@@ -180,7 +180,7 @@
     const onPlan = actualPct >= planPct - 5;
 
     const targetPage = isClient ? 'client.html' : 'dashboard.html';
-    const goUrl = '../' + targetPage + '?project=' + encodeURIComponent(proj.project_id);
+    const goUrl = targetPage + '?project=' + encodeURIComponent(proj.project_id);
 
     return `
       <div class="card card-body project-card" onclick="window.location.href='${goUrl}'">
@@ -214,7 +214,7 @@
     const value = parseFloat(proj.total_value) || 0;
     const days = parseInt(proj.total_days, 10) || 0;
     const targetPage = isClient ? 'client.html' : 'dashboard.html';
-    const goUrl = '../' + targetPage + '?project=' + encodeURIComponent(proj.project_id);
+    const goUrl = targetPage + '?project=' + encodeURIComponent(proj.project_id);
     return `
       <div class="card card-body project-card" onclick="window.location.href='${goUrl}'">
         <div class="project-meta">

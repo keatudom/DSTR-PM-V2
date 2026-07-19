@@ -112,7 +112,7 @@
         </details>
 
         <div class="about-link">
-          <a href="../about.html" class="btn btn-secondary btn-sm">เกี่ยวกับเรา · DESIGNTERIOR</a>
+          <a href="about.html" class="btn btn-secondary btn-sm">เกี่ยวกับเรา · DESIGNTERIOR</a>
         </div>
       </div>
     </div>
@@ -128,7 +128,7 @@
 
   // ถ้า login อยู่แล้ว → HR ไปใบลงเวลา, ที่เหลือไป projects.html
   if (Auth.isLoggedIn()) {
-    window.location.href = (Auth.getRole() === 'hr') ? '../hr.html' : 'projects.html';
+    window.location.href = (Auth.getRole() === 'hr') ? 'hr.html' : 'projects.html';
   }
 
   // ── Phase G: Sign in with Google (GIS) — ตรรกะเดิมเป๊ะ ──
@@ -142,7 +142,7 @@
     try {
       const result = await Auth.loginGoogle(resp.credential);
       if (result.ok) {
-        window.location.href = (result.role === 'hr') ? '../hr.html' : 'projects.html';
+        window.location.href = (result.role === 'hr') ? 'hr.html' : 'projects.html';
         return;
       }
       if (result.notAuthorized) {
