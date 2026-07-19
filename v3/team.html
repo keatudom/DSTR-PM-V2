@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ทีมงาน — DSTR PM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<link rel="manifest" href="../manifest.json">
+<meta name="theme-color" content="#0f172a">
+<style>
+  .tm-subhdr { margin-bottom:var(--space-4); }
+  .tm-subhdr h1 { font-size:var(--text-2xl); }
+  .tm-subhdr-d { font-size:var(--text-sm); color:var(--color-slate-500); margin-top:2px; }
+  .tm-tabs { display:flex; gap:6px; margin-bottom:var(--space-4); }
+  .tm-tab { flex:1; padding:10px; border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-600); border-radius:var(--radius-md); font-size:var(--text-sm); font-weight:600; cursor:pointer; font-family:inherit; }
+  .tm-tab.on { background:var(--color-blue-600); color:#fff; border-color:var(--color-blue-600); }
+  .tm-loading { text-align:center; padding:40px; color:var(--color-slate-400); }
+  .tm-empty { text-align:center; color:var(--color-slate-400); padding:30px; }
+  .tm-empty-ic { font-size:32px; margin-bottom:8px; }
+  .tm-add-team { width:100%; padding:11px; margin-bottom:8px; background:var(--color-blue-600); color:#fff; border:none; border-radius:var(--radius-md); font-size:var(--text-sm); font-weight:600; cursor:pointer; font-family:inherit; }
+
+  /* eval ranking */
+  .ev-rank-card { background:#fff; border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:12px; margin-bottom:12px; }
+  .ev-rank-h { font-size:var(--text-sm); font-weight:700; color:var(--color-slate-800); }
+  .ev-rank-sub { font-size:10px; color:var(--color-slate-400); margin:2px 0 8px; }
+  .ev-rank-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-top:1px solid var(--color-slate-100); }
+  .ev-rank-row.top { background:var(--color-warning-50); border-radius:var(--radius-md); padding:7px 6px; }
+  .ev-rank-no { font-size:14px; font-weight:700; min-width:24px; text-align:center; }
+  .ev-rank-name { flex:1; font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); }
+  .ev-rank-name small { display:block; font-size:10px; color:var(--color-slate-400); font-weight:400; }
+  .ev-rank-blacklist { font-size:9px; font-weight:700; background:var(--color-error-50); color:var(--color-error-700); padding:2px 7px; border-radius:var(--radius-full); }
+  .ev-rank-score { font-size:var(--text-base); font-weight:700; color:var(--color-slate-900); }
+  .ev-score-pill { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700; color:var(--color-slate-700); }
+  .grade-badge { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:var(--radius-full); font-size:11px; font-weight:700; color:#fff; }
+  .grade-badge.sm { width:19px; height:19px; font-size:10px; }
+  .grade-A { background:#10b981; } .grade-B { background:#3b82f6; } .grade-C { background:#f59e0b; } .grade-D { background:#ea580c; } .grade-F { background:#dc2626; } .grade-\– { background:#94a3b8; }
+
+  /* team card */
+  .tm-card { background:#fff; border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:12px; margin-bottom:10px; }
+  .tm-card-head { display:flex; align-items:center; gap:10px; }
+  .tm-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; background:var(--color-slate-100); }
+  .tm-av-elec { background:#fef9c3; } .tm-av-paint { background:#fce7f3; } .tm-av-wood { background:#fef3c7; } .tm-av-gen { background:var(--color-blue-50); color:var(--color-blue-700); font-weight:700; }
+  .tm-card-info { flex:1; min-width:0; }
+  .tm-card-name { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-800); }
+  .tm-card-sub { font-size:11px; color:var(--color-slate-500); margin-top:1px; }
+  .tm-badge { font-size:9px; font-weight:700; padding:2px 8px; border-radius:var(--radius-full); }
+  .tm-badge-active { background:var(--color-success-50); color:var(--color-success-700); }
+  .tm-chev { color:var(--color-slate-400); font-size:14px; cursor:pointer; padding:2px 4px; }
+  .tm-collapsed .tm-contract, .tm-collapsed .tm-ms-title, .tm-collapsed .tm-ms-list, .tm-collapsed .tm-acts, .tm-collapsed .tm-file-list { display:none; }
+
+  /* contract */
+  .tm-contract { background:var(--color-slate-50); border-radius:var(--radius-md); padding:10px; margin-top:10px; }
+  .tm-ct-row { display:flex; justify-content:space-between; font-size:var(--text-xs); margin-bottom:6px; }
+  .tm-ct-label { color:var(--color-slate-500); } .tm-ct-val { font-weight:700; color:var(--color-slate-900); }
+  .tm-bar { height:7px; background:var(--color-slate-200); border-radius:var(--radius-full); overflow:hidden; margin:4px 0; }
+  .tm-bar-fill { height:100%; background:var(--color-success-500); }
+  .tm-ct-foot { display:flex; justify-content:space-between; font-size:11px; margin-top:4px; }
+  .tm-ct-paid { color:var(--color-success-700); } .tm-ct-left { color:var(--color-warning-700); }
+  .tm-ms-title { font-size:11px; font-weight:600; color:var(--color-slate-600); margin:12px 0 6px; }
+  .tm-ms-list { display:flex; flex-direction:column; gap:5px; }
+  .tm-ms { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--color-slate-200); border-radius:var(--radius-md); cursor:pointer; }
+  .tm-ms:hover { background:var(--color-slate-50); }
+  .tm-ms-ic { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+  .tm-ms-ic-paid { background:var(--color-success-500); color:#fff; } .tm-ms-ic-partial { background:var(--color-warning-500); color:#fff; } .tm-ms-ic-pending { background:var(--color-slate-200); color:var(--color-slate-500); }
+  .tm-ms-body { flex:1; min-width:0; }
+  .tm-ms-name { font-size:var(--text-xs); font-weight:500; color:var(--color-slate-800); }
+  .tm-ms-evid { display:block; font-size:9px; color:var(--color-slate-500); margin-top:1px; }
+  .tm-ms-amt { font-size:var(--text-xs); font-weight:700; white-space:nowrap; }
+  .tm-ms-amt-paid { color:var(--color-success-700); } .tm-ms-amt-partial { color:var(--color-warning-700); } .tm-ms-amt-pending { color:var(--color-slate-500); }
+  .tm-file-list { display:flex; flex-direction:column; gap:4px; }
+  .tm-file-row { display:flex; align-items:center; gap:6px; font-size:11px; }
+  .tm-file-name { color:var(--color-blue-700); cursor:pointer; text-decoration:underline; flex:1; word-break:break-all; }
+  .tm-file-del { color:var(--color-error-600); cursor:pointer; font-weight:700; }
+  .tm-acts { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+  .tm-btn { flex:1; min-width:100px; padding:8px; border:1px solid var(--color-slate-300); background:#fff; border-radius:var(--radius-md); font-size:var(--text-xs); font-weight:600; color:var(--color-slate-700); cursor:pointer; font-family:inherit; }
+  .tm-btn-add { background:var(--color-blue-600); color:#fff; border-color:var(--color-blue-600); }
+  .tm-note { font-size:11px; color:var(--color-slate-500); background:var(--color-slate-50); border-radius:var(--radius-md); padding:8px 10px; line-height:1.5; text-align:left; }
+  .tm-priv { font-size:11px; color:var(--color-warning-700); background:var(--color-warning-50); border:1px solid #fde68a; border-radius:var(--radius-md); padding:8px 10px; margin-bottom:10px; line-height:1.5; text-align:left; }
+
+  /* staff */
+  .ps-sec-h { display:flex; align-items:center; gap:6px; font-size:var(--text-sm); font-weight:700; color:var(--color-slate-700); margin-bottom:8px; }
+  .ps-sec-h-cnt { margin-left:auto; font-size:11px; color:var(--color-slate-400); font-weight:500; }
+  .ps-empty { font-size:11.5px; color:var(--color-slate-400); padding:10px; text-align:center; }
+  .tm-staff { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--color-slate-200); border-radius:var(--radius-md); margin-bottom:7px; background:#fff; }
+  .tm-staff.ps-assigned { border-color:var(--color-blue-200); background:var(--color-blue-50); }
+  .tm-staff-role { font-size:9px; font-weight:700; padding:2px 8px; border-radius:var(--radius-full); }
+  .tm-role-pm { background:#dbeafe; color:#1e40af; } .tm-role-fm { background:var(--color-success-50); color:var(--color-success-700); } .tm-role-se { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .ps-btn { font-size:11px; font-weight:600; padding:6px 11px; border-radius:var(--radius-md); border:none; cursor:pointer; font-family:inherit; }
+  .ps-btn-add { background:var(--color-blue-600); color:#fff; } .ps-btn-out { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .ps-chip-on { font-size:10px; font-weight:700; color:var(--color-success-700); background:var(--color-success-50); padding:4px 9px; border-radius:var(--radius-full); }
+
+  /* modal fields */
+  .tm-field { margin-bottom:10px; }
+  .tm-field-label { display:block; font-size:11px; font-weight:600; color:var(--color-slate-600); margin-bottom:4px; text-align:left; }
+  .tm-input, .tm-select { width:100%; box-sizing:border-box; padding:9px 11px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; }
+  .tm-row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+</style>
+</head>
+<body>
+  <div class="app-container">
+    <main class="main-content">
+      <div id="loadingScreen" class="tm-loading"><div class="spinner"></div><div style="margin-top:10px">กำลังโหลด...</div></div>
+      <div class="page-content" id="mainContent" style="display:none">
+        <div class="tm-subhdr">
+          <h1><i data-lucide="users" style="width:24px;height:24px;vertical-align:-4px"></i> ทีมงาน</h1>
+          <div class="tm-subhdr-d" id="hdrSub">ผู้รับเหมา & ทีมบริษัท</div>
+        </div>
+        <div class="tm-tabs">
+          <button class="tm-tab on" id="tabContractor" onclick="switchTab('contractor')">🔨 ผู้รับเหมา</button>
+          <button class="tm-tab" id="tabStaff" onclick="switchTab('staff')">👔 ทีมบริษัท</button>
+        </div>
+        <div id="tabContent"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/state.js"></script>
+  <script src="../js/modal.js"></script>
+  <script src="../vendor/lucide/lucide.min.js"></script>
+  <script src="../js/shell.js"></script>
+  <script>
+  Auth.requireAuth();
+  Shell.render({ page: 'team', title: 'ทีมงาน', scope: 'project' });
+
+  const tmState = {
+    tab:'contractor', teams:[], contracts:[], milestones:[], staff:[], projectStaff:[],
+    contractFiles:[], paymentSlips:[], evalSummary:{}, evalRanking:[], isAdmin:true, collapsed:{},
+    projectId:(typeof state!=='undefined'&&state.projectId)||'bow-house'
+  };
+
+  async function loadAll(){
+    try{
+      tmState.isAdmin=(typeof Auth.getRole==='function')?Auth.getRole()!=='client':true;
+      const res=await API.callRead('get_teams_bundle');
+      if(!res.ok||!res.data) throw new Error(res.error||'โหลดข้อมูลไม่สำเร็จ');
+      tmState.teams=res.data.teams||[]; tmState.contracts=res.data.contracts||[]; tmState.milestones=res.data.milestones||[];
+      tmState.staff=res.data.staff||[]; tmState.contractFiles=res.data.contract_files||[]; tmState.paymentSlips=res.data.payment_slips||[];
+      try{ const psRes=await API.getProjectStaff(tmState.projectId); tmState.projectStaff=(psRes&&psRes.ok&&Array.isArray(psRes.data))?psRes.data:[]; }catch(e){ tmState.projectStaff=[]; }
+      try{ const ptRes=await API.callRead('get_project_teams',{ project_id:tmState.projectId }); tmState.projectTeams=(ptRes&&ptRes.ok&&Array.isArray(ptRes.data))?ptRes.data:[]; }catch(e){ tmState.projectTeams=[]; }
+      tmState.projTeamSet={}; tmState.projectTeams.forEach(a=>{ tmState.projTeamSet[String(a.team_id)]=a.assignment_id; });
+      tmState.contracts.forEach(c=>{ if(c.team_id&&!tmState.projTeamSet[String(c.team_id)]) tmState.projTeamSet[String(c.team_id)]=true; });
+      try{ const evRes=await API.getEvalSummary(); if(evRes&&evRes.ok&&Array.isArray(evRes.data)){ tmState.evalRanking=evRes.data; tmState.evalSummary={}; evRes.data.forEach(s=>{ tmState.evalSummary[s.teamId]=s; }); } }catch(e){ tmState.evalRanking=[]; tmState.evalSummary={}; }
+      document.getElementById('loadingScreen').style.display='none';
+      document.getElementById('mainContent').style.display='block';
+      renderTab();
+    }catch(err){ document.getElementById('loadingScreen').innerHTML='❌ '+err.message+'<br><span style="font-size:11px">ลองรีเฟรชหน้า</span>'; }
+  }
+  function switchTab(tab){ tmState.tab=tab; document.getElementById('tabContractor').classList.toggle('on',tab==='contractor'); document.getElementById('tabStaff').classList.toggle('on',tab==='staff'); renderTab(); }
+  function renderTab(){ if(tmState.tab==='contractor') renderContractors(); else renderStaff(); if(window.lucide) lucide.createIcons(); }
+
+  function renderContractors(){
+    const el=document.getElementById('tabContent');
+    const teams=tmState.teams.filter(t=>t.category==='contractor'&&tmState.projTeamSet[String(t.team_id)]);
+    let html=renderEvalRanking();
+    if(teams.length===0) html+='<div class="tm-empty"><div class="tm-empty-ic">🔨</div>ยังไม่มีช่างในโครงการนี้<br><span style="font-size:12px;color:var(--color-slate-400)">กด "เพิ่มช่างเข้าโครงการ" เพื่อเลือกจากคลังช่าง</span></div>';
+    else teams.forEach(team=>{ html+=renderTeamCard(team); });
+    if(tmState.isAdmin){ html+='<button class="tm-add-team" onclick="openAddTeamToProject()">+ เพิ่มช่างเข้าโครงการ</button>'; html+='<button class="tm-add-team" style="background:#fff;color:var(--color-blue-700);border:1px solid #bfdbfe" onclick="openAddTeam()">+ สร้างช่างใหม่ (คลังช่าง)</button>'; }
+    el.innerHTML=html;
+  }
+  function renderEvalRanking(){
+    const ranking=(tmState.evalRanking||[]).filter(r=>r.count>0);
+    if(ranking.length===0) return '';
+    let rows='';
+    ranking.forEach(r=>{ const isBlack=r.grade==='F'; rows+='<div class="ev-rank-row '+(r.rank<=3?'top':'')+'"><span class="ev-rank-no">'+(r.rank<=3?['🥇','🥈','🥉'][r.rank-1]:r.rank)+'</span><div class="ev-rank-name">'+escapeHtml(r.teamName)+'<small>ประเมิน '+r.count+' ครั้ง'+(r.lastDate?' · ล่าสุด '+escapeHtml(r.lastDate):'')+'</small></div>'+(isBlack?'<span class="ev-rank-blacklist">🚩 Blacklist</span>':'')+'<span class="ev-rank-score">'+(Number(r.avg)||0).toFixed(1)+'</span>'+evGradeBadge(r.grade,true)+'</div>'; });
+    return '<div class="ev-rank-card"><div class="ev-rank-h">🏆 อันดับผู้รับเหมา (คะแนนเฉลี่ยรวมทุกโครงการ)</div><div class="ev-rank-sub">เกรด A ≥90 · B ≥80 · C ≥70 · D ≥60 · F &lt;60 (Blacklist)</div>'+rows+'</div>';
+  }
+  function evGradeBadge(grade,sm){ const g=grade||'–'; return '<span class="grade-badge grade-'+g+(sm?' sm':'')+'">'+g+'</span>'; }
+  function renderTeamCard(team){
+    const avClass=team.type&&team.type.indexOf('ไฟ')>=0?'tm-av-elec':team.type&&team.type.indexOf('สี')>=0?'tm-av-paint':team.type&&team.type.indexOf('ไม้')>=0?'tm-av-wood':'tm-av-gen';
+    const avIcon=team.type&&team.type.indexOf('ไฟ')>=0?'⚡':team.type&&team.type.indexOf('สี')>=0?'🎨':team.type&&team.type.indexOf('ไม้')>=0?'🪵':'🔧';
+    const collapsed=tmState.collapsed[team.team_id];
+    const contracts=tmState.contracts.filter(c=>c.team_id===team.team_id);
+    const mainContract=contracts.find(c=>c.type==='main')||contracts[0];
+    let bodyHtml='';
+    if(tmState.isAdmin&&mainContract) bodyHtml=renderContractBody(team,mainContract,contracts);
+    else if(tmState.isAdmin&&!mainContract) bodyHtml='<div class="tm-note" style="margin-top:10px">ยังไม่มีสัญญา</div><div class="tm-acts"><button class="tm-btn tm-btn-add" onclick="openAddContract(\''+team.team_id+'\')">+ เพิ่มสัญญา</button></div>';
+    const scorePill=(function(){ const s=tmState.evalSummary[team.team_id]; if(!s||!s.count) return ''; return '<span class="ev-score-pill" title="คะแนนเฉลี่ย '+(Number(s.avg)||0).toFixed(1)+' จาก '+s.count+' ครั้ง">'+(Number(s.avg)||0).toFixed(0)+evGradeBadge(s.grade,true)+'</span>'; })();
+    return '<div class="tm-card '+(collapsed?'tm-collapsed':'')+'"><div class="tm-card-head"><div class="tm-avatar '+avClass+'">'+avIcon+'</div><div class="tm-card-info"><div class="tm-card-name">'+escapeHtml(team.name)+'</div><div class="tm-card-sub">หัวหน้า: '+escapeHtml(team.lead_name||'-')+'</div></div>'+scorePill+'<span class="tm-badge tm-badge-active">ทำงานอยู่</span>'+(tmState.isAdmin?'<span class="tm-chev" onclick="openEditTeam(\''+team.team_id+'\')" title="แก้ไข/ลบช่าง">✏️</span>':'')+(tmState.isAdmin?'<span class="tm-chev" onclick="toggleCollapse(\''+team.team_id+'\')">'+(collapsed?'▸':'▾')+'</span>':'')+'</div>'+bodyHtml+'</div>';
+  }
+  function renderContractBody(team,contract,allContracts){
+    const value=contract.value||0, paid=contract.paid_total||0, left=value-paid, pct=value>0?Math.round((paid/value)*100):0;
+    const ms=tmState.milestones.filter(m=>m.contract_id===contract.contract_id).sort((a,b)=>a.seq-b.seq);
+    let msHtml='';
+    ms.forEach(m=>{
+      const st=m.status||'pending';
+      const icCls=st==='paid'?'tm-ms-paid':st==='partial'?'tm-ms-partial':'tm-ms-pending';
+      const icon=st==='paid'?'✓':st==='partial'?'◐':'○';
+      const iconCls=st==='paid'?'tm-ms-ic-paid':st==='partial'?'tm-ms-ic-partial':'tm-ms-ic-pending';
+      const amtCls=st==='paid'?'tm-ms-amt-paid':st==='partial'?'tm-ms-amt-partial':'tm-ms-amt-pending';
+      let amtText;
+      if(st==='paid') amtText=fmtMoney(m.paid_amount||m.amount)+'฿';
+      else if(st==='partial') amtText=fmtMoney(m.paid_amount)+' / ค้าง '+fmtMoney((m.amount||0)-(m.paid_amount||0))+'฿';
+      else amtText=fmtMoney(m.amount)+'฿';
+      let evidHtml='';
+      if(st==='paid'||st==='partial'){ const ev=m.evidence_status||'none'; const slipCount=tmState.paymentSlips.filter(s=>s.milestone_id===m.milestone_id).length; const evMap={ none:{dot:'🔴',txt:'ไม่มีหลักฐาน'}, partial:{dot:'🟡',txt:'หลักฐานบางส่วน'}, full:{dot:'🟢',txt:'หลักฐานครบ'} }; const e=evMap[ev]||evMap.none; evidHtml='<span class="tm-ms-evid">'+e.dot+' '+e.txt+(slipCount>0?' ('+slipCount+')':'')+'</span>'; }
+      msHtml+='<div class="tm-ms '+icCls+'" onclick="openMilestone(\''+m.milestone_id+'\',\''+contract.contract_id+'\')"><span class="tm-ms-ic '+iconCls+'">'+icon+'</span><div class="tm-ms-body"><span class="tm-ms-name">'+escapeHtml(m.name)+'</span>'+evidHtml+'</div><span class="tm-ms-amt '+amtCls+'">'+amtText+'</span></div>';
+    });
+    const variations=allContracts.filter(c=>c.type==='variation');
+    let varHtml='';
+    if(variations.length>0){ varHtml='<div class="tm-ms-title">📋 งานเพิ่ม</div><div class="tm-ms-list">'; variations.forEach(v=>{ varHtml+='<div class="tm-ms tm-ms-pending"><span class="tm-ms-ic tm-ms-ic-pending">+</span><span class="tm-ms-name" style="flex:1">'+escapeHtml(v.title||v.contract_no)+'</span><span class="tm-ms-amt tm-ms-amt-pending">'+fmtMoney(v.value)+'฿</span></div>'; }); varHtml+='</div>'; }
+    const files=tmState.contractFiles.filter(f=>f.contract_id===contract.contract_id);
+    let filesHtml='';
+    if(files.length>0){ let listHtml=''; files.forEach(f=>{ const icon=f.file_type==='pdf'?'📄':'🖼️'; listHtml+='<div class="tm-file-row"><span>'+icon+'</span><span class="tm-file-name" onclick="openLink(\''+escapeHtml(f.url)+'\')">'+escapeHtml(f.name)+'</span><span class="tm-file-del" onclick="deleteContractFile(\''+f.file_id+'\')">✕</span></div>'; }); filesHtml='<div class="tm-ms-title">📎 ไฟล์สัญญา ('+files.length+')</div><div class="tm-file-list">'+listHtml+'</div>'; }
+    return '<div class="tm-contract"><div class="tm-ct-row"><span class="tm-ct-label">มูลค่าสัญญา</span><span class="tm-ct-val">'+fmtMoney(value)+' ฿</span></div><div class="tm-bar"><div class="tm-bar-fill" style="width:'+pct+'%"></div></div><div class="tm-ct-foot"><span class="tm-ct-paid">จ่ายแล้ว '+fmtMoney(paid)+'฿</span><span class="tm-ct-left">คงเหลือ '+fmtMoney(left)+'฿</span></div></div><div class="tm-ms-title">งวดการจ่าย · แตะเพื่อบันทึกจ่ายเงิน</div><div class="tm-ms-list">'+(msHtml||'<div class="tm-note">ยังไม่มีงวด</div>')+'</div>'+varHtml+filesHtml+'<div class="tm-acts"><button class="tm-btn" onclick="openUploadContract(\''+contract.contract_id+'\')">📎 '+(files.length>0?'เพิ่มไฟล์':'แนบสัญญา')+'</button><button class="tm-btn" onclick="openAddVariation(\''+team.team_id+'\',\''+contract.contract_id+'\')">+ งานเพิ่ม</button></div>';
+  }
+  function toggleCollapse(teamId){ tmState.collapsed[teamId]=!tmState.collapsed[teamId]; renderTab(); }
+
+  function renderStaff(){
+    const el=document.getElementById('tabContent');
+    if(tmState.staff.length===0){ el.innerHTML='<div class="tm-empty"><div class="tm-empty-ic">👔</div>ยังไม่มีทีมงานบริษัท</div>'+(tmState.isAdmin?'<button class="tm-add-team" onclick="openAddStaff()">+ เพิ่มทีมงาน</button>':''); return; }
+    const assignedSet=new Set(tmState.projectStaff.map(a=>String(a.staff_id)));
+    let html='<div class="ps-sec-h"><span>🎯 ทีมในโครงการนี้</span><span class="ps-sec-h-cnt">'+tmState.projectStaff.length+' คน</span></div>';
+    if(tmState.projectStaff.length===0) html+='<div class="ps-empty">ยังไม่มีคนถูกเลือกเข้าโครงการนี้ — กด "📌 เพิ่มเข้าโครงการ" ที่รายการด้านล่าง</div>';
+    else tmState.projectStaff.forEach(a=>{ const role=(a.role||'').toLowerCase(); const roleCls=role.indexOf('manager')>=0?'tm-role-pm':role.indexOf('foreman')>=0?'tm-role-fm':role.indexOf('engineer')>=0?'tm-role-se':'tm-role-fm'; const initial=(a.name||'?').slice(0,1); html+='<div class="tm-staff ps-assigned"><div class="tm-avatar tm-av-gen">'+initial+'</div><div class="tm-card-info"><div class="tm-card-name">'+escapeHtml(a.name)+'</div>'+(a.phone?'<div class="tm-card-sub">📞 '+escapeHtml(a.phone)+'</div>':'')+'</div><span class="tm-staff-role '+roleCls+'">'+escapeHtml(a.role||'-')+'</span>'+(tmState.isAdmin?'<button class="ps-btn ps-btn-out" onclick="unassignStaff(\''+a.assignment_id+'\',\''+escapeHtml(a.name)+'\')">− ออก</button>':'')+'</div>'; });
+    html+='<div class="ps-sec-h" style="margin-top:18px"><span>👔 ทีมบริษัททั้งหมด</span><span class="ps-sec-h-cnt">'+tmState.staff.length+' คน</span></div>';
+    tmState.staff.forEach(s=>{ const role=(s.role||'').toLowerCase(); const roleCls=role.indexOf('manager')>=0?'tm-role-pm':role.indexOf('foreman')>=0?'tm-role-fm':role.indexOf('engineer')>=0?'tm-role-se':'tm-role-fm'; const initial=(s.name||'?').slice(0,1); const isAssigned=assignedSet.has(String(s.staff_id)); const toggleBtn=tmState.isAdmin?(isAssigned?'<span class="ps-chip-on">✓ ในโครงการ</span>':'<button class="ps-btn ps-btn-add" onclick="assignStaff(\''+s.staff_id+'\',\''+escapeHtml(s.name)+'\')">📌 เพิ่ม</button>'):''; html+='<div class="tm-staff"><div class="tm-avatar tm-av-gen">'+initial+'</div><div class="tm-card-info"><div class="tm-card-name">'+escapeHtml(s.name)+'</div>'+(s.phone?'<div class="tm-card-sub">📞 '+escapeHtml(s.phone)+'</div>':'')+'</div><span class="tm-staff-role '+roleCls+'">'+escapeHtml(s.role||'-')+'</span>'+toggleBtn+(tmState.isAdmin?'<span class="tm-chev" onclick="openEditStaff(\''+s.staff_id+'\')">✏️</span>':'')+'</div>'; });
+    if(tmState.isAdmin) html+='<button class="tm-add-team" onclick="openAddStaff()">+ เพิ่มทีมงานใหม่ในระบบ</button>';
+    el.innerHTML=html;
+  }
+  async function assignStaff(staffId,staffName){
+    const btn=event&&event.target; if(btn) btn.disabled=true;
+    try{ const res=await API.assignProjectStaff(tmState.projectId,staffId,''); if(!res||!res.ok){ Modal.toast('❌ เพิ่มไม่สำเร็จ — ลองใหม่'); if(btn) btn.disabled=false; return; } const psRes=await API.getProjectStaff(tmState.projectId); tmState.projectStaff=(psRes&&psRes.ok&&Array.isArray(psRes.data))?psRes.data:[]; renderStaff(); }catch(e){ Modal.toast('❌ เพิ่มไม่สำเร็จ: '+e.message); if(btn) btn.disabled=false; }
+  }
+  async function unassignStaff(assignmentId,staffName){
+    const ok=await Modal.confirm({icon:'⚠️',iconClass:'warn',title:'ลบออกจากโครงการ?',desc:'"'+staffName+'" จะออกจากโครงการนี้',confirmText:'ลบออก',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'}); if(!ok) return;
+    try{ const res=await API.unassignProjectStaff(assignmentId); if(!res||!res.ok){ Modal.toast('❌ ลบไม่สำเร็จ'); return; } const psRes=await API.getProjectStaff(tmState.projectId); tmState.projectStaff=(psRes&&psRes.ok&&Array.isArray(psRes.data))?psRes.data:[]; renderStaff(); }catch(e){ Modal.toast('❌ ลบไม่สำเร็จ: '+e.message); }
+  }
+
+  function openAddTeam(){
+    Modal.show('<div class="modal-title">➕ เพิ่มทีม / ผู้รับเหมา</div><div class="tm-field"><label class="tm-field-label">ชื่อทีม</label><input type="text" class="tm-input" id="ntName" placeholder="เช่น ทีมช่างไม้"></div><div class="tm-row2"><div class="tm-field"><label class="tm-field-label">ประเภท</label><select class="tm-select" id="ntType"><option>ช่างไม้</option><option>ช่างไฟ</option><option>ช่างสี</option><option>ช่างทั่วไป</option></select></div><div class="tm-field"><label class="tm-field-label">เบอร์โทร</label><input type="text" class="tm-input" id="ntPhone" placeholder="08x-xxx-xxxx"></div></div><div class="tm-field"><label class="tm-field-label">ชื่อหัวหน้าทีม</label><input type="text" class="tm-input" id="ntLead" placeholder="ชื่อหัวหน้า"></div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="saveTeam()">บันทึก</button></div>','pay-modal');
+  }
+  async function saveTeam(){
+    const name=document.getElementById('ntName').value.trim(); if(!name){ Modal.toast('กรุณาใส่ชื่อทีม'); return; }
+    Modal.close(); Modal.toast('กำลังบันทึก...');
+    try{ const res=await API.callRead('create_team',{ name:name, type:document.getElementById('ntType').value, phone:document.getElementById('ntPhone').value.trim(), lead_name:document.getElementById('ntLead').value.trim(), category:'contractor' }); if(!res||!res.ok) throw new Error((res&&res.error)||'บันทึกไม่สำเร็จ'); const newId=res.data&&res.data.team&&res.data.team.team_id; if(newId){ try{ await API.callRead('assign_project_team',{ project_id:tmState.projectId, team_id:newId }); }catch(e){} } Modal.toast('✓ เพิ่มช่างแล้ว'); setTimeout(()=>loadAll(),1000); }catch(err){ Modal.toast('❌ '+err.message); }
+  }
+  function openAddTeamToProject(){
+    const pool=tmState.teams.filter(t=>t.category==='contractor'&&!tmState.projTeamSet[String(t.team_id)]);
+    if(!pool.length){ Modal.toast('ช่างในคลังถูกเพิ่มหมดแล้ว — สร้างช่างใหม่ได้'); return; }
+    const opts=pool.map(t=>'<label style="display:flex;align-items:center;gap:8px;padding:9px 6px;border-bottom:1px solid var(--color-slate-100);cursor:pointer"><input type="checkbox" value="'+t.team_id+'" class="apt-cb"><span>'+escapeHtml(t.name)+(t.type?' <small style="color:var(--color-slate-400)">· '+escapeHtml(t.type)+'</small>':'')+'</span></label>').join('');
+    Modal.show('<div class="modal-title">+ เพิ่มช่างเข้าโครงการ</div><div class="tm-note">เลือกช่างจากคลัง → ใช้ในโครงการนี้ (ติ๊กได้ใน Daily report)</div><div style="max-height:46vh;overflow-y:auto;margin:8px 0;text-align:left">'+opts+'</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="doAssignTeamsToProject()">เพิ่มที่เลือก</button></div>','pay-modal');
+  }
+  async function doAssignTeamsToProject(){
+    const ids=Array.from(document.querySelectorAll('.apt-cb:checked')).map(c=>c.value); if(!ids.length){ Modal.toast('เลือกช่างก่อน'); return; }
+    Modal.close(); Modal.toast('กำลังเพิ่ม...');
+    try{ for(const id of ids){ await API.callRead('assign_project_team',{ project_id:tmState.projectId, team_id:id }); } Modal.toast('✓ เพิ่มช่างเข้าโครงการแล้ว'); setTimeout(()=>loadAll(),1000); }catch(e){ Modal.toast('❌ '+e.message); }
+  }
+  function openEditTeam(teamId){
+    const t=tmState.teams.find(x=>String(x.team_id)===String(teamId)); if(!t){ Modal.toast('ไม่พบช่าง'); return; }
+    const viaContract=tmState.projTeamSet[String(teamId)]===true;
+    Modal.show('<div class="modal-title">✏️ แก้ไขช่าง</div><div class="tm-field"><label class="tm-field-label">ชื่อ</label><input type="text" class="tm-input" id="etName" value="'+escapeHtml(t.name)+'"></div><div class="tm-field"><label class="tm-field-label">ประเภทช่าง</label><input type="text" class="tm-input" id="etType" value="'+escapeHtml(t.type||'')+'"></div><div class="tm-field"><label class="tm-field-label">หัวหน้า</label><input type="text" class="tm-input" id="etLead" value="'+escapeHtml(t.lead_name||'')+'"></div><div class="tm-field"><label class="tm-field-label">เบอร์โทร</label><input type="text" class="tm-input" id="etPhone" value="'+escapeHtml(t.phone||'')+'"></div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="submitEditTeam(\''+teamId+'\')">บันทึก</button></div><div style="display:flex;gap:8px;margin-top:10px">'+(viaContract?'':'<button class="tm-btn" style="flex:1;background:var(--color-warning-50);color:var(--color-warning-700);border:none" onclick="removeTeamFromProject(\''+teamId+'\')">เอาออกจากโครงการ</button>')+'<button class="tm-btn" style="flex:1;background:var(--color-error-50);color:var(--color-error-700);border:none" onclick="confirmDeleteTeam(\''+teamId+'\')">🗑️ ลบถาวร</button></div>','pay-modal');
+  }
+  async function submitEditTeam(teamId){
+    const name=document.getElementById('etName').value.trim(); if(!name){ Modal.toast('ใส่ชื่อก่อน'); return; }
+    Modal.close(); Modal.toast('กำลังบันทึก...');
+    try{ const res=await API.callRead('update_team',{ team_id:teamId, name:name, type:document.getElementById('etType').value.trim(), lead_name:document.getElementById('etLead').value.trim(), phone:document.getElementById('etPhone').value.trim() }); if(!res||!res.ok) throw new Error((res&&res.error)||'บันทึกไม่สำเร็จ'); Modal.toast('✓ บันทึกแล้ว'); setTimeout(()=>loadAll(),900); }catch(e){ Modal.toast('❌ '+e.message); }
+  }
+  async function removeTeamFromProject(teamId){
+    const assignId=tmState.projTeamSet[String(teamId)]; if(!assignId||assignId===true){ Modal.toast('ช่างนี้อยู่เพราะมีสัญญา — ลบสัญญาก่อน'); return; }
+    const ok=await Modal.confirm({icon:'⚠️',iconClass:'warn',title:'เอาช่างออกจากโครงการ?',desc:'ยังอยู่ในคลังช่าง',confirmText:'เอาออก',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'}); if(!ok) return;
+    Modal.close(); Modal.toast('กำลังเอาออก...');
+    try{ const res=await API.callRead('unassign_project_team',{ assignment_id:assignId }); if(!res||!res.ok) throw new Error((res&&res.error)||'ไม่สำเร็จ'); Modal.toast('✓ เอาออกจากโครงการแล้ว'); setTimeout(()=>loadAll(),900); }catch(e){ Modal.toast('❌ '+e.message); }
+  }
+  async function confirmDeleteTeam(teamId){
+    const ok=await Modal.confirm({icon:'🗑️',iconClass:'danger',title:'ลบช่างถาวร?',desc:'หายจากคลังช่างทุกโครงการ',confirmText:'ลบถาวร',cancelText:'ยกเลิก',confirmClass:'modal-btn-danger'}); if(!ok) return;
+    Modal.close(); Modal.toast('กำลังลบ...');
+    try{ const res=await API.callRead('delete_team',{ team_id:teamId }); if(!res||!res.ok) throw new Error((res&&res.error)||'ลบไม่สำเร็จ'); Modal.toast('✓ ลบช่างแล้ว'); setTimeout(()=>loadAll(),900); }catch(e){ Modal.toast('❌ '+e.message); }
+  }
+
+  function openAddContract(teamId){
+    Modal.show('<div class="modal-title">📄 เพิ่มสัญญาหลัก</div><div class="tm-priv">🔒 ข้อมูลสัญญาเห็นเฉพาะ Admin · อย่าใส่เลขบัตร ปชช./บัญชี</div><div class="tm-field"><label class="tm-field-label">เลขที่สัญญา</label><input type="text" class="tm-input" id="ncNo" placeholder="DSTR-BK-xxxx"></div><div class="tm-field"><label class="tm-field-label">ชื่อสัญญา</label><input type="text" class="tm-input" id="ncTitle" placeholder="เช่น สัญญารับเหมา Built-in"></div><div class="tm-row2"><div class="tm-field"><label class="tm-field-label">มูลค่า (฿)</label><input type="number" class="tm-input" id="ncValue" placeholder="0"></div><div class="tm-field"><label class="tm-field-label">วันเซ็น</label><input type="date" class="tm-input" id="ncDate"></div></div><div class="tm-note">💡 บันทึกสัญญาก่อน แล้วค่อยกด "📎 แนบสัญญา" เพื่ออัปโหลดไฟล์</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="saveContract(\''+teamId+'\')">บันทึก</button></div>','pay-modal');
+  }
+  async function saveContract(teamId){
+    const value=Number(document.getElementById('ncValue').value||0); if(value<=0){ Modal.toast('กรุณาใส่มูลค่าสัญญา'); return; }
+    Modal.close(); Modal.toast('กำลังบันทึก...');
+    try{ const res=await API.callWrite('create_contract',{ team_id:teamId, type:'main', contract_no:document.getElementById('ncNo').value.trim(), title:document.getElementById('ncTitle').value.trim(), value:value, sign_date:document.getElementById('ncDate').value }); if(!res.ok) throw new Error(res.error||'บันทึกไม่สำเร็จ'); Modal.toast('✓ เพิ่มสัญญาแล้ว'); setTimeout(()=>loadAll(),1200); }catch(err){ Modal.toast('❌ '+err.message); }
+  }
+  function openUploadContract(contractId){
+    Modal.show('<div class="modal-title">📎 แนบไฟล์สัญญา</div><div class="tm-priv">⚠️ ห้ามแนบหน้าที่มีเลขบัตรประชาชน เลขบัญชี หรือรูปบัตร — แนบเฉพาะหน้าที่ปลอดภัย</div><div class="tm-field"><label class="tm-field-label">เลือกไฟล์ (รูปภาพ หรือ PDF)</label><input type="file" class="tm-input" id="cfFile" accept="image/*,application/pdf" style="padding:6px" onchange="previewContractFile()"></div><div class="tm-field"><label class="tm-field-label">ชื่อ/คำอธิบายไฟล์</label><input type="text" class="tm-input" id="cfName" placeholder="เช่น หน้า 1 ขอบเขตงาน"></div><div id="cfPreview" style="display:none;text-align:center;margin-bottom:10px"><div id="cfPreviewInner"></div></div><div class="tm-note">💡 แนบได้หลายไฟล์ · เก็บใน Google Drive · เปิดดูได้ในแอป</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" id="cfUploadBtn" onclick="doUploadContract(\''+contractId+'\')">อัปโหลด</button></div>','pay-modal');
+  }
+  function previewContractFile(){
+    const input=document.getElementById('cfFile'), file=input.files&&input.files[0], box=document.getElementById('cfPreview'), inner=document.getElementById('cfPreviewInner');
+    if(!file){ box.style.display='none'; return; }
+    if(file.size>10*1024*1024){ Modal.toast('❌ ไฟล์ใหญ่เกิน 10MB'); input.value=''; box.style.display='none'; return; }
+    box.style.display='block';
+    const nameInput=document.getElementById('cfName'); if(nameInput&&!nameInput.value.trim()) nameInput.value=file.name.replace(/\.[^.]+$/,'');
+    if(file.type.indexOf('pdf')>=0) inner.innerHTML='<div style="font-size:12px;color:var(--color-slate-500)">📄 '+escapeHtml(file.name)+' ('+Math.round(file.size/1024)+' KB)</div>';
+    else{ const reader=new FileReader(); reader.onload=e=>{ inner.innerHTML='<img src="'+e.target.result+'" style="max-width:100%;max-height:160px;border-radius:8px">'; }; reader.readAsDataURL(file); }
+  }
+  async function doUploadContract(contractId){
+    const input=document.getElementById('cfFile'), file=input.files&&input.files[0]; if(!file){ Modal.toast('กรุณาเลือกไฟล์'); return; }
+    const fileName=document.getElementById('cfName').value.trim()||file.name.replace(/\.[^.]+$/,'');
+    const btn=document.getElementById('cfUploadBtn'); btn.disabled=true; btn.textContent='กำลังอัปโหลด...';
+    try{ const base64=await new Promise((resolve,reject)=>{ const reader=new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(file); }); const res=await API.callPost('upload_contract_file',{ contract_id:contractId, file_base64:base64, file_name:fileName }); if(!res.ok) throw new Error(res.error||'อัปโหลดไม่สำเร็จ'); Modal.close(); Modal.toast('✓ แนบไฟล์สัญญาแล้ว'); setTimeout(()=>loadAll(),1200); }catch(err){ Modal.toast('❌ '+err.message); btn.disabled=false; btn.textContent='อัปโหลด'; }
+  }
+  async function deleteContractFile(fileId){
+    const ok=await Modal.confirm({icon:'🗑️',iconClass:'warn',title:'ลบไฟล์สัญญานี้?',confirmText:'ลบ',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'}); if(!ok) return;
+    Modal.toast('กำลังลบ...');
+    try{ const res=await API.callWrite('delete_contract_file',{ file_id:fileId }); if(!res.ok) throw new Error(res.error||'ลบไม่สำเร็จ'); Modal.toast('✓ ลบไฟล์แล้ว'); setTimeout(()=>loadAll(),1200); }catch(err){ Modal.toast('❌ '+err.message); }
+  }
+  function openAddVariation(teamId,parentContractId){
+    Modal.show('<div class="modal-title">➕ เพิ่มงานเพิ่ม (Variation Order)</div><div class="tm-note">💡 งานเพิ่ม = สัญญาเพิ่มเติม นอกเหนือสัญญาหลัก · ควรเซ็นเอกสารแยก</div><div class="tm-field"><label class="tm-field-label">รายละเอียดงานเพิ่ม</label><input type="text" class="tm-input" id="nvTitle" placeholder="เช่น เพิ่มตู้เก็บของ"></div><div class="tm-row2"><div class="tm-field"><label class="tm-field-label">มูลค่า (฿)</label><input type="number" class="tm-input" id="nvValue" placeholder="0"></div><div class="tm-field"><label class="tm-field-label">เลขที่เอกสาร</label><input type="text" class="tm-input" id="nvNo" placeholder="(ถ้ามี)"></div></div><div class="tm-field"><label class="tm-field-label">ลิงก์เอกสาร (ถ้ามี)</label><input type="text" class="tm-input" id="nvLink" placeholder="https://drive.google.com/..."></div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="saveVariation(\''+teamId+'\',\''+parentContractId+'\')">บันทึก</button></div>','pay-modal');
+  }
+  async function saveVariation(teamId,parentId){
+    const value=Number(document.getElementById('nvValue').value||0); if(value<=0){ Modal.toast('กรุณาใส่มูลค่า'); return; }
+    const title=document.getElementById('nvTitle').value.trim(); if(!title){ Modal.toast('กรุณาใส่รายละเอียด'); return; }
+    Modal.close(); Modal.toast('กำลังบันทึก...');
+    try{ const res=await API.callWrite('create_contract',{ team_id:teamId, type:'variation', parent_id:parentId, title:title, contract_no:document.getElementById('nvNo').value.trim(), value:value, file_link:document.getElementById('nvLink').value.trim(), sign_date:new Date().toISOString().slice(0,10) }); if(!res.ok) throw new Error(res.error||'บันทึกไม่สำเร็จ'); Modal.toast('✓ เพิ่มงานเพิ่มแล้ว'); setTimeout(()=>loadAll(),1200); }catch(err){ Modal.toast('❌ '+err.message); }
+  }
+
+  function openMilestone(milestoneId,contractId){
+    if(!tmState.isAdmin) return;
+    const m=tmState.milestones.find(x=>x.milestone_id===milestoneId); if(!m) return;
+    const remain=(m.amount||0)-(m.paid_amount||0);
+    Modal.show('<div class="modal-title">💰 '+escapeHtml(m.name)+'</div><div class="modal-desc">'+escapeHtml(m.condition||'')+'</div><div class="tm-contract" style="margin-top:0"><div class="tm-ct-row"><span class="tm-ct-label">มูลค่างวด</span><span class="tm-ct-val">'+fmtMoney(m.amount)+'฿</span></div><div class="tm-ct-row"><span class="tm-ct-label">จ่ายแล้ว</span><span class="tm-ct-val">'+fmtMoney(m.paid_amount||0)+'฿</span></div><div class="tm-ct-row" style="margin-bottom:0"><span class="tm-ct-label">คงเหลือ</span><span class="tm-ct-val" style="color:var(--color-warning-700)">'+fmtMoney(remain)+'฿</span></div></div><div class="tm-field" style="margin-top:10px"><label class="tm-field-label">บันทึกยอดจ่าย (รวมที่จ่ายไปแล้ว)</label><input type="number" class="tm-input" id="mpAmount" value="'+(m.paid_amount||0)+'"></div><div class="tm-field"><label class="tm-field-label">💰 สถานะการจ่าย</label><select class="tm-select" id="mpStatus"><option value="pending" '+(m.status==='pending'?'selected':'')+'>ยังไม่จ่าย</option><option value="partial" '+(m.status==='partial'?'selected':'')+'>จ่ายบางส่วน</option><option value="paid" '+(m.status==='paid'?'selected':'')+'>จ่ายครบงวด</option></select></div><div class="tm-field"><label class="tm-field-label">📎 สถานะหลักฐาน (สลิป/ใบโอน)</label><select class="tm-select" id="mpEvidence"><option value="none" '+((m.evidence_status||'none')==='none'?'selected':'')+'>🔴 ยังไม่มีหลักฐาน</option><option value="partial" '+(m.evidence_status==='partial'?'selected':'')+'>🟡 มีหลักฐานบางส่วน</option><option value="full" '+(m.evidence_status==='full'?'selected':'')+'>🟢 หลักฐานครบ</option></select></div>'+renderSlipsSection(milestoneId)+'<div class="tm-priv">⚠️ ตรวจสอบกับสัญญาตัวจริง + ผู้ดูแลบัญชีก่อนจ่ายเงินจริง</div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="saveMilestone(\''+milestoneId+'\',\''+contractId+'\')">บันทึก</button></div>','pay-modal');
+  }
+  function renderSlipsSection(milestoneId){
+    const slips=tmState.paymentSlips.filter(s=>s.milestone_id===milestoneId);
+    let listHtml=''; slips.forEach(s=>{ const icon=s.file_type==='pdf'?'📄':'🖼️'; listHtml+='<div class="tm-file-row"><span>'+icon+'</span><span class="tm-file-name" onclick="openLink(\''+escapeHtml(s.url)+'\')">'+escapeHtml(s.name)+'</span><span class="tm-file-del" onclick="deletePaymentSlip(\''+s.slip_id+'\')">✕</span></div>'; });
+    return '<div class="tm-field"><label class="tm-field-label">หลักฐานที่แนบ ('+slips.length+')</label><div class="tm-file-list">'+(listHtml||'<div style="font-size:11px;color:var(--color-slate-400);padding:4px">ยังไม่มีหลักฐาน</div>')+'</div><button class="tm-btn" style="margin-top:6px;width:100%" onclick="openUploadSlip(\''+milestoneId+'\')">📎 แนบสลิป/หลักฐาน</button></div>';
+  }
+  async function saveMilestone(milestoneId,contractId){
+    const paidAmount=Number(document.getElementById('mpAmount').value||0), status=document.getElementById('mpStatus').value, evidenceStatus=document.getElementById('mpEvidence').value;
+    Modal.close(); Modal.toast('กำลังบันทึก...');
+    try{ const res=await API.callWrite('update_milestone',{ milestone_id:milestoneId, contract_id:contractId, paid_amount:paidAmount, status:status, evidence_status:evidenceStatus, paid_date:status==='pending'?'':new Date().toISOString().slice(0,10) }); if(!res.ok) throw new Error(res.error||'บันทึกไม่สำเร็จ'); Modal.toast('✓ บันทึกงวดแล้ว'); setTimeout(()=>loadAll(),1200); }catch(err){ Modal.toast('❌ '+err.message); }
+  }
+  function openUploadSlip(milestoneId){
+    const m=tmState.milestones.find(x=>x.milestone_id===milestoneId); const contractId=m?m.contract_id:'';
+    Modal.show('<div class="modal-title">📎 แนบสลิป/หลักฐาน</div><div class="tm-note">💡 แนบสลิปโอนเงิน ใบเสร็จ หรือหลักฐานการจ่าย (รูป/PDF)</div><div class="tm-field"><label class="tm-field-label">เลือกไฟล์</label><input type="file" class="tm-input" id="slFile" accept="image/*,application/pdf" style="padding:6px" onchange="previewSlip()"></div><div class="tm-field"><label class="tm-field-label">ชื่อ/คำอธิบาย</label><input type="text" class="tm-input" id="slName" placeholder="เช่น สลิปโอน 25,000฿"></div><div id="slPreview" style="display:none;text-align:center;margin-bottom:10px"><div id="slPreviewInner"></div></div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="openMilestone(\''+milestoneId+'\',\''+contractId+'\')">กลับ</button><button class="modal-btn modal-btn-primary" id="slUploadBtn" onclick="doUploadSlip(\''+milestoneId+'\',\''+contractId+'\')">อัปโหลด</button></div>','pay-modal');
+  }
+  function previewSlip(){
+    const input=document.getElementById('slFile'), file=input.files&&input.files[0], box=document.getElementById('slPreview'), inner=document.getElementById('slPreviewInner');
+    if(!file){ box.style.display='none'; return; }
+    if(file.size>10*1024*1024){ Modal.toast('❌ ไฟล์ใหญ่เกิน 10MB'); input.value=''; box.style.display='none'; return; }
+    const nameInput=document.getElementById('slName'); if(nameInput&&!nameInput.value.trim()) nameInput.value=file.name.replace(/\.[^.]+$/,'');
+    box.style.display='block';
+    if(file.type.indexOf('pdf')>=0) inner.innerHTML='<div style="font-size:12px;color:var(--color-slate-500)">📄 '+escapeHtml(file.name)+' ('+Math.round(file.size/1024)+' KB)</div>';
+    else{ const reader=new FileReader(); reader.onload=e=>{ inner.innerHTML='<img src="'+e.target.result+'" style="max-width:100%;max-height:160px;border-radius:8px">'; }; reader.readAsDataURL(file); }
+  }
+  async function doUploadSlip(milestoneId,contractId){
+    const input=document.getElementById('slFile'), file=input.files&&input.files[0]; if(!file){ Modal.toast('กรุณาเลือกไฟล์'); return; }
+    const fileName=document.getElementById('slName').value.trim()||file.name.replace(/\.[^.]+$/,'');
+    const btn=document.getElementById('slUploadBtn'); btn.disabled=true; btn.textContent='กำลังอัปโหลด...';
+    try{ const base64=await new Promise((resolve,reject)=>{ const reader=new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(file); }); const res=await API.callPost('upload_payment_slip',{ milestone_id:milestoneId, contract_id:contractId, file_base64:base64, file_name:fileName }); if(!res.ok) throw new Error(res.error||'อัปโหลดไม่สำเร็จ'); Modal.toast('✓ แนบหลักฐานแล้ว'); setTimeout(()=>loadAll(),1200); }catch(err){ Modal.toast('❌ '+err.message); btn.disabled=false; btn.textContent='อัปโหลด'; }
+  }
+  async function deletePaymentSlip(slipId){
+    const ok=await Modal.confirm({icon:'🗑️',iconClass:'warn',title:'ลบหลักฐานนี้?',confirmText:'ลบ',cancelText:'ยกเลิก',confirmClass:'modal-btn-warn'}); if(!ok) return;
+    Modal.toast('กำลังลบ...');
+    try{ const res=await API.callWrite('delete_payment_slip',{ slip_id:slipId }); if(!res.ok) throw new Error(res.error||'ลบไม่สำเร็จ'); Modal.toast('✓ ลบแล้ว'); setTimeout(()=>loadAll(),1200); }catch(err){ Modal.toast('❌ '+err.message); }
+  }
+
+  function openAddStaff(){
+    Modal.show('<div class="modal-title">➕ เพิ่มทีมงานบริษัท</div><div class="tm-field"><label class="tm-field-label">ชื่อ</label><input type="text" class="tm-input" id="nsName" placeholder="ชื่อ-นามสกุล"></div><div class="tm-row2"><div class="tm-field"><label class="tm-field-label">ตำแหน่ง</label><select class="tm-select" id="nsRole"><option>Project Manager</option><option>Foreman</option><option>Site Engineer</option><option>Admin</option></select></div><div class="tm-field"><label class="tm-field-label">เบอร์โทร</label><input type="text" class="tm-input" id="nsPhone" placeholder="08x-xxx-xxxx"></div></div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="saveStaff()">บันทึก</button></div>','pay-modal');
+  }
+  async function saveStaff(){
+    const name=document.getElementById('nsName').value.trim(); if(!name){ Modal.toast('กรุณาใส่ชื่อ'); return; }
+    Modal.close(); Modal.toast('กำลังบันทึก...');
+    try{ const res=await API.callWrite('create_staff',{ name:name, role:document.getElementById('nsRole').value, phone:document.getElementById('nsPhone').value.trim() }); if(!res.ok) throw new Error(res.error||'บันทึกไม่สำเร็จ'); Modal.toast('✓ เพิ่มทีมงานแล้ว'); setTimeout(()=>loadAll(),1200); }catch(err){ Modal.toast('❌ '+err.message); }
+  }
+  function openEditStaff(staffId){
+    const s=tmState.staff.find(x=>x.staff_id===staffId); if(!s) return;
+    Modal.show('<div class="modal-title">✏️ แก้ไขทีมงาน</div><div class="tm-field"><label class="tm-field-label">ชื่อ</label><input type="text" class="tm-input" id="esName" value="'+escapeHtml(s.name)+'"></div><div class="tm-row2"><div class="tm-field"><label class="tm-field-label">ตำแหน่ง</label><select class="tm-select" id="esRole"><option '+(s.role==='Project Manager'?'selected':'')+'>Project Manager</option><option '+(s.role==='Foreman'?'selected':'')+'>Foreman</option><option '+(s.role==='Site Engineer'?'selected':'')+'>Site Engineer</option><option '+(s.role==='Admin'?'selected':'')+'>Admin</option></select></div><div class="tm-field"><label class="tm-field-label">เบอร์โทร</label><input type="text" class="tm-input" id="esPhone" value="'+escapeHtml(s.phone||'')+'"></div></div><div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button><button class="modal-btn modal-btn-primary" onclick="saveEditStaff(\''+staffId+'\')">บันทึก</button></div>','pay-modal');
+  }
+  async function saveEditStaff(staffId){
+    const name=document.getElementById('esName').value.trim(); if(!name){ Modal.toast('กรุณาใส่ชื่อ'); return; }
+    Modal.close(); Modal.toast('กำลังบันทึก...');
+    try{ const res=await API.callWrite('update_staff',{ staff_id:staffId, name:name, role:document.getElementById('esRole').value, phone:document.getElementById('esPhone').value.trim() }); if(!res.ok) throw new Error(res.error||'บันทึกไม่สำเร็จ'); Modal.toast('✓ บันทึกแล้ว'); setTimeout(()=>loadAll(),1200); }catch(err){ Modal.toast('❌ '+err.message); }
+  }
+
+  function fmtMoney(n){ return Number(n||0).toLocaleString('en-US'); }
+  function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function openLink(url){ if(!url) return; window.open(url,'_blank'); }
+
+  loadAll();
+  </script>
+</body>
+</html>
