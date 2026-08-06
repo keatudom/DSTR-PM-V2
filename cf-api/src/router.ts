@@ -325,6 +325,10 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
       return qc.closeQcInspection(env, p);
     case 'delete_qc_inspection':
       return qc.deleteQcInspection(env, p);
+    case 'restore_qc_inspection':
+      return qc.restoreQcInspection(env, p);
+    case 'get_qc_trash':
+      return qc.getQcTrash(env, p);
     case 'qc_summary':
       return qc.qcSummary(env, p);
 

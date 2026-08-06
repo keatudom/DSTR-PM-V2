@@ -986,9 +986,19 @@ const API = {
     return this.callPost('close_qc_inspection', { inspection_id: inspectionId });
   },
 
-  /** ลบการตรวจ + ผลรายข้อ (เผื่อกดผิด/ทดสอบ) — { inspection_id } */
+  /** ทิ้งการตรวจลงถังขยะ (soft delete — กู้คืนได้ 30 วัน) — { inspection_id } */
   deleteQcInspection: function(inspectionId) {
     return this.callPost('delete_qc_inspection', { inspection_id: inspectionId });
+  },
+
+  /** กู้คืนการตรวจจากถังขยะ — { inspection_id } */
+  restoreQcInspection: function(inspectionId) {
+    return this.callPost('restore_qc_inspection', { inspection_id: inspectionId });
+  },
+
+  /** รายการในถังขยะของโครงการ + เหลืออีกกี่วันก่อนลบจริง */
+  getQcTrash: function() {
+    return this.callRead('get_qc_trash');
   },
 
   /** สรุป QC ต่อ FF (รอบล่าสุด + defect ค้าง) — เลี้ยงการ์ด dashboard */

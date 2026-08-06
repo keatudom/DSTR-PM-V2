@@ -9,7 +9,16 @@
 //   create_qc_inspection — สร้างหัว + แถวผลตามเกณฑ์ active (รอบใหม่ = round+1)
 //   update_qc_result     — ติ๊ก pass/fail/na + defect_class + note + photo_url + แก้ไข/ตรวจซ้ำ
 //   close_qc_inspection  — สรุป pass/fail/na → สถานะ (ผ่าน / ผ่านมีเงื่อนไข / ไม่ผ่าน)
+//   delete_qc_inspection — ทิ้งลงถังขยะ (soft delete — กู้คืนได้ 30 วัน)
+//   restore_qc_inspection— กู้คืนจากถังขยะ
+//   get_qc_trash         — รายการในถังขยะ + เหลืออีกกี่วันก่อนลบจริง
 //   qc_summary           — สรุปต่อ FF (รอบล่าสุด + defect ค้าง C/M/Mn) เลี้ยง dashboard
+//
+// ★ 2026-08-06 (spec: docs/superpowers/specs/2026-08-06-qc-sharing-audit-trash-pdf-design.md)
+//   - audit trail: ประทับ "ใครทำ" จาก token ทุกจุด (created_by / checked_by / closed_by / deleted_by)
+//     ชื่อมาจาก params.__actor ที่ index.ts ร้อยมาให้ → ปลอมไม่ได้ ห้ามเชื่อชื่อที่หน้าเว็บส่งมา
+//   - ถังขยะ 30 วัน: ลบ = ประทับ deleted_at · ลบจริงแบบ lazy ตอนมีคนเรียก get_qc_inspections
+//     (Cron Triggers ของโปรเจกต์นี้ปิดอยู่ — ดู wrangler.toml)
 //
 // กติกาสถานะ (จากไฟล์ต้นแบบ):
 //   มี C ค้าง        → ไม่ผ่าน (fail)
@@ -23,7 +32,19 @@
 import type { Env } from '../lib/env.ts';
 import { queryAll, queryFirst, exec } from '../lib/db.ts';
 import { nextId } from '../lib/ids.ts';
-import { todayStr } from '../lib/time.ts';
+import { todayStr, nowStr } from '../lib/time.ts';
+
+// เก็บของในถังขยะกี่วันก่อนลบจริง (เจ้าของงานเคาะ 30 วัน)
+const TRASH_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// ชื่อคนที่กำลังทำ action นี้ — อ่านจาก token (index.ts:87 ร้อย __actor มาให้)
+// ห้ามรับชื่อจาก param ที่หน้าเว็บส่ง (ปลอมได้) · ไม่มี token (anon) → ''
+function actorName(p: Record<string, unknown>): string {
+  const a = p.__actor as { name?: string; email?: string } | null | undefined;
+  if (!a) return '';
+  return String(a.name || a.email || '');
+}
 
 const VALID_RESULTS = new Set(['pass', 'fail', 'na', '']); // '' = ยังไม่ตรวจ
 const VALID_DEFECT_CLASS = new Set(['C', 'M', 'Mn', '']);
@@ -58,6 +79,12 @@ interface InspectionRow {
   summary_na: number;
   notes: string;
   created_at: string;
+  // ★ 0003 — audit trail + ถังขยะ (แถวเก่าเป็น '' → หน้าเว็บแสดง "—")
+  created_by: string;
+  closed_by: string;
+  closed_at: string;
+  deleted_by: string;
+  deleted_at: string;
 }
 
 interface ResultRow {
@@ -70,11 +97,14 @@ interface ResultRow {
   photo_url: string;
   fixed_date: string;
   recheck_result: string;
+  // ★ 0003 — ใครติ๊กข้อนี้ เมื่อไหร่
+  checked_by: string;
+  checked_at: string;
 }
 
 // สถานะ machine → ป้ายไทย (ไว้โชว์บนหน้าเว็บ)
 const STATUS_LABEL: Record<string, string> = {
-  pending: 'รอตรวจ',
+  pending: 'กำลังตรวจ', // ยังไม่ปิดการตรวจ — คนอื่นเห็นได้ว่ามีคนถืองานนี้อยู่
   pass: 'ผ่าน — พร้อมส่งมอบ',
   conditional: 'ผ่านมีเงื่อนไข — ต้องแก้ไข/ตรวจซ้ำ',
   fail: 'ไม่ผ่าน — มี defect วิกฤต (C) ต้องแก้ก่อนส่งมอบ',
@@ -96,10 +126,37 @@ export async function getQcCriteria(env: Env): Promise<unknown> {
   return rows;
 }
 
+// ── กวาดถังขยะ: ลบจริงของที่ทิ้งเกิน 30 วัน ──
+// ทำแบบ lazy (ตอนมีคนเปิดหน้า QC) เพราะ Cron Triggers ของโปรเจกต์นี้ปิดอยู่ (wrangler.toml)
+// ผลจากมุมผู้ใช้เหมือนกัน — ต่างแค่ลบตอนมีคนเข้ามาใช้ ไม่ใช่ตอนเที่ยงคืนเป๊ะ
+async function purgeExpiredTrash(env: Env): Promise<void> {
+  const cutoff = nowStr(Date.now() - TRASH_DAYS * DAY_MS); // 'YYYY-MM-DD HH:mm:ss' — เทียบเป็น string ได้ตรงๆ
+  try {
+    const expired = await queryAll<{ inspection_id: string }>(
+      env,
+      `SELECT inspection_id FROM qc_inspections
+       WHERE deleted_at IS NOT NULL AND deleted_at != '' AND deleted_at < ?`,
+      cutoff,
+    );
+    if (expired.length === 0) return;
+    const stmts: D1PreparedStatement[] = [];
+    for (const row of expired) {
+      stmts.push(env.DB.prepare('DELETE FROM qc_results WHERE inspection_id = ?').bind(row.inspection_id));
+      stmts.push(env.DB.prepare('DELETE FROM qc_inspections WHERE inspection_id = ?').bind(row.inspection_id));
+    }
+    await env.DB.batch(stmts);
+  } catch (e) {
+    // กวาดไม่สำเร็จไม่ควรทำให้หน้า QC พัง — รอบหน้าค่อยกวาดใหม่
+    console.warn('[qc] purgeExpiredTrash failed:', e);
+  }
+}
+
 // ── get_qc_inspections — รายการตรวจต่อโครงการ (filter ff_code/status) ──
 export async function getQcInspections(env: Env, p: Record<string, unknown>): Promise<unknown> {
+  await purgeExpiredTrash(env);
   const projectId = String(p.project_id || '');
-  const conds = ['project_id = ?'];
+  // ไม่เอาของในถังขยะ (deleted_at ว่าง = ยังอยู่) — แถวเก่าก่อน migration 0003 เป็น NULL ต้องนับด้วย
+  const conds = ['project_id = ?', "(deleted_at IS NULL OR deleted_at = '')"];
   const args: unknown[] = [projectId];
   if (p.ff_code) { conds.push('ff_code = ?'); args.push(String(p.ff_code)); }
   if (p.status) { conds.push('status = ?'); args.push(String(p.status)); }
@@ -173,6 +230,9 @@ export async function createQcInspection(env: Env, p: Record<string, unknown>): 
   const inspectionId = await nextId(env, 'QCI-', 4);
   const now = todayStr();
   const inspectDate = String(p.inspect_date || now);
+  const who = actorName(p);
+  // ผู้ตรวจ: ใช้ที่กรอกมา ถ้าเว้นว่างก็ใช้ชื่อคนที่ล็อกอิน (เมลใครเมลมัน)
+  const inspector = String(p.inspector || '') || who;
 
   // header + N ผลรายข้อ ยิงเป็น batch เดียว (atomic)
   const stmts: D1PreparedStatement[] = [];
@@ -181,8 +241,8 @@ export async function createQcInspection(env: Env, p: Record<string, unknown>): 
       `INSERT INTO qc_inspections
         (inspection_id, project_id, ff_code, item_name, location, maker, drawing_ref,
          inspector, inspect_date, round, status, summary_pass, summary_fail, summary_na,
-         notes, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, 0, 0, ?, ?)`,
+         notes, created_at, created_by, closed_by, closed_at, deleted_by, deleted_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, 0, 0, ?, ?, ?, '', '', '', '')`,
     ).bind(
       inspectionId,
       projectId,
@@ -191,11 +251,12 @@ export async function createQcInspection(env: Env, p: Record<string, unknown>): 
       String(p.location || ''),
       String(p.maker || ''),
       String(p.drawing_ref || ''),
-      String(p.inspector || ''),
+      inspector,
       inspectDate,
       round,
       String(p.notes || ''),
       now,
+      who,
     ),
   );
   for (const c of criteria) {
@@ -204,8 +265,9 @@ export async function createQcInspection(env: Env, p: Record<string, unknown>): 
     stmts.push(
       env.DB.prepare(
         `INSERT INTO qc_results
-          (result_id, inspection_id, criteria_id, result, defect_class, note, photo_url, fixed_date, recheck_result)
-         VALUES (?, ?, ?, '', '', '', '', '', '')`,
+          (result_id, inspection_id, criteria_id, result, defect_class, note, photo_url,
+           fixed_date, recheck_result, checked_by, checked_at)
+         VALUES (?, ?, ?, '', '', '', '', '', '', '', '')`,
       ).bind(resultId, inspectionId, c.criteria_id),
     );
   }
@@ -274,6 +336,12 @@ export async function updateQcResult(env: Env, p: Record<string, unknown>): Prom
 
   if (sets.length === 0) throw new Error('ไม่มีข้อมูลให้แก้');
 
+  // ประทับ "ใครแตะข้อนี้ล่าสุด เมื่อไหร่" — ตรวจร่วมกันหลายคนจะได้รู้ว่าใครติ๊กข้อไหน
+  const who = actorName(p);
+  if (who) { sets.push('checked_by = ?'); vals.push(who); }
+  sets.push('checked_at = ?');
+  vals.push(nowStr());
+
   vals.push(resultId);
   await exec(env, `UPDATE qc_results SET ${sets.join(', ')} WHERE result_id = ?`, ...vals);
 
@@ -325,15 +393,20 @@ export async function closeQcInspection(env: Env, p: Record<string, unknown>): P
   const defects = countPendingDefects(results);
   const status = computeStatus(defects);
 
+  const closedBy = actorName(p);
+  const closedAt = nowStr();
   await exec(
     env,
     `UPDATE qc_inspections
-     SET status = ?, summary_pass = ?, summary_fail = ?, summary_na = ?
+     SET status = ?, summary_pass = ?, summary_fail = ?, summary_na = ?,
+         closed_by = ?, closed_at = ?
      WHERE inspection_id = ?`,
     status,
     summaryPass,
     summaryFail,
     summaryNa,
+    closedBy,
+    closedAt,
     inspectionId,
   );
 
@@ -343,18 +416,78 @@ export async function closeQcInspection(env: Env, p: Record<string, unknown>): P
     status_label: statusLabel(status),
     summary: { pass: summaryPass, fail: summaryFail, na: summaryNa },
     pending_defects: defects,
+    closed_by: closedBy,
+    closed_at: closedAt,
   };
 }
 
-// ── delete_qc_inspection — ลบหัว + ผลรายข้อทั้งหมด (กดผิด/ทดสอบ) ──
+// ── delete_qc_inspection — ทิ้งลงถังขยะ (ยังไม่ลบจริง กู้คืนได้ 30 วัน) ──
+// เปลี่ยนจากลบจริงเป็น soft delete ตามที่เจ้าของงานเคาะ — เผลอกดลบแล้วเอากลับมาได้
 export async function deleteQcInspection(env: Env, p: Record<string, unknown>): Promise<unknown> {
   const inspectionId = String(p.inspection_id || '');
   if (!inspectionId) throw new Error('inspection_id required');
-  await env.DB.batch([
-    env.DB.prepare('DELETE FROM qc_results WHERE inspection_id = ?').bind(inspectionId),
-    env.DB.prepare('DELETE FROM qc_inspections WHERE inspection_id = ?').bind(inspectionId),
-  ]);
-  return { deleted: inspectionId };
+
+  const existing = await queryFirst<InspectionRow>(
+    env,
+    'SELECT inspection_id FROM qc_inspections WHERE inspection_id = ?',
+    inspectionId,
+  );
+  if (!existing) throw new Error('ไม่พบการตรวจ inspection_id นี้');
+
+  const deletedAt = nowStr();
+  await exec(
+    env,
+    'UPDATE qc_inspections SET deleted_at = ?, deleted_by = ? WHERE inspection_id = ?',
+    deletedAt,
+    actorName(p),
+    inspectionId,
+  );
+  return { deleted: inspectionId, deleted_at: deletedAt, trash_days: TRASH_DAYS };
+}
+
+// ── restore_qc_inspection — กู้คืนจากถังขยะ (เคลียร์ร่องรอยการลบ) ──
+export async function restoreQcInspection(env: Env, p: Record<string, unknown>): Promise<unknown> {
+  const inspectionId = String(p.inspection_id || '');
+  if (!inspectionId) throw new Error('inspection_id required');
+
+  const existing = await queryFirst<InspectionRow>(
+    env,
+    'SELECT inspection_id, deleted_at FROM qc_inspections WHERE inspection_id = ?',
+    inspectionId,
+  );
+  if (!existing) throw new Error('กู้คืนไม่ได้ — รายการนี้ถูกลบถาวรไปแล้ว (เกิน ' + TRASH_DAYS + ' วัน)');
+
+  await exec(
+    env,
+    "UPDATE qc_inspections SET deleted_at = '', deleted_by = '' WHERE inspection_id = ?",
+    inspectionId,
+  );
+  return { restored: inspectionId };
+}
+
+// ── get_qc_trash — ของในถังขยะของโครงการ + เหลืออีกกี่วันก่อนลบจริง ──
+export async function getQcTrash(env: Env, p: Record<string, unknown>): Promise<unknown> {
+  await purgeExpiredTrash(env);
+  const projectId = String(p.project_id || '');
+  const rows = await queryAll<InspectionRow>(
+    env,
+    `SELECT * FROM qc_inspections
+     WHERE project_id = ? AND deleted_at IS NOT NULL AND deleted_at != ''
+     ORDER BY deleted_at DESC`,
+    projectId,
+  );
+  const now = Date.now();
+  return rows.map((r) => {
+    // deleted_at เป็นเวลาไทย 'YYYY-MM-DD HH:mm:ss' → อ่านกลับเป็น UTC แล้วหักออก 7 ชม.
+    const stampedMs = Date.parse(String(r.deleted_at).replace(' ', 'T') + 'Z') - 7 * 60 * 60 * 1000;
+    const usedDays = Number.isFinite(stampedMs) ? Math.floor((now - stampedMs) / DAY_MS) : 0;
+    return {
+      ...r,
+      status_label: statusLabel(r.status),
+      days_left: Math.max(0, TRASH_DAYS - usedDays),
+      trash_days: TRASH_DAYS,
+    };
+  });
 }
 
 // ── qc_summary — สรุปต่อ FF (รอบล่าสุด + defect ค้าง) เลี้ยงการ์ด dashboard ──
@@ -365,7 +498,9 @@ export async function qcSummary(env: Env, p: Record<string, unknown>): Promise<u
   // การตรวจล่าสุด (รอบสูงสุด) ต่อ ff_code
   const inspections = await queryAll<InspectionRow>(
     env,
-    `SELECT * FROM qc_inspections WHERE project_id = ? ORDER BY ff_code, round DESC`,
+    `SELECT * FROM qc_inspections
+     WHERE project_id = ? AND (deleted_at IS NULL OR deleted_at = '')
+     ORDER BY ff_code, round DESC`,
     projectId,
   );
 
