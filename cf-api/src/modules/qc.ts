@@ -49,6 +49,24 @@ function actorName(p: Record<string, unknown>): string {
 const VALID_RESULTS = new Set(['pass', 'fail', 'na', '']); // '' = ยังไม่ตรวจ
 const VALID_DEFECT_CLASS = new Set(['C', 'M', 'Mn', '']);
 
+// ── เหตุผลของ N/A (migration 0004) ──
+// แยก 2 ความหมายที่เคยปนกัน: "ไม่ต้องตรวจ (จบ)" vs "ยังตรวจไม่ได้ (ค้าง)"
+const NA_REASON_LABEL: Record<string, string> = {
+  not_applicable: 'ไม่มีส่วนนี้ในชิ้นงาน',
+  out_of_scope: 'ไม่อยู่ในสโคปผู้รับเหมารายนี้',
+  waived: 'เจ้าของบ้าน/ผู้ออกแบบยกเว้นให้',
+  wait_material: 'รอวัสดุ ยังไม่มาส่ง',
+  not_installed: 'ยังติดตั้งไม่เสร็จ ตรวจไม่ได้',
+  other: 'อื่น ๆ',
+};
+// เหตุผลที่แปลว่า "ยังไม่ได้ตรวจจริง" → ต้องกลับมาตรวจรอบหน้า ห้ามให้ปิดงานเป็น "ผ่าน"
+const NA_PENDING_REASONS = new Set(['wait_material', 'not_installed']);
+const VALID_NA_REASON = new Set([...Object.keys(NA_REASON_LABEL), '']);
+
+function naReasonLabel(code: string): string {
+  return NA_REASON_LABEL[code] || '';
+}
+
 interface CriteriaRow {
   criteria_id: string;
   section: string;
@@ -100,6 +118,8 @@ interface ResultRow {
   // ★ 0003 — ใครติ๊กข้อนี้ เมื่อไหร่
   checked_by: string;
   checked_at: string;
+  // ★ 0004 — ทำไมถึง N/A (ดู NA_REASON_LABEL)
+  na_reason: string;
 }
 
 // สถานะ machine → ป้ายไทย (ไว้โชว์บนหน้าเว็บ)
@@ -186,6 +206,7 @@ export async function getQcInspection(env: Env, p: Record<string, unknown>): Pro
     env,
     `SELECT r.result_id, r.inspection_id, r.criteria_id, r.result, r.defect_class,
             r.note, r.photo_url, r.fixed_date, r.recheck_result,
+            r.checked_by, r.checked_at, r.na_reason,
             c.section, c.section_name, c.seq, c.item, c.acceptance, c.method,
             c.defects, c.defect_class AS criteria_defect_class
      FROM qc_results r
@@ -197,7 +218,8 @@ export async function getQcInspection(env: Env, p: Record<string, unknown>): Pro
 
   return {
     inspection: { ...inspection, status_label: statusLabel(inspection.status) },
-    results,
+    // แนบคำไทยของเหตุผล N/A ให้หน้าเว็บ/PDF ใช้ตรง ๆ (ไม่ต้องไปแปลรหัสเองสองที่)
+    results: results.map((r) => ({ ...r, na_reason_label: naReasonLabel(String(r.na_reason || '')) })),
   };
 }
 
@@ -266,8 +288,8 @@ export async function createQcInspection(env: Env, p: Record<string, unknown>): 
       env.DB.prepare(
         `INSERT INTO qc_results
           (result_id, inspection_id, criteria_id, result, defect_class, note, photo_url,
-           fixed_date, recheck_result, checked_by, checked_at)
-         VALUES (?, ?, ?, '', '', '', '', '', '', '', '')`,
+           fixed_date, recheck_result, checked_by, checked_at, na_reason)
+         VALUES (?, ?, ?, '', '', '', '', '', '', '', '', '')`,
       ).bind(resultId, inspectionId, c.criteria_id),
     );
   }
@@ -312,6 +334,21 @@ export async function updateQcResult(env: Env, p: Record<string, unknown>): Prom
       sets.push('defect_class = ?');
       vals.push('');
     }
+    // ถ้าไม่ใช่ na → เคลียร์เหตุผล N/A (กันเหตุผลเก่าค้างแล้วไปนับเป็น "ค้างตรวจ")
+    if (result !== 'na') {
+      sets.push('na_reason = ?');
+      vals.push('');
+    }
+  }
+  if (p.na_reason !== undefined) {
+    const nr = String(p.na_reason);
+    if (!VALID_NA_REASON.has(nr)) throw new Error('na_reason ไม่ถูกต้อง');
+    // เขียนเฉพาะเมื่อผลเป็น na (หรือกำลังตั้งเป็น na)
+    const willBeNa = p.result !== undefined ? String(p.result) === 'na' : existing.result === 'na';
+    if (willBeNa) {
+      const idx = sets.indexOf('na_reason = ?');
+      if (idx !== -1) { vals[idx] = nr; } else { sets.push('na_reason = ?'); vals.push(nr); }
+    }
   }
   if (p.defect_class !== undefined) {
     const dc = String(p.defect_class);
@@ -350,9 +387,14 @@ export async function updateQcResult(env: Env, p: Record<string, unknown>): Prom
 }
 
 // นับ defect ค้าง (fail ที่ยังไม่ตรวจซ้ำผ่าน) แยกตามระดับ
-function countPendingDefects(results: ResultRow[]): { C: number; M: number; Mn: number } {
-  const out = { C: 0, M: 0, Mn: 0 };
+// + na = ข้อที่ติ๊ก N/A เพราะ "ยังตรวจไม่ได้" (รอวัสดุ / ยังติดตั้งไม่เสร็จ) — ยังไม่เคยตรวจจริง
+function countPendingDefects(results: ResultRow[]): { C: number; M: number; Mn: number; na: number } {
+  const out = { C: 0, M: 0, Mn: 0, na: 0 };
   for (const r of results) {
+    if (r.result === 'na') {
+      if (NA_PENDING_REASONS.has(String(r.na_reason || ''))) out.na++;
+      continue;
+    }
     if (r.result !== 'fail') continue;
     if (r.recheck_result === 'pass') continue; // แก้แล้ว ตรวจซ้ำผ่าน → ไม่ค้าง
     if (r.defect_class === 'C') out.C++;
@@ -363,9 +405,11 @@ function countPendingDefects(results: ResultRow[]): { C: number; M: number; Mn: 
   return out;
 }
 
-function computeStatus(defects: { C: number; M: number; Mn: number }): string {
+function computeStatus(defects: { C: number; M: number; Mn: number; na: number }): string {
   if (defects.C > 0) return 'fail';
   if (defects.M > 0 || defects.Mn > 0) return 'conditional';
+  // ยังมีข้อที่ตรวจไม่ได้ค้างอยู่ → ห้ามขึ้น "ผ่าน — พร้อมส่งมอบ" (เจ้าของงานเคาะ 2026-08-06)
+  if (defects.na > 0) return 'conditional';
   return 'pass';
 }
 
