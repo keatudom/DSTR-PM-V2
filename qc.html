@@ -647,8 +647,9 @@ async function printInspection() {
     }).join('') + '</div>' : '';
 
   document.getElementById('printDoc').innerHTML =
-    '<h2>ใบตรวจคุณภาพงานบิ้วอิน (QC Checklist)</h2>' +
-    '<div class="p-sub">' + esc(QC.projectName || state.projectId || '') + ' · เอกสารเลขที่ ' + esc(ins.inspection_id || '') + '</div>' +
+    '<h2>QC ' + esc(ins.ff_code || '') + (ins.item_name ? (' · ' + esc(ins.item_name)) : '') + '</h2>' +
+    '<div class="p-sub">ใบตรวจคุณภาพงานบิ้วอิน · รอบที่ ' + (ins.round || 1) + ' · ' +
+      esc(QC.projectName || state.projectId || '') + ' · เอกสารเลขที่ ' + esc(ins.inspection_id || '') + '</div>' +
     '<div class="p-grid">' +
       '<div><b>รหัสชิ้นงาน</b>' + esc(ins.ff_code || '—') + '</div>' +
       '<div><b>รายการ</b>' + esc(ins.item_name || '—') + '</div>' +
@@ -669,7 +670,12 @@ async function printInspection() {
     '<div class="p-sign"><div>ผู้ตรวจสอบ</div><div>ผู้รับมอบงาน</div></div>';
 
   await waitForImages(document.getElementById('printDoc'));
-  window.print();
+
+  // เบราว์เซอร์ตั้งชื่อไฟล์ PDF จากชื่อหน้าเว็บ (document.title) → สลับชั่วคราวให้ได้
+  // "QC F-21 รอบ1 2026-08-01" แทน "QC ตรวจคุณภาพ · Bow House" แล้วคืนค่าเดิมหลังพิมพ์
+  var prevTitle = document.title;
+  document.title = 'QC ' + (ins.ff_code || 'ชิ้นงาน') + ' รอบ' + (ins.round || 1) + ' ' + (ins.inspect_date || '');
+  try { window.print(); } finally { document.title = prevTitle; }
 }
 
 // รูปที่ยังโหลดไม่เสร็จจะพิมพ์ออกมาเป็นช่องว่าง — รอให้โหลดครบก่อน (กันค้าง จำกัด 8 วินาที)
