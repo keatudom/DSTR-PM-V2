@@ -108,10 +108,11 @@ async function scheduled(event: ScheduledController, env: Env, ctx: ExecutionCon
   const forward = { __ctx: ctx } as Record<string, unknown>;
   try {
     // ⚠️ ต้องตรงกับ crons ใน wrangler.toml เป๊ะ (CF ส่ง string ที่ลงทะเบียนไว้กลับมาตรงๆ)
-    //    วันอาทิตย์ = 'SUN' (CF ไม่รับ '0') — รับทั้งสองแบบกันพลาดถ้ามีคนแก้ toml กลับ
-    if (cron === '0 */3 * * *') await lineOpsDigest(env, forward);        // ทุก 3 ชม → กลุ่มหน้างาน
-    else if (cron === '30 11 * * *') await lineDailyDigest(env, forward);  // 18:30 ไทย → กลุ่มหลัก
-    else if (cron === '0 12 * * SUN' || cron === '0 12 * * 0') await lineWeeklyDigest(env, forward);  // อา. 19:00 ไทย → กลุ่มหลัก
+    //    ตอนนี้ลงทะเบียนไว้ตัวเดียว: "0 11 * * *" = สรุปรายวัน 18:00 ไทย (เจ้าของงานเคาะ 2026-08-07)
+    //    เคสอื่นคงไว้เผื่อเปิด cron กลับ · วันอาทิตย์ = 'SUN' (CF ไม่รับ '0') รับทั้งสองแบบกันพลาด
+    if (cron === '0 11 * * *' || cron === '30 11 * * *') await lineDailyDigest(env, forward);  // 18:00 ไทย → กลุ่มหลัก
+    else if (cron === '0 */3 * * *') await lineOpsDigest(env, forward);   // ทุก 3 ชม → กลุ่มหน้างาน (ปิดอยู่)
+    else if (cron === '0 12 * * SUN' || cron === '0 12 * * 0') await lineWeeklyDigest(env, forward);  // อา. 19:00 ไทย (ปิดอยู่)
   } catch { /* best-effort */ }
 }
 
