@@ -36,8 +36,11 @@ GOOGLE_CLIENT_ID = "1007106153160-bih4m06f6qdrche186s7ng4u85ghs6t0.apps.googleus
 # LINE_GROUP_OPS_ID, LINE_OWNER_UID  (รวม 10 ตัว — จดลง secrets-ledger)
 
 # ── Cron Triggers (LINE digests) — handler = scheduled() ใน index.ts
-# ⛔ พักไว้ 2026-07-15: Cloudflare /schedules API ลงทะเบียนไม่ผ่าน (บัญชีใหม่ error กว้างๆ)
-#    digest สั่งมือได้ (?action=_run_weekly_digest ฯลฯ) · แผนถาวร: cron-job.org (ฟรี) ยิง endpoint
-#    เวลาเดิม: ops ทุก 3 ชม · daily 18:30 ไทย (=11:30 UTC) · weekly อา. 19:00 ไทย (=12:00 UTC อา.)
-# [triggers]
-# crons = ["0 */3 * * *", "30 11 * * *", "0 12 * * 0"]
+# ✅ เปิดแล้ว 2026-08-07: เดิมพักไว้ 2026-07-15 เพราะ /schedules API ลงทะเบียนไม่ผ่าน (บัญชีใหม่)
+#    พร้อมกับย้าย LINE webhook จาก Apps Script → Worker ตัวนี้ (ตัวเก่าอ่าน Sheets ที่ไม่มีข้อมูลแล้ว
+#    → รายงานออกทุกวันแต่ "0 รายการ") · trigger เวลาฝั่ง Apps Script ถูกลบแล้วเช่นกัน
+#    เวลา: ops ทุก 3 ชม · daily 18:30 ไทย (=11:30 UTC) · weekly อา. 19:00 ไทย (=12:00 UTC อา.)
+#    ⚠️ วันอาทิตย์ต้องเขียน SUN (หรือ 7) — CF ไม่รับ '0' → เดิม "0 12 * * 0" ทำให้ทั้งชุดลงทะเบียนไม่ผ่าน
+#       (นี่คือสาเหตุจริงของ error 2026-07-15 ไม่ใช่เรื่องบัญชีใหม่) · ต้องตรงกับ event.cron ใน index.ts
+[triggers]
+crons = ["0 */3 * * *", "30 11 * * *", "0 12 * * SUN"]
