@@ -77,13 +77,63 @@ const API = {
   },
 
   /**
+   * 🔁 ข้อผิดพลาดชั่วคราวที่ "ลองใหม่แล้วหาย" — ไม่ใช่ความผิดของคำสั่งที่ส่งไป
+   * D1 (ฐานข้อมูล Cloudflare) สะอึกเป็นครั้งคราวกับ query หนักๆ
+   * วัดจริง 2026-08-13: getAll ล้ม ~1 ใน 6 ครั้ง ส่วน query เล็กผ่าน 6/6
+   * → หน้าโครงการขึ้น "โหลดข้อมูลไม่สำเร็จ" ทั้งที่ข้อมูลอยู่ครบ กดรีเฟรชเองก็หาย
+   */
+  _isTransient: function(res) {
+    var e = res && res.ok === false ? String(res.error || '') : '';
+    return e.indexOf('D1_ERROR') >= 0 || e.indexOf('internal error') >= 0 ||
+           e.indexOf('Network') >= 0 || e.indexOf('storage caused object to be reset') >= 0;
+  },
+
+  /**
+   * ⚠️⚠️ กับดักสำคัญ: ระบบนี้ยิง "คำสั่งบันทึก" ผ่าน callRead ด้วยหลายตัว
+   *   (create_checkin, update_ff, delete_ff, create_risk, create_eval, assign_project_staff ...
+   *    เป็นมรดกจากยุค Apps Script — บทเรียน callwrite-loses-post-body)
+   *   ถ้าลองใหม่แบบเหมารวม = บันทึกซ้ำ 2 รอบ (เช็คอิน 2 ครั้ง / เบิกของ 2 ครั้ง)
+   *
+   * จึงลองใหม่ "เฉพาะคำสั่งที่อ่านอย่างเดียวจริงๆ" ตามชื่อ: get_* / client_get_* / getAll /
+   * qc_summary / ping — ทุกตัวนี้ไม่แตะฐานข้อมูล ยิงซ้ำกี่ครั้งก็ปลอดภัย
+   */
+  _isReadOnly: function(action) {
+    return /^(get_|client_get_)/.test(action) || /^(getAll|qc_summary|ping|check_boq_status)$/.test(action);
+  },
+
+  /**
+   * เรียกซ้ำอัตโนมัติเมื่อเจอ error ชั่วคราว — เฉพาะคำสั่งอ่านเท่านั้น
+   */
+  _cfCallRetry: function(action, params, tries) {
+    var self = this;
+    if (!this._isReadOnly(action)) return this._cfCall(action, params);  // คำสั่งเขียน = ยิงครั้งเดียวจบ
+    tries = tries || 3;
+    var delays = [0, 400, 1200];   // ครั้งแรกทันที แล้วหน่วงเพิ่มขึ้น
+    function attempt(i) {
+      return self._cfCall(action, params).then(function(res) {
+        if (i + 1 < tries && self._isTransient(res)) {
+          console.warn('[API] ' + action + ' สะดุด (' + (res && res.error) + ') — ลองใหม่ครั้งที่ ' + (i + 2));
+          return new Promise(function(r) { setTimeout(r, delays[i + 1] || 1200); }).then(function() { return attempt(i + 1); });
+        }
+        return res;
+      }).catch(function(err) {
+        if (i + 1 < tries) {
+          return new Promise(function(r) { setTimeout(r, delays[i + 1] || 1200); }).then(function() { return attempt(i + 1); });
+        }
+        throw err;
+      });
+    }
+    return attempt(0);
+  },
+
+  /**
    * อ่านข้อมูลด้วย JSONP (bypass CORS)
    * @param {string} action - ชื่อ action ที่ Apps Script รู้จัก
    * @param {object} params - query parameters
    */
   callRead(action, params) {
-    // ☁️ โหมด Cloudflare — fetch ตรง (อ่าน response ได้จริง)
-    if (CONFIG.BACKEND === 'cf') return this._cfCall(action, params);
+    // ☁️ โหมด Cloudflare — fetch ตรง (อ่าน response ได้จริง) + ลองใหม่ถ้า D1 สะอึก
+    if (CONFIG.BACKEND === 'cf') return this._cfCallRetry(action, params);
     params = this._injectAuth(this._injectProjectId(params));
     return new Promise(function(resolve, reject) {
       var cbName = 'jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
