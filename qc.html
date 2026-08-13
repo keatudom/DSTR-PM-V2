@@ -3,109 +3,99 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QC ตรวจคุณภาพ · Bow House</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css">
+<title>QC ตรวจคุณภาพ — DSTR PM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/design-system.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
 <style>
-  /* ── QC-specific (นอกเหนือจาก main.css) ── */
-  .qc-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
-  .qc-hdr h2 { font-size:19px; font-weight:700; color:#1F3864; }
-  .qc-hdr-sub { font-size:12px; color:#6B7280; margin-top:2px; }
-  .qc-back { background:#F3F4F6; color:#4B5563; border:none; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; }
-
-  /* tally การ์ดสรุปบนสุด */
+  .qc-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-4); flex-wrap:wrap; gap:var(--space-2); }
+  .qc-head h1 { font-size:var(--text-2xl); }
+  .qc-head-sub { font-size:var(--text-sm); color:var(--color-slate-500); margin-top:2px; }
   .qc-tally { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
-  .qc-tally .t { background:#fff; border:1px solid #E5E7EB; border-radius:12px; padding:12px 8px; text-align:center; }
+  .qc-tally .t { background:#fff; border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); padding:12px 8px; text-align:center; }
   .qc-tally .t .n { font-size:22px; font-weight:700; line-height:1; }
-  .qc-tally .t .l { font-size:10px; color:#6B7280; margin-top:5px; }
-  .qc-tally .pass .n { color:#1D9E75; } .qc-tally .cond .n { color:#BA7517; }
-  .qc-tally .fail .n { color:#DC2626; } .qc-tally .pend .n { color:#6B7280; }
-
-  /* badge สถานะ */
-  .qc-badge { display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; }
-  .qc-badge.pass { background:#DCFCE7; color:#15803D; }
-  .qc-badge.conditional { background:#FEF3C7; color:#B45309; }
-  .qc-badge.fail { background:#FEE2E2; color:#B91C1C; }
-  .qc-badge.pending { background:#DBEAFE; color:#1D4ED8; }
-
-  /* รายการ inspection ในหน้า list */
-  .qc-item { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:13px 4px; border-bottom:1px solid #F1F3F5; }
+  .qc-tally .t .l { font-size:10px; color:var(--color-slate-500); margin-top:5px; }
+  .qc-tally .pass .n { color:var(--color-success-700); } .qc-tally .cond .n { color:var(--color-warning-700); }
+  .qc-tally .fail .n { color:var(--color-error-700); } .qc-tally .pend .n { color:var(--color-slate-500); }
+  .qc-badge { display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:var(--radius-full); }
+  .qc-badge.pass { background:var(--color-success-50); color:var(--color-success-700); }
+  .qc-badge.conditional { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .qc-badge.fail { background:var(--color-error-50); color:var(--color-error-700); }
+  .qc-badge.pending { background:var(--color-blue-50); color:var(--color-blue-700); }
+  .qc-item { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:13px 4px; border-bottom:1px solid var(--color-slate-100); }
   .qc-item:last-child { border-bottom:none; }
   .qc-item .hit { flex:1; display:flex; justify-content:space-between; align-items:center; gap:8px; cursor:pointer; min-width:0; }
-  .qc-item .hit:hover { background:#F9FAFB; }
+  .qc-item .hit:hover { background:var(--color-slate-50); }
   .qc-item-l { min-width:0; }
-  .qc-item-l .code { font-weight:700; font-size:14px; color:#111827; }
-  .qc-item-l .name { font-size:12px; color:#6B7280; margin-top:2px; }
+  .qc-item-l .code { font-weight:700; font-size:14px; color:var(--color-slate-900); }
+  .qc-item-l .name { font-size:12px; color:var(--color-slate-500); margin-top:2px; }
   .qc-item-r { text-align:right; white-space:nowrap; }
-  .qc-item-r .round { font-size:10px; color:#9CA3AF; margin-top:4px; }
-  .qc-def { font-size:10px; color:#B91C1C; margin-top:3px; }
-  .qc-who { font-size:10px; color:#9CA3AF; margin-top:3px; }
-  .qc-del { background:none; border:none; cursor:pointer; padding:6px 8px; border-radius:8px; color:#9CA3AF; font-size:15px; line-height:1; }
-  .qc-del:hover { background:#FEE2E2; color:#B91C1C; }
-
+  .qc-item-r .round { font-size:10px; color:var(--color-slate-400); margin-top:4px; }
+  .qc-def { font-size:10px; color:var(--color-error-700); margin-top:3px; }
+  .qc-who { font-size:10px; color:var(--color-slate-400); margin-top:3px; }
+  .qc-iconbtn { background:none; border:none; cursor:pointer; padding:6px; border-radius:var(--radius-md); color:var(--color-slate-400); line-height:0; }
+  .qc-iconbtn:hover { background:var(--color-error-50); color:var(--color-error-700); }
+  .qc-iconbtn i { width:16px; height:16px; }
   /* ประวัติการตรวจ (รอบก่อนหน้า) กางใต้ชิ้นงาน */
-  .qc-hist-toggle { font-size:11px; color:#1F3864; cursor:pointer; padding:6px 4px 10px; user-select:none; }
+  .qc-hist-toggle { font-size:11px; color:var(--color-blue-700); cursor:pointer; padding:6px 4px 10px; user-select:none; }
   .qc-hist-toggle:hover { text-decoration:underline; }
-  .qc-hist { display:none; margin:0 0 10px 10px; padding-left:10px; border-left:2px solid #E5E7EB; }
+  .qc-hist { display:none; margin:0 0 10px 10px; padding-left:10px; border-left:2px solid var(--color-slate-200); }
   .qc-hist.open { display:block; }
-  .qc-hist .h-row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 2px; border-bottom:1px dashed #F1F3F5; }
+  .qc-hist .h-row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 2px; border-bottom:1px dashed var(--color-slate-100); }
   .qc-hist .h-row:last-child { border-bottom:none; }
   .qc-hist .h-main { flex:1; cursor:pointer; min-width:0; }
-  .qc-hist .h-top { font-size:12px; color:#374151; font-weight:600; }
-  .qc-hist .h-sub { font-size:10px; color:#9CA3AF; margin-top:2px; }
-
-  /* ฟอร์มตรวจ — หมวด + ข้อ */
-  .qc-sec { font-size:12px; font-weight:700; color:#1F3864; background:#EEF2F7; padding:8px 12px; border-radius:8px; margin:16px 0 8px; }
-  .qc-crit { border:1px solid #E5E7EB; border-radius:10px; padding:12px; margin-bottom:10px; }
+  .qc-hist .h-top { font-size:12px; color:var(--color-slate-800); font-weight:600; }
+  .qc-hist .h-sub { font-size:10px; color:var(--color-slate-400); margin-top:2px; }
+  .qc-sec { font-size:12px; font-weight:700; color:var(--color-blue-700); background:var(--color-blue-50); padding:8px 12px; border-radius:var(--radius-md); margin:16px 0 8px; }
+  .qc-crit { border:1px solid var(--color-slate-200); border-radius:var(--radius-md); padding:12px; margin-bottom:10px; }
   .qc-crit .top { display:flex; justify-content:space-between; gap:8px; }
-  .qc-crit .item { font-weight:600; font-size:13px; color:#111827; }
+  .qc-crit .item { font-weight:600; font-size:13px; color:var(--color-slate-900); }
   .qc-crit .cls { font-size:10px; font-weight:700; padding:2px 6px; border-radius:5px; height:fit-content; white-space:nowrap; }
-  .cls-C { background:#FEE2E2; color:#B91C1C; } .cls-M { background:#FEF3C7; color:#B45309; } .cls-Mn { background:#E0E7FF; color:#4338CA; }
-  .qc-crit .acc { font-size:11px; color:#6B7280; margin-top:5px; line-height:1.45; }
-  .qc-crit .meth { font-size:11px; color:#9CA3AF; margin-top:3px; font-style:italic; }
-  .qc-crit .by { font-size:10px; color:#9CA3AF; margin-top:7px; }
+  .cls-C { background:var(--color-error-50); color:var(--color-error-700); } .cls-M { background:var(--color-warning-50); color:var(--color-warning-700); } .cls-Mn { background:#e0e7ff; color:#4338ca; }
+  .qc-crit .acc { font-size:11px; color:var(--color-slate-500); margin-top:5px; line-height:1.45; }
+  .qc-crit .meth { font-size:11px; color:var(--color-slate-400); margin-top:3px; font-style:italic; }
+  .qc-crit .by { font-size:10px; color:var(--color-slate-400); margin-top:7px; }
   .qc-res { display:flex; gap:6px; margin-top:10px; }
-  .qc-res button { flex:1; padding:9px; border-radius:8px; border:2px solid #E5E7EB; background:#fff; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; color:#6B7280; }
-  .qc-res button.on-pass { background:#1D9E75; border-color:#1D9E75; color:#fff; }
-  .qc-res button.on-fail { background:#DC2626; border-color:#DC2626; color:#fff; }
-  .qc-res button.on-na  { background:#6B7280; border-color:#6B7280; color:#fff; }
-  .qc-fail-box { margin-top:10px; padding:10px; background:#FEF2F2; border-radius:8px; display:none; }
+  .qc-res button { flex:1; padding:9px; border-radius:var(--radius-md); border:2px solid var(--color-slate-200); background:#fff; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; color:var(--color-slate-500); }
+  .qc-res button.on-pass { background:var(--color-success-500); border-color:var(--color-success-500); color:#fff; }
+  .qc-res button.on-fail { background:var(--color-error-500); border-color:var(--color-error-500); color:#fff; }
+  .qc-res button.on-na { background:var(--color-slate-500); border-color:var(--color-slate-500); color:#fff; }
+  .qc-fail-box { margin-top:10px; padding:10px; background:var(--color-error-50); border-radius:var(--radius-md); display:none; }
   .qc-fail-box.show { display:block; }
   .qc-fail-box .row { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
-  .qc-fail-box select, .qc-fail-box input, .qc-fail-box textarea { font-family:inherit; font-size:12px; padding:7px 9px; border:1px solid #E5E7EB; border-radius:7px; width:100%; }
-  .qc-fail-box label { font-size:11px; color:#6B7280; min-width:52px; }
+  .qc-fail-box select, .qc-fail-box input, .qc-fail-box textarea { font-family:inherit; font-size:12px; padding:7px 9px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); width:100%; }
+  .qc-fail-box label { font-size:11px; color:var(--color-slate-500); min-width:52px; }
   /* กล่องเหตุผลตอนติ๊ก N/A — สีกลาง ๆ ไม่ใช่แดงแบบ defect เพราะ N/A ไม่ใช่ความผิด */
-  .qc-na-box { margin-top:10px; padding:10px; background:#F3F4F6; border-radius:8px; display:none; }
+  .qc-na-box { margin-top:10px; padding:10px; background:var(--color-slate-100); border-radius:var(--radius-md); display:none; }
   .qc-na-box.show { display:block; }
   .qc-na-box .row { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
   .qc-na-box .row:last-child { margin-bottom:0; }
-  .qc-na-box select, .qc-na-box input { font-family:inherit; font-size:12px; padding:7px 9px; border:1px solid #E5E7EB; border-radius:7px; width:100%; }
-  .qc-na-box label { font-size:11px; color:#6B7280; min-width:52px; }
-  .qc-na-box .warn { font-size:10px; color:#B45309; margin-top:6px; }
-  .qc-thumb { width:44px; height:44px; border-radius:6px; object-fit:cover; border:1px solid #E5E7EB; }
-
+  .qc-na-box select, .qc-na-box input { font-family:inherit; font-size:12px; padding:7px 9px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); width:100%; }
+  .qc-na-box label { font-size:11px; color:var(--color-slate-500); min-width:52px; }
+  .qc-na-box .warn { font-size:10px; color:var(--color-warning-700); margin-top:6px; }
+  .qc-thumb { width:44px; height:44px; border-radius:6px; object-fit:cover; border:1px solid var(--color-slate-200); }
   .qc-field { margin-bottom:11px; }
-  .qc-field label { display:block; font-size:11px; color:#6B7280; margin-bottom:4px; font-weight:600; }
-  .qc-field input { width:100%; padding:9px 11px; border:1px solid #E5E7EB; border-radius:8px; font-family:inherit; font-size:13px; }
-
-  /* ปุ่ม 4 ตัวในแถบล่าง: ยอมให้ย่อได้ ไม่งั้นปุ่มสุดท้ายล้นออกนอกการ์ดบนจอแคบ */
-  .qc-sticky { position:sticky; bottom:0; background:#fff; border-top:1px solid #E5E7EB; padding:12px 0; margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+  .qc-field label { display:block; font-size:11px; color:var(--color-slate-500); margin-bottom:4px; font-weight:600; }
+  .qc-field input { width:100%; box-sizing:border-box; padding:9px 11px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-family:inherit; font-size:13px; }
+  .qc-sticky { position:sticky; bottom:0; background:#fff; border-top:1px solid var(--color-slate-200); padding:12px 0; margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+  /* ปุ่ม 4 ตัวในแถบล่าง: ยอมให้ย่อ/ตัดบรรทัดได้ ไม่งั้นปุ่มสุดท้ายล้นออกนอกการ์ดบนจอแคบ */
   .qc-sticky .btn { flex:1 1 auto; min-width:0; white-space:nowrap; font-size:13px; padding-left:10px; padding-right:10px; }
-  .qc-notice { background:#FEF3C7; border:1px solid #FCD34D; color:#92400E; border-radius:10px; padding:14px; font-size:13px; line-height:1.55; }
-  .qc-empty { text-align:center; color:#9CA3AF; padding:30px 10px; font-size:13px; }
-  .qc-big-status { text-align:center; padding:18px; border-radius:12px; margin-bottom:14px; }
+  .qc-notice { background:var(--color-warning-50); border:1px solid #fcd34d; color:var(--color-warning-700); border-radius:var(--radius-lg); padding:14px; font-size:13px; line-height:1.55; }
+  .qc-empty { text-align:center; color:var(--color-slate-400); padding:30px 10px; font-size:13px; }
+  .qc-big-status { text-align:center; padding:18px; border-radius:var(--radius-lg); margin-bottom:14px; }
   .qc-big-status .lbl { font-size:16px; font-weight:700; }
   .qc-big-status .meta { font-size:11px; margin-top:6px; opacity:.85; }
-  .qc-big-status.pass { background:#DCFCE7; color:#15803D; }
-  .qc-big-status.conditional { background:#FEF3C7; color:#B45309; }
-  .qc-big-status.fail { background:#FEE2E2; color:#B91C1C; }
-  .qc-big-status.pending { background:#F3F4F6; color:#6B7280; }
-  .qc-toolbar { display:flex; justify-content:flex-end; gap:8px; margin-bottom:10px; }
-  .qc-toolbar button { background:#F3F4F6; color:#4B5563; border:none; padding:7px 11px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; }
-  .qc-toolbar button:hover { background:#E5E7EB; }
+  .qc-big-status.pass { background:var(--color-success-50); color:var(--color-success-700); }
+  .qc-big-status.conditional { background:var(--color-warning-50); color:var(--color-warning-700); }
+  .qc-big-status.fail { background:var(--color-error-50); color:var(--color-error-700); }
+  .qc-big-status.pending { background:var(--color-slate-100); color:var(--color-slate-500); }
+  .card-title { display:flex; justify-content:space-between; align-items:center; gap:8px; font-weight:600; color:var(--color-slate-800); margin-bottom:var(--space-3); flex-wrap:wrap; }
+  .qc-trash-bar { display:flex; justify-content:flex-end; margin-bottom:10px; }
 
   /* ── เอกสารสำหรับพิมพ์/บันทึกเป็น PDF ──
-     ซ่อนบนจอ · ตอนพิมพ์ซ่อนทุกอย่างที่ไม่ใช่เอกสาร */
+     ซ่อนบนจอ · ตอนพิมพ์ซ่อนทุกอย่างที่ไม่ใช่เอกสาร (รวม sidebar/bottom nav ที่ shell.js แปะไว้ที่ body) */
   #printDoc { display:none; }
   @media print {
     body > *:not(#printDoc) { display:none !important; }
@@ -132,650 +122,463 @@
 </style>
 </head>
 <body>
+  <div class="app-container">
+    <main class="main-content">
+      <div class="page-content">
+        <div class="qc-head">
+          <div>
+            <h1><i data-lucide="clipboard-check" style="width:24px;height:24px;vertical-align:-4px"></i> QC ตรวจคุณภาพ</h1>
+            <div class="qc-head-sub" id="hdrSub">กำลังโหลด...</div>
+          </div>
+        </div>
 
-<div class="app">
+        <div id="loadingScreen" class="qc-empty">กำลังโหลด QC...</div>
+        <div id="gasNotice" class="qc-notice" style="display:none">⚠️ ฟีเจอร์ตรวจคุณภาพ (QC) ทำงานบนเครื่องยนต์ใหม่ (Cloudflare) เท่านั้น</div>
 
-  <!-- Header -->
-  <div class="qc-hdr">
-    <div>
-      <h2>✅ QC ตรวจคุณภาพ</h2>
-      <div class="qc-hdr-sub" id="hdrSub">กำลังโหลด...</div>
-    </div>
-    <button class="qc-back" onclick="goBack()">← กลับ</button>
-  </div>
+        <div id="view-list" style="display:none">
+          <div class="qc-tally" id="qcTally"></div>
+          <div class="qc-trash-bar"><button class="btn btn-ghost btn-sm" id="btnTrash" onclick="openTrash()">🗑 ถังขยะ</button></div>
+          <div class="card card-body">
+            <div class="card-title">
+              <span>รายการตรวจ QC ต่อชิ้นงาน</span>
+              <span style="display:flex;gap:6px">
+                <button class="btn btn-ghost btn-sm" onclick="refreshList(true)"><i data-lucide="refresh-cw"></i> รีเฟรช</button>
+                <button class="btn btn-primary btn-sm" onclick="openCreate()"><i data-lucide="plus"></i> ตรวจงานใหม่</button>
+              </span>
+            </div>
+            <div id="qcList"></div>
+          </div>
+        </div>
 
-  <div id="loadingScreen" class="qc-empty">กำลังโหลด QC...</div>
+        <div id="view-trash" style="display:none">
+          <div class="card card-body">
+            <div class="card-title"><span>🗑 ถังขยะ — เก็บไว้ 30 วันแล้วลบอัตโนมัติ</span></div>
+            <div id="trashList"></div>
+            <div class="qc-sticky"><button class="btn btn-ghost" onclick="showView('list')">← กลับรายการตรวจ</button></div>
+          </div>
+        </div>
 
-  <!-- โหมด gas: แจ้งว่า QC ใช้ได้เฉพาะ cf -->
-  <div id="gasNotice" class="qc-notice" style="display:none">
-    ⚠️ ฟีเจอร์ตรวจคุณภาพ (QC) ทำงานบนเครื่องยนต์ใหม่ (Cloudflare) เท่านั้น<br>
-    ขณะนี้ระบบยังใช้เครื่องยนต์เดิม (Apps Script) — จะเปิดใช้ QC ได้หลังการตัดยอดย้ายระบบ
-  </div>
+        <div id="view-create" style="display:none">
+          <div class="card card-body">
+            <div class="card-title"><span>เปิดการตรวจ QC ใหม่</span></div>
+            <div class="qc-field"><label>รหัสชิ้นงาน (FF Code) *</label><input id="c_ff" placeholder="เช่น F-01"></div>
+            <div class="qc-field"><label>รายการเฟอร์นิเจอร์</label><input id="c_item" placeholder="เช่น ตู้โชว์ TV"></div>
+            <div class="qc-field"><label>ตำแหน่ง/ห้อง</label><input id="c_loc" placeholder="เช่น Living room"></div>
+            <div class="qc-field"><label>ผู้ผลิต/ช่าง</label><input id="c_maker" placeholder="ชื่อทีม/ช่าง"></div>
+            <div class="qc-field"><label>อ้างอิงแบบเลขที่</label><input id="c_dwg" placeholder="เลขที่แบบ"></div>
+            <div class="qc-field"><label>ผู้ตรวจสอบ</label><input id="c_insp" placeholder="ชื่อผู้ตรวจ"></div>
+            <div class="qc-field"><label>วันที่ตรวจ</label><input id="c_date" type="date"></div>
+            <div class="qc-sticky"><button class="btn btn-ghost" onclick="showView('list')">ยกเลิก</button><button class="btn btn-primary" onclick="submitCreate()">เริ่มตรวจ →</button></div>
+          </div>
+        </div>
 
-  <!-- ═══════ VIEW: LIST ═══════ -->
-  <div id="view-list" style="display:none">
-    <div class="qc-tally" id="qcTally"></div>
-    <div class="qc-toolbar">
-      <button onclick="refreshList(true)">🔄 รีเฟรช</button>
-      <button id="btnTrash" onclick="openTrash()">🗑 ถังขยะ</button>
-    </div>
-    <div class="card">
-      <div class="card-title">
-        <span>รายการตรวจ QC ต่อชิ้นงาน</span>
-        <button class="btn btn-primary" onclick="openCreate()">＋ ตรวจงานใหม่</button>
+        <div id="view-form" style="display:none">
+          <div class="card card-body">
+            <div class="card-title"><span id="formTitle">ฟอร์มตรวจ</span><span id="formRound"></span></div>
+            <div id="formStatusBar"></div>
+            <div id="qcForm"></div>
+            <div class="qc-sticky">
+              <button class="btn btn-ghost" onclick="backToList()">← กลับ</button>
+              <button class="btn btn-ghost" onclick="printInspection()">🖨 พิมพ์ / PDF</button>
+              <button class="btn btn-ghost" id="btnRecheck" style="display:none" onclick="recheck()">ตรวจซ้ำรอบใหม่</button>
+              <button class="btn btn-primary" id="btnClose" onclick="closeInspection()">สรุป &amp; ปิดการตรวจ</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="qcList"></div>
-    </div>
+    </main>
   </div>
 
-  <!-- ═══════ VIEW: TRASH ═══════ -->
-  <div id="view-trash" style="display:none">
-    <div class="card">
-      <div class="card-title"><span>🗑 ถังขยะ — เก็บไว้ 30 วันแล้วลบอัตโนมัติ</span></div>
-      <div id="trashList"></div>
-      <div class="qc-sticky"><button class="btn btn-cancel" onclick="showView('list')">← กลับรายการตรวจ</button></div>
-    </div>
-  </div>
+  <input type="file" id="qcPhotoInput" accept="image/*" capture="environment" style="display:none">
+  <div id="printDoc"></div>
 
-  <!-- ═══════ VIEW: CREATE ═══════ -->
-  <div id="view-create" style="display:none">
-    <div class="card">
-      <div class="card-title"><span>เปิดการตรวจ QC ใหม่</span></div>
-      <div class="qc-field"><label>รหัสชิ้นงาน (FF Code) *</label><input id="c_ff" placeholder="เช่น F-01"></div>
-      <div class="qc-field"><label>รายการเฟอร์นิเจอร์</label><input id="c_item" placeholder="เช่น ตู้โชว์ TV"></div>
-      <div class="qc-field"><label>ตำแหน่ง/ห้อง</label><input id="c_loc" placeholder="เช่น Living room"></div>
-      <div class="qc-field"><label>ผู้ผลิต/ช่าง</label><input id="c_maker" placeholder="ชื่อทีม/ช่าง"></div>
-      <div class="qc-field"><label>อ้างอิงแบบเลขที่</label><input id="c_dwg" placeholder="เลขที่แบบ"></div>
-      <div class="qc-field"><label>ผู้ตรวจสอบ</label><input id="c_insp" placeholder="ชื่อผู้ตรวจ"></div>
-      <div class="qc-field"><label>วันที่ตรวจ</label><input id="c_date" type="date"></div>
-      <div class="qc-sticky">
-        <button class="btn btn-cancel" onclick="showView('list')">ยกเลิก</button>
-        <button class="btn btn-primary" onclick="submitCreate()">เริ่มตรวจ →</button>
-      </div>
-    </div>
-  </div>
+  <script src="js/config.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="vendor/lucide/lucide.min.js"></script>
+  <script src="js/shell.js"></script>
+  <script>
+  if (!Auth.requireAuth('admin')) { /* redirect */ }
+  Shell.render({ page: 'qc', title: 'QC ตรวจคุณภาพ', scope: 'project' });
 
-  <!-- ═══════ VIEW: FORM ═══════ -->
-  <div id="view-form" style="display:none">
-    <div class="card">
-      <div class="card-title"><span id="formTitle">ฟอร์มตรวจ</span><span id="formRound"></span></div>
-      <div id="formStatusBar"></div>
-      <div id="qcForm"></div>
-      <div class="qc-sticky">
-        <button class="btn btn-cancel" onclick="backToList()">← กลับ</button>
-        <button class="btn btn-cancel" onclick="printInspection()">🖨 พิมพ์ / PDF</button>
-        <button class="btn btn-cancel" id="btnRecheck" style="display:none" onclick="recheck()">ตรวจซ้ำรอบใหม่</button>
-        <button class="btn btn-primary" id="btnClose" onclick="closeInspection()">สรุป &amp; ปิดการตรวจ</button>
-      </div>
-    </div>
-  </div>
+  var QC = { criteria:[], current:null, photoTarget:null, projectName:'', rows:[], trash:[] };
+  function showView(name){ ['list','trash','create','form'].forEach(function(v){ var el=document.getElementById('view-'+v); if(el) el.style.display=(v===name)?'block':'none'; }); window.scrollTo(0,0); }
 
-</div>
-
-<input type="file" id="qcPhotoInput" accept="image/*" capture="environment" style="display:none">
-<div id="printDoc"></div>
-
-<script src="js/config.js"></script>
-<script src="js/state.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/api.js"></script>
-<script src="js/modal.js"></script>
-<script>
-// ============================================================
-// QC app — ฟีเจอร์ตรวจคุณภาพ · ทำงานบน BACKEND==='cf'
-// ใช้ state.projectId ทุกจุด ห้าม hardcode โปรเจกต์
-//
-// ★ 2026-08-06 (spec: docs/superpowers/specs/2026-08-06-qc-sharing-audit-trash-pdf-design.md)
-//   - รายการจัดกลุ่มตามชิ้นงาน: 1 แถว = 1 FF, รอบก่อนหน้าอยู่ในบรรทัด "ประวัติการตรวจ"
-//   - ปิดการตรวจแล้วยังเปิดกลับมาดู/แก้ได้ครบทุกข้อ (เดิมเด้งไปหน้าสรุปแล้วกลับไม่ได้)
-//   - ปุ่มลบ → ถังขยะ 30 วัน กู้คืนได้
-//   - ขึ้นชื่อคนทำทุกจุด (ชื่อมาจาก token ฝั่งเซิร์ฟเวอร์ ปลอมไม่ได้)
-//   - ปุ่มพิมพ์ / บันทึกเป็น PDF
-// ============================================================
-var QC = {
-  criteria: [],        // เกณฑ์ 26 ข้อ
-  current: null,       // { inspection, results } ที่กำลังตรวจ
-  photoTarget: null,   // result_id ที่กำลังแนบรูป
-  projectName: '',
-  rows: [],
-  trash: [],
-};
-
-function goBack() {
-  var pid = encodeURIComponent(state.projectId);
-  window.location.href = 'dashboard.html?project=' + pid;
-}
-
-function showView(name) {
-  ['list','trash','create','form'].forEach(function(v){
-    var el = document.getElementById('view-' + v);
-    if (el) el.style.display = (v === name) ? 'block' : 'none';
-  });
-  window.scrollTo(0, 0);
-}
-
-// ── init ──
-(async function init() {
-  // แสดงชื่อโปรเจกต์
-  try {
-    var pj = await API.getProjects();
-    if (pj && pj.ok && Array.isArray(pj.data)) {
-      var p = pj.data.find(function(x){ return x.project_id === state.projectId; });
-      QC.projectName = (p && p.name ? p.name : state.projectId);
-      document.getElementById('hdrSub').textContent = QC.projectName + ' · ตรวจก่อนส่งมอบ';
-    }
-  } catch (e) {}
-
-  // QC ใช้ได้เฉพาะ cf
-  if (CONFIG.BACKEND !== 'cf') {
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('gasNotice').style.display = 'block';
-    return;
-  }
-
-  try {
-    var cr = await API.getQcCriteria();
-    QC.criteria = (cr && cr.ok && Array.isArray(cr.data)) ? cr.data : [];
-  } catch (e) { QC.criteria = []; }
-
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('c_date').value = todayStr();
-  await refreshList();
-  showView('list');
-})();
-
-// งานที่คนอื่นเปิดตรวจอยู่จะไม่โผล่เอง ถ้าหน้าเว็บโหลดรายการแค่ครั้งเดียว
-// → พอสลับกลับมาที่แท็บนี้ ดึงใหม่ให้อัตโนมัติ (คู่กับปุ่มรีเฟรช)
-document.addEventListener('visibilitychange', function() {
-  if (document.visibilityState !== 'visible') return;
-  if (document.getElementById('view-list').style.display !== 'block') return;
-  refreshList();
-});
-
-// ============================================================
-// LIST view — จัดกลุ่มตามชิ้นงาน (1 แถว = 1 FF, รอบเก่าอยู่ในประวัติ)
-// ============================================================
-async function refreshList(showToast) {
-  var tallyEl = document.getElementById('qcTally');
-  var listEl = document.getElementById('qcList');
-  var sum, ins, trash;
-  try {
-    sum = await API.qcSummary();
-    ins = await API.getQcInspections({});
-    trash = await API.getQcTrash();
-  } catch (e) {
-    listEl.innerHTML = '<div class="qc-empty">โหลดข้อมูลไม่สำเร็จ</div>';
-    return;
-  }
-  var t = (sum && sum.ok && sum.data && sum.data.tally) ? sum.data.tally : { pass:0, conditional:0, fail:0, pending:0 };
-  tallyEl.innerHTML =
-    tallyCell('pass', t.pass, 'ผ่าน') +
-    tallyCell('cond', t.conditional, 'มีเงื่อนไข') +
-    tallyCell('fail', t.fail, 'ไม่ผ่าน') +
-    tallyCell('pend', t.pending, 'กำลังตรวจ');
-
-  QC.rows = (ins && ins.ok && Array.isArray(ins.data)) ? ins.data : [];
-  QC.trash = (trash && trash.ok && Array.isArray(trash.data)) ? trash.data : [];
-  document.getElementById('btnTrash').textContent = '🗑 ถังขยะ' + (QC.trash.length ? ' (' + QC.trash.length + ')' : '');
-
-  if (!QC.rows.length) {
-    listEl.innerHTML = '<div class="qc-empty">ยังไม่มีการตรวจ — กด “＋ ตรวจงานใหม่” เพื่อเริ่ม</div>';
-  } else {
-    listEl.innerHTML = groupByFf(QC.rows).map(renderFfGroup).join('');
-  }
-  if (showToast && window.Modal && Modal.toast) Modal.toast('🔄 อัปเดตรายการแล้ว');
-}
-
-// รวมทุกรอบของชิ้นงานเดียวกันไว้ด้วยกัน เรียงรอบใหม่สุดขึ้นก่อน
-function groupByFf(rows) {
-  var map = {}, order = [];
-  rows.forEach(function(r){
-    var k = r.ff_code || '(ไม่ระบุ FF)';
-    if (!map[k]) { map[k] = []; order.push(k); }
-    map[k].push(r);
-  });
-  return order.map(function(k){
-    var list = map[k].slice().sort(function(a,b){ return (b.round||0) - (a.round||0); });
-    return { ff: k, latest: list[0], history: list.slice(1) };
-  });
-}
-
-function renderFfGroup(g) {
-  var r = g.latest;
-  var dfc = (r.status === 'fail' || r.status === 'conditional')
-    ? '<div class="qc-def">มี defect ค้าง: ' + (r.summary_fail || 0) + ' รายการ</div>' : '';
-  var who = r.created_by ? ('<div class="qc-who">เปิดโดย ' + esc(r.created_by) + '</div>') : '';
-  var html =
-    '<div class="qc-item">' +
-      '<div class="hit" onclick="openInspection(\'' + r.inspection_id + '\')">' +
-        '<div class="qc-item-l"><div class="code">' + esc(g.ff) + '</div>' +
-          '<div class="name">' + esc(r.item_name || '') + '</div>' + dfc + who + '</div>' +
-        '<div class="qc-item-r"><span class="qc-badge ' + r.status + '">' + esc(r.status_label || r.status) + '</span>' +
-          '<div class="round">รอบ ' + (r.round || 1) + ' · ' + esc(r.inspect_date || '') + '</div></div>' +
-      '</div>' + delBtn(r) +
-    '</div>';
-  if (g.history.length) {
-    html += '<div class="qc-hist-toggle" onclick="toggleHist(\'' + cssId(g.ff) + '\')">▾ ประวัติการตรวจ ' + (g.history.length + 1) + ' รอบ</div>' +
-      '<div class="qc-hist" id="hist-' + cssId(g.ff) + '">' + g.history.map(histRow).join('') + '</div>';
-  }
-  return html;
-}
-
-function histRow(r) {
-  var score = (r.status === 'pending')
-    ? 'กำลังตรวจอยู่'
-    : 'ผ่าน ' + (r.summary_pass||0) + ' / ไม่ผ่าน ' + (r.summary_fail||0) + ' / N/A ' + (r.summary_na||0);
-  var closed = r.closed_by ? (' · ปิดโดย ' + esc(r.closed_by) + ' ' + esc(r.closed_at || '')) : '';
-  return '<div class="h-row">' +
-    '<div class="h-main" onclick="openInspection(\'' + r.inspection_id + '\')">' +
-      '<div class="h-top">รอบ ' + (r.round||1) + ' · ' + esc(r.inspect_date||'') +
-        ' <span class="qc-badge ' + r.status + '">' + esc(r.status_label || r.status) + '</span></div>' +
-      '<div class="h-sub">' + esc(score) + (r.created_by ? (' · เปิดโดย ' + esc(r.created_by)) : '') + closed + '</div>' +
-    '</div>' + delBtn(r) + '</div>';
-}
-
-function delBtn(r) {
-  return '<button class="qc-del" title="ลบรอบนี้" onclick="event.stopPropagation();askDelete(\'' + r.inspection_id + '\')">🗑</button>';
-}
-function toggleHist(key) { var el = document.getElementById('hist-' + key); if (el) el.classList.toggle('open'); }
-function cssId(s) { return String(s).replace(/[^A-Za-z0-9_-]/g, '_'); }
-function tallyCell(cls, n, label) {
-  return '<div class="t ' + cls + '"><div class="n">' + (n || 0) + '</div><div class="l">' + label + '</div></div>';
-}
-
-// ============================================================
-// ถังขยะ — ลบแล้วยังกู้คืนได้ 30 วัน
-// ============================================================
-function askDelete(inspectionId) {
-  var r = findRow(inspectionId); if (!r) return;
-  Modal.confirm({
-    icon: '🗑', title: 'ทิ้งการตรวจนี้ลงถังขยะ?',
-    desc: esc(r.ff_code || '') + ' · รอบ ' + (r.round || 1) + ' · ' + esc(r.inspect_date || ''),
-    info: 'ยังกู้คืนได้ภายใน 30 วัน หลังจากนั้นระบบจะลบถาวร',
-    confirmText: 'ทิ้งลงถังขยะ', confirmClass: 'modal-btn-danger'
-  }).then(async function(ok){
-    if (!ok) return;
-    var res = await API.deleteQcInspection(inspectionId);
-    if (!res || !res.ok) { Modal.toast('❌ ลบไม่สำเร็จ: ' + ((res && res.error) || '')); return; }
-    Modal.toast('🗑 ย้ายลงถังขยะแล้ว');
+  (async function init(){
+    try{ var pj=await API.getProjects(); if(pj&&pj.ok&&Array.isArray(pj.data)){ var p=pj.data.find(function(x){ return x.project_id===state.projectId; }); QC.projectName=(p&&p.name?p.name:state.projectId); document.getElementById('hdrSub').textContent=QC.projectName+' · ตรวจก่อนส่งมอบ'; } }catch(e){}
+    if(CONFIG.BACKEND!=='cf'){ document.getElementById('loadingScreen').style.display='none'; document.getElementById('gasNotice').style.display='block'; return; }
+    try{ var cr=await API.getQcCriteria(); QC.criteria=(cr&&cr.ok&&Array.isArray(cr.data))?cr.data:[]; }catch(e){ QC.criteria=[]; }
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('c_date').value=todayStr();
     await refreshList(); showView('list');
+    if(window.lucide) lucide.createIcons();
+  })();
+
+  // งานที่คนอื่นเปิดตรวจอยู่จะไม่โผล่เอง ถ้าหน้าเว็บโหลดรายการแค่ครั้งเดียว
+  // → พอสลับกลับมาที่แท็บนี้ ดึงใหม่ให้อัตโนมัติ (คู่กับปุ่มรีเฟรช)
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState!=='visible') return;
+    if(document.getElementById('view-list').style.display!=='block') return;
+    refreshList();
   });
-}
-function findRow(id) {
-  return QC.rows.find(function(x){ return x.inspection_id === id; }) ||
-    (QC.current && QC.current.inspection && QC.current.inspection.inspection_id === id ? QC.current.inspection : null);
-}
 
-async function openTrash() {
-  var res;
-  try { res = await API.getQcTrash(); } catch (e) { Modal.toast('❌ โหลดถังขยะไม่สำเร็จ'); return; }
-  QC.trash = (res && res.ok && Array.isArray(res.data)) ? res.data : [];
-  var el = document.getElementById('trashList');
-  el.innerHTML = QC.trash.length ? QC.trash.map(function(r){
-    return '<div class="qc-item"><div class="hit" style="cursor:default"><div class="qc-item-l">' +
-      '<div class="code">' + esc(r.ff_code || '(ไม่ระบุ FF)') + ' · รอบ ' + (r.round||1) + '</div>' +
-      '<div class="name">' + esc(r.item_name || '') + '</div>' +
-      '<div class="qc-who">ลบโดย ' + esc(r.deleted_by || '—') + ' · ' + esc(r.deleted_at || '') + '</div>' +
-      '</div><div class="qc-item-r"><span class="qc-badge pending">เหลืออีก ' + (r.days_left||0) + ' วัน</span></div></div>' +
-      '<button class="btn btn-cancel" onclick="restoreInspection(\'' + r.inspection_id + '\')">กู้คืน</button></div>';
-  }).join('') : '<div class="qc-empty">ถังขยะว่าง</div>';
-  showView('trash');
-}
-async function restoreInspection(id) {
-  var res = await API.restoreQcInspection(id);
-  if (!res || !res.ok) { Modal.toast('❌ กู้คืนไม่สำเร็จ: ' + ((res && res.error) || '')); return; }
-  Modal.toast('↩️ กู้คืนแล้ว');
-  await refreshList(); await openTrash();
-}
+  // ============================================================
+  // รายการตรวจ — จัดกลุ่มตามชิ้นงาน (1 แถว = 1 FF, รอบเก่าอยู่ในประวัติ)
+  // ============================================================
+  async function refreshList(showToast){
+    var tallyEl=document.getElementById('qcTally'), listEl=document.getElementById('qcList');
+    var sum, ins, trash;
+    try{ sum=await API.qcSummary(); ins=await API.getQcInspections({}); trash=await API.getQcTrash(); }
+    catch(e){ listEl.innerHTML='<div class="qc-empty">โหลดข้อมูลไม่สำเร็จ</div>'; return; }
 
-// ── CREATE ──
-function openCreate() {
-  ['c_ff','c_item','c_loc','c_maker','c_dwg'].forEach(function(id){ document.getElementById(id).value=''; });
-  var me = Auth.getUser();                    // เมลใครเมลมัน — เติมชื่อคนที่ล็อกอินให้ (แก้ทับได้)
-  document.getElementById('c_insp').value = (me && (me.name || me.email)) || '';
-  document.getElementById('c_date').value = todayStr();
-  showView('create');
-}
-async function submitCreate() {
-  var ff = document.getElementById('c_ff').value.trim();
-  if (!ff) { Modal.toast('⚠️ กรุณากรอกรหัสชิ้นงาน (FF Code)'); return; }
-  var data = {
-    ff_code: ff,
-    item_name: document.getElementById('c_item').value.trim(),
-    location: document.getElementById('c_loc').value.trim(),
-    maker: document.getElementById('c_maker').value.trim(),
-    drawing_ref: document.getElementById('c_dwg').value.trim(),
-    inspector: document.getElementById('c_insp').value.trim(),
-    inspect_date: document.getElementById('c_date').value || todayStr(),
-  };
-  var res = await API.createQcInspection(data);
-  if (!res || !res.ok) { Modal.toast('❌ สร้างไม่สำเร็จ: ' + ((res && res.error) || '')); return; }
-  await openInspection(res.data.inspection_id);
-}
+    var t=(sum&&sum.ok&&sum.data&&sum.data.tally)?sum.data.tally:{pass:0,conditional:0,fail:0,pending:0};
+    tallyEl.innerHTML=tallyCell('pass',t.pass,'ผ่าน')+tallyCell('cond',t.conditional,'มีเงื่อนไข')+tallyCell('fail',t.fail,'ไม่ผ่าน')+tallyCell('pend',t.pending,'กำลังตรวจ');
 
-// ============================================================
-// FORM — เปิดได้ทุกสถานะ (ปิดแล้วก็ยังเข้ามาดู/แก้ได้)
-// ============================================================
-async function openInspection(inspectionId) {
-  var res;
-  try { res = await API.getQcInspection(inspectionId); } catch (e) { Modal.toast('❌ โหลดไม่สำเร็จ'); return; }
-  if (!res || !res.ok || !res.data) { Modal.toast('❌ ไม่พบการตรวจ'); return; }
-  QC.current = res.data;
-  var ins = res.data.inspection;
-  document.getElementById('formTitle').textContent = (ins.ff_code || '') + ' · ' + (ins.item_name || '');
-  document.getElementById('formRound').textContent = 'รอบ ' + (ins.round || 1);
-  var closed = (ins.status && ins.status !== 'pending');
-  document.getElementById('btnRecheck').style.display = closed ? '' : 'none';
-  document.getElementById('btnClose').textContent = closed ? 'ปิดการตรวจอีกครั้ง' : 'สรุป & ปิดการตรวจ';
-  renderStatusBar();
-  renderForm();
-  showView('form');
-}
-async function backToList() { await refreshList(); showView('list'); }
+    QC.rows=(ins&&ins.ok&&Array.isArray(ins.data))?ins.data:[];
+    QC.trash=(trash&&trash.ok&&Array.isArray(trash.data))?trash.data:[];
+    document.getElementById('btnTrash').textContent='🗑 ถังขยะ'+(QC.trash.length?' ('+QC.trash.length+')':'');
 
-function renderStatusBar() {
-  var ins = QC.current.inspection, el = document.getElementById('formStatusBar');
-  if (!ins.status || ins.status === 'pending') {
-    el.innerHTML = '<div class="qc-big-status pending"><div class="lbl">กำลังตรวจ</div><div class="meta">' +
-      'เปิดโดย ' + esc(ins.created_by || ins.inspector || '—') + ' · ' + esc(ins.inspect_date || '') + '</div></div>';
-    return;
+    if(!QC.rows.length){ listEl.innerHTML='<div class="qc-empty">ยังไม่มีการตรวจ — กด "＋ ตรวจงานใหม่" เพื่อเริ่ม</div>'; }
+    else { listEl.innerHTML=groupByFf(QC.rows).map(renderFfGroup).join(''); }
+    if(window.lucide) lucide.createIcons();
+    if(showToast) Modal.toast('🔄 อัปเดตรายการแล้ว');
   }
-  // ข้อที่ N/A เพราะ "ยังตรวจไม่ได้" = ยังไม่เคยตรวจจริง ต้องเตือนให้เห็นชัดว่าค้างอะไรอยู่
-  var waiting = (QC.current.results || []).filter(function(r){ return r.result === 'na' && NA_PENDING[r.na_reason]; });
-  var waitTxt = waiting.length
-    ? '<div class="meta">⏳ ค้างตรวจ ' + waiting.length + ' ข้อ (ข้อ ' + waiting.map(function(r){ return r.seq; }).join(', ') + ') — ต้องกลับมาตรวจรอบหน้า</div>'
-    : '';
-  el.innerHTML = '<div class="qc-big-status ' + ins.status + '"><div class="lbl">' + esc(ins.status_label || ins.status) + '</div>' +
-    '<div class="meta">ผ่าน ' + (ins.summary_pass||0) + ' / ไม่ผ่าน ' + (ins.summary_fail||0) + ' / N/A ' + (ins.summary_na||0) +
-    (ins.closed_by ? (' · ปิดโดย ' + esc(ins.closed_by) + ' ' + esc(ins.closed_at || '')) : '') + '</div>' + waitTxt + '</div>';
-}
 
-function renderForm() {
-  var results = QC.current.results || [];
-  var html = '';
-  var lastSec = '';
-  results.forEach(function(r){
-    if (r.section !== lastSec) {
-      html += '<div class="qc-sec">' + esc(r.section) + '. ' + esc(r.section_name || '') + '</div>';
-      lastSec = r.section;
-    }
-    html += renderCrit(r);
-  });
-  document.getElementById('qcForm').innerHTML = html;
-}
-
-function renderCrit(r) {
-  var cls = r.criteria_defect_class || '';
-  var rid = r.result_id;
-  var res = r.result || '';
-  var failShow = (res === 'fail') ? ' show' : '';
-  var naShow = (res === 'na') ? ' show' : '';
-  var dc = r.defect_class || cls;  // default จากเกณฑ์
-  // ใครติ๊กข้อนี้ (มาจาก token ฝั่งเซิร์ฟเวอร์ ปลอมไม่ได้) — ข้อที่ยังไม่แตะจะว่าง
-  var byTxt = (r.checked_by || r.checked_at) ? ('✓ ' + esc(r.checked_by || '—') + ' · ' + esc(r.checked_at || '')) : '';
-  return '<div class="qc-crit" id="crit-' + rid + '">' +
-    '<div class="top"><div class="item">' + esc(r.seq) + ' ' + esc(r.item) + '</div>' +
-      (cls ? '<span class="cls cls-' + cls + '">' + cls + '</span>' : '') + '</div>' +
-    '<div class="acc">✓ ' + esc(r.acceptance || '') + '</div>' +
-    (r.method ? '<div class="meth">วิธี: ' + esc(r.method) + '</div>' : '') +
-    '<div class="qc-res">' +
-      resBtn(rid, 'pass', res, 'ผ่าน') +
-      resBtn(rid, 'fail', res, 'ไม่ผ่าน') +
-      resBtn(rid, 'na', res, 'N/A') +
-    '</div>' +
-    '<div class="qc-fail-box' + failShow + '" id="fb-' + rid + '">' +
-      '<div class="row"><label>ระดับ</label><select id="dc-' + rid + '" onchange="saveResult(\'' + rid + '\')">' +
-        dcOpt('C', dc) + dcOpt('M', dc) + dcOpt('Mn', dc) + '</select></div>' +
-      '<div class="row"><label>หมายเหตุ</label><input id="nt-' + rid + '" value="' + esc(r.note || '') + '" placeholder="อธิบาย defect + แนวทางแก้" onblur="saveResult(\'' + rid + '\')"></div>' +
-      '<div class="row"><label>รูป</label>' +
-        (r.photo_url ? '<img src="' + esc(r.photo_url) + '" class="qc-thumb">' : '') +
-        '<button class="btn btn-cancel" onclick="attachPhoto(\'' + rid + '\')">📷 ถ่ายรูป defect</button></div>' +
-    '</div>' +
-    '<div class="qc-na-box' + naShow + '" id="nb-' + rid + '">' +
-      '<div class="row"><label>เหตุผล</label><select id="nr-' + rid + '" onchange="saveResult(\'' + rid + '\')">' +
-        naOpts(r.na_reason || '') + '</select></div>' +
-      '<div class="row"><label>หมายเหตุ</label><input id="nn-' + rid + '" value="' + esc(r.note || '') + '" placeholder="อธิบายเพิ่ม (ถ้ามี)" onblur="saveResult(\'' + rid + '\')"></div>' +
-      '<div class="warn" id="nw-' + rid + '">' + naWarnText(r.na_reason || '') + '</div>' +
-    '</div>' +
-    '<div class="by" id="by-' + rid + '">' + byTxt + '</div></div>';
-}
-
-// เหตุผลของ N/A — 2 กลุ่ม: "ไม่ต้องตรวจ (จบ)" กับ ⏳ "ยังตรวจไม่ได้ (ต้องกลับมาตรวจ)"
-// รหัสต้องตรงกับ NA_REASON_LABEL ใน cf-api/src/modules/qc.ts
-var NA_REASONS = [
-  { v:'',              t:'— เลือกเหตุผล —' },
-  { v:'not_applicable',t:'ไม่มีส่วนนี้ในชิ้นงาน' },
-  { v:'out_of_scope',  t:'ไม่อยู่ในสโคปผู้รับเหมารายนี้' },
-  { v:'waived',        t:'เจ้าของบ้าน/ผู้ออกแบบยกเว้นให้' },
-  { v:'wait_material', t:'⏳ รอวัสดุ ยังไม่มาส่ง' },
-  { v:'not_installed', t:'⏳ ยังติดตั้งไม่เสร็จ ตรวจไม่ได้' },
-  { v:'other',         t:'อื่น ๆ (พิมพ์หมายเหตุ)' },
-];
-var NA_PENDING = { wait_material:1, not_installed:1 };   // เหตุผลที่ถือว่า "ยังไม่ได้ตรวจ"
-function naOpts(cur) {
-  return NA_REASONS.map(function(o){
-    return '<option value="' + o.v + '"' + (o.v === cur ? ' selected' : '') + '>' + o.t + '</option>';
-  }).join('');
-}
-function naLabelOf(code) {
-  var o = NA_REASONS.find(function(x){ return x.v === code; });
-  return o && o.v ? o.t.replace('⏳ ', '').replace(' (พิมพ์หมายเหตุ)', '') : '';
-}
-function naWarnText(code) {
-  if (NA_PENDING[code]) return '⏳ ข้อนี้ถือว่ายังไม่ได้ตรวจ — ปิดงานแล้วจะขึ้น "ผ่านมีเงื่อนไข" และต้องกลับมาตรวจรอบหน้า';
-  if (code === 'other') return 'เลือก "อื่น ๆ" แล้วควรพิมพ์หมายเหตุกำกับด้วย';
-  return '';
-}
-function resBtn(rid, val, cur, label) {
-  var on = (cur === val) ? ' class="on-' + val + '"' : '';
-  return '<button' + on + ' onclick="tick(\'' + rid + '\',\'' + val + '\')">' + label + '</button>';
-}
-function dcOpt(v, cur) {
-  return '<option value="' + v + '"' + (v === cur ? ' selected' : '') + '>' + v +
-    (v === 'C' ? ' — วิกฤต' : v === 'M' ? ' — สำคัญ' : ' — เล็กน้อย') + '</option>';
-}
-
-// ── tick ผลรายข้อ ──
-async function tick(resultId, val) {
-  // update UI ทันที (optimistic)
-  var box = document.getElementById('fb-' + resultId);
-  var naBox = document.getElementById('nb-' + resultId);
-  var crit = document.getElementById('crit-' + resultId);
-  crit.querySelectorAll('.qc-res button').forEach(function(b){ b.className=''; });
-  var idx = { pass:0, fail:1, na:2 }[val];
-  crit.querySelectorAll('.qc-res button')[idx].className = 'on-' + val;
-  if (box) box.className = 'qc-fail-box' + (val === 'fail' ? ' show' : '');
-  if (naBox) naBox.className = 'qc-na-box' + (val === 'na' ? ' show' : '');
-
-  // อัปเดต local model
-  var r = (QC.current.results || []).find(function(x){ return x.result_id === resultId; });
-  if (r) r.result = val;
-  await saveResult(resultId);
-}
-
-async function saveResult(resultId) {
-  var r = (QC.current.results || []).find(function(x){ return x.result_id === resultId; });
-  if (!r) return;
-  var data = { result_id: resultId, result: r.result || '' };
-  if (r.result === 'fail') {
-    var dcEl = document.getElementById('dc-' + resultId);
-    var ntEl = document.getElementById('nt-' + resultId);
-    if (dcEl) data.defect_class = dcEl.value;
-    if (ntEl) data.note = ntEl.value;
-    if (r.photo_url) data.photo_url = r.photo_url;
-  }
-  if (r.result === 'na') {
-    var nrEl = document.getElementById('nr-' + resultId);
-    var nnEl = document.getElementById('nn-' + resultId);
-    if (nrEl) data.na_reason = nrEl.value;
-    if (nnEl) data.note = nnEl.value;
-    var wEl = document.getElementById('nw-' + resultId);        // อัปเดตคำเตือนใต้กล่องทันที
-    if (wEl && nrEl) wEl.textContent = naWarnText(nrEl.value);
-  }
-  try {
-    var res = await API.updateQcResult(data);
-    if (res && res.ok && res.data && res.data.result) {
-      Object.assign(r, res.data.result);       // sync กลับ local
-      var byEl = document.getElementById('by-' + resultId);   // ขึ้นชื่อคนติ๊กทันที ไม่ต้องรีโหลด
-      if (byEl) byEl.textContent = (r.checked_by || r.checked_at) ? ('✓ ' + (r.checked_by || '—') + ' · ' + (r.checked_at || '')) : '';
-    }
-  } catch (e) {}
-}
-
-// ── แนบรูป defect (ใช้ uploadLogPhoto เดิม → cf → R2) ──
-function attachPhoto(resultId) {
-  QC.photoTarget = resultId;
-  document.getElementById('qcPhotoInput').click();
-}
-document.getElementById('qcPhotoInput').addEventListener('change', async function(ev) {
-  var file = ev.target.files[0];
-  if (!file || !QC.photoTarget) return;
-  var rid = QC.photoTarget;
-  var reader = new FileReader();
-  reader.onload = async function() {
-    var res = await API.uploadLogPhoto(reader.result);
-    if (res && res.ok && res.photo_url) {
-      var r = (QC.current.results || []).find(function(x){ return x.result_id === rid; });
-      if (r) { r.photo_url = res.photo_url; }
-      await API.updateQcResult({ result_id: rid, photo_url: res.photo_url });
-      renderForm();  // refresh เพื่อโชว์ thumbnail
-    } else {
-      Modal.toast('❌ อัปรูปไม่สำเร็จ');
-    }
-  };
-  reader.readAsDataURL(file);
-  ev.target.value = '';
-});
-
-// ── ปิดการตรวจ → คำนวณสถานะใหม่ แล้วอยู่ที่ฟอร์มเดิม ──
-async function closeInspection() {
-  // ติ๊ก N/A แต่ไม่เลือกเหตุผล = เอกสารบอกไม่ได้ว่าทำไมข้ามข้อนั้น → เตือนก่อน (ยังปิดได้ถ้ายืนยัน)
-  var blank = (QC.current.results || []).filter(function(r){ return r.result === 'na' && !(r.na_reason || ''); });
-  if (blank.length) {
-    var ok = await Modal.confirm({
-      icon: '⚠️', title: 'มี ' + blank.length + ' ข้อที่ติ๊ก N/A แต่ยังไม่ได้เลือกเหตุผล',
-      desc: 'ข้อ ' + blank.map(function(r){ return r.seq; }).join(', '),
-      info: 'ถ้าไม่ระบุเหตุผล เอกสารจะบอกไม่ได้ว่าทำไมข้ามข้อนั้น',
-      confirmText: 'ปิดการตรวจเลย', cancelText: 'กลับไปเลือกเหตุผล'
+  // รวมทุกรอบของชิ้นงานเดียวกันไว้ด้วยกัน เรียงรอบใหม่สุดขึ้นก่อน
+  function groupByFf(rows){
+    var map={}, order=[];
+    rows.forEach(function(r){ var k=r.ff_code||'(ไม่ระบุ FF)'; if(!map[k]){ map[k]=[]; order.push(k); } map[k].push(r); });
+    return order.map(function(k){
+      var list=map[k].slice().sort(function(a,b){ return (b.round||0)-(a.round||0); });
+      return { ff:k, latest:list[0], history:list.slice(1) };
     });
-    if (!ok) return;
   }
-  var id = QC.current.inspection.inspection_id;
-  var res = await API.closeQcInspection(id);
-  if (!res || !res.ok) { Modal.toast('❌ ปิดไม่สำเร็จ: ' + ((res && res.error) || '')); return; }
-  Modal.toast('✅ ปิดการตรวจแล้ว');
-  await openInspection(id);
-}
 
-// ── ตรวจซ้ำ = สร้าง "รอบใหม่" ของชิ้นงานเดิม (เก็บเป็นประวัติ ไม่ใช่ชิ้นงานใหม่) ──
-function recheck() {
-  var ins = QC.current.inspection;
-  Modal.confirm({
-    icon: '🔁', title: 'เปิดรอบตรวจใหม่?',
-    desc: 'จะสร้างการตรวจ ' + esc(ins.ff_code || '') + ' รอบที่ ' + ((ins.round || 1) + 1),
-    info: 'รอบเดิมยังอยู่เป็นประวัติ · ใช้ตอนช่างแก้ของเสร็จแล้วมาตรวจซ้ำ',
-    confirmText: 'เปิดรอบใหม่', confirmClass: 'modal-btn-primary'
-  }).then(async function(ok){
-    if (!ok) return;
-    var res = await API.createQcInspection({
-      ff_code: ins.ff_code, item_name: ins.item_name, location: ins.location,
-      maker: ins.maker, drawing_ref: ins.drawing_ref, inspector: ins.inspector,
-      inspect_date: todayStr()
+  function renderFfGroup(g){
+    var r=g.latest;
+    var dfc=(r.status==='fail'||r.status==='conditional')?'<div class="qc-def">มี defect ค้าง: '+(r.summary_fail||0)+' รายการ</div>':'';
+    var who=r.created_by?('เปิดโดย '+esc(r.created_by)):'';
+    var html=''
+      + '<div class="qc-item">'
+      +   '<div class="hit" onclick="openInspection(\''+r.inspection_id+'\')">'
+      +     '<div class="qc-item-l"><div class="code">'+esc(g.ff)+'</div><div class="name">'+esc(r.item_name||'')+'</div>'+dfc
+      +       (who?'<div class="qc-who">'+who+'</div>':'')+'</div>'
+      +     '<div class="qc-item-r"><span class="qc-badge '+r.status+'">'+esc(r.status_label||r.status)+'</span>'
+      +       '<div class="round">รอบ '+(r.round||1)+' · '+esc(r.inspect_date||'')+'</div></div>'
+      +   '</div>'
+      +   trashBtn(r)
+      + '</div>';
+    if(g.history.length){
+      html+='<div class="qc-hist-toggle" onclick="toggleHist(\''+cssId(g.ff)+'\')">▾ ประวัติการตรวจ '+(g.history.length+1)+' รอบ</div>'
+          + '<div class="qc-hist" id="hist-'+cssId(g.ff)+'">'
+          + g.history.map(histRow).join('') + '</div>';
+    }
+    return html;
+  }
+
+  function histRow(r){
+    var score=(r.status==='pending')
+      ? 'กำลังตรวจอยู่'
+      : 'ผ่าน '+(r.summary_pass||0)+' / ไม่ผ่าน '+(r.summary_fail||0)+' / N/A '+(r.summary_na||0);
+    var closed=r.closed_by?(' · ปิดโดย '+esc(r.closed_by)+' '+esc(r.closed_at||'')):'';
+    return '<div class="h-row">'
+      + '<div class="h-main" onclick="openInspection(\''+r.inspection_id+'\')">'
+      +   '<div class="h-top">รอบ '+(r.round||1)+' · '+esc(r.inspect_date||'')+' <span class="qc-badge '+r.status+'">'+esc(r.status_label||r.status)+'</span></div>'
+      +   '<div class="h-sub">'+esc(score)+(r.created_by?(' · เปิดโดย '+esc(r.created_by)):'')+closed+'</div>'
+      + '</div>' + trashBtn(r) + '</div>';
+  }
+
+  function trashBtn(r){
+    return '<button class="qc-iconbtn" title="ลบรอบนี้" onclick="event.stopPropagation();askDelete(\''+r.inspection_id+'\')"><i data-lucide="trash-2"></i></button>';
+  }
+  function toggleHist(key){ var el=document.getElementById('hist-'+key); if(el) el.classList.toggle('open'); }
+  function cssId(s){ return String(s).replace(/[^A-Za-z0-9_-]/g,'_'); }
+  function tallyCell(cls,n,label){ return '<div class="t '+cls+'"><div class="n">'+(n||0)+'</div><div class="l">'+label+'</div></div>'; }
+
+  // ============================================================
+  // ถังขยะ — ลบแล้วยังกู้คืนได้ 30 วัน
+  // ============================================================
+  function askDelete(inspectionId){
+    var r=findRow(inspectionId); if(!r) return;
+    Modal.confirm({
+      icon:'🗑', title:'ทิ้งการตรวจนี้ลงถังขยะ?',
+      desc:esc(r.ff_code||'')+' · รอบ '+(r.round||1)+' · '+esc(r.inspect_date||''),
+      info:'ยังกู้คืนได้ภายใน 30 วัน หลังจากนั้นระบบจะลบถาวร',
+      confirmText:'ทิ้งลงถังขยะ', confirmClass:'modal-btn-danger'
+    }).then(async function(ok){
+      if(!ok) return;
+      var res=await API.deleteQcInspection(inspectionId);
+      if(!res||!res.ok){ Modal.toast('❌ ลบไม่สำเร็จ: '+((res&&res.error)||'')); return; }
+      Modal.toast('🗑 ย้ายลงถังขยะแล้ว');
+      await refreshList(); showView('list');
     });
-    if (!res || !res.ok) { Modal.toast('❌ สร้างรอบใหม่ไม่สำเร็จ'); return; }
+  }
+  function findRow(id){ return QC.rows.find(function(x){ return x.inspection_id===id; }) || (QC.current&&QC.current.inspection&&QC.current.inspection.inspection_id===id?QC.current.inspection:null); }
+
+  async function openTrash(){
+    var res; try{ res=await API.getQcTrash(); }catch(e){ Modal.toast('❌ โหลดถังขยะไม่สำเร็จ'); return; }
+    QC.trash=(res&&res.ok&&Array.isArray(res.data))?res.data:[];
+    var el=document.getElementById('trashList');
+    el.innerHTML=QC.trash.length ? QC.trash.map(function(r){
+      return '<div class="qc-item"><div class="hit" style="cursor:default"><div class="qc-item-l">'
+        + '<div class="code">'+esc(r.ff_code||'(ไม่ระบุ FF)')+' · รอบ '+(r.round||1)+'</div>'
+        + '<div class="name">'+esc(r.item_name||'')+'</div>'
+        + '<div class="qc-who">ลบโดย '+esc(r.deleted_by||'—')+' · '+esc(r.deleted_at||'')+'</div>'
+        + '</div><div class="qc-item-r"><span class="qc-badge pending">เหลืออีก '+(r.days_left||0)+' วัน</span></div></div>'
+        + '<button class="btn btn-ghost btn-sm" onclick="restoreInspection(\''+r.inspection_id+'\')">กู้คืน</button></div>';
+    }).join('') : '<div class="qc-empty">ถังขยะว่าง</div>';
+    showView('trash');
+    if(window.lucide) lucide.createIcons();
+  }
+  async function restoreInspection(id){
+    var res=await API.restoreQcInspection(id);
+    if(!res||!res.ok){ Modal.toast('❌ กู้คืนไม่สำเร็จ: '+((res&&res.error)||'')); return; }
+    Modal.toast('↩️ กู้คืนแล้ว');
+    await refreshList(); await openTrash();
+  }
+
+  // ============================================================
+  // เปิดการตรวจใหม่
+  // ============================================================
+  function openCreate(){
+    ['c_ff','c_item','c_loc','c_maker','c_dwg'].forEach(function(id){ document.getElementById(id).value=''; });
+    var me=Auth.getUser();                       // เมลใครเมลมัน — เติมชื่อคนที่ล็อกอินให้ (แก้ทับได้)
+    document.getElementById('c_insp').value=(me&&(me.name||me.email))||'';
+    document.getElementById('c_date').value=todayStr(); showView('create');
+  }
+  async function submitCreate(){
+    var ff=document.getElementById('c_ff').value.trim();
+    if(!ff){ Modal.toast('⚠️ กรุณากรอกรหัสชิ้นงาน (FF Code)'); return; }
+    var data={ ff_code:ff, item_name:document.getElementById('c_item').value.trim(), location:document.getElementById('c_loc').value.trim(), maker:document.getElementById('c_maker').value.trim(), drawing_ref:document.getElementById('c_dwg').value.trim(), inspector:document.getElementById('c_insp').value.trim(), inspect_date:document.getElementById('c_date').value||todayStr() };
+    var res=await API.createQcInspection(data);
+    if(!res||!res.ok){ Modal.toast('❌ สร้างไม่สำเร็จ: '+((res&&res.error)||'')); return; }
     await openInspection(res.data.inspection_id);
-  });
-}
+  }
 
-// ============================================================
-// พิมพ์ / บันทึกเป็น PDF — ใช้ระบบพิมพ์ของเบราว์เซอร์ (ฟอนต์ไทยในเครื่อง ไม่เพี้ยน)
-// ============================================================
-async function printInspection() {
-  if (!QC.current) return;
-  var ins = QC.current.inspection, results = QC.current.results || [];
-  var me = Auth.getUser(), printedBy = (me && (me.name || me.email)) || '—';
-  var RES = { pass:'ผ่าน', fail:'ไม่ผ่าน', na:'N/A' };
+  // ============================================================
+  // ฟอร์มตรวจ — เปิดได้ทุกสถานะ (ปิดแล้วก็ยังเข้ามาดู/แก้ได้)
+  // ============================================================
+  async function openInspection(inspectionId){
+    var res;
+    try{ res=await API.getQcInspection(inspectionId); }catch(e){ Modal.toast('❌ โหลดไม่สำเร็จ'); return; }
+    if(!res||!res.ok||!res.data){ Modal.toast('❌ ไม่พบการตรวจ'); return; }
+    QC.current=res.data; var ins=res.data.inspection;
+    document.getElementById('formTitle').textContent=(ins.ff_code||'')+' · '+(ins.item_name||'');
+    document.getElementById('formRound').textContent='รอบ '+(ins.round||1);
+    var closed=(ins.status&&ins.status!=='pending');
+    document.getElementById('btnRecheck').style.display=closed?'':'none';
+    document.getElementById('btnClose').textContent=closed?'ปิดการตรวจอีกครั้ง':'สรุป & ปิดการตรวจ';
+    renderStatusBar(); renderForm(); showView('form');
+    if(window.lucide) lucide.createIcons();
+  }
+  async function backToList(){ await refreshList(); showView('list'); }
 
-  var rowsHtml = '', lastSec = '';
-  results.forEach(function(r){
-    if (r.section !== lastSec) {
-      rowsHtml += '<tr class="p-secrow"><td colspan="6">' + esc(r.section) + '. ' + esc(r.section_name || '') + '</td></tr>';
-      lastSec = r.section;
+  function renderStatusBar(){
+    var ins=QC.current.inspection, el=document.getElementById('formStatusBar');
+    if(!ins.status||ins.status==='pending'){
+      el.innerHTML='<div class="qc-big-status pending"><div class="lbl">กำลังตรวจ</div><div class="meta">'
+        +'เปิดโดย '+esc(ins.created_by||ins.inspector||'—')+' · '+esc(ins.inspect_date||'')+'</div></div>';
+      return;
     }
-    var rechk = (r.recheck_result === 'pass') ? ' (แก้แล้ว ✓)' : '';
-    // N/A ต้องบอกเหตุผลในเอกสารเสมอ ไม่งั้นคนอ่านไม่รู้ว่าทำไมถึงข้ามข้อนั้น
-    var naTxt = (r.result === 'na')
-      ? ('<b>' + esc(r.na_reason_label || naLabelOf(r.na_reason) || 'ไม่ระบุเหตุผล') + '</b>' + (r.note ? ' · ' : ''))
-      : '';
-    var cellNote = naTxt + esc(r.note || '') + rechk;
-    rowsHtml += '<tr><td>' + esc(r.seq) + '</td><td>' + esc(r.item) + '</td><td>' + esc(r.acceptance || '') + '</td>' +
-      '<td>' + esc(RES[r.result] || '—') + (NA_PENDING[r.na_reason] ? '<br><span style="font-size:7.5pt">⏳ ค้างตรวจ</span>' : '') + '</td>' +
-      '<td>' + esc(r.result === 'fail' ? (r.defect_class || 'M') : '') + '</td>' +
-      '<td>' + cellNote + '<br><span style="color:#666">' + esc(r.checked_by || '—') + '</span></td></tr>';
+    // ข้อที่ N/A เพราะ "ยังตรวจไม่ได้" = ยังไม่เคยตรวจจริง ต้องเตือนให้เห็นชัดว่าค้างอะไรอยู่
+    var waiting=(QC.current.results||[]).filter(function(r){ return r.result==='na' && NA_PENDING[r.na_reason]; });
+    var waitTxt=waiting.length?('<div class="meta">⏳ ค้างตรวจ '+waiting.length+' ข้อ (ข้อ '+waiting.map(function(r){ return r.seq; }).join(', ')+') — ต้องกลับมาตรวจรอบหน้า</div>'):'';
+    el.innerHTML='<div class="qc-big-status '+ins.status+'"><div class="lbl">'+esc(ins.status_label||ins.status)+'</div>'
+      +'<div class="meta">ผ่าน '+(ins.summary_pass||0)+' / ไม่ผ่าน '+(ins.summary_fail||0)+' / N/A '+(ins.summary_na||0)
+      +(ins.closed_by?(' · ปิดโดย '+esc(ins.closed_by)+' '+esc(ins.closed_at||'')):'')+'</div>'+waitTxt+'</div>';
+  }
+
+  function renderForm(){
+    var results=QC.current.results||[], html='', lastSec='';
+    results.forEach(function(r){ if(r.section!==lastSec){ html+='<div class="qc-sec">'+esc(r.section)+'. '+esc(r.section_name||'')+'</div>'; lastSec=r.section; } html+=renderCrit(r); });
+    document.getElementById('qcForm').innerHTML=html;
+    if(window.lucide) lucide.createIcons();
+  }
+  function renderCrit(r){
+    var cls=r.criteria_defect_class||'', rid=r.result_id, res=r.result||'', failShow=(res==='fail')?' show':'', naShow=(res==='na')?' show':'', dc=r.defect_class||cls;
+    // ใครติ๊กข้อนี้ (มาจาก token ฝั่งเซิร์ฟเวอร์ ปลอมไม่ได้) — ข้อที่ยังไม่แตะจะไม่มีบรรทัดนี้
+    var by=(r.checked_by||r.checked_at)?('<div class="by" id="by-'+rid+'">✓ '+esc(r.checked_by||'—')+' · '+esc(r.checked_at||'')+'</div>'):'<div class="by" id="by-'+rid+'"></div>';
+    return '<div class="qc-crit" id="crit-'+rid+'"><div class="top"><div class="item">'+esc(r.seq)+' '+esc(r.item)+'</div>'+(cls?'<span class="cls cls-'+cls+'">'+cls+'</span>':'')+'</div><div class="acc">✓ '+esc(r.acceptance||'')+'</div>'+(r.method?'<div class="meth">วิธี: '+esc(r.method)+'</div>':'')+'<div class="qc-res">'+resBtn(rid,'pass',res,'ผ่าน')+resBtn(rid,'fail',res,'ไม่ผ่าน')+resBtn(rid,'na',res,'N/A')+'</div><div class="qc-fail-box'+failShow+'" id="fb-'+rid+'"><div class="row"><label>ระดับ</label><select id="dc-'+rid+'" onchange="saveResult(\''+rid+'\')">'+dcOpt('C',dc)+dcOpt('M',dc)+dcOpt('Mn',dc)+'</select></div><div class="row"><label>หมายเหตุ</label><input id="nt-'+rid+'" value="'+esc(r.note||'')+'" placeholder="อธิบาย defect + แนวทางแก้" onblur="saveResult(\''+rid+'\')"></div><div class="row"><label>รูป</label>'+(r.photo_url?'<img src="'+esc(r.photo_url)+'" class="qc-thumb">':'')+'<button class="btn btn-ghost btn-sm" onclick="attachPhoto(\''+rid+'\')">📷 ถ่ายรูป defect</button></div></div>'
+      +'<div class="qc-na-box'+naShow+'" id="nb-'+rid+'">'
+      +  '<div class="row"><label>เหตุผล</label><select id="nr-'+rid+'" onchange="saveResult(\''+rid+'\')">'+naOpts(r.na_reason||'')+'</select></div>'
+      +  '<div class="row"><label>หมายเหตุ</label><input id="nn-'+rid+'" value="'+esc(r.note||'')+'" placeholder="อธิบายเพิ่ม (ถ้ามี)" onblur="saveResult(\''+rid+'\')"></div>'
+      +  '<div class="warn" id="nw-'+rid+'">'+naWarnText(r.na_reason||'')+'</div>'
+      +'</div>'+by+'</div>';
+  }
+
+  // เหตุผลของ N/A — 2 กลุ่ม: "ไม่ต้องตรวจ (จบ)" กับ ⏳ "ยังตรวจไม่ได้ (ต้องกลับมาตรวจ)"
+  // รหัสต้องตรงกับ NA_REASON_LABEL ใน cf-api/src/modules/qc.ts
+  var NA_REASONS = [
+    { v:'',              t:'— เลือกเหตุผล —' },
+    { v:'not_applicable',t:'ไม่มีส่วนนี้ในชิ้นงาน' },
+    { v:'out_of_scope',  t:'ไม่อยู่ในสโคปผู้รับเหมารายนี้' },
+    { v:'waived',        t:'เจ้าของบ้าน/ผู้ออกแบบยกเว้นให้' },
+    { v:'wait_material', t:'⏳ รอวัสดุ ยังไม่มาส่ง' },
+    { v:'not_installed', t:'⏳ ยังติดตั้งไม่เสร็จ ตรวจไม่ได้' },
+    { v:'other',         t:'อื่น ๆ (พิมพ์หมายเหตุ)' },
+  ];
+  var NA_PENDING = { wait_material:1, not_installed:1 };   // เหตุผลที่ถือว่า "ยังไม่ได้ตรวจ"
+  function naOpts(cur){ return NA_REASONS.map(function(o){ return '<option value="'+o.v+'"'+(o.v===cur?' selected':'')+'>'+o.t+'</option>'; }).join(''); }
+  function naLabelOf(code){ var o=NA_REASONS.find(function(x){ return x.v===code; }); return (o&&o.v)?o.t.replace('⏳ ','').replace(' (พิมพ์หมายเหตุ)',''):''; }
+  function naWarnText(code){
+    if(NA_PENDING[code]) return '⏳ ข้อนี้ถือว่ายังไม่ได้ตรวจ — ปิดงานแล้วจะขึ้น "ผ่านมีเงื่อนไข" และต้องกลับมาตรวจรอบหน้า';
+    if(code==='other') return 'เลือก "อื่น ๆ" แล้วควรพิมพ์หมายเหตุกำกับด้วย';
+    return '';
+  }
+  function resBtn(rid,val,cur,label){ var on=(cur===val)?' class="on-'+val+'"':''; return '<button'+on+' onclick="tick(\''+rid+'\',\''+val+'\')">'+label+'</button>'; }
+  function dcOpt(v,cur){ return '<option value="'+v+'"'+(v===cur?' selected':'')+'>'+v+(v==='C'?' — วิกฤต':v==='M'?' — สำคัญ':' — เล็กน้อย')+'</option>'; }
+
+  async function tick(resultId,val){
+    var box=document.getElementById('fb-'+resultId), naBox=document.getElementById('nb-'+resultId), crit=document.getElementById('crit-'+resultId);
+    crit.querySelectorAll('.qc-res button').forEach(function(b){ b.className=''; });
+    crit.querySelectorAll('.qc-res button')[{pass:0,fail:1,na:2}[val]].className='on-'+val;
+    if(box) box.className='qc-fail-box'+(val==='fail'?' show':'');
+    if(naBox) naBox.className='qc-na-box'+(val==='na'?' show':'');
+    var r=(QC.current.results||[]).find(function(x){ return x.result_id===resultId; });
+    if(r) r.result=val;
+    await saveResult(resultId);
+  }
+  async function saveResult(resultId){
+    var r=(QC.current.results||[]).find(function(x){ return x.result_id===resultId; }); if(!r) return;
+    var data={ result_id:resultId, result:r.result||'' };
+    if(r.result==='fail'){ var dcEl=document.getElementById('dc-'+resultId), ntEl=document.getElementById('nt-'+resultId); if(dcEl) data.defect_class=dcEl.value; if(ntEl) data.note=ntEl.value; if(r.photo_url) data.photo_url=r.photo_url; }
+    if(r.result==='na'){
+      var nrEl=document.getElementById('nr-'+resultId), nnEl=document.getElementById('nn-'+resultId);
+      if(nrEl) data.na_reason=nrEl.value;
+      if(nnEl) data.note=nnEl.value;
+      var wEl=document.getElementById('nw-'+resultId);        // อัปเดตคำเตือนใต้กล่องทันที
+      if(wEl&&nrEl) wEl.textContent=naWarnText(nrEl.value);
+    }
+    try{
+      var res=await API.updateQcResult(data);
+      if(res&&res.ok&&res.data&&res.data.result){
+        Object.assign(r,res.data.result);
+        var byEl=document.getElementById('by-'+resultId);           // ขึ้นชื่อคนติ๊กทันที ไม่ต้องรีโหลด
+        if(byEl) byEl.textContent=(r.checked_by||r.checked_at)?('✓ '+(r.checked_by||'—')+' · '+(r.checked_at||'')):'';
+      }
+    }catch(e){}
+  }
+  function attachPhoto(resultId){ QC.photoTarget=resultId; document.getElementById('qcPhotoInput').click(); }
+  document.getElementById('qcPhotoInput').addEventListener('change', async function(ev){
+    var file=ev.target.files[0]; if(!file||!QC.photoTarget) return;
+    var rid=QC.photoTarget; var reader=new FileReader();
+    reader.onload=async function(){
+      var res=await API.uploadLogPhoto(reader.result);
+      if(res&&res.ok&&res.photo_url){ var r=(QC.current.results||[]).find(function(x){ return x.result_id===rid; }); if(r) r.photo_url=res.photo_url; await API.updateQcResult({ result_id:rid, photo_url:res.photo_url }); renderForm(); }
+      else Modal.toast('❌ อัปรูปไม่สำเร็จ');
+    };
+    reader.readAsDataURL(file); ev.target.value='';
   });
 
-  var photos = results.filter(function(r){ return r.photo_url; });
-  var photosHtml = photos.length ? '<div class="p-photos"><b style="font-size:9pt">รูปประกอบ (' + photos.length + ')</b><br>' +
-    photos.map(function(r){
-      return '<div class="p-photo"><img src="' + esc(r.photo_url) + '"><div class="cap">ข้อ ' + esc(r.seq) + ' — ' + esc(r.item) + (r.note ? (' · ' + esc(r.note)) : '') + '</div></div>';
-    }).join('') + '</div>' : '';
+  async function closeInspection(){
+    // ติ๊ก N/A แต่ไม่เลือกเหตุผล = เอกสารบอกไม่ได้ว่าทำไมข้ามข้อนั้น → เตือนก่อน (ยังปิดได้ถ้ายืนยัน)
+    var blank=(QC.current.results||[]).filter(function(r){ return r.result==='na' && !(r.na_reason||''); });
+    if(blank.length){
+      var okBlank=await Modal.confirm({
+        icon:'⚠️', title:'มี '+blank.length+' ข้อที่ติ๊ก N/A แต่ยังไม่ได้เลือกเหตุผล',
+        desc:'ข้อ '+blank.map(function(r){ return r.seq; }).join(', '),
+        info:'ถ้าไม่ระบุเหตุผล เอกสารจะบอกไม่ได้ว่าทำไมข้ามข้อนั้น',
+        confirmText:'ปิดการตรวจเลย', cancelText:'กลับไปเลือกเหตุผล'
+      });
+      if(!okBlank) return;
+    }
+    var id=QC.current.inspection.inspection_id;
+    var res=await API.closeQcInspection(id);
+    if(!res||!res.ok){ Modal.toast('❌ ปิดไม่สำเร็จ: '+((res&&res.error)||'')); return; }
+    Modal.toast('✅ ปิดการตรวจแล้ว');
+    await openInspection(id);
+  }
 
-  document.getElementById('printDoc').innerHTML =
-    '<h2>QC ' + esc(ins.ff_code || '') + (ins.item_name ? (' · ' + esc(ins.item_name)) : '') + '</h2>' +
-    '<div class="p-sub">ใบตรวจคุณภาพงานบิ้วอิน · รอบที่ ' + (ins.round || 1) + ' · ' +
-      esc(QC.projectName || state.projectId || '') + ' · เอกสารเลขที่ ' + esc(ins.inspection_id || '') + '</div>' +
-    '<div class="p-grid">' +
-      '<div><b>รหัสชิ้นงาน</b>' + esc(ins.ff_code || '—') + '</div>' +
-      '<div><b>รายการ</b>' + esc(ins.item_name || '—') + '</div>' +
-      '<div><b>ตำแหน่ง/ห้อง</b>' + esc(ins.location || '—') + '</div>' +
-      '<div><b>ผู้ผลิต/ช่าง</b>' + esc(ins.maker || '—') + '</div>' +
-      '<div><b>อ้างอิงแบบ</b>' + esc(ins.drawing_ref || '—') + '</div>' +
-      '<div><b>รอบที่ตรวจ</b>' + (ins.round || 1) + '</div>' +
-      '<div><b>ผู้ตรวจสอบ</b>' + esc(ins.inspector || ins.created_by || '—') + '</div>' +
-      '<div><b>วันที่ตรวจ</b>' + esc(ins.inspect_date || '—') + '</div>' +
-    '</div>' +
-    '<div class="p-status">' + esc(ins.status_label || 'ยังไม่ปิดการตรวจ') +
-      '<div style="font-size:9pt;font-weight:400;margin-top:1.5mm">ผ่าน ' + (ins.summary_pass||0) + ' · ไม่ผ่าน ' + (ins.summary_fail||0) + ' · N/A ' + (ins.summary_na||0) + ' · รวม ' + results.length + ' ข้อ</div>' +
-    '</div>' +
-    '<table><thead><tr><th style="width:8%">ข้อ</th><th style="width:22%">รายการตรวจ</th><th style="width:26%">เกณฑ์ยอมรับ</th><th style="width:8%">ผล</th><th style="width:8%">ระดับ</th><th style="width:28%">หมายเหตุ / ผู้ตรวจ</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
-    photosHtml +
-    '<div class="p-foot">เปิดการตรวจโดย ' + esc(ins.created_by || '—') + ' · ปิดการตรวจโดย ' + esc(ins.closed_by || '—') + ' ' + esc(ins.closed_at || '') +
-      '<br>พิมพ์เอกสารโดย ' + esc(printedBy) + ' · ' + esc(nowStamp()) + '</div>' +
-    '<div class="p-sign"><div>ผู้ตรวจสอบ</div><div>ผู้รับมอบงาน</div></div>';
+  // ตรวจซ้ำ = สร้าง "รอบใหม่" ของชิ้นงานเดิม (เก็บเป็นประวัติ ไม่ใช่ชิ้นงานใหม่)
+  function recheck(){
+    var ins=QC.current.inspection;
+    Modal.confirm({
+      icon:'🔁', title:'เปิดรอบตรวจใหม่?',
+      desc:'จะสร้างการตรวจ '+esc(ins.ff_code||'')+' รอบที่ '+((ins.round||1)+1),
+      info:'รอบเดิมยังอยู่เป็นประวัติ · ใช้ตอนช่างแก้ของเสร็จแล้วมาตรวจซ้ำ',
+      confirmText:'เปิดรอบใหม่', confirmClass:'modal-btn-primary'
+    }).then(async function(ok){
+      if(!ok) return;
+      var res=await API.createQcInspection({ ff_code:ins.ff_code, item_name:ins.item_name, location:ins.location, maker:ins.maker, drawing_ref:ins.drawing_ref, inspector:ins.inspector, inspect_date:todayStr() });
+      if(!res||!res.ok){ Modal.toast('❌ สร้างรอบใหม่ไม่สำเร็จ'); return; }
+      await openInspection(res.data.inspection_id);
+    });
+  }
 
-  await waitForImages(document.getElementById('printDoc'));
+  // ============================================================
+  // พิมพ์ / บันทึกเป็น PDF — ใช้ระบบพิมพ์ของเบราว์เซอร์ (ฟอนต์ไทยในเครื่อง ไม่เพี้ยน)
+  // ============================================================
+  async function printInspection(){
+    if(!QC.current){ return; }
+    var ins=QC.current.inspection, results=QC.current.results||[];
+    var me=Auth.getUser(), printedBy=(me&&(me.name||me.email))||'—';
+    var RES={ pass:'ผ่าน', fail:'ไม่ผ่าน', na:'N/A' };
 
-  // เบราว์เซอร์ตั้งชื่อไฟล์ PDF จากชื่อหน้าเว็บ (document.title) → สลับชั่วคราวให้ได้
-  // "QC F-21 รอบ1 2026-08-01" แทน "QC ตรวจคุณภาพ · Bow House" แล้วคืนค่าเดิมหลังพิมพ์
-  var prevTitle = document.title;
-  document.title = 'QC ' + (ins.ff_code || 'ชิ้นงาน') + ' รอบ' + (ins.round || 1) + ' ' + (ins.inspect_date || '');
-  try { window.print(); } finally { document.title = prevTitle; }
-}
+    var rowsHtml='', lastSec='';
+    results.forEach(function(r){
+      if(r.section!==lastSec){ rowsHtml+='<tr class="p-secrow"><td colspan="6">'+esc(r.section)+'. '+esc(r.section_name||'')+'</td></tr>'; lastSec=r.section; }
+      var recheck=(r.recheck_result==='pass')?' (แก้แล้ว ✓)':'';
+      // N/A ต้องบอกเหตุผลในเอกสารเสมอ ไม่งั้นคนอ่านไม่รู้ว่าทำไมถึงข้ามข้อนั้น
+      var naTxt=(r.result==='na')?('<b>'+esc(r.na_reason_label||naLabelOf(r.na_reason)||'ไม่ระบุเหตุผล')+'</b>'+(r.note?' · ':'')):'';
+      rowsHtml+='<tr><td>'+esc(r.seq)+'</td><td>'+esc(r.item)+'</td><td>'+esc(r.acceptance||'')+'</td>'
+        +'<td>'+esc(RES[r.result]||'—')+(NA_PENDING[r.na_reason]?'<br><span style="font-size:7.5pt">⏳ ค้างตรวจ</span>':'')+'</td>'
+        +'<td>'+esc(r.result==='fail'?(r.defect_class||'M'):'')+'</td>'
+        +'<td>'+naTxt+esc(r.note||'')+recheck+'<br><span style="color:#666">'+esc(r.checked_by||'—')+'</span></td></tr>';
+    });
 
-// รูปที่ยังโหลดไม่เสร็จจะพิมพ์ออกมาเป็นช่องว่าง — รอให้โหลดครบก่อน (กันค้าง จำกัด 8 วินาที)
-function waitForImages(root) {
-  var imgs = Array.prototype.slice.call(root.querySelectorAll('img'));
-  if (!imgs.length) return Promise.resolve();
-  return Promise.race([
-    Promise.all(imgs.map(function(img){
-      if (img.complete) return Promise.resolve();
-      return new Promise(function(done){ img.onload = done; img.onerror = done; });
-    })),
-    new Promise(function(done){ setTimeout(done, 8000); })
-  ]);
-}
-function nowStamp() {
-  var d = new Date();
-  function p(n){ return (n < 10 ? '0' : '') + n; }
-  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
-}
+    var photos=results.filter(function(r){ return r.photo_url; });
+    var photosHtml=photos.length ? '<div class="p-photos"><b style="font-size:9pt">รูปประกอบ ('+photos.length+')</b><br>'
+      + photos.map(function(r){ return '<div class="p-photo"><img src="'+esc(r.photo_url)+'"><div class="cap">ข้อ '+esc(r.seq)+' — '+esc(r.item)+(r.note?(' · '+esc(r.note)):'')+'</div></div>'; }).join('')
+      + '</div>' : '';
 
-// ── helpers ──
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
-    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
-  });
-}
-</script>
+    document.getElementById('printDoc').innerHTML=''
+      + '<h2>QC '+esc(ins.ff_code||'')+(ins.item_name?(' · '+esc(ins.item_name)):'')+'</h2>'
+      + '<div class="p-sub">ใบตรวจคุณภาพงานบิ้วอิน · รอบที่ '+(ins.round||1)+' · '+esc(QC.projectName||state.projectId||'')+' · เอกสารเลขที่ '+esc(ins.inspection_id||'')+'</div>'
+      + '<div class="p-grid">'
+      +   '<div><b>รหัสชิ้นงาน</b>'+esc(ins.ff_code||'—')+'</div>'
+      +   '<div><b>รายการ</b>'+esc(ins.item_name||'—')+'</div>'
+      +   '<div><b>ตำแหน่ง/ห้อง</b>'+esc(ins.location||'—')+'</div>'
+      +   '<div><b>ผู้ผลิต/ช่าง</b>'+esc(ins.maker||'—')+'</div>'
+      +   '<div><b>อ้างอิงแบบ</b>'+esc(ins.drawing_ref||'—')+'</div>'
+      +   '<div><b>รอบที่ตรวจ</b>'+(ins.round||1)+'</div>'
+      +   '<div><b>ผู้ตรวจสอบ</b>'+esc(ins.inspector||ins.created_by||'—')+'</div>'
+      +   '<div><b>วันที่ตรวจ</b>'+esc(ins.inspect_date||'—')+'</div>'
+      + '</div>'
+      + '<div class="p-status">'+esc(ins.status_label||'ยังไม่ปิดการตรวจ')
+      +   '<div style="font-size:9pt;font-weight:400;margin-top:1.5mm">ผ่าน '+(ins.summary_pass||0)+' · ไม่ผ่าน '+(ins.summary_fail||0)+' · N/A '+(ins.summary_na||0)+' · รวม '+results.length+' ข้อ</div>'
+      + '</div>'
+      + '<table><thead><tr><th style="width:8%">ข้อ</th><th style="width:22%">รายการตรวจ</th><th style="width:26%">เกณฑ์ยอมรับ</th><th style="width:8%">ผล</th><th style="width:8%">ระดับ</th><th style="width:28%">หมายเหตุ / ผู้ตรวจ</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>'
+      + photosHtml
+      + '<div class="p-foot">เปิดการตรวจโดย '+esc(ins.created_by||'—')+' · ปิดการตรวจโดย '+esc(ins.closed_by||'—')+' '+esc(ins.closed_at||'')
+      +   '<br>พิมพ์เอกสารโดย '+esc(printedBy)+' · '+esc(nowStamp())+'</div>'
+      + '<div class="p-sign"><div>ผู้ตรวจสอบ</div><div>ผู้รับมอบงาน</div></div>';
+
+    await waitForImages(document.getElementById('printDoc'));
+
+    // เบราว์เซอร์ตั้งชื่อไฟล์ PDF จากชื่อหน้าเว็บ (document.title) → สลับชั่วคราวให้ได้
+    // "QC F-21 รอบ1 2026-08-01" แทนชื่อหน้าเดิม แล้วคืนค่าหลังพิมพ์
+    var prevTitle=document.title;
+    document.title='QC '+(ins.ff_code||'ชิ้นงาน')+' รอบ'+(ins.round||1)+' '+(ins.inspect_date||'');
+    try{ window.print(); } finally { document.title=prevTitle; }
+  }
+
+  // รูปที่ยังโหลดไม่เสร็จจะพิมพ์ออกมาเป็นช่องว่าง — รอให้โหลดครบก่อน (กันค้าง จำกัด 8 วินาที)
+  function waitForImages(root){
+    var imgs=Array.prototype.slice.call(root.querySelectorAll('img'));
+    if(!imgs.length) return Promise.resolve();
+    return Promise.race([
+      Promise.all(imgs.map(function(img){
+        if(img.complete) return Promise.resolve();
+        return new Promise(function(done){ img.onload=done; img.onerror=done; });
+      })),
+      new Promise(function(done){ setTimeout(done,8000); })
+    ]);
+  }
+  function nowStamp(){ var d=new Date(); function p(n){ return (n<10?'0':'')+n; } return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  </script>
 </body>
 </html>
