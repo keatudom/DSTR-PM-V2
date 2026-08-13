@@ -19,6 +19,7 @@ import * as notifications from './modules/notifications.ts'; // Session 2 — �
 import * as line from './modules/line_webhook.ts'; // Session 2 — โมดูล 11 (LINE digests)
 import * as qc from './modules/qc.ts'; // ★ Session 3 — QC Checklist
 import * as gallery from './modules/gallery.ts'; // ★ คลังรูปภาพรวม (2026-08-13)
+import * as content from './modules/content.ts'; // ★ ท่อคอนเทนต์ สถานี 2-4 (2026-08-13)
 
 export async function route(env: Env, action: string, p: Record<string, unknown>): Promise<unknown> {
   switch (action) {
@@ -28,6 +29,24 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
     // 📊 getAll ‼raw (Code.js:621) — aggregate สำหรับ dashboard เก่า — Session 2
     case 'getAll':
       return ffTasks.getAll(env, p);
+
+    // 📣 CONTENT PIPELINE — ท่อคอนเทนต์ สถานี 2-4 (คัด/เขียน/เคาะ)
+    case 'get_content_candidates':
+      return content.getContentCandidates(env, p);
+    case 'generate_content':
+      return content.generateContent(env, p);
+    case 'list_content':
+      return content.listContent(env, p);
+    case 'update_content':
+      return content.updateContent(env, p);
+    case 'reroll_content':
+      return content.rerollContent(env, p);
+    case 'get_brand_voice':
+      return content.getBrandVoice(env, p);
+    case 'set_photo_consent':
+      return content.setPhotoConsent(env, p);
+    case 'content_stats':
+      return content.contentStats(env, p);
 
     // 🖼️ GALLERY — คลังรูปภาพรวมของโครงการ (4 แหล่ง) + ย้ายรูปเก่า Drive → R2
     case 'get_gallery':

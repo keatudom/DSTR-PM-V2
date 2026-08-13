@@ -55,6 +55,8 @@ addCap('READ', [
   'suggest_task_from_log', 'parse_activity_text', 'parse_material_log',
   'scan_bill', 'detect_unknowns', 'login', 'login_google', 'get_me',
   'check_stock_for_items', 'get_notifications', 'get_gallery',
+  // ท่อคอนเทนต์: อ่านคิว/วัตถุดิบ/คู่มือเสียงแบรนด์ = ใครในทีมก็ดูได้
+  'get_content_candidates', 'list_content', 'get_brand_voice', 'content_stats',
 ]);
 addCap('OPS', [
   'updateTask', 'team_checkin', 'withdraw_material', 'create_daily',
@@ -63,6 +65,8 @@ addCap('OPS', [
   'delete_task_photo', 'add_activity_log', 'untick_task_from_log',
   'save_ai_summary', 'confirm_task_tick', 'upload_log_photo',
   'delete_activity_log',
+  // เคาะ/แก้/รีคอนเทนต์ = งานประจำสัปดาห์ของคนเข้าเวร
+  'update_content', 'reroll_content',
 ]);
 addCap('PROCURE', [
   'create_material', 'update_material', 'deactivate_material',
@@ -75,6 +79,9 @@ addCap('MANAGE', [
   'create_supplier', 'create_contractor', 'create_risk', 'update_risk',
   'delete_risk', 'clone_risks', 'create_eval', 'update_eval', 'delete_eval',
   'delete_daily', 'delete_team', 'assign_project_team', 'unassign_project_team',
+  // generate_content = เสียเงินค่า AI ทุกครั้งที่กด → จำกัดระดับหัวหน้าขึ้นไป
+  // set_photo_consent = เรื่องสิทธิ์ใช้ภาพลูกค้า (กฎหมาย) ไม่ใช่คนหน้างานติ๊กเอง
+  'generate_content', 'set_photo_consent',
 ]);
 addCap('FINANCE', [
   'updatePayment', 'create_contract', 'update_contract', 'create_milestone',

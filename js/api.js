@@ -939,6 +939,59 @@ const API = {
   },
 
   // ============================================================
+  // 📣 CONTENT PIPELINE — ท่อคอนเทนต์ สถานี 2-4 (คัด / เขียน / เคาะ)
+  // ============================================================
+  // กลยุทธ์ DSTR-MKT-2569-002 · วัตถุดิบมาจาก Daily Log ที่โฟร์แมนทำอยู่แล้ว
+  // ⚠️ AI ทำงานเมื่อกดปุ่มเท่านั้น — generateContent/rerollContent มีค่าใช้จ่ายทุกครั้งที่เรียก
+
+  /**
+   * วัตถุดิบที่ยังไม่เคยถูกหยิบไปทำคอนเทนต์
+   * @param {object} params - { source?:'all'|'daily'|'task'|'checkin'|'qc', from?, to?, ff_code?, q? }
+   * Returns: { blocked (true=ยังไม่ติ๊กยินยอมใช้ภาพ), items:[...], total, counts }
+   */
+  getContentCandidates: function(params) {
+    return this.callRead('get_content_candidates', params || {});
+  },
+
+  /**
+   * ให้ AI เขียนแคปชั่นจากวัตถุดิบที่เลือก (ครั้งละไม่เกิน 10 ชิ้น)
+   * @param {object} data - { items:[...], style:'behind'|'educate'|'showcase'|'pro'|'developer', platform:'fb'|'ig'|'tiktok'|'line' }
+   */
+  generateContent: function(data) {
+    return this.callPost('generate_content', Object.assign({}, data, { items: JSON.stringify(data.items || []) }));
+  },
+
+  /** คิวคอนเทนต์ — { status?:'draft'|'approved'|'scheduled'|'posted'|'rejected' } */
+  listContent: function(params) {
+    return this.callRead('list_content', params || {});
+  },
+
+  /** เคาะ/แก้ — { content_id, status?, caption?, hashtags?, platform?, scheduled_at?, notes? } */
+  updateContent: function(data) {
+    return this.callPost('update_content', data);
+  },
+
+  /** กดรีเขียนใหม่ + สอนระบบ — { content_id, note (คำสั่งที่จะถูกจำไว้ใช้ครั้งต่อไป), style?, platform? } */
+  rerollContent: function(data) {
+    return this.callPost('reroll_content', data);
+  },
+
+  /** คู่มือเสียงแบรนด์ที่สะสมจากการกดรี */
+  getBrandVoice: function() {
+    return this.callRead('get_brand_voice');
+  },
+
+  /** ติ๊กยินยอมใช้ภาพของโครงการ (owner/pm) — { consent:true|false } */
+  setPhotoConsent: function(consent) {
+    return this.callPost('set_photo_consent', { consent: !!consent });
+  },
+
+  /** ถังสำรอง + สัดส่วนสไตล์ + สถานะยินยอมใช้ภาพ */
+  contentStats: function() {
+    return this.callRead('content_stats');
+  },
+
+  // ============================================================
   // 👥 PROJECT STAFF — assign คนในบริษัทเข้าโปรเจค (27_Project_Staff)
   // ============================================================
 
