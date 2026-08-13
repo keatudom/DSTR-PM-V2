@@ -31,47 +31,61 @@ const Shell = {
   },
 
   // ── นิยามเมนู ──────────────────────────────────────────
-  // scope 'global'  = เมนูระดับบน (ภาพรวมหลายโครงการ / ระบบ)
+  // scope 'global'  = เมนูระดับบน (ข้ามโครงการ / ระบบ)
   // scope 'project' = เมนูภายใน 1 โครงการ (แนบ ?project= อัตโนมัติ)
+  //
+  // ⚠️ กติกาที่เจ้าของงานเคาะ 2026-08-13 (หลังเจอปัญหา "ปุ่มสลับที่ / หน้าเดียวมี 2 ชื่อ"):
+  //   1. **1 หน้า = 1 ชื่อ** — `label` (เมนูข้าง) กับ `short` (แถบล่างมือถือ) มาจาก item เดียวกัน
+  //      ห้ามนิยามแถบล่างเป็น list แยก ไม่งั้นชื่อ/ไอคอนจะ drift กัน (เคยเป็น: dashboard =
+  //      "งาน" ในโครงการ แต่ = "หน้าหลัก" ในหน้าเช็คอิน)
+  //   2. **ห้ามใช้คำว่า "ภาพรวม" เป็นชื่อเมนู** — ชนกับแท็บ "ภาพรวม" ในหน้าโครงการ
+  //      (ผู้ใช้กดแล้วเด้งออกไปหน้าเลือกโครงการโดยไม่ตั้งใจ) → ใช้ "โครงการ" แทน
+  //   3. **เช็คอินอยู่ในเมนูโครงการเท่านั้น** — เช็คอินต้องรู้ว่าไซต์ไหน ถ้าเข้าจากเมนูระดับบน
+  //      จะไม่มี ?project= แล้วตกไป default 'bow-house' = ลงเวลาผิดโครงการทั้งบริษัท
   NAV: {
     global: [
       { section: 'เมนูหลัก' },
-      { key: 'projects', label: 'ภาพรวมโครงการ', icon: 'layout-dashboard', href: 'projects.html' },
-      { key: 'checkin',  label: 'เช็คอิน / ลงเวลา', icon: 'map-pin',         href: 'checkin.html' },
+      { key: 'projects', label: 'โครงการทั้งหมด', short: 'โครงการ', icon: 'layout-dashboard', href: 'projects.html' },
       { section: 'การจัดการ' },
-      { key: 'users',    label: 'ผู้ใช้งาน',        icon: 'users',           href: 'users.html' },
-      { key: 'hr',       label: 'พนักงาน (HR)',     icon: 'contact',         href: 'hr.html' },
+      { key: 'users',    label: 'ผู้ใช้งาน',      short: 'ผู้ใช้',   icon: 'users',   href: 'users.html' },
+      { key: 'hr',       label: 'พนักงาน (HR)',   short: 'พนักงาน',  icon: 'contact', href: 'hr.html' },
       { section: 'ระบบ' },
-      { key: 'help',     label: 'ช่วยเหลือและวิธีใช้', icon: 'help-circle',   href: 'help.html' },
+      { key: 'help',     label: 'ช่วยเหลือและวิธีใช้', short: 'ช่วยเหลือ', icon: 'help-circle', href: 'help.html' },
     ],
     project: [
-      { key: 'back',     label: 'กลับภาพรวมโครงการ', icon: 'arrow-left',      href: 'projects.html', global: true },
+      { key: 'back',      label: 'กลับรายการโครงการ', icon: 'arrow-left', href: 'projects.html', global: true },
       { section: 'เมนูโครงการ' },
-      { key: 'dashboard', label: 'รายการงาน (FF)',   icon: 'list-todo',       href: 'dashboard.html' },
-      { key: 'daily',     label: 'รายงานประจำวัน',    icon: 'activity',        href: 'daily.html' },
-      { key: 'materials', label: 'วัสดุ / เบิกจ่าย',  icon: 'package',         href: 'materials.html' },
-      { key: 'team',      label: 'ทีม / ผู้รับเหมา',   icon: 'users',           href: 'team.html' },
-      { key: 'qc',        label: 'ตรวจสอบคุณภาพ (QC)', icon: 'clipboard-check', href: 'qc.html' },
-      { key: 'gallery',   label: 'คลังรูปภาพ',        icon: 'images',          href: 'gallery.html' },
-      { key: 'client',    label: 'มุมมองลูกค้า',      icon: 'eye',             href: 'client.html' },
+      { key: 'dashboard', label: 'รายการงาน (FF)',    short: 'งาน',    icon: 'list-todo',       href: 'dashboard.html' },
+      { key: 'daily',     label: 'รายงานประจำวัน',     short: 'รายวัน', icon: 'activity',        href: 'daily.html' },
+      { key: 'checkin',   label: 'เช็คอิน / ลงเวลา',   short: 'ลงเวลา', icon: 'map-pin',         href: 'checkin.html' },
+      { key: 'materials', label: 'วัสดุ / เบิกจ่าย',   short: 'วัสดุ',  icon: 'package',         href: 'materials.html' },
+      { key: 'team',      label: 'ทีม / ผู้รับเหมา',    short: 'ทีม',    icon: 'users',           href: 'team.html' },
+      { key: 'qc',        label: 'ตรวจสอบคุณภาพ (QC)',  short: 'QC',     icon: 'clipboard-check', href: 'qc.html' },
+      { key: 'gallery',   label: 'คลังรูปภาพ',         short: 'รูป',    icon: 'images',          href: 'gallery.html' },
+      { key: 'client',    label: 'มุมมองลูกค้า',       short: 'ลูกค้า', icon: 'eye',             href: 'client.html' },
     ],
   },
 
-  // bottom nav มือถือ (≤5 ปุ่ม) แยกตาม scope
-  BOTTOM: {
-    global: [
-      { key: 'projects', label: 'ภาพรวม',   icon: 'layout-dashboard', href: 'projects.html' },
-      { key: 'checkin',  label: 'เช็คอิน',  icon: 'map-pin',          href: 'checkin.html' },
-      { key: 'users',    label: 'ผู้ใช้',   icon: 'users',            href: 'users.html' },
-      { key: 'help',     label: 'ช่วยเหลือ', icon: 'help-circle',     href: 'help.html' },
-    ],
-    project: [
-      { key: 'dashboard', label: 'งาน',    icon: 'list-todo', href: 'dashboard.html' },
-      { key: 'daily',     label: 'รายวัน', icon: 'activity',  href: 'daily.html' },
-      { key: 'materials', label: 'วัสดุ',  icon: 'package',   href: 'materials.html' },
-      { key: 'team',      label: 'ทีม',    icon: 'users',     href: 'team.html' },
-      { key: 'projects',  label: 'ภาพรวม', icon: 'grid-3x3',  href: 'projects.html', global: true },
-    ],
+  // ── แถบล่างมือถือ: เลือก "คีย์" จาก NAV ชุดเดียวกัน (≤5 ปุ่ม) ──
+  // เก็บแค่ลำดับคีย์ → ชื่อ/ไอคอน/ลิงก์มาจาก NAV เสมอ = ไม่มีทาง drift
+  //
+  // ⚠️ 'projects' ต้องเป็น **ปุ่มซ้ายสุดของทั้งสอง scope** — เป็นปุ่ม "ขึ้นไปข้างบน/หน้าแรก"
+  //    เดิมมันอยู่ซ้ายสุดตอนอยู่นอกโครงการ แต่เด้งไปขวาสุดตอนเข้าโครงการ → นิ้วจำตำแหน่งไม่ได้
+  //    (เจ้าของงานแจ้งเอง 2026-08-13 ว่า "ปุ่มมันสลับกัน")
+  BOTTOM_KEYS: {
+    global:  ['projects', 'users', 'hr', 'help'],
+    // ช่างใช้ 4 อย่างนี้ทุกวัน: ดูงาน → ลงเวลา → บันทึกงาน → เบิกของ
+    // (ทีม/QC/รูป/ลูกค้า ยังอยู่ในเมนูข้าง — แถบล่างจำกัด 5 ปุ่มไม่งั้นนิ้วชนกัน)
+    project: ['projects', 'dashboard', 'checkin', 'daily', 'materials'],
+  },
+
+  // หา item จาก key (ข้าม section header) — bottom nav ใช้ดึงชื่อ/ไอคอนจาก NAV
+  _item(scope, key) {
+    const inScope = (this.NAV[scope] || []).find((i) => i.key === key);
+    if (inScope) return inScope;
+    // 'projects' อยู่ใน NAV.global — scope project ยืมมาใช้เป็นปุ่มออกจากโครงการ
+    const g = this.NAV.global.find((i) => i.key === key);
+    return g ? Object.assign({}, g, { global: true }) : null;
   },
 
   _href(item) {
@@ -133,11 +147,14 @@ const Shell = {
 
   // ── สร้าง bottom nav ───────────────────────────────────
   _buildBottomNav() {
-    const items = this.BOTTOM[this._scope] || this.BOTTOM.global;
+    const keys = this.BOTTOM_KEYS[this._scope] || this.BOTTOM_KEYS.global;
     let html = '';
-    items.forEach((it) => {
+    keys.forEach((k) => {
+      const it = this._item(this._scope, k);
+      if (!it) return;
       const active = it.key === this._page ? ' active' : '';
-      html += `<a href="${this._href(it)}" class="bottom-nav-item${active}"><i data-lucide="${it.icon}"></i><span>${it.label}</span></a>`;
+      // ชื่อบนแถบล่างใช้ short (สั้นให้พอดีปุ่ม) แต่ถ้าไม่ได้ตั้งไว้ก็ใช้ label เดียวกับเมนูข้าง
+      html += `<a href="${this._href(it)}" class="bottom-nav-item${active}"><i data-lucide="${it.icon}"></i><span>${it.short || it.label}</span></a>`;
     });
     const nav = document.createElement('nav');
     nav.className = 'bottom-nav';
@@ -185,6 +202,21 @@ const Shell = {
   },
 
   // ── main ───────────────────────────────────────────────
+  // ── แถบล่างอย่างเดียว (ไม่มี sidebar/topbar) ──────────────
+  // ใช้กับหน้าที่โครงหน้าเป็นของตัวเอง ไม่ได้ใช้ .app-container — ตอนนี้คือ checkin.html
+  // (หน้าเช็คอินเป็น PWA เต็มจอสำหรับช่าง เลยไม่ยัด sidebar เข้าไป)
+  // สำคัญ: ยังดึงชื่อ/ไอคอน/ลิงก์จาก NAV ชุดเดียวกัน → ปุ่มตรงกับหน้าอื่นเป๊ะ ไม่ drift
+  renderBottomNavOnly(opts) {
+    opts = opts || {};
+    this._page = opts.page || '';
+    this._scope = opts.scope === 'project' ? 'project' : 'global';
+    document.body.appendChild(this._buildBottomNav());
+    // แถบล่างเป็น position:fixed — ถ้าไม่เว้นที่ให้ มันจะทับเนื้อหาบรรทัดสุดท้าย
+    // (หน้าพวกนี้ไม่ได้ใช้ .page-content ที่มี padding เผื่อไว้แล้ว)
+    document.body.classList.add('has-bottom-nav');
+    if (window.lucide) lucide.createIcons();
+  },
+
   render(opts) {
     opts = opts || {};
     this._page = opts.page || '';

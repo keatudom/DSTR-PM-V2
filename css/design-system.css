@@ -612,3 +612,43 @@ img { max-width: 100%; }
 @media (max-width: 768px) {
   .bottom-nav { display: flex; }
 }
+
+/* ============================================================
+   แก้ปัญหาที่เจอตอน UAT มือถือ 2026-08-13 (เจ้าของงานแจ้ง "ไม่สมดุล")
+   ============================================================ */
+
+/* ── 1. ซ่อนแถบเลื่อนของแถบที่เลื่อนแนวนอน ──────────────────
+   อาการ: หน้าโครงการบนมือถือ แถบแท็บมี scrollbar หนา 16px โผล่มากินพื้นที่
+          และแท็บ "การเงิน"/"ความเสี่ยง" ถูกดันตกจอโดยไม่มีอะไรบอกว่ามีต่อ
+   เลื่อนได้เหมือนเดิมทุกอย่าง แค่ไม่วาดแถบให้เกะกะ (หน้าเก่า client.html ทำถูกอยู่แล้ว
+   แต่ design system ใหม่ลืมยกมา) */
+.tabs, .table-wrap, .zone-tabs, .chips-row,
+.gl-chips, .mat-tabs, .mh-filter-row, .tl-wrap {
+  scrollbar-width: none;              /* Firefox */
+  -ms-overflow-style: none;           /* Edge เก่า */
+  -webkit-overflow-scrolling: touch;  /* iOS เลื่อนลื่น */
+}
+.tabs::-webkit-scrollbar, .table-wrap::-webkit-scrollbar, .zone-tabs::-webkit-scrollbar,
+.chips-row::-webkit-scrollbar, .gl-chips::-webkit-scrollbar, .mat-tabs::-webkit-scrollbar,
+.mh-filter-row::-webkit-scrollbar, .tl-wrap::-webkit-scrollbar { display: none; }
+
+/* บอกใบ้ว่ายังมีแท็บต่อทางขวา — เงาจางที่ขอบ (แทนแถบเลื่อนที่ซ่อนไป) */
+.tabs { position: relative; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%); mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%); }
+@media (min-width: 769px) { .tabs { -webkit-mask-image: none; mask-image: none; } }
+
+/* ── 2. ปุ่มบนมือถือต้องแตะง่าย ≥44px ──────────────────────
+   พิมพ์เขียวกำหนดไว้เอง (BLUEPRINT §2.2 ข้อ 7) แต่ของจริงหลายปุ่มสูงแค่ 36-40px
+   ช่างใส่ถุงมือ/มือเปื้อน แตะพลาดบ่อย */
+@media (max-width: 768px) {
+  .btn, .tab, .chip, select, input[type="date"], input[type="number"], input[type="text"], input[type="search"] {
+    min-height: 44px;
+  }
+  .btn-sm { min-height: 40px; }        /* ปุ่มรองในการ์ด — ผ่อนได้เล็กน้อย */
+  .btn-icon { min-width: 44px; }
+  .bottom-nav-item { min-height: 56px; }
+}
+
+/* หน้าที่ใช้แถบล่างแต่ไม่ได้ใช้ .page-content (checkin, hr) — เว้นที่ให้แถบล่างไม่ทับเนื้อหา */
+@media (max-width: 768px) {
+  body.has-bottom-nav { padding-bottom: calc(var(--bottomnav-h) + var(--space-4)); }
+}

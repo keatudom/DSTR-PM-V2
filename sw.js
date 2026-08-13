@@ -2,7 +2,8 @@
 // แคชเฉพาะไฟล์ same-origin (HTML/CSS/JS) — ไม่แตะ API (script.google.com)
 // ⚠️ เลข CACHE ต้องเปลี่ยนทุกครั้งที่ shell เปลี่ยนชุดไฟล์ — activate จะล้างถังเก่าทิ้งให้เอง
 //    'dstr-v3' = หลังตัดยอดดีไซน์ใหม่ 2026-08-13 (design-system.css + shell.js + Lucide)
-var CACHE = 'dstr-v3';
+//    'dstr-v4' = แก้เมนู/มือถือ 2026-08-13 รอบบ่าย (shell.js + design-system.css เปลี่ยน)
+var CACHE = 'dstr-v4';
 var SHELL = [
   'index.html', 'dashboard.html', 'checkin.html', 'daily.html',
   'css/design-system.css',

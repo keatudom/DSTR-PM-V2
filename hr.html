@@ -123,8 +123,14 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/api.js"></script>
+<script src="vendor/lucide/lucide.min.js"></script>
+<script src="js/shell.js"></script>
 <script>
 if (!Auth.requireAuth('admin')) { /* client ถูกเด้งออก */ }
+
+// เดิมหน้านี้ไม่มีเมนูเลย — เข้ามาแล้วออกได้ทางเดียวคือปุ่มย้อนกลับของเบราว์เซอร์
+// ใส่แถบล่างชุดเดียวกับหน้าอื่นให้ (ระดับบน: โครงการ/ผู้ใช้/พนักงาน/ช่วยเหลือ)
+Shell.renderBottomNavOnly({ page:'hr', scope:'global' });
 
 var TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 var ROLE_TH = { creator:'ผู้สร้างระบบ', owner:'เจ้าของกิจการ', director:'ผู้ดูแลโครงการ', pm:'PM', hr:'ฝ่ายบุคคล', site_engineer:'วิศวกรหน้างาน', foreman:'โฟร์แมน', purchaser:'ฝ่ายจัดซื้อ', contractor:'ผู้รับเหมา', admin:'แอดมิน' };
