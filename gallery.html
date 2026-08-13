@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คลังรูปภาพ · DSTR</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<style>
+  /* ── คลังรูปภาพ (นอกเหนือจาก main.css) ── */
+  .gl-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .gl-hdr h2 { font-size:19px; font-weight:700; color:#1F3864; }
+  .gl-hdr-sub { font-size:12px; color:#6B7280; margin-top:2px; }
+  .gl-back { background:#F3F4F6; color:#4B5563; border:none; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; }
+
+  /* ชิปเลือกแหล่งที่มา */
+  .gl-chips { display:flex; gap:7px; overflow-x:auto; padding-bottom:4px; margin-bottom:12px; -webkit-overflow-scrolling:touch; }
+  .gl-chip { flex:0 0 auto; border:1px solid #E5E7EB; background:#fff; color:#4B5563; border-radius:20px;
+             padding:7px 13px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .gl-chip .n { opacity:.65; margin-left:3px; font-weight:500; }
+  .gl-chip.on { color:#fff; border-color:transparent; }
+  .gl-chip.on[data-src="all"]     { background:#1F3864; }
+  .gl-chip.on[data-src="daily"]   { background:#378ADD; }
+  .gl-chip.on[data-src="checkin"] { background:#BA7517; }
+  .gl-chip.on[data-src="task"]    { background:#1D9E75; }
+  .gl-chip.on[data-src="qc"]      { background:#7C3AED; }
+
+  /* แถบกรองเพิ่มเติม */
+  .gl-filters { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+  .gl-filters input, .gl-filters select {
+    font-family:inherit; font-size:12px; padding:8px 10px; border:1px solid #E5E7EB;
+    border-radius:9px; background:#fff; color:#111827; }
+  .gl-filters input[type="date"] { width:140px; }
+  .gl-filters .grow { flex:1; min-width:150px; }
+  .gl-clear { background:none; border:none; color:#6B7280; font-size:12px; cursor:pointer; font-family:inherit; text-decoration:underline; }
+
+  /* แถบเครื่องมือ + สรุปที่เลือก */
+  .gl-bar { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .gl-count { font-size:12px; color:#6B7280; }
+  .gl-actions { display:flex; gap:7px; flex-wrap:wrap; }
+  .gl-btn { font-family:inherit; font-size:12px; font-weight:600; padding:8px 12px; border-radius:9px; cursor:pointer;
+            border:1px solid #E5E7EB; background:#fff; color:#4B5563; }
+  .gl-btn.primary { background:#1F3864; border-color:#1F3864; color:#fff; }
+  .gl-btn:disabled { opacity:.45; cursor:not-allowed; }
+
+  /* กลุ่มตามวัน */
+  .gl-day { font-size:12px; font-weight:700; color:#374151; background:#F3F4F6;
+            padding:6px 11px; border-radius:7px; display:inline-block; margin:16px 0 9px; }
+  .gl-day:first-of-type { margin-top:4px; }
+
+  /* ตารางรูป */
+  .gl-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(112px, 1fr)); gap:8px; }
+  .gl-tile { position:relative; border-radius:10px; overflow:hidden; background:#F3F4F6; aspect-ratio:1/1; cursor:pointer; }
+  .gl-tile img { width:100%; height:100%; object-fit:cover; display:block; }
+  .gl-tile .cap { position:absolute; left:0; right:0; bottom:0; padding:14px 6px 5px; font-size:9px; color:#fff;
+                  background:linear-gradient(transparent, rgba(0,0,0,.72)); line-height:1.35;
+                  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gl-tile .src { position:absolute; top:5px; left:5px; font-size:9px; font-weight:700; color:#fff;
+                  padding:2px 6px; border-radius:20px; }
+  .src-daily { background:#378ADD; } .src-checkin { background:#BA7517; }
+  .src-task  { background:#1D9E75; } .src-qc      { background:#7C3AED; }
+  .gl-tile .pick { position:absolute; top:4px; right:4px; width:23px; height:23px; border-radius:50%;
+                   border:2px solid rgba(255,255,255,.9); background:rgba(0,0,0,.28); cursor:pointer;
+                   display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; line-height:1; }
+  .gl-tile.sel { outline:3px solid #1F3864; outline-offset:-3px; }
+  .gl-tile.sel .pick { background:#1F3864; border-color:#fff; }
+
+  .gl-empty { text-align:center; color:#9CA3AF; font-size:13px; padding:44px 12px; }
+  .gl-more { text-align:center; margin:18px 0 4px; }
+
+  /* ดูรูปใหญ่ */
+  .gl-view { position:fixed; inset:0; background:#111827; z-index:9999; display:none;
+             flex-direction:column; }
+  .gl-view.open { display:flex; }
+  .gl-view-top { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; gap:10px; }
+  .gl-view-top .x { background:rgba(255,255,255,.14); border:none; color:#fff; width:34px; height:34px;
+                    border-radius:50%; font-size:17px; cursor:pointer; line-height:1; }
+  .gl-view-body { flex:1; display:flex; align-items:center; justify-content:center; padding:0 8px; min-height:0; position:relative; }
+  .gl-view-body img { max-width:100%; max-height:100%; object-fit:contain; border-radius:8px; }
+  .gl-nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.14); border:none;
+            color:#fff; width:38px; height:56px; border-radius:9px; font-size:20px; cursor:pointer; }
+  .gl-nav.prev { left:6px; } .gl-nav.next { right:6px; }
+  .gl-view-info { color:#E5E7EB; padding:12px 16px 18px; font-size:12px; line-height:1.6; }
+  .gl-view-info .t { color:#fff; font-weight:600; font-size:14px; margin-bottom:3px; }
+  .gl-view-info .meta { color:#9CA3AF; font-size:11px; }
+  .gl-view-info .acts { margin-top:11px; display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* แถบล่างตอนเลือกรูป */
+  .gl-sel-bar { position:fixed; left:0; right:0; bottom:0; background:#1F3864; color:#fff; z-index:900;
+                padding:11px 14px; display:none; justify-content:space-between; align-items:center; gap:10px;
+                box-shadow:0 -3px 14px rgba(0,0,0,.18); }
+  .gl-sel-bar.on { display:flex; }
+  .gl-sel-bar .n { font-size:13px; font-weight:600; }
+  .gl-sel-bar button { font-family:inherit; font-size:12px; font-weight:600; padding:8px 13px; border-radius:9px;
+                       border:none; cursor:pointer; }
+  .gl-sel-bar .go { background:#fff; color:#1F3864; }
+  .gl-sel-bar .no { background:rgba(255,255,255,.16); color:#fff; }
+  .gl-sel-bar button:disabled { opacity:.55; cursor:not-allowed; }
+
+  .gl-note { font-size:11px; color:#92400E; background:#FEF3C7; border-radius:9px; padding:9px 12px; margin-bottom:12px; }
+</style>
+</head>
+<body>
+
+<div class="app" style="padding-bottom:70px">
+
+  <div class="gl-hdr">
+    <div>
+      <h2>🖼️ คลังรูปภาพ</h2>
+      <div class="gl-hdr-sub" id="hdrSub">กำลังโหลด...</div>
+    </div>
+    <button class="gl-back" onclick="goBack()">← กลับ</button>
+  </div>
+
+  <div id="loadingScreen" class="gl-empty">กำลังโหลดรูป...</div>
+
+  <div id="gasNotice" class="gl-note" style="display:none">
+    ⚠️ คลังรูปภาพทำงานบนเครื่องยนต์ใหม่ (Cloudflare) เท่านั้น — ขณะนี้ระบบยังใช้เครื่องยนต์เดิม
+  </div>
+
+  <div id="main" style="display:none">
+    <div class="gl-chips" id="chips"></div>
+
+    <div class="gl-filters">
+      <input type="date" id="fFrom" onchange="applyFilters()" title="ตั้งแต่วันที่">
+      <span style="color:#9CA3AF;font-size:12px">ถึง</span>
+      <input type="date" id="fTo" onchange="applyFilters()" title="ถึงวันที่">
+      <select id="fFF" onchange="applyFilters()"><option value="">ทุกชิ้นงาน</option></select>
+      <input type="search" id="fQ" class="grow" placeholder="ค้นหาข้อความ / ชื่อคน" oninput="debouncedFilter()">
+      <button class="gl-clear" onclick="clearFilters()">ล้างตัวกรอง</button>
+    </div>
+
+    <div class="gl-bar">
+      <div class="gl-count" id="countLine">—</div>
+      <div class="gl-actions">
+        <button class="gl-btn" onclick="selectAllShown()">เลือกรูปที่เห็นทั้งหมด</button>
+        <button class="gl-btn" onclick="reload()">🔄 รีเฟรช</button>
+      </div>
+    </div>
+
+    <div id="legacyNote" class="gl-note" style="display:none"></div>
+    <div id="grid"></div>
+    <div class="gl-more" id="moreWrap" style="display:none">
+      <button class="gl-btn" onclick="showMore()">โหลดรูปเพิ่ม</button>
+    </div>
+  </div>
+</div>
+
+<!-- แถบล่างตอนเลือกรูป -->
+<div class="gl-sel-bar" id="selBar">
+  <span class="n" id="selCount">เลือกแล้ว 0 รูป</span>
+  <span style="display:flex;gap:7px">
+    <button class="no" onclick="clearSelection()">ยกเลิก</button>
+    <button class="go" id="btnDl" onclick="downloadSelected()">⬇ ดาวน์โหลด</button>
+  </span>
+</div>
+
+<!-- ดูรูปใหญ่ -->
+<div class="gl-view" id="viewer">
+  <div class="gl-view-top">
+    <span id="vSrc" style="font-size:11px;font-weight:700;color:#fff;padding:3px 9px;border-radius:20px"></span>
+    <button class="x" onclick="closeViewer()">✕</button>
+  </div>
+  <div class="gl-view-body">
+    <button class="gl-nav prev" onclick="stepViewer(-1)">‹</button>
+    <img id="vImg" alt="">
+    <button class="gl-nav next" onclick="stepViewer(1)">›</button>
+  </div>
+  <div class="gl-view-info">
+    <div class="t" id="vTitle"></div>
+    <div id="vDetail"></div>
+    <div class="meta" id="vMeta"></div>
+    <div class="acts">
+      <button class="gl-btn primary" onclick="downloadCurrent()">⬇ ดาวน์โหลดรูปนี้</button>
+      <button class="gl-btn" onclick="openSource()">ดูต้นทาง</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/gallery.js"></script>
+<script>
+// ตรรกะทั้งหมดอยู่ใน js/gallery.js (ใช้ร่วมกับ /v3/gallery.html) — ที่นี่เหลือแค่ boot
+if (!Auth.requireAuth('admin')) { /* redirected */ }
+
+function goBack() {
+  window.location.href = 'dashboard.html?project=' + encodeURIComponent(state.projectId);
+}
+
+galleryInit();
+</script>
+</body>
+</html>

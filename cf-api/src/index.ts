@@ -42,6 +42,12 @@ app.get('/media/*', async (c) => {
   const headers = new Headers();
   obj.writeHttpMetadata(headers);
   headers.set('Cache-Control', 'public, max-age=31536000');
+  // CORS สำหรับหน้าคลังรูปภาพ: ปุ่มดาวน์โหลดต้องดึงไฟล์ด้วย fetch() แล้วแปลงเป็น blob
+  // (<a download> ข้าม origin เบราว์เซอร์จะเปิดแท็บแทนเซฟ) → ถ้าไม่มี header นี้ fetch ถูกบล็อก
+  // อ่านอย่างเดียว + ไฟล์เปิดสาธารณะอยู่แล้ว → allowlist เดิมพอ ไม่ต้องเปิด *
+  for (const [k, v] of Object.entries(corsHeaders(c.req.header('Origin') ?? null, c.env))) {
+    headers.set(k, v);
+  }
   return new Response(obj.body, { headers });
 });
 

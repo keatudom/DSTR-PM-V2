@@ -18,6 +18,7 @@ import * as photos from './modules/photos.ts'; // Session 2 — โมดูล 
 import * as notifications from './modules/notifications.ts'; // Session 2 — โมดูล 11
 import * as line from './modules/line_webhook.ts'; // Session 2 — โมดูล 11 (LINE digests)
 import * as qc from './modules/qc.ts'; // ★ Session 3 — QC Checklist
+import * as gallery from './modules/gallery.ts'; // ★ คลังรูปภาพรวม (2026-08-13)
 
 export async function route(env: Env, action: string, p: Record<string, unknown>): Promise<unknown> {
   switch (action) {
@@ -27,6 +28,12 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
     // 📊 getAll ‼raw (Code.js:621) — aggregate สำหรับ dashboard เก่า — Session 2
     case 'getAll':
       return ffTasks.getAll(env, p);
+
+    // 🖼️ GALLERY — คลังรูปภาพรวมของโครงการ (4 แหล่ง) + ย้ายรูปเก่า Drive → R2
+    case 'get_gallery':
+      return gallery.getGallery(env, p);
+    case 'migrate_drive_photos':
+      return gallery.migrateDrivePhotos(env, p);
 
     // 📷 PHOTOS / FILES / AI BILL (Code.js) — Session 2 โมดูล 7 (upload = R2 gated)
     case 'get_photos':

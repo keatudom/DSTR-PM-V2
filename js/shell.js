@@ -52,6 +52,7 @@ const Shell = {
       { key: 'materials', label: 'วัสดุ / เบิกจ่าย',  icon: 'package',         href: 'materials.html' },
       { key: 'team',      label: 'ทีม / ผู้รับเหมา',   icon: 'users',           href: 'team.html' },
       { key: 'qc',        label: 'ตรวจสอบคุณภาพ (QC)', icon: 'clipboard-check', href: 'qc.html' },
+      { key: 'gallery',   label: 'คลังรูปภาพ',        icon: 'images',          href: 'gallery.html' },
       { key: 'client',    label: 'มุมมองลูกค้า',      icon: 'eye',             href: 'client.html' },
     ],
   },

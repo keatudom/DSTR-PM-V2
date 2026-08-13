@@ -54,7 +54,7 @@ addCap('READ', [
   'get_inventory_summary', 'get_client_finance', 'get_contract_files',
   'suggest_task_from_log', 'parse_activity_text', 'parse_material_log',
   'scan_bill', 'detect_unknowns', 'login', 'login_google', 'get_me',
-  'check_stock_for_items', 'get_notifications',
+  'check_stock_for_items', 'get_notifications', 'get_gallery',
 ]);
 addCap('OPS', [
   'updateTask', 'team_checkin', 'withdraw_material', 'create_daily',
@@ -87,6 +87,8 @@ addCap('ATTEND', ['get_attendance_all', 'update_checkin', 'set_id_card']);
 addCap('ADMIN', [
   'create_staff', 'update_staff', 'assign_project_staff',
   'unassign_project_staff', 'get_users', 'upsert_user', 'set_user_role',
+  // ย้ายรูปเก่า Drive → R2 (แตะ url ในฐานข้อมูลตรงๆ — เจ้าของ/แอดมินเท่านั้น)
+  'migrate_drive_photos',
 ]);
 
 // write caps ที่ต้องเช็ค project scope (auth.gs:278)

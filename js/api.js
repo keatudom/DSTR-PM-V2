@@ -864,6 +864,31 @@ const API = {
   },
 
   // ============================================================
+  // 🖼️ GALLERY — คลังรูปภาพรวมของโครงการ (ทำงานบน BACKEND==='cf')
+  // ============================================================
+  // รวมรูปจาก 4 แหล่ง (รายงานประจำวัน / เช็คอิน / หลักฐานงาน / QC) ให้รูปแบบเดียวกัน
+  // project_id แนบอัตโนมัติจาก state.projectId ผ่าน _injectProjectId
+
+  /**
+   * ดึงรูปทั้งหมดของโครงการ
+   * @param {object} params - { source?:'all'|'daily'|'checkin'|'task'|'qc',
+   *                            from?, to? ('YYYY-MM-DD'), ff_code?, q?, limit? }
+   * Returns: { ok:true, data:{ items:[{id,source,url,date,time,title,detail,
+   *                                    ff_code,by,ref_id,legacy}], counts:{...} } }
+   */
+  getGallery: function(params) {
+    return this.callRead('get_gallery', params || {});
+  },
+
+  /**
+   * ย้ายรูปเก่าจาก Google Drive → R2 ทีละชุด (owner/admin เท่านั้น · ทำครั้งเดียวตอน migrate)
+   * @param {object} params - { limit?:1-40 (default 15), dry_run?:true }
+   */
+  migrateDrivePhotos: function(params) {
+    return this.callPost('migrate_drive_photos', params || {});
+  },
+
+  // ============================================================
   // 👥 PROJECT STAFF — assign คนในบริษัทเข้าโปรเจค (27_Project_Staff)
   // ============================================================
 
