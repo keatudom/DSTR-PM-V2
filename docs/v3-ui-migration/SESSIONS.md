@@ -1,4 +1,4 @@
-# 🗓️ V3 UI Migration — ใบสั่งงานราย Session
+**สถานะรวม (อัปเดต 2026-08-13):** 🎉 **ตัดยอดครบทุกหน้าแล้ว** — หน้าโฉมใหม่ 13 หน้าอยู่ที่ root ใช้ URL เดิมทั้งหมด (`https://keatudom.github.io/DSTR-PM-V2/<หน้า>.html`) · โฟลเดอร์ `v3/` เหลือแค่ `demo.html` (หน้าโชว์ component) · **เหลือหน้าเดียวที่ยังเป็นดีไซน์เก่า = `client.html`** (เจ้าของงานสั่งพักไว้ · สเปกอยู่ที่ `S3-client-design.md`) · ⏳ ค้าง: คลิปสอนใหม่ของ daily/checkin + แจ้งกลุ่ม LINE ช่าง# 🗓️ V3 UI Migration — ใบสั่งงานราย Session
 
 > อ่าน `BLUEPRINT.md` ก่อนทุก session (กติกา §2 + พิธีตัดยอด §4 บังคับใช้ทุกหน้า)
 > จบแต่ละ session: อัปเดตตาราง "บันทึกผล" ท้ายไฟล์นี้ + /handoff
@@ -135,3 +135,21 @@
 | S2b-2 | 2026-07-18 | `v3/dashboard.html` แทน stub `_soon()` ด้วยของจริง: **FF Detail overlay** (openFFDetail/closeFFDetail + header KPI variance, กราฟแผน-vs-จริง 4 งวด, section แบบ/รูปทรง caption `[แบบ:`, งานรายงวด reuse `renderFFSubtasks(_,true)` ซ่อน CTA, gallery รวม, loadFFDPhotosBundle) + **FF Wizard** (FFW.* สร้างหลาย FF/tasks/template + openEdit/submitEdit + confirmDelete + openFFWizardModal + confirmCloneFromTemplate) · ปุ่ม "เพิ่มงาน"→FFW.open() · Esc ปิดทีละชั้น · ปุ่มปิด 44px · CSS overlay/wizard แปลงเป็น design tokens | ⏳ (ตัดยอดหลัง S2c) | ✅ verified Playwright: **parity 18/18 FF เป๊ะ** (pct/plan/var/ราคา/zone/งานรายงวด เทียบหน้าเดิม — ต่างแค่ currentWeek เดินตามนาฬิกา) · overlay+กราฟ+section ครบ · wizard: กันรหัสซ้ำข้ามการ์ด, validate กัน submit ว่าง, template 4 งาน, edit เติมค่าเดิมครบ, delete dialog (ยกเลิก=ไม่ลบจริง) · **z-index ซ้อนจริงผ่าน 3 ชั้น** (overlay 50 < modal 100 < lightbox 9999, elementFromPoint ยืนยัน) · mobile 390px + desktop · **0 console error** |
 | S2b-1 | 2026-07-16 | `v3/dashboard.html` แท็บ "รายการงาน": FF list (zone tabs+sort gen จาก data), expand → subtask จัดกลุ่มงวด (phase dot), ติ๊กงาน (toggleTask/markDone/confirmUncheck + uncheck modal + date-choice), รูปงาน (chip 3-state+retry, gallery, lightbox, compress, ลบ) · แก้ hardcode zone→gen จาก data · z-index lightbox 9999 > modal 100 | ⏳ (รอ S2b-2+S2c) | ✅ verified: 18 FF, expand F-01=19 งาน/4 phase, uncheck modal+gallery เปิดถูก (ไม่กดยืนยัน=ไม่เขียน), 0 error · ⏳ **S2b-2 ค้าง = FF detail overlay + FF wizard (ตอนนี้ stub → toast)** |
 | S2a | 2026-07-16 | `v3/dashboard.html` (per-project) โครง tab + shell scope project + พอร์ต overview ทั้งหมด: header/pills, KPI, gauge donut, AI daily card, AI alerts, inventory (read-only), timeline 20wk, notifications (NF.*) · แก้ลิงก์ hardcode `?project=bow-house` → `state.projectId` · inventory `dashboard-inventory.md` = parity checklist | ⏳ (ตัดยอดหลัง S2c — ทั้งหน้าต้องครบก่อน) | ✅ verified Playwright: ข้อมูลจริง Kun Beau House 40.7%/81.7%/-41%/1.19M, gauge, timeline 18 แถว, tab switch, กระดิ่ง 40 รายการ+mark-read, mobile+desktop, **0 console error** · ⚠️ actor บาง noti = "???" (data เก่าใน DB เพี้ยน ไม่ใช่บั๊กหน้าใหม่) · S2b/c = placeholder |
+
+---
+
+## 🚚 บันทึกการตัดยอด (cutover) — 2026-08-13
+
+ทำบน branch `v3-cutover` → merge เข้า main · แบ่ง 4 slice ตามความเสี่ยง (เจ้าของงานเคาะ)
+วิธี: `v3/x.html` → `x.html` + แทน `../` ด้วยว่าง + ลบไฟล์ใน v3/ (ไม่เหลือสำเนาซ้ำให้ drift)
+
+| Slice | หน้า | ตรวจอะไร | ผล |
+|---|---|---|---|
+| 1 | index · projects · dashboard | เงิน+% เทียบหน้าเดิม side-by-side | ✅ ตัวเลขเงินตรง 23/23 · % ตรง 22/22 (กระจายตามแท็บ) |
+| 2 | users · hr · help · about · gallery | โหลดได้ + asset ครบ | ✅ (about: รูปทีมงานยังไม่เคยอัป → monogram เหมือนเดิม) |
+| 3 | team · qc · materials | team=เทียบเงิน · qc=marker ฟีเจอร์ล่าสุด | ✅ เงินตรงทุกตัว (210k/42k/168k/63k · เกรด 87.5·76.3) · qc marker ครบ (na_reason, ถังขยะ, PDF) |
+| 4 | daily · checkin | กับดักเดิม: `checkin_action`, GPS, กล้อง, PWA, sw.js | ✅ ครบทุกจุด |
+
+**เก็บกวาดพร้อมกัน:** `sw.js` → CACHE `dstr-v3` + แคช `design-system.css`/`shell.js`/Lucide (ไอคอนต้องมีตอนออฟไลน์) · `css/main.css` **ยังลบไม่ได้** เพราะ `client.html` ยังใช้อยู่
+
+**ย้อนกลับ:** `git revert` commit ของ slice นั้น (แต่ละ slice แยกกันได้) แล้ว push

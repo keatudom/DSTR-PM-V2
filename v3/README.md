@@ -1,11 +1,17 @@
-# 🚧 v3/ — โซนทดสอบ V3 UI (ผู้ใช้จริงยังไม่เห็น)
+# v3/ — เหลือแค่หน้าโชว์ส่วนประกอบ
 
-หน้าใน `v3/` คือหน้าโฉมใหม่ที่**กำลังทำ** — ยังไม่ตัดยอด ไม่มีลิงก์จากหน้าจริงชี้เข้ามา
-เข้าทดสอบผ่าน URL ตรง เช่น `https://keatudom.github.io/DSTR-PM-V2/v3/dashboard.html`
+**ตัดยอด V3 เสร็จแล้ว 2026-08-13** — หน้าโฉมใหม่ทั้ง 13 หน้าย้ายไปอยู่ที่ root แล้ว
+ผู้ใช้เข้าที่ URL เดิมทุกหน้า (`https://keatudom.github.io/DSTR-PM-V2/<หน้า>.html`)
+**ไม่มี URL `/v3/` สำหรับผู้ใช้อีกต่อไป**
 
-**asset อ้างด้วย `../`** (ไฟล์กลางอยู่ที่ root): `../css/design-system.css`, `../js/*.js`, `../vendor/lucide/lucide.min.js`
-ตอนตัดยอด: ย้ายไฟล์ `v3/x.html` → `x.html` (root) แล้วแก้ `../` → `./` ตาม checklist ใน `docs/v3-ui-migration/BLUEPRINT.md` §4
+เหลือในโฟลเดอร์นี้ไฟล์เดียว:
 
-- `demo.html` = หน้าโชว์ทุก component ของ design system + shell (ไว้เช็คสายตา ไม่ตัดยอด)
+- `demo.html` — หน้าโชว์ทุก component ของ design system + shell (ปุ่ม/ตาราง/modal/toast/chip/…)
+  ไว้ให้คนแก้ UI เปิดดูว่ามีอะไรใช้ได้บ้าง **ไม่ใช่หน้าใช้งานจริง ไม่มีลิงก์จากเมนูชี้เข้ามา**
+  เปิดที่ `https://keatudom.github.io/DSTR-PM-V2/v3/demo.html`
+  (asset อ้างด้วย `../` เพราะยังอยู่ในโฟลเดอร์ย่อย)
 
-ดูพิมพ์เขียว: `docs/v3-ui-migration/BLUEPRINT.md` + `SESSIONS.md`
+หน้าเดียวที่**ยังเป็นดีไซน์เก่า** = `client.html` (หน้าเจ้าบ้าน) — เจ้าของงานสั่งพักไว้ก่อน
+มีสเปกรออยู่ที่ `docs/v3-ui-migration/S3-client-design.md`
+
+ประวัติ/พิมพ์เขียวการย้าย: `docs/v3-ui-migration/BLUEPRINT.md` + `SESSIONS.md`

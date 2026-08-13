@@ -1,10 +1,15 @@
 // DSTR Service Worker — network-first (กันแคชค้าง) + offline shell
 // แคชเฉพาะไฟล์ same-origin (HTML/CSS/JS) — ไม่แตะ API (script.google.com)
-var CACHE = 'dstr-v2';
+// ⚠️ เลข CACHE ต้องเปลี่ยนทุกครั้งที่ shell เปลี่ยนชุดไฟล์ — activate จะล้างถังเก่าทิ้งให้เอง
+//    'dstr-v3' = หลังตัดยอดดีไซน์ใหม่ 2026-08-13 (design-system.css + shell.js + Lucide)
+var CACHE = 'dstr-v3';
 var SHELL = [
   'index.html', 'dashboard.html', 'checkin.html', 'daily.html',
-  'css/main.css',
+  'css/design-system.css',
+  // ไอคอนต้องแคช — ช่างใช้กลางไซต์ เน็ตหลุดแล้วไอคอนหายทั้งหน้า อ่านไม่ออกเลย
+  'vendor/lucide/lucide.min.js',
   'js/config.js', 'js/auth.js', 'js/api.js', 'js/state.js', 'js/modal.js',
+  'js/shell.js', 'js/pwa-install.js',
   'manifest.json'
 ];
 
