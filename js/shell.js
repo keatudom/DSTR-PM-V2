@@ -62,6 +62,7 @@ const Shell = {
       { key: 'team',      label: 'ทีม / ผู้รับเหมา',    short: 'ทีม',    icon: 'users',           href: 'team.html' },
       { key: 'qc',        label: 'ตรวจสอบคุณภาพ (QC)',  short: 'QC',     icon: 'clipboard-check', href: 'qc.html' },
       { key: 'gallery',   label: 'คลังรูปภาพ',         short: 'รูป',    icon: 'images',          href: 'gallery.html' },
+      { key: 'content',   label: 'โรงงานคอนเทนต์',     short: 'คอนเทนต์', icon: 'megaphone',       href: 'content.html' },
       { key: 'client',    label: 'มุมมองลูกค้า',       short: 'ลูกค้า', icon: 'eye',             href: 'client.html' },
     ],
   },

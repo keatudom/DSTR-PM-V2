@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>โรงงานคอนเทนต์ — DSTR PM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/design-system.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<style>
+  /* ==========================================================
+     สไตล์สำหรับหน้า โรงงานคอนเทนต์ (Content Factory)
+     ========================================================== */
+  
+  /* Utilities เฉพาะหน้า */
+  .cf-hide { display: none !important; }
+  .cf-scroll-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cf-scroll-hide::-webkit-scrollbar { display: none; }
+
+  /* 1. Header & Tabs */
+  .cf-head { margin-bottom: var(--space-4); }
+  .cf-head h1 { font-size: var(--text-2xl); display: flex; align-items: center; gap: var(--space-2); }
+  .cf-stat-bar { 
+    display: flex; gap: var(--space-4); align-items: center; 
+    background: var(--color-slate-800); color: #fff; 
+    padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); 
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+  }
+  .cf-stat-main { display: flex; align-items: center; gap: var(--space-3); }
+  .cf-stat-num { font-size: var(--text-2xl); font-weight: 700; color: var(--color-warning-500); line-height: 1; }
+  .cf-stat-text { font-size: var(--text-sm); line-height: 1.3; }
+  
+  .cf-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--color-slate-200); overflow-x: auto; margin-bottom: var(--space-4); }
+  .cf-tab {
+    display: inline-flex; align-items: center; gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm); font-weight: 600;
+    color: var(--color-slate-500);
+    border-bottom: 2px solid transparent;
+    cursor: pointer; white-space: nowrap;
+    transition: all 0.15s;
+    min-height: 44px; /* Mobile safe tap */
+  }
+  .cf-tab:hover { color: var(--color-slate-800); }
+  .cf-tab.active { color: var(--color-blue-700); border-bottom-color: var(--color-blue-600); }
+
+  /* 2. Consent Gate */
+  .cf-consent-gate {
+    background: #fff; border: 1px solid var(--color-slate-200);
+    border-radius: var(--radius-lg); padding: var(--space-8) var(--space-4);
+    text-align: center; box-shadow: var(--shadow-sm);
+    margin-top: var(--space-8);
+  }
+  .cf-consent-icon {
+    width: 64px; height: 64px; background: var(--color-blue-50);
+    color: var(--color-blue-600); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto var(--space-4);
+  }
+  .cf-consent-icon i { width: 32px; height: 32px; }
+
+  /* 3. Screen A: เลือกวัตถุดิบ (Candidate Grid) */
+  .cf-filter-bar { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); align-items: center; }
+  /* padding-bottom เผื่อ Action Bar ด้านล่าง เพื่อไม่ให้แถบลอยทับการ์ดรูป */
+  .cf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--space-3); padding-bottom: 120px; }
+  @media (max-width: 768px) {
+    .cf-grid { padding-bottom: 260px; } /* บนมือถือ Action bar สูง + bottom nav สูง */
+  }
+  
+  .cf-card {
+    background: #fff; border: 1px solid var(--color-slate-200); border-radius: var(--radius-lg); overflow: hidden;
+    position: relative; cursor: pointer; display: flex; flex-direction: column; transition: border-color 0.15s;
+  }
+  .cf-card:hover { border-color: var(--color-slate-400); }
+  .cf-card.sel { outline: 3px solid var(--color-blue-600); outline-offset: -1px; border-color: transparent; }
+  
+  .cf-card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: var(--color-slate-100); }
+  .cf-card-badge {
+    position: absolute; top: 6px; left: 6px;
+    font-size: 10px; font-weight: 700; color: #fff;
+    padding: 2px 6px; border-radius: var(--radius-full);
+  }
+  .cf-badge-daily { background: #378ADD; }
+  .cf-badge-evidence { background: #1D9E75; }
+  
+  .cf-card-pick {
+    position: absolute; top: 4px; right: 4px; 
+    width: 44px; height: 44px; /* แก้ตามกติกา mobile tap target 44px */
+    border-radius: 50%; border: 2px solid rgba(255,255,255,0.9);
+    background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;
+    color: transparent; transition: all 0.1s;
+  }
+  .cf-card.sel .cf-card-pick { background: var(--color-blue-600); border-color: #fff; color: #fff; }
+  .cf-card.sel .cf-card-pick i { width: 20px; height: 20px; }
+  
+  .cf-card-body { padding: var(--space-2); flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .cf-card-meta { font-size: 10px; color: var(--color-slate-500); display: flex; justify-content: space-between; }
+  .cf-card-code { font-size: 11px; font-weight: 600; color: var(--color-slate-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cf-card-desc { font-size: 11px; color: var(--color-slate-700); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; background: var(--color-slate-50); padding: 4px; border-radius: var(--radius-sm); }
+  
+  /* Action Bar (Sticky Bottom สำหรับ Screen A) */
+  .cf-action-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #fff; border-top: 1px solid var(--color-slate-200);
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.05); padding: var(--space-3) var(--space-4);
+    z-index: 40; display: flex; justify-content: space-between; align-items: center; gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+  @media (max-width: 768px) { 
+    .cf-action-bar { bottom: var(--bottomnav-h); flex-direction: column; align-items: stretch; padding: var(--space-4); } 
+  }
+
+  /* 4. Screen B: เคาะคอนเทนต์ (Polish) */
+  .cf-polish-layout { display: grid; grid-template-columns: 1fr 340px; gap: var(--space-6); padding-bottom: 24px; }
+  @media (max-width: 900px) { .cf-polish-layout { grid-template-columns: 1fr; } }
+  
+  .cf-polish-main { background: #fff; border: 1px solid var(--color-slate-200); border-radius: var(--radius-lg); overflow: hidden; }
+  .cf-polish-img { width: 100%; max-height: 400px; object-fit: contain; background: var(--color-slate-900); }
+  .cf-polish-meta { padding: var(--space-4); border-bottom: 1px solid var(--color-slate-100); }
+  
+  .cf-editor-panel { display: flex; flex-direction: column; gap: var(--space-4); }
+  .cf-ai-box { border: 1px solid var(--color-blue-200); background: var(--color-blue-50); border-radius: var(--radius-lg); padding: var(--space-4); position: relative; }
+  .cf-ai-badge { position: absolute; top: -10px; left: var(--space-4); background: var(--color-blue-600); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full); }
+  
+  .cf-btn-group { display: flex; gap: var(--space-2); }
+  .cf-btn-group .btn { flex: 1; }
+  
+  /* Brand Voice Box */
+  .cf-brand-voice { background: var(--color-slate-50); border: 1px dashed var(--color-slate-300); border-radius: var(--radius-md); padding: var(--space-3); }
+  .cf-brand-voice h4 { font-size: var(--text-xs); color: var(--color-slate-500); text-transform: uppercase; margin-bottom: var(--space-2); }
+  .cf-bv-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-sm); color: var(--color-slate-700); line-height: 1.6; }
+
+  /* 5. Screen C: คิว & ถังสำรอง */
+  .cf-queue-hero {
+    background: var(--color-slate-900); color: #fff; border-radius: var(--radius-lg);
+    padding: var(--space-6); text-align: center; margin-bottom: var(--space-6);
+  }
+  .cf-queue-hero-num { font-size: 48px; font-weight: 700; line-height: 1; margin-bottom: var(--space-2); color: var(--color-warning-500); }
+  .cf-queue-hero-num.ready { color: var(--color-success-500); }
+  
+  .cf-style-stats { display: flex; gap: var(--space-4); overflow-x: auto; padding-bottom: var(--space-2); margin-bottom: var(--space-6); }
+  .cf-style-stat { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--color-slate-200); border-radius: var(--radius-md); padding: var(--space-3); }
+  
+  .cf-queue-list { display: flex; flex-direction: column; gap: var(--space-3); padding-bottom: 24px; }
+  .cf-queue-item { background: #fff; border: 1px solid var(--color-slate-200); border-radius: var(--radius-md); display: flex; gap: var(--space-4); padding: var(--space-3); align-items: center; }
+  @media (max-width: 600px) { .cf-queue-item { flex-direction: column; align-items: stretch; } }
+  .cf-q-img { width: 80px; height: 80px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; }
+  .cf-q-content { flex: 1; min-width: 0; }
+  .cf-q-text { font-size: var(--text-sm); color: var(--color-slate-800); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cf-q-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+
+  /* แก้ไข: บังคับให้ปุ่มทุกประเภทมีความสูง 44px บนหน้าจอมือถือ (≤768px) */
+  @media (max-width: 768px) {
+    .btn, .cf-tab, .form-select, .form-input, .chip, .badge.reroll-chip {
+      min-height: 44px !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  /* Reroll Chip */
+  .reroll-chip { cursor: pointer; padding: 6px 12px; font-size: 13px; }
+
+</style>
+</head>
+<body>
+  <div class="app-container">
+    <main class="main-content">
+      <div class="page-content">
+
+        <!-- 1. Header Area -->
+        <div class="cf-head">
+          <div class="flex items-center justify-between">
+            <h1><i data-lucide="megaphone" style="width:28px;height:28px;color:var(--color-blue-600)"></i> โรงงานคอนเทนต์</h1>
+          </div>
+          <p class="text-muted text-sm mt-1">
+            โครงการ: <span id="displayProjectId" class="font-bold text-slate-800">กำลังโหลด...</span>
+            <br class="hide-desktop">
+            <span class="hide-mobile"> | </span>เปลี่ยนบันทึกหน้างานให้เป็นโซเชียลโพสต์ได้อย่างรวดเร็ว
+          </p>
+        </div>
+
+        <!-- 2. Status Bar (ถังสำรอง) -->
+        <div class="cf-stat-bar">
+          <div class="cf-stat-main">
+            <i data-lucide="inbox" style="width:24px;height:24px;color:var(--color-warning-500)"></i>
+            <div>
+              <div class="cf-stat-num">4 / 6 ชิ้น</div>
+            </div>
+          </div>
+          <div class="cf-stat-text text-warning-200" style="color:#fcd34d">
+            ⚠️ <strong>กติกาเหล็ก:</strong> ห้ามเริ่มปล่อยโพสต์จนกว่าถังสำรองจะครบ 6 ชิ้น เพื่อความสม่ำเสมอในการสื่อสาร
+          </div>
+        </div>
+
+        <!-- แท็บสลับจอ -->
+        <div class="cf-tabs cf-scroll-hide" id="cfTabs">
+          <div class="cf-tab active" onclick="switchTab('screenA', this)">
+            <i data-lucide="image-plus"></i> เลือกวัตถุดิบ
+          </div>
+          <div class="cf-tab" onclick="switchTab('screenB', this)">
+            <i data-lucide="sparkles"></i> เคาะคอนเทนต์ <span class="badge badge-blue">1</span>
+          </div>
+          <div class="cf-tab" onclick="switchTab('screenC', this)">
+            <i data-lucide="list-video"></i> คิว & ถังสำรอง
+          </div>
+        </div>
+
+        <!-- ==========================================
+             หน้าจอกั้น: Consent Gate
+             ========================================== -->
+        <div id="viewConsent" class="cf-consent-gate cf-hide">
+          <div class="cf-consent-icon"><i data-lucide="shield-alert"></i></div>
+          <h2 class="mb-2" style="font-size:var(--text-xl)">จำเป็นต้องขออนุญาตใช้ภาพ</h2>
+          <p class="text-muted mb-6 mx-auto" style="max-width:500px;line-height:1.6">
+            ระบบตรวจพบว่าโครงการนี้ยังไม่ได้ยืนยันสิทธิ์การนำภาพถ่ายไปใช้ในการทำคอนเทนต์ 
+            ตามนโยบายความเป็นส่วนตัว กรุณายืนยันว่าคุณได้รับอนุญาตจากเจ้าของโครงการแล้ว
+          </p>
+          <button class="btn btn-primary btn-lg" onclick="grantConsent()">
+            <i data-lucide="check-circle"></i> ยืนยันสิทธิ์ให้ใช้ภาพในโครงการนี้ได้
+          </button>
+        </div>
+
+        <!-- ==========================================
+             จอ A: เลือกวัตถุดิบ (Raw Material)
+             ========================================== -->
+        <div id="screenA" class="">
+          <div class="cf-filter-bar">
+            <div class="chips-row cf-scroll-hide" style="display:flex;gap:8px;flex:1">
+              <button class="chip on" onclick="this.classList.toggle('on')">รายงานประจำวัน</button>
+              <button class="chip on" onclick="this.classList.toggle('on')">หลักฐานงาน</button>
+              <button class="chip" onclick="this.classList.toggle('on')">เช็คอิน</button>
+              <button class="chip" onclick="this.classList.toggle('on')">QC</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input type="date" class="form-input" style="width:140px;">
+              <div class="input-icon" style="flex:1;min-width:200px">
+                <i data-lucide="search"></i>
+                <input type="text" class="form-input" placeholder="ค้นหาข้อความ...">
+              </div>
+            </div>
+          </div>
+
+          <div class="gl-note mb-4" style="font-size:12px;color:var(--color-slate-600);background:var(--color-slate-100);border:none;border-radius:var(--radius-md);padding:12px">
+            💡 <strong>รูปไม่ต้องสวยเสมอ</strong> — รูปหน้างานสดๆ ช่วยให้คอนเทนต์ดูสมจริงและน่าเชื่อถือ ระบบดึงข้อความที่ช่างพิมพ์ไว้มาให้อ่านเพื่อช่วยตัดสินใจ
+          </div>
+
+          <!-- Grid -->
+          <div class="cf-grid">
+            <!-- Card 1 -->
+            <div class="cf-card sel" onclick="togglePick(this)">
+              <div class="cf-card-badge cf-badge-daily">รายงานประจำวัน</div>
+              <div class="cf-card-pick"><i data-lucide="check"></i></div>
+              <img src="https://dstr-api.keatudom456.workers.dev/media/bow-house/activity/1786610506516_log.jpg" class="cf-card-img" alt="หน้างาน">
+              <div class="cf-card-body">
+                <div class="cf-card-meta"><span>13 ส.ค. 69</span><span>14:20</span></div>
+                <div class="cf-card-code">ทั่วไป</div>
+                <div class="cf-card-desc">ช่างสีพ่นชิ้นงานในแต่ละFอย่างต่อเนื่อง</div>
+              </div>
+            </div>
+            
+            <!-- Card 2 -->
+            <div class="cf-card sel" onclick="togglePick(this)">
+              <div class="cf-card-badge cf-badge-evidence">หลักฐานงาน</div>
+              <div class="cf-card-pick"><i data-lucide="check"></i></div>
+              <img src="https://dstr-api.keatudom456.workers.dev/media/bow-house/activity/1786609250088_log.jpg" class="cf-card-img" alt="หน้างาน">
+              <div class="cf-card-body">
+                <div class="cf-card-meta"><span>13 ส.ค. 69</span><span>10:15</span></div>
+                <div class="cf-card-code">F-19</div>
+                <div class="cf-card-desc">ทำงานที่ F-19 (ตู้เสื้อผ้าห้องนอนคุณแม่)</div>
+              </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="cf-card" onclick="togglePick(this)">
+              <div class="cf-card-badge cf-badge-daily">รายงานประจำวัน</div>
+              <div class="cf-card-pick"><i data-lucide="check"></i></div>
+              <img src="https://dstr-api.keatudom456.workers.dev/media/bow-house/activity/1786609174784_log.jpg" class="cf-card-img" alt="หน้างาน">
+              <div class="cf-card-body">
+                <div class="cf-card-meta"><span>13 ส.ค. 69</span><span>09:30</span></div>
+                <div class="cf-card-code">สั่งของ/ซื้อของ</div>
+                <div class="cf-card-desc">ไปรับแผ่นสแตนเลสที่เอามาตัดที่ร้าน วี-คัท บางโพครับ</div>
+              </div>
+            </div>
+            
+            <!-- Card 4 -->
+            <div class="cf-card" onclick="togglePick(this)">
+              <div class="cf-card-badge cf-badge-daily">รายงานประจำวัน</div>
+              <div class="cf-card-pick"><i data-lucide="check"></i></div>
+              <img src="https://dstr-api.keatudom456.workers.dev/media/bow-house/activity/1786609085906_log.jpg" class="cf-card-img" alt="หน้างาน">
+              <div class="cf-card-body">
+                <div class="cf-card-meta"><span>13 ส.ค. 69</span><span>08:45</span></div>
+                <div class="cf-card-code">สั่งของ/ซื้อของ</div>
+                <div class="cf-card-desc">มาซื้ออุปกรณ์ที่ร้านไทยฟิตติ้งครับ</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sticky Action Bar -->
+          <div class="cf-action-bar">
+            <div style="font-weight:600;color:var(--color-slate-800)">
+              เลือกแล้ว <span class="badge badge-blue tabular" style="font-size:14px;min-height:24px!important;">2 / 10</span> รูป
+            </div>
+            
+            <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap">
+              <select class="form-select" style="width:160px;">
+                <option value="behind">Behind (เบื้องหลัง 40%)</option>
+                <option value="educate">Educate (ให้ความรู้ 25%)</option>
+                <option value="showcase">Showcase (ผลงาน 20%)</option>
+                <option value="pro">Pro (ภาษาช่าง 10%)</option>
+                <option value="developer">Dev (ส่งงาน 5%)</option>
+              </select>
+              
+              <div style="display:flex;gap:var(--space-2)">
+                <label class="check-line"><input type="checkbox" checked> FB</label>
+                <label class="check-line"><input type="checkbox" checked> IG</label>
+                <label class="check-line"><input type="checkbox"> TikTok</label>
+              </div>
+
+              <button class="btn btn-primary btn-lg" onclick="showGenerateConfirm()" style="background:linear-gradient(135deg, var(--color-blue-600), #6366f1);border:none;box-shadow:var(--shadow-md)">
+                <i data-lucide="sparkles"></i> ให้ AI เขียนให้ (2)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             จอ B: เคาะคอนเทนต์ (AI Polish)
+             ========================================== -->
+        <div id="screenB" class="cf-hide">
+          <div class="cf-polish-layout">
+            
+            <!-- Left: Reference & Image -->
+            <div class="cf-polish-main">
+              <img src="https://dstr-api.keatudom456.workers.dev/media/bow-house/activity/1786610506516_log.jpg" class="cf-polish-img" alt="ภาพหน้างาน">
+              <div class="cf-polish-meta">
+                <div class="flex items-center justify-between mb-2 gap-2">
+                  <span class="badge badge-gray" style="min-height:24px!important"><i data-lucide="calendar"></i> 13 ส.ค. 69</span>
+                  <button class="btn btn-secondary btn-sm" onclick="showChangePhotoModal()"><i data-lucide="images"></i> เปลี่ยนรูป</button>
+                </div>
+                <div class="form-hint" style="font-size:12px;padding:var(--space-3);background:var(--color-slate-50);border-radius:var(--radius-md);border-left:3px solid var(--color-slate-400)">
+                  <strong class="text-slate-700">บันทึกของโฟร์แมน:</strong><br>
+                  "ช่างสีพ่นชิ้นงานในแต่ละFอย่างต่อเนื่อง"
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: AI Output & Actions -->
+            <div class="cf-editor-panel">
+              <div class="cf-ai-box">
+                <div class="cf-ai-badge" style="min-height:20px!important">สไตล์: เบื้องหลังการทำงาน (Behind)</div>
+                <textarea class="form-textarea" style="border:none;background:transparent;box-shadow:none;padding:0;min-height:160px;font-size:var(--text-base);color:var(--color-slate-800);margin-top:var(--space-2)">อัปเดตหน้างานวันนี้ครับ! ทีมช่างสีของเรากำลังเร่งพ่นสีชิ้นงานในแต่ละเฟอร์นิเจอร์อย่างต่อเนื่อง 🎨✨
+
+ทุกจุดเราใส่ใจเก็บรายละเอียด เพื่อให้ได้งานสีที่เรียบเนียน สวยงามตรงตามแบบที่สุดครับ ความคืบหน้าหน้างานเป็นไปตามแผนเลย รอติดตามผลงานตอนประกอบเสร็จได้เลยครับ! 
+
+#DSTR #เฟอร์นิเจอร์บิ้วอิน #ตกแต่งภายใน #ช่างสี #หน้างานวันนี้</textarea>
+              </div>
+
+              <div class="cf-btn-group">
+                <button class="btn btn-secondary" onclick="showRerollModal()"><i data-lucide="refresh-cw"></i> รีแคปชั่น</button>
+              </div>
+              
+              <div class="cf-btn-group">
+                <button class="btn btn-danger" style="flex:0.5" onclick="processReject()"><i data-lucide="trash-2"></i> ตก</button>
+                <button class="btn btn-success" style="flex:1.5;font-size:16px" onclick="processApprove()"><i data-lucide="check-circle-2"></i> ผ่าน (เข้าถังสำรอง)</button>
+              </div>
+
+              <!-- Brand Voice Sidebar -->
+              <div class="cf-brand-voice mt-4">
+                <h4><i data-lucide="brain-circuit" style="width:14px;height:14px;vertical-align:-2px"></i> สิ่งที่ระบบเรียนรู้แล้ว</h4>
+                <ul class="cf-bv-list">
+                  <li>ห้ามใช้คำว่า "สุดปัง" หรือศัพท์วัยรุ่นเกินไป</li>
+                  <li>ใช้โทนเสียงเป็นกันเอง แบบพี่คุยกับน้อง</li>
+                  <li>ให้มีแฮชแท็ก #DSTR ทุกโพสต์เสมอ</li>
+                </ul>
+                <div class="text-xs text-muted mt-2 text-right">สอนอัตโนมัติทุกครั้งที่กดรีแคปชั่น</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             จอ C: คิว & ถังสำรอง
+             ========================================== -->
+        <div id="screenC" class="cf-hide">
+          <div class="cf-queue-hero">
+            <div class="text-sm mb-2" style="color:var(--color-slate-400);text-transform:uppercase;letter-spacing:1px">สถานะถังสำรอง (Buffer Pool)</div>
+            <div class="cf-queue-hero-num">4 / 6 <span style="font-size:24px;font-weight:500;color:var(--color-slate-300)">ชิ้น</span></div>
+            <div style="font-size:var(--text-lg);color:#fcd34d;font-weight:500">⚠️ ยังไม่ถึงเป้า — ระงับการโพสต์เพื่อสะสมสต็อก</div>
+          </div>
+
+          <div class="cf-style-stats cf-scroll-hide">
+            <div class="cf-style-stat">
+              <div class="text-xs text-muted mb-1">Behind (เป้า 40%)</div>
+              <div class="progress-track mb-1"><div class="progress-fill" style="width:50%"></div></div>
+              <div class="text-sm font-bold tabular">50% <span class="text-xs font-normal text-muted">(2 ชิ้น)</span></div>
+            </div>
+            <div class="cf-style-stat">
+              <div class="text-xs text-muted mb-1">Educate (เป้า 25%)</div>
+              <div class="progress-track mb-1"><div class="progress-fill" style="width:25%"></div></div>
+              <div class="text-sm font-bold tabular">25% <span class="text-xs font-normal text-muted">(1 ชิ้น)</span></div>
+            </div>
+            <div class="cf-style-stat">
+              <div class="text-xs text-muted mb-1">Showcase (เป้า 20%)</div>
+              <div class="progress-track mb-1"><div class="progress-fill" style="width:25%"></div></div>
+              <div class="text-sm font-bold tabular">25% <span class="text-xs font-normal text-muted">(1 ชิ้น)</span></div>
+            </div>
+          </div>
+
+          <h3 class="mb-4" style="font-size:var(--text-lg)">รายการคิวคอนเทนต์</h3>
+          <div class="cf-queue-list">
+            <!-- Queue Item 1 -->
+            <div class="cf-queue-item">
+              <img src="https://dstr-api.keatudom456.workers.dev/media/bow-house/activity/1786609250088_log.jpg" class="cf-q-img" alt="">
+              <div class="cf-q-content">
+                <div class="flex gap-2 mb-1 flex-wrap">
+                  <span class="badge badge-success" style="min-height:24px!important">Approved</span>
+                  <span class="badge badge-blue" style="min-height:24px!important">Behind</span>
+                </div>
+                <div class="cf-q-text">อัปเดตหน้างานวันนี้ครับ ทีมช่างของเรากำลังลุยติดตั้งตู้เสื้อผ้าห้องนอนคุณแม่...</div>
+                <div class="text-xs text-muted"><i data-lucide="clock" style="width:12px;height:12px;vertical-align:-2px"></i> จ. 17 ส.ค. 69 (แนะนำ)</div>
+              </div>
+              <div class="cf-q-actions">
+                <button class="btn btn-secondary btn-sm" onclick="showToast('✅ คัดลอกแคปชั่นแล้ว')"><i data-lucide="copy"></i> คัดลอกแคปชั่น</button>
+                <button class="btn btn-secondary btn-sm" onclick="showToast('⬇️ กำลังดาวน์โหลดรูปภาพ...')"><i data-lucide="download"></i> ดาวน์โหลดรูป</button>
+                <button class="btn btn-success btn-sm" onclick="showToast('✅ เปลี่ยนสถานะเป็น โพสต์ลงโซเชียลแล้ว')"><i data-lucide="check"></i> ลงแล้ว</button>
+              </div>
+            </div>
+            
+            <!-- Queue Item 2 -->
+            <div class="cf-queue-item">
+              <img src="https://dstr-api.keatudom456.workers.dev/media/bow-house/activity/1786609174784_log.jpg" class="cf-q-img" alt="">
+              <div class="cf-q-content">
+                <div class="flex gap-2 mb-1 flex-wrap">
+                  <span class="badge badge-success" style="min-height:24px!important">Approved</span>
+                  <span class="badge badge-warning" style="min-height:24px!important">Educate</span>
+                </div>
+                <div class="cf-q-text">รู้หรือไม่? การเลือกแผ่นสแตนเลสมาตกแต่ง ต้องสั่งตัด V-Cut เพื่อความเนี๊ยบ...</div>
+                <div class="text-xs text-muted"><i data-lucide="clock" style="width:12px;height:12px;vertical-align:-2px"></i> พ. 19 ส.ค. 69 (แนะนำ)</div>
+              </div>
+              <div class="cf-q-actions">
+                <button class="btn btn-secondary btn-sm" onclick="showToast('✅ คัดลอกแคปชั่นแล้ว')"><i data-lucide="copy"></i> คัดลอกแคปชั่น</button>
+                <button class="btn btn-secondary btn-sm" onclick="showToast('⬇️ กำลังดาวน์โหลดรูปภาพ...')"><i data-lucide="download"></i> ดาวน์โหลดรูป</button>
+                <button class="btn btn-success btn-sm" onclick="showToast('✅ เปลี่ยนสถานะเป็น โพสต์ลงโซเชียลแล้ว')"><i data-lucide="check"></i> ลงแล้ว</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ==========================================
+       Modals
+       ========================================== -->
+  
+  <!-- Modal: Generate Confirm -->
+  <div class="modal-bg" id="modalGen">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title">ยืนยันสร้างคอนเทนต์ด้วย AI</h3>
+        <button class="modal-close" onclick="closeModal('modalGen')"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-icon info"><i data-lucide="sparkles"></i></div>
+      <p class="modal-desc">
+        คุณกำลังสั่งให้ AI เขียนแคปชั่นจากรูปและบันทึกหน้างานจำนวน <strong style="color:var(--color-slate-900)">2 ชิ้น</strong><br>
+        <span style="color:var(--color-error-500);font-size:12px;display:block;margin-top:8px">⚠️ การทำงานนี้มีค่าใช้จ่าย API เครดิต กรุณาตรวจสอบให้แน่ใจ</span>
+      </p>
+      <div class="modal-btns">
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal('modalGen')">ยกเลิก</button>
+        <button class="modal-btn modal-btn-primary" onclick="closeModal('modalGen'); switchTab('screenB', document.querySelectorAll('.cf-tab')[1]);">ตกลง, ดำเนินการเลย</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Reroll Caption -->
+  <div class="modal-bg" id="modalReroll">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title">รีแคปชั่น (เขียนใหม่)</h3>
+        <button class="modal-close" onclick="closeModal('modalReroll')"><i data-lucide="x"></i></button>
+      </div>
+      <p class="text-sm text-muted mb-4">
+        บอก AI ว่าต้องการให้ปรับแก้อย่างไร เหตุผลนี้จะถูกจำไว้เป็นกฎเสียงแบรนด์ (Brand Voice) ในครั้งถัดไป 
+      </p>
+      
+      <div class="chips-row cf-scroll-hide mb-3" style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="badge badge-gray reroll-chip" onclick="addReason(this)">สั้นลง</button>
+        <button class="badge badge-gray reroll-chip" onclick="addReason(this)">เน้นวัสดุ</button>
+        <button class="badge badge-gray reroll-chip" onclick="addReason(this)">ให้ความรู้มากขึ้น</button>
+        <button class="badge badge-gray reroll-chip" onclick="addReason(this)">อย่าใช้อีโมจิ</button>
+        <button class="badge badge-gray reroll-chip" onclick="addReason(this)">โทนอบอุ่นขึ้น</button>
+        <button class="badge badge-gray reroll-chip" onclick="addReason(this)">ไม่เอารูปติดคน</button>
+      </div>
+      
+      <textarea id="rerollReason" class="form-textarea mb-2" placeholder="พิมพ์เหตุผลที่ให้แก้ เช่น ห้ามใช้คำว่า 'สุดปัง'..." style="min-height:80px"></textarea>
+      
+      <div class="modal-btns mt-4">
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal('modalReroll')">ยกเลิก</button>
+        <button class="modal-btn modal-btn-primary" onclick="submitReroll()">สั่งเขียนใหม่ <span style="font-size:10px;font-weight:normal">(เสียเครดิต)</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: เปลี่ยนรูป (Change Photo) -->
+  <div class="modal-bg" id="modalChangePhoto">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <h3 class="modal-title">เลือกรูปภาพใหม่จากคลังของโครงการ</h3>
+        <button class="modal-close" onclick="closeModal('modalChangePhoto')"><i data-lucide="x"></i></button>
+      </div>
+      
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <div class="chips-row cf-scroll-hide" style="display:flex;gap:8px;flex:1">
+          <button class="chip on" style="min-height:36px!important">รายงานประจำวัน</button>
+          <button class="chip" style="min-height:36px!important">หลักฐานงาน</button>
+        </div>
+        <div class="input-icon" style="flex:1;min-width:180px">
+          <i data-lucide="search" style="width:14px;height:14px"></i>
+          <input type="text" class="form-input" placeholder="ค้นหาข้อความ..." style="min-height:36px">
+        </div>
+      </div>
+
+      <div class="cf-grid" style="grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); padding-bottom: 16px; max-height:40vh; overflow-y:auto">
+        <!-- Photo Option 1 -->
+        <div class="cf-card" onclick="selectNewPhoto(this)">
+          <div class="cf-card-badge cf-badge-daily">รายงาน</div>
+          <img src="https://dstr-api.keatudom456.workers.dev/media/bow-house/activity/1786610506516_log.jpg" class="cf-card-img" alt="">
+          <div class="cf-card-body"><div class="cf-card-meta"><span>13 ส.ค.</span></div></div>
+        </div>
+        <!-- Photo Option 2 -->
+        <div class="cf-card" onclick="selectNewPhoto(this)">
+          <div class="cf-card-badge cf-badge-evidence">หลักฐาน</div>
+          <img src="https://dstr-api.keatudom456.workers.dev/media/bow-house/activity/1786609250088_log.jpg" class="cf-card-img" alt="">
+          <div class="cf-card-body"><div class="cf-card-meta"><span>13 ส.ค.</span></div></div>
+        </div>
+        <!-- Photo Option 3 -->
+        <div class="cf-card" onclick="selectNewPhoto(this)">
+          <div class="cf-card-badge cf-badge-daily">รายงาน</div>
+          <img src="https://dstr-api.keatudom456.workers.dev/media/bow-house/activity/1786609174784_log.jpg" class="cf-card-img" alt="">
+          <div class="cf-card-body"><div class="cf-card-meta"><span>13 ส.ค.</span></div></div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between mt-4 border-t pt-4" style="border-top:1px solid var(--color-slate-200)">
+        <button class="btn btn-secondary" disabled style="opacity:0.6">
+          <i data-lucide="upload"></i> อัปโหลดรูปจากเครื่อง <span class="badge badge-gray ml-2" style="min-height:20px!important;padding:2px 6px;font-size:10px">เฟส 2</span>
+        </button>
+        <button class="btn btn-ghost" onclick="closeModal('modalChangePhoto')">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast (จำลอง js/modal.js) -->
+  <div id="mockToast" class="toast"></div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="vendor/lucide/lucide.min.js"></script>
+  <script src="js/shell.js"></script>
+  
+  <script>
+    // Boot Shell
+    Shell.render({ page: 'content', title: 'โรงงานคอนเทนต์', scope: 'project' });
+
+    // Set Project ID dynamically
+    const pid = Shell.projectId();
+    const pidEl = document.getElementById('displayProjectId');
+    if(pidEl) pidEl.innerText = pid;
+
+    // --- Mockup Interactions ---
+    function switchTab(screenId, tabEl) {
+      document.querySelectorAll('.cf-tab').forEach(t => t.classList.remove('active'));
+      tabEl.classList.add('active');
+      
+      document.getElementById('screenA').classList.add('cf-hide');
+      document.getElementById('screenB').classList.add('cf-hide');
+      document.getElementById('screenC').classList.add('cf-hide');
+      
+      document.getElementById(screenId).classList.remove('cf-hide');
+      
+      // Toggle Action bar specific to Screen A
+      const actBar = document.querySelector('.cf-action-bar');
+      if (actBar) {
+        if (screenId === 'screenA') actBar.classList.remove('cf-hide');
+        else actBar.classList.add('cf-hide');
+      }
+    }
+
+    function togglePick(card) {
+      card.classList.toggle('sel');
+    }
+
+    // Modal helpers
+    function showGenerateConfirm() { document.getElementById('modalGen').classList.add('show'); }
+    function showRerollModal() { document.getElementById('modalReroll').classList.add('show'); }
+    function showChangePhotoModal() { document.getElementById('modalChangePhoto').classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+    
+    function addReason(btn) {
+      const ta = document.getElementById('rerollReason');
+      if (ta.value) ta.value += ', ' + btn.innerText;
+      else ta.value = btn.innerText;
+    }
+    
+    function submitReroll() {
+      const ta = document.getElementById('rerollReason');
+      if (!ta.value.trim()) { alert('กรุณาระบุเหตุผล'); return; }
+      closeModal('modalReroll');
+      showToast('🔄 กำลังให้ AI เขียนใหม่...');
+      ta.value = '';
+    }
+
+    function selectNewPhoto(cardEl) {
+      closeModal('modalChangePhoto');
+      showToast('🖼️ เปลี่ยนรูปภาพสำเร็จ (Mockup)');
+      // ในการทำงานจริงจะดึง src ของ cardEl ไปใส่ในรูปหลักของ Screen B
+    }
+
+    function processApprove() {
+      showToast('✅ ผ่าน! บันทึกลงถังสำรองแล้ว');
+      setTimeout(() => switchTab('screenC', document.querySelectorAll('.cf-tab')[2]), 1000);
+    }
+    
+    function processReject() {
+      showToast('🗑️ ปัดตกทิ้งเรียบร้อย');
+      setTimeout(() => switchTab('screenA', document.querySelectorAll('.cf-tab')[0]), 1000);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('mockToast');
+      t.innerText = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // Consent simulation
+    let hasConsent = false; // set to false to test gate
+    if (!hasConsent) {
+      document.getElementById('viewConsent').classList.remove('cf-hide');
+      document.getElementById('screenA').classList.add('cf-hide');
+      const actBar = document.querySelector('.cf-action-bar');
+      if (actBar) actBar.classList.add('cf-hide');
+      document.getElementById('cfTabs').classList.add('cf-hide');
+      document.querySelector('.cf-stat-bar').classList.add('cf-hide');
+    }
+
+    function grantConsent() {
+      document.getElementById('viewConsent').classList.add('cf-hide');
+      document.getElementById('screenA').classList.remove('cf-hide');
+      document.getElementById('cfTabs').classList.remove('cf-hide');
+      document.querySelector('.cf-stat-bar').classList.remove('cf-hide');
+      const actBar = document.querySelector('.cf-action-bar');
+      if (actBar) actBar.classList.remove('cf-hide');
+      showToast('✅ บันทึกสิทธิ์การใช้ภาพสำเร็จ');
+    }
+
+    if (window.lucide) lucide.createIcons();
+  </script>
+</body>
+</html>
