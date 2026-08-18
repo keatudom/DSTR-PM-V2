@@ -20,6 +20,7 @@ import * as line from './modules/line_webhook.ts'; // Session 2 — โมดู
 import * as qc from './modules/qc.ts'; // ★ Session 3 — QC Checklist
 import * as gallery from './modules/gallery.ts'; // ★ คลังรูปภาพรวม (2026-08-13)
 import * as content from './modules/content.ts'; // ★ ท่อคอนเทนต์ สถานี 2-4 (2026-08-13)
+import * as tour from './modules/tour.ts'; // ★ เดินดูหน้างาน 360 (2026-08-18)
 
 export async function route(env: Env, action: string, p: Record<string, unknown>): Promise<unknown> {
   switch (action) {
@@ -53,6 +54,46 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
       return gallery.getGallery(env, p);
     case 'migrate_drive_photos':
       return gallery.migrateDrivePhotos(env, p);
+
+    // 🧭 SITE TOUR — เดินดูหน้างาน 360 (จุด → เวอร์ชัน → ภาพ) 2026-08-18
+    case 'tour_get_config':
+      return tour.getConfig(env, p);
+    case 'tour_get_version':
+      return tour.getVersion(env, p);
+    case 'tour_save_plan':
+      return tour.savePlan(env, p);
+    case 'tour_delete_plan':
+      return tour.deletePlan(env, p);
+    case 'tour_save_point':
+      return tour.savePoint(env, p);
+    case 'tour_delete_point':
+      return tour.deletePoint(env, p);
+    case 'tour_save_link':
+      return tour.saveLink(env, p);
+    case 'tour_delete_link':
+      return tour.deleteLink(env, p);
+    case 'tour_create_version':
+      return tour.createVersion(env, p);
+    case 'tour_update_version':
+      return tour.updateVersion(env, p);
+    case 'tour_publish_version':
+      return tour.publishVersion(env, p);
+    case 'tour_delete_version':
+      return tour.deleteVersion(env, p);
+    case 'tour_restore_version':
+      return tour.restoreVersion(env, p);
+    case 'tour_upload_shot':
+      return tour.uploadShot(env, p);
+    case 'tour_update_shot':
+      return tour.updateShot(env, p);
+    case 'tour_delete_shot':
+      return tour.deleteShot(env, p);
+    case 'tour_save_pin':
+      return tour.savePin(env, p);
+    case 'tour_delete_pin':
+      return tour.deletePin(env, p);
+    case 'tour_resolve_pin':
+      return tour.resolvePin(env, p);
 
     // 📷 PHOTOS / FILES / AI BILL (Code.js) — Session 2 โมดูล 7 (upload = R2 gated)
     case 'get_photos':

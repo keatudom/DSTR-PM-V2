@@ -98,7 +98,10 @@ const API = {
    * qc_summary / ping — ทุกตัวนี้ไม่แตะฐานข้อมูล ยิงซ้ำกี่ครั้งก็ปลอดภัย
    */
   _isReadOnly: function(action) {
-    return /^(get_|client_get_)/.test(action) || /^(getAll|qc_summary|ping|check_boq_status)$/.test(action);
+    // tour_get_* = อ่านอย่างเดียวจริง (ไม่แตะฐานข้อมูลเลย) → ลองใหม่ได้ปลอดภัย
+    // สำคัญกับหน้าทัวร์เป็นพิเศษ เพราะคนใช้ยืนอยู่หน้างานที่เน็ตสะดุดบ่อย
+    return /^(get_|client_get_|tour_get_)/.test(action) ||
+           /^(getAll|qc_summary|ping|check_boq_status)$/.test(action);
   },
 
   /**
@@ -1132,6 +1135,106 @@ const API = {
   /** สรุป QC ต่อ FF (รอบล่าสุด + defect ค้าง) — เลี้ยงการ์ด dashboard */
   qcSummary: function() {
     return this.callRead('qc_summary');
+  },
+
+  // ============================================================
+  // 🧭 SITE TOUR — เดินดูหน้างาน 360
+  //   สเปก: docs/site-tour-360/TOUR-SPEC.md
+  //   จุด+ลูกศร+แผนผัง = ของโครงการ (วางครั้งเดียว) · ภาพ = ของเวอร์ชัน (เกิดใหม่ทุกรอบ)
+  // ============================================================
+
+  /** แผนผัง + จุด + ลูกศร + รายการเวอร์ชัน — ก้อนเดียวจบ (ลดจำนวนคำขอบนเน็ตหน้างาน)
+   *  includeDraft = true → เอาเวอร์ชันที่ยังถ่ายไม่เสร็จมาด้วย (ใช้ในโหมดถ่าย) */
+  tourGetConfig: function(includeDraft) {
+    return this.callRead('tour_get_config', { include_draft: includeDraft ? 'true' : '' });
+  },
+
+  /** ภาพครบทุกจุดของเวอร์ชันหนึ่ง (เว้นว่าง = เวอร์ชันล่าสุดที่เผยแพร่แล้ว)
+   *  จุดที่ยังไม่ถ่าย → หลังบ้านเติมภาพสำรอง "ย้อนหลังเท่านั้น" + ธง fallback_from_version */
+  tourGetVersion: function(versionId) {
+    return this.callRead('tour_get_version', { version_id: versionId || '' });
+  },
+
+  /** อัปแปลนพื้น — { plan_id?, floor_label, image_base64, width, height, sort_order } */
+  tourSavePlan: function(data) {
+    return this.callUpload('tour_save_plan', data);
+  },
+
+  tourDeletePlan: function(planId) {
+    return this.callPost('tour_delete_plan', { plan_id: planId });
+  },
+
+  /** วาง/แก้จุดถ่าย — { point_id?, name, plan_id, plan_x, plan_y, sort_order } (พิกัด 0..1) */
+  tourSavePoint: function(data) {
+    return this.callPost('tour_save_point', data);
+  },
+
+  /** ปิดจุด (ไม่ลบจริง — ภาพเก่ายังต้องอยู่เป็นหลักฐาน) */
+  tourDeletePoint: function(pointId) {
+    return this.callPost('tour_delete_point', { point_id: pointId });
+  },
+
+  /** วาง/แก้ลูกศรเดิน — { link_id?, from_point, to_point, yaw, pitch, label } */
+  tourSaveLink: function(data) {
+    return this.callPost('tour_save_link', data);
+  },
+
+  tourDeleteLink: function(linkId) {
+    return this.callPost('tour_delete_link', { link_id: linkId });
+  },
+
+  /** สร้างเวอร์ชันใหม่ (เริ่มที่สถานะ draft — ยังไม่มีใครเห็น) — { name, note, captured_at } */
+  tourCreateVersion: function(data) {
+    return this.callPost('tour_create_version', data);
+  },
+
+  /** แก้ชื่อ/วันที่เวอร์ชัน — { version_id, name, note, captured_at } */
+  tourUpdateVersion: function(data) {
+    return this.callPost('tour_update_version', data);
+  },
+
+  /** เผยแพร่ให้ทีมเห็น (ประทับวันที่ + ลงบันทึกกิจกรรม) */
+  tourPublishVersion: function(versionId) {
+    return this.callPost('tour_publish_version', { version_id: versionId });
+  },
+
+  /** ทิ้งเวอร์ชันลงถังขยะ (กู้คืนได้ 30 วัน) */
+  tourDeleteVersion: function(versionId) {
+    return this.callPost('tour_delete_version', { version_id: versionId });
+  },
+
+  tourRestoreVersion: function(versionId) {
+    return this.callPost('tour_restore_version', { version_id: versionId });
+  },
+
+  /** อัปภาพเข้าจุด × เวอร์ชัน — { version_id, point_id, image_base64, width, height, taken_at }
+   *  ระบบเดาชนิดภาพ (360 เต็มใบ / พาโน / รูปธรรมดา) จากสัดส่วนให้เอง
+   *  ถ่ายทับของเดิม = ของเก่าลงถังขยะ ไม่ได้หายไปไหน */
+  tourUploadShot: function(data) {
+    return this.callUpload('tour_upload_shot', data);
+  },
+
+  /** ปรับค่าภาพหลังอัป — { shot_id, yaw_offset, kind, haov, vaov } (แก้ตอนระบบเดาผิด/ภาพหันเบี้ยว) */
+  tourUpdateShot: function(data) {
+    return this.callPost('tour_update_shot', data);
+  },
+
+  tourDeleteShot: function(shotId) {
+    return this.callPost('tour_delete_shot', { shot_id: shotId });
+  },
+
+  /** ปักหมุดคอมเมนต์บนภาพ — { pin_id?, point_id, version_id, yaw, pitch, kind, ref_id, text }
+   *  ⚠️ ห้ามเรียกตอนกำลังดูภาพสำรอง (หมุดจะไม่รู้ว่าเป็นของเวอร์ชันไหน) */
+  tourSavePin: function(data) {
+    return this.callPost('tour_save_pin', data);
+  },
+
+  tourDeletePin: function(pinId) {
+    return this.callPost('tour_delete_pin', { pin_id: pinId });
+  },
+
+  tourResolvePin: function(pinId, resolved) {
+    return this.callPost('tour_resolve_pin', { pin_id: pinId, resolved: resolved ? 'true' : 'false' });
   },
 
   // ============================================================

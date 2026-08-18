@@ -57,6 +57,8 @@ addCap('READ', [
   'check_stock_for_items', 'get_notifications', 'get_gallery',
   // ท่อคอนเทนต์: อ่านคิว/วัตถุดิบ/คู่มือเสียงแบรนด์ = ใครในทีมก็ดูได้
   'get_content_candidates', 'list_content', 'get_brand_voice', 'content_stats',
+  // เดินดูหน้างาน 360: ดูทัวร์ = ทุกคนในโครงการ (เฟส 1 ยังไม่เปิดฝั่งเจ้าบ้าน)
+  'tour_get_config', 'tour_get_version',
 ]);
 addCap('OPS', [
   'updateTask', 'team_checkin', 'withdraw_material', 'create_daily',
@@ -67,6 +69,9 @@ addCap('OPS', [
   'delete_activity_log',
   // เคาะ/แก้/รีคอนเทนต์ = งานประจำสัปดาห์ของคนเข้าเวร
   'update_content', 'reroll_content',
+  // 🧭 เดินดูหน้างาน 360 — ถ่าย/อัป/ปักหมุด = งานหน้าไซต์ (โฟร์แมนขึ้นไป)
+  'tour_upload_shot', 'tour_update_shot', 'tour_delete_shot',
+  'tour_save_pin', 'tour_delete_pin', 'tour_resolve_pin',
 ]);
 addCap('PROCURE', [
   'create_material', 'update_material', 'deactivate_material',
@@ -89,7 +94,14 @@ addCap('FINANCE', [
   'upload_contract_file', 'delete_contract_file',
 ]);
 addCap('PRICING', ['create_project']);
-addCap('SITECFG', ['set_site_location']);
+addCap('SITECFG', [
+  'set_site_location',
+  // 🧭 เดินดูหน้างาน 360 — วางแผนที่จุด/ลูกศร + คุมเวอร์ชัน = งานตั้งค่าไซต์ (วิศวกรไซต์/PM ขึ้นไป)
+  'tour_save_plan', 'tour_delete_plan', 'tour_save_point', 'tour_delete_point',
+  'tour_save_link', 'tour_delete_link',
+  'tour_create_version', 'tour_update_version', 'tour_publish_version',
+  'tour_delete_version', 'tour_restore_version',
+]);
 addCap('ATTEND', ['get_attendance_all', 'update_checkin', 'set_id_card']);
 addCap('ADMIN', [
   'create_staff', 'update_staff', 'assign_project_staff',

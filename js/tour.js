@@ -1,0 +1,679 @@
+/**
+ * js/tour.js — เดินดูหน้างาน 360 (Site Tour)
+ * ============================================================
+ * สเปก: docs/site-tour-360/TOUR-SPEC.md · หน้าตาออกแบบโดย Antigravity
+ *
+ * โครง 3 ชั้น:
+ *   จุด + ลูกศร + แผนผัง = ของโครงการ (วางครั้งเดียว ใช้ตลอด)
+ *   เวอร์ชัน             = การกลับไปถ่ายทุกจุดอีกรอบ (มีชื่อ + วันที่)
+ *   ภาพ                  = 1 จุด × 1 เวอร์ชัน (เกิดใหม่ทุกรอบ ไม่ทับของเก่า)
+ *
+ * ⚠️ กติกาที่ห้ามพัง:
+ *   - เข้าหน้ามา = เวอร์ชันล่าสุดที่เผยแพร่แล้วเสมอ
+ *   - เปลี่ยนเวอร์ชันแล้วต้องยืนอยู่ห้องเดิม (ห้ามเด้งกลับจุดแรก)
+ *   - ภาพสำรองมองย้อนหลังเท่านั้น (หลังบ้านคัดมาให้แล้ว ฝั่งนี้แค่ติดป้ายบอก)
+ *   - ห้ามปักหมุดบนภาพสำรอง
+ * ============================================================
+ */
+
+const Tour = {
+  data: {
+    plans: [],
+    points: [],
+    links: [],
+    versions: [],
+    version: null,     // เวอร์ชันที่กำลังดู
+    shots: [],         // [{point_id, shot, fallback_from_version, no_image}]
+    pins: [],
+    pointId: null,
+    draftVersionId: null,   // เวอร์ชันที่กำลังถ่ายอยู่ในโหมดถ่าย
+    tray: [],               // รูปที่เลือกมาจากคลังภาพ รอจับคู่กับจุด
+    mapTool: 'point',       // point | link
+    linkFrom: null,
+  },
+  viewer: null,
+  busy: false,
+
+  // ── ตัวช่วย ───────────────────────────────────────────────
+  _pt(id) { return this.data.points.find((p) => p.point_id === id) || null; },
+  _ver(id) { return this.data.versions.find((v) => v.version_id === id) || null; },
+  _shot(pointId) { return this.data.shots.find((s) => s.point_id === pointId) || null; },
+  _thaiDate(s) {
+    const t = String(s || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return t || '-';
+    const M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const d = t.split('-');
+    return Number(d[2]) + ' ' + M[Number(d[1]) - 1] + ' ' + (Number(d[0]) + 543 - 2500);
+  },
+  _esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  },
+  _busy(on, msg) {
+    this.busy = on;
+    let el = document.getElementById('tour-busy');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'tour-busy';
+      el.style.cssText = 'position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;' +
+        'background:rgba(15,23,42,.72);color:#fff;font-weight:600;text-align:center;padding:24px;backdrop-filter:blur(2px)';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg || 'กำลังทำงาน…';
+    el.style.display = on ? 'flex' : 'none';
+  },
+  _err(res, fallback) {
+    const m = (res && res.error) || fallback || 'ทำรายการไม่สำเร็จ';
+    if (window.Modal) Modal.toast('❌ ' + m); else alert(m);
+  },
+
+  // ── เริ่มต้น ──────────────────────────────────────────────
+  async init() {
+    this._busy(true, 'กำลังโหลดทัวร์…');
+    try {
+      await this.loadConfig(true);
+      if (!this.data.points.length) { this._busy(false); return this.showSetupNeeded(); }
+      if (!this.data.versions.filter((v) => v.status === 'published').length) {
+        this._busy(false);
+        return this.showSetupNeeded('ยังไม่มีเวอร์ชันที่เผยแพร่ — กด "ถ่ายเวอร์ชันใหม่" เพื่อเริ่มบันทึกสภาพหน้างาน');
+      }
+      await this.loadVersion('');           // '' = ล่าสุดที่เผยแพร่แล้ว (หลังบ้านเลือกให้)
+      this.goToPoint(this.data.points[0].point_id, true);
+    } catch (e) {
+      this._err({ error: e.message }, 'โหลดทัวร์ไม่สำเร็จ');
+    }
+    this._busy(false);
+  },
+
+  async loadConfig(includeDraft) {
+    const res = await API.tourGetConfig(includeDraft);
+    if (!res || res.ok === false) throw new Error((res && res.error) || 'โหลดข้อมูลทัวร์ไม่สำเร็จ');
+    const d = res.data || res;
+    this.data.plans = d.plans || [];
+    this.data.points = d.points || [];
+    this.data.links = d.links || [];
+    this.data.versions = d.versions || [];
+  },
+
+  // ยังไม่ได้ตั้งค่า — พาไปหน้าวางจุดแทนที่จะโชว์จอดำเปล่าๆ
+  showSetupNeeded(msg) {
+    const empty = document.getElementById('tv-empty-msg');
+    if (empty) {
+      empty.style.display = 'flex';
+      empty.innerHTML =
+        '<div style="text-align:center;padding:24px">' +
+        '<div style="font-size:15px;line-height:1.7;margin-bottom:16px">' +
+        this._esc(msg || 'โครงการนี้ยังไม่ได้วางจุดถ่าย — วางจุดครั้งเดียว แล้วรอบต่อไปแค่ถ่ายทับ') +
+        '</div>' +
+        '<button class="btn btn-primary" onclick="Tour.switchMode(\'map\')">วางจุดและเส้นทาง</button> ' +
+        '<button class="btn btn-secondary" onclick="Tour.enterCaptureMode()">ถ่ายเวอร์ชันใหม่</button>' +
+        '</div>';
+    }
+    const warn = document.getElementById('tv-fallback-warn');
+    if (warn) warn.style.display = 'none';
+  },
+
+  // ── โหลดเวอร์ชัน ─────────────────────────────────────────
+  async loadVersion(versionId) {
+    const res = await API.tourGetVersion(versionId || '');
+    if (!res || res.ok === false) throw new Error((res && res.error) || 'โหลดเวอร์ชันไม่สำเร็จ');
+    const d = res.data || res;
+    if (!d.version) throw new Error('ยังไม่มีเวอร์ชันในโครงการนี้');
+
+    this.data.version = d.version;
+    this.data.shots = d.shots || [];
+    this.data.pins = d.pins || [];
+
+    const label = document.getElementById('tv-current-version');
+    if (label) label.innerText = d.version.name + ' (' + this._thaiDate(d.version.captured_at) + ')';
+    this.renderVersionList();
+  },
+
+  // ── เดินไปจุด ────────────────────────────────────────────
+  // จังหวะ: เฟดมืด 150ms → เปลี่ยนภาพ → เฟดกลับ (รวมไม่เกิน 300ms ตามที่เคาะไว้)
+  goToPoint(pointId, instant) {
+    const container = document.getElementById('panorama-container');
+    if (!container || instant) return this._doGoToPoint(pointId);
+    container.classList.add('fade-out');
+    setTimeout(() => {
+      this._doGoToPoint(pointId);
+      container.classList.remove('fade-out');
+    }, 150);
+  },
+
+  _doGoToPoint(pointId) {
+    const pt = this._pt(pointId);
+    if (!pt) return;
+    this.data.pointId = pointId;
+
+    document.getElementById('tv-point-name').innerText = pt.name;
+    const idx = this.data.points.findIndex((p) => p.point_id === pointId) + 1;
+    document.getElementById('tv-point-stats').innerText = 'จุดที่ ' + idx + '/' + this.data.points.length;
+    this.updateMinimapPoint();
+
+    const entry = this._shot(pointId);
+    const warnEl = document.getElementById('tv-fallback-warn');
+    const emptyEl = document.getElementById('tv-empty-msg');
+    const pinBtn = document.getElementById('btn-pin');
+    const container = document.getElementById('panorama-container');
+
+    // จุดที่ย้อนหลังแล้วไม่มีภาพเลย — บอกตามตรง อย่าโชว์จอดำเฉยๆ
+    if (!entry || entry.no_image || !entry.shot) {
+      warnEl.style.display = 'none';
+      emptyEl.style.display = 'flex';
+      emptyEl.innerHTML =
+        '<div style="text-align:center;padding:24px">' +
+        '<i data-lucide="eye-off" style="width:40px;height:40px;opacity:.5"></i>' +
+        '<div style="margin:12px 0 16px;line-height:1.7">จุดนี้ยังไม่มีภาพในเวอร์ชัน<br><b>' +
+        this._esc(this.data.version.name) + '</b> หรือก่อนหน้า</div>' +
+        '<button class="btn btn-secondary btn-sm" onclick="Tour.jumpToStart()">กลับไปจุดเริ่มต้น</button>' +
+        '</div>';
+      if (pinBtn) pinBtn.disabled = true;
+      if (this.viewer) { try { this.viewer.destroy(); } catch (e) { /* */ } this.viewer = null; }
+      if (container) container.innerHTML = '';
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    const shot = entry.shot;
+    const fb = entry.fallback_from_version;
+    if (fb) {
+      // กฎทองข้อ 7: ห้ามปักหมุดบนภาพสำรอง (หมุดจะไม่รู้ว่าเป็นของเวอร์ชันไหน)
+      warnEl.style.display = 'flex';
+      warnEl.innerHTML =
+        '<i data-lucide="alert-triangle"></i>' +
+        '<span style="flex:1">ยังไม่ถ่ายในเวอร์ชันนี้ — กำลังแสดงภาพจาก "' + this._esc(fb.name) + '" ' +
+        this._thaiDate(fb.captured_at) + '</span>' +
+        '<button class="btn btn-sm btn-ghost" style="color:#fff;border:1px solid rgba(255,255,255,.4)" ' +
+        'onclick="Tour.switchVersion(\'' + fb.version_id + '\')">ไปเวอร์ชันนั้น</button>';
+      if (pinBtn) pinBtn.disabled = true;
+    } else {
+      warnEl.style.display = 'none';
+      if (pinBtn) pinBtn.disabled = false;
+    }
+
+    this._renderShot(shot, pointId);
+    if (window.lucide) lucide.createIcons();
+  },
+
+  // วาดภาพ + ลูกศรเดิน · รูปธรรมดาไม่เอาเข้า Pannellum (จะบิด) — โชว์เป็นรูปนิ่งแล้ววางลูกศรเป็นปุ่มแทน
+  _renderShot(shot, pointId) {
+    const container = document.getElementById('panorama-container');
+    const linksOut = this.data.links.filter((l) => l.from_point === pointId);
+    if (this.viewer) { try { this.viewer.destroy(); } catch (e) { /* */ } this.viewer = null; }
+    container.innerHTML = '';
+
+    if (shot.kind === 'flat' || typeof pannellum === 'undefined') {
+      container.style.background = '#000';
+      const chips = linksOut.map((l) =>
+        '<button class="btn btn-secondary btn-sm" onclick="Tour.goToPoint(\'' + l.to_point + '\')">' +
+        '→ ' + this._esc(l.label || (this._pt(l.to_point) || {}).name || 'ไปต่อ') + '</button>').join(' ');
+      container.innerHTML =
+        '<img src="' + shot.url + '" alt="" style="width:100%;height:100%;object-fit:contain">' +
+        (chips ? '<div style="position:absolute;left:0;right:0;bottom:16px;display:flex;gap:8px;' +
+          'justify-content:center;flex-wrap:wrap;padding:0 12px">' + chips + '</div>' : '');
+      return;
+    }
+
+    const hotSpots = linksOut.map((l) => ({
+      pitch: Number(l.pitch) || -10,
+      yaw: Number(l.yaw) || 0,
+      cssClass: 'custom-hotspot',
+      createTooltipFunc: this._hotspotTooltip,
+      createTooltipArgs: this._esc(l.label || (this._pt(l.to_point) || {}).name || 'ไปต่อ'),
+      clickHandlerFunc: () => this.goToPoint(l.to_point),
+    }));
+
+    const cfg = {
+      type: 'equirectangular',
+      panorama: shot.url,
+      autoLoad: true,
+      showControls: false,
+      hotSpots: hotSpots,
+      hfov: 100, minHfov: 50, maxHfov: 120,
+      pitch: 0,
+      yaw: Number(shot.yaw_offset) || 0,   // ค่าปรับหมุน — ทำให้เวอร์ชันต่างรอบหันทางเดียวกัน
+    };
+    // พาโนมือถือ = ภาพไม่ครบรอบ ต้องบอก Pannellum ว่ากว้าง/สูงกี่องศา ไม่งั้นภาพจะยืด
+    if (shot.kind === 'pano') {
+      cfg.haov = Number(shot.haov) || 180;
+      cfg.vaov = Number(shot.vaov) || 60;
+      cfg.maxHfov = Math.min(120, cfg.haov);
+    }
+    try {
+      this.viewer = pannellum.viewer('panorama-container', cfg);
+    } catch (e) {
+      container.innerHTML = '<img src="' + shot.url + '" style="width:100%;height:100%;object-fit:contain">';
+    }
+  },
+
+  _hotspotTooltip(hotSpotDiv, args) {
+    hotSpotDiv.innerHTML = '<i data-lucide="chevron-up"></i>';
+    const span = document.createElement('span');
+    span.className = 'custom-hotspot-label';
+    span.innerHTML = args;
+    hotSpotDiv.appendChild(span);
+    if (window.lucide) lucide.createIcons();
+  },
+
+  jumpToStart() {
+    if (this.data.points.length) this.goToPoint(this.data.points[0].point_id);
+  },
+
+  // ── ตัวเลือกเวอร์ชัน ─────────────────────────────────────
+  openVersionSelector() { document.getElementById('bs-versions').classList.add('show'); },
+  closeVersionSelector() { document.getElementById('bs-versions').classList.remove('show'); },
+
+  renderVersionList() {
+    const listEl = document.getElementById('tv-version-list');
+    if (!listEl) return;
+    if (!this.data.versions.length) {
+      listEl.innerHTML = '<div class="text-muted" style="padding:16px;text-align:center">ยังไม่มีเวอร์ชัน</div>';
+      return;
+    }
+    const curId = this.data.version ? this.data.version.version_id : '';
+    listEl.innerHTML = this.data.versions.map((v) => {
+      const active = v.version_id === curId ? 'active' : '';
+      const draft = v.status === 'draft'
+        ? ' <span class="badge badge-warning">ยังไม่เผยแพร่</span>' : '';
+      const cnt = (v.shot_count || 0) + '/' + (v.point_count || 0) + ' จุด';
+      const by = v.created_by ? ' · ' + this._esc(v.created_by) : '';
+      return '<div class="bs-item ' + active + '" onclick="Tour.switchVersion(\'' + v.version_id + '\')">' +
+        '<div class="bs-item-main">' +
+        '<div class="bs-item-name">' + this._esc(v.name) + draft + '</div>' +
+        '<div class="bs-item-date">' + this._thaiDate(v.captured_at) + ' · ' + cnt + by + '</div>' +
+        '</div>' +
+        (active ? '<i data-lucide="check" style="color:var(--color-blue-600)"></i>' : '') +
+        '</div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  },
+
+  async switchVersion(vid) {
+    if (this.data.version && vid === this.data.version.version_id) return this.closeVersionSelector();
+    this.closeVersionSelector();
+    const keep = this.data.pointId;          // กฎทอง: เปลี่ยนเวอร์ชันแล้วยืนอยู่ห้องเดิม
+    this._busy(true, 'กำลังเปลี่ยนเวอร์ชัน…');
+    try {
+      await this.loadVersion(vid);
+      this.goToPoint(keep || (this.data.points[0] || {}).point_id, true);
+    } catch (e) { this._err({ error: e.message }); }
+    this._busy(false);
+  },
+
+  // ── แผนผังจิ๋ว ───────────────────────────────────────────
+  toggleMinimap() {
+    const overlay = document.getElementById('minimap-overlay');
+    const open = overlay.style.display === 'flex';
+    overlay.style.display = open ? 'none' : 'flex';
+    if (open) overlay.classList.remove('expanded'); else this.updateMinimapPoint();
+  },
+  expandMinimap() { document.getElementById('minimap-overlay').classList.toggle('expanded'); },
+
+  updateMinimapPoint() {
+    const pt = this._pt(this.data.pointId);
+    const wrap = document.getElementById('tv-minimap-points');
+    if (!wrap) return;
+    const plan = this.data.plans.find((pl) => pt && pl.plan_id === pt.plan_id) || this.data.plans[0] || null;
+    const floorEl = document.getElementById('tv-minimap-floor');
+    if (floorEl) floorEl.innerText = plan ? ' - ' + plan.floor_label : '';
+    const img = document.getElementById('tv-minimap-img');
+    if (img) {
+      if (plan && plan.url) { img.src = plan.url; img.style.display = ''; }
+      else { img.removeAttribute('src'); img.style.display = 'none'; }
+    }
+    wrap.innerHTML = this.data.points.map((p) =>
+      '<div class="mm-point ' + (pt && p.point_id === pt.point_id ? 'active' : '') + '" ' +
+      'title="' + this._esc(p.name) + '" ' +
+      'style="left:' + ((Number(p.plan_x) || 0.5) * 100) + '%;top:' + ((Number(p.plan_y) || 0.5) * 100) + '%" ' +
+      'onclick="event.stopPropagation(); Tour.goToPoint(\'' + p.point_id + '\'); Tour.toggleMinimap();"></div>').join('');
+  },
+
+  // ── หมุดคอมเมนต์ ─────────────────────────────────────────
+  async togglePins() {
+    const pins = this.data.pins.filter((p) => p.point_id === this.data.pointId);
+    const list = pins.length
+      ? pins.map((p) => '<div style="padding:8px 0;border-bottom:1px solid var(--color-slate-200)">' +
+        (p.resolved === 1 ? '✅ ' : '📌 ') + this._esc(p.text || '(ไม่มีข้อความ)') +
+        (p.ref_id ? ' <span class="badge">' + this._esc(p.ref_id) + '</span>' : '') + '</div>').join('')
+      : '<div class="text-muted" style="padding:8px 0">ยังไม่มีหมุดในจุดนี้</div>';
+    const ok = await Modal.confirm({
+      title: 'หมุดคอมเมนต์ — ' + ((this._pt(this.data.pointId) || {}).name || ''),
+      desc: 'บันทึกสิ่งที่เห็นในภาพนี้ไว้ให้ทีมอ่าน',
+      info: list,
+      icon: '📌', iconClass: 'info',
+      confirmText: 'เพิ่มหมุดใหม่', cancelText: 'ปิด',
+    });
+    if (!ok) return;
+    const text = prompt('พิมพ์สิ่งที่อยากบันทึกไว้ที่จุดนี้');
+    if (!text) return;
+    const yaw = this.viewer && this.viewer.getYaw ? this.viewer.getYaw() : 0;
+    const pitch = this.viewer && this.viewer.getPitch ? this.viewer.getPitch() : 0;
+    const res = await API.tourSavePin({
+      point_id: this.data.pointId, version_id: this.data.version.version_id,
+      yaw: yaw, pitch: pitch, kind: 'note', text: text,
+    });
+    if (!res || res.ok === false) return this._err(res);
+    Modal.toast('✅ บันทึกหมุดแล้ว');
+    await this.loadVersion(this.data.version.version_id);
+  },
+
+  toggleCompare() { Modal.toast('ระบบเทียบ 2 เวอร์ชันอยู่ในเฟสถัดไป'); },
+  goHome() { window.location.href = 'dashboard.html' + (location.search || ''); },
+
+  // ── สลับโหมด ─────────────────────────────────────────────
+  switchMode(mode) {
+    document.getElementById('mode-view').style.display = mode === 'view' ? 'flex' : 'none';
+    document.getElementById('mode-capture').style.display = mode === 'capture' ? 'block' : 'none';
+    document.getElementById('mode-map').style.display = mode === 'map' ? 'block' : 'none';
+    this.closeVersionSelector();
+    if (mode === 'capture') this.renderCaptureList();
+    if (mode === 'map') this.renderMap();
+  },
+
+  // ════════════════════════════════════════════════════════
+  // 📸 โหมดถ่ายเวอร์ชันใหม่
+  // ════════════════════════════════════════════════════════
+  enterCaptureMode() {
+    // เสนอชื่อให้ก่อน — พนักงานแค่แตะ ไม่ต้องคิดเอง
+    const nameEl = document.getElementById('tc-name');
+    if (nameEl && !nameEl.value) {
+      const d = new Date();
+      nameEl.value = 'สภาพหน้างาน ' + d.getDate() + '/' + (d.getMonth() + 1);
+    }
+    this.switchMode('capture');
+  },
+
+  renderCaptureList() {
+    const list = document.getElementById('tc-point-list');
+    if (!list) return;
+    if (!this.data.points.length) {
+      list.innerHTML = '<div class="text-muted" style="padding:12px;text-align:center">' +
+        'ยังไม่มีจุดถ่าย — ไป "วางจุดและเส้นทาง" ก่อน<br>' +
+        '<button class="btn btn-secondary btn-sm mt-2" onclick="Tour.switchMode(\'map\')">วางจุด</button></div>';
+      document.getElementById('tc-progress-text').innerText = '0/0 จุด';
+      document.getElementById('tc-progress-bar').style.width = '0%';
+      return;
+    }
+
+    const done = this.data.captureDone || {};
+    list.innerHTML = this.data.points.map((p) => {
+      const ok = !!done[p.point_id];
+      return '<div class="point-row ' + (ok ? 'done' : '') + '">' +
+        '<div class="flex items-center gap-2">' +
+        (ok ? '<i data-lucide="check-circle-2" style="color:var(--color-success-500)"></i>'
+            : '<i data-lucide="circle" class="text-muted"></i>') +
+        '<span class="font-semibold">' + this._esc(p.name) + '</span></div>' +
+        '<button class="btn ' + (ok ? 'btn-ghost' : 'btn-secondary') + ' btn-sm" ' +
+        'onclick="Tour.pickPhotoFor(\'' + p.point_id + '\')">' + (ok ? 'ถ่ายใหม่' : '+ รูป') + '</button>' +
+        '</div>';
+    }).join('');
+
+    const n = Object.keys(done).length;
+    document.getElementById('tc-progress-text').innerText = n + '/' + this.data.points.length + ' จุด';
+    document.getElementById('tc-progress-bar').style.width =
+      Math.round((n / this.data.points.length) * 100) + '%';
+    if (window.lucide) lucide.createIcons();
+  },
+
+  // ต้องมีเวอร์ชัน draft ก่อนถึงจะอัปรูปได้ — สร้างให้อัตโนมัติตอนกดรูปแรก
+  async _ensureDraft() {
+    if (this.data.draftVersionId) return this.data.draftVersionId;
+    const name = (document.getElementById('tc-name').value || '').trim();
+    if (!name) { Modal.toast('⚠️ ใส่ชื่อเวอร์ชันก่อน'); return null; }
+    const res = await API.tourCreateVersion({ name: name });
+    if (!res || res.ok === false) { this._err(res, 'สร้างเวอร์ชันไม่สำเร็จ'); return null; }
+    const d = res.data || res;
+    this.data.draftVersionId = d.version_id;
+    this.data.captureDone = {};
+    return d.version_id;
+  },
+
+  /**
+   * ⚠️ ตั้งใจเปิด "คลังภาพ" ไม่ใช่กล้องผ่านเว็บ
+   * กล้องที่เปิดจากหน้าเว็บ (capture) ไม่มีโหมดพาโนรามาให้เลือก → ถ่ายพาโนไม่ได้เลย
+   * ขั้นตอนจริง: ถ่ายพาโนด้วยแอปกล้องปกติให้ครบก่อน แล้วค่อยเข้ามาเลือกรูป
+   */
+  pickPhotoFor(pointId) {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0];
+      if (f) await this.uploadFor(pointId, f);
+    };
+    inp.click();
+  },
+
+  async uploadFor(pointId, file) {
+    const vid = await this._ensureDraft();
+    if (!vid) return;
+    this._busy(true, 'กำลังย่อรูปและอัปโหลด…');
+    try {
+      const img = await this._compress(file, 4096, 0.82);
+      const res = await API.tourUploadShot({
+        version_id: vid, point_id: pointId,
+        image_base64: img.dataUrl, width: img.w, height: img.h,
+        taken_at: file.lastModified ? new Date(file.lastModified).toISOString() : '',
+      });
+      if (!res || res.ok === false) { this._busy(false); return this._err(res, 'อัปรูปไม่สำเร็จ'); }
+      const d = res.data || res;
+      this.data.captureDone = this.data.captureDone || {};
+      this.data.captureDone[pointId] = true;
+      this.renderCaptureList();
+      const kindTxt = d.kind === 'sphere' ? '360 เต็มใบ' : d.kind === 'pano' ? 'พาโนรามา' : 'รูปธรรมดา';
+      Modal.toast('✅ อัปแล้ว (' + kindTxt + ')');
+    } catch (e) {
+      this._err({ error: e.message }, 'อัปรูปไม่สำเร็จ');
+    }
+    this._busy(false);
+  },
+
+  // ย่อด้านยาวเหลือ 4096px คุณภาพ 82% → ~0.8-1.5 MB ยังคมพอส่องดูงานไม้
+  _compress(file, maxDim, quality) {
+    return new Promise((resolve, reject) => {
+      const rd = new FileReader();
+      rd.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+      rd.onload = (ev) => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('เปิดรูปไม่สำเร็จ (ไฟล์อาจไม่ใช่รูปภาพ)'));
+        img.onload = () => {
+          let w = img.naturalWidth, h = img.naturalHeight;
+          if (w > maxDim || h > maxDim) {
+            if (w >= h) { h = Math.round(h * maxDim / w); w = maxDim; }
+            else { w = Math.round(w * maxDim / h); h = maxDim; }
+          }
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          try { resolve({ dataUrl: c.toDataURL('image/jpeg', quality), w: w, h: h }); }
+          catch (err) { reject(err); }
+        };
+        img.src = ev.target.result;
+      };
+      rd.readAsDataURL(file);
+    });
+  },
+
+  async publishNewVersion() {
+    const vid = this.data.draftVersionId;
+    if (!vid) return Modal.toast('⚠️ ยังไม่ได้ถ่ายรูปสักจุด');
+    const n = Object.keys(this.data.captureDone || {}).length;
+    const total = this.data.points.length;
+    // ไม่ล็อกปุ่ม — บางเวอร์ชันตั้งใจถ่ายแค่ห้องที่มีความคืบหน้า แค่ถามยืนยันให้รู้ตัว
+    const ok = await Modal.confirm({
+      title: 'เผยแพร่ให้ทีมดู',
+      desc: 'ถ่ายไป ' + n + ' จาก ' + total + ' จุด' +
+        (n < total ? ' — ห้องที่เหลือจะแสดงภาพจากเวอร์ชันก่อนหน้า พร้อมป้ายบอกว่าเป็นภาพเก่า' : ''),
+      icon: '🚀', iconClass: 'info',
+      confirmText: 'เผยแพร่เลย', confirmClass: 'modal-btn-primary',
+    });
+    if (!ok) return;
+
+    this._busy(true, 'กำลังเผยแพร่…');
+    const res = await API.tourPublishVersion(vid);
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    this.data.draftVersionId = null;
+    this.data.captureDone = {};
+    document.getElementById('tc-name').value = '';
+    try {
+      await this.loadConfig(true);
+      await this.loadVersion(vid);
+      this.switchMode('view');
+      this.goToPoint(this.data.pointId || this.data.points[0].point_id, true);
+      Modal.toast('✅ เผยแพร่แล้ว');
+    } catch (e) { this._err({ error: e.message }); }
+    this._busy(false);
+  },
+
+  // ════════════════════════════════════════════════════════
+  // 🗺️ โหมดวางจุดและเส้นทาง (ทำครั้งเดียวตอนเปิดโครงการ)
+  // ════════════════════════════════════════════════════════
+  setMapTool(tool) {
+    this.data.mapTool = tool;
+    this.data.linkFrom = null;
+    this.renderMap();
+  },
+
+  renderMap() {
+    const wrap = document.getElementById('map-canvas-wrap');
+    if (!wrap) return;
+    const plan = this.data.plans[0] || null;
+
+    document.querySelectorAll('.map-toolbar .btn').forEach((b) => b.classList.remove('active'));
+    const btn = document.getElementById('map-tool-' + this.data.mapTool);
+    if (btn) btn.classList.add('active');
+
+    if (!plan) {
+      wrap.innerHTML = '<div class="center-msg text-muted"><i data-lucide="map"></i>' +
+        '<div style="margin:12px 0">ยังไม่มีแปลนพื้น — อัปแปลนก่อน แล้วค่อยแตะวางจุด</div>' +
+        '<button class="btn btn-primary btn-sm" onclick="Tour.pickPlan()">อัปแปลนพื้น</button></div>';
+      if (window.lucide) lucide.createIcons();
+      this.renderMapPointList();
+      return;
+    }
+
+    const hint = this.data.mapTool === 'point'
+      ? 'แตะบนแปลนเพื่อวางจุดใหม่'
+      : (this.data.linkFrom
+        ? 'แตะจุดปลายทาง (จาก "' + this._esc((this._pt(this.data.linkFrom) || {}).name) + '")'
+        : 'แตะจุดต้นทางก่อน');
+
+    wrap.innerHTML =
+      '<div id="map-plan-box" style="position:relative;width:100%;user-select:none" onclick="Tour.onPlanClick(event)">' +
+      '<img src="' + plan.url + '" style="width:100%;display:block;border-radius:8px" draggable="false">' +
+      this.data.points.map((p) =>
+        '<div class="mm-point" style="left:' + ((Number(p.plan_x) || 0) * 100) + '%;top:' + ((Number(p.plan_y) || 0) * 100) + '%;' +
+        (this.data.linkFrom === p.point_id ? 'outline:3px solid var(--color-warning-500);' : '') +
+        'cursor:pointer" title="' + this._esc(p.name) + '" ' +
+        'onclick="event.stopPropagation(); Tour.onPointClick(\'' + p.point_id + '\')"></div>').join('') +
+      '</div>' +
+      '<div class="text-sm text-muted" style="margin-top:8px;text-align:center">' + hint + '</div>';
+
+    this.renderMapPointList();
+    if (window.lucide) lucide.createIcons();
+  },
+
+  renderMapPointList() {
+    const box = document.getElementById('map-point-list');
+    if (!box) return;
+    if (!this.data.points.length) { box.innerHTML = ''; return; }
+    box.innerHTML =
+      '<div class="form-label" style="margin-top:16px">จุดทั้งหมด (' + this.data.points.length + ')</div>' +
+      this.data.points.map((p) => {
+        const outs = this.data.links.filter((l) => l.from_point === p.point_id)
+          .map((l) => (this._pt(l.to_point) || {}).name || '?').join(', ');
+        return '<div class="point-row">' +
+          '<div><div class="font-semibold">' + this._esc(p.name) + '</div>' +
+          '<div class="text-sm text-muted">' + (outs ? '→ ' + this._esc(outs) : 'ยังไม่มีทางเดินออก') + '</div></div>' +
+          '<button class="btn btn-ghost btn-sm" onclick="Tour.removePoint(\'' + p.point_id + '\')">ลบ</button>' +
+          '</div>';
+      }).join('');
+  },
+
+  pickPlan() {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0];
+      if (!f) return;
+      this._busy(true, 'กำลังอัปแปลน…');
+      try {
+        const img = await this._compress(f, 2000, 0.85);
+        const res = await API.tourSavePlan({
+          plan_id: (this.data.plans[0] || {}).plan_id || '',
+          floor_label: (this.data.plans[0] || {}).floor_label || 'ชั้น 1',
+          image_base64: img.dataUrl, width: img.w, height: img.h,
+        });
+        if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+        await this.loadConfig(true);
+        this.renderMap();
+        Modal.toast('✅ อัปแปลนแล้ว');
+      } catch (e) { this._err({ error: e.message }); }
+      this._busy(false);
+    };
+    inp.click();
+  },
+
+  async onPlanClick(ev) {
+    if (this.data.mapTool !== 'point') return;
+    const box = document.getElementById('map-plan-box');
+    const r = box.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+    const y = Math.max(0, Math.min(1, (ev.clientY - r.top) / r.height));
+    const name = prompt('ชื่อจุดนี้ (เช่น ห้องนอนใหญ่ – มุมประตู)');
+    if (!name) return;
+    this._busy(true, 'กำลังบันทึกจุด…');
+    const res = await API.tourSavePoint({
+      name: name, plan_id: (this.data.plans[0] || {}).plan_id || '',
+      plan_x: x, plan_y: y, sort_order: this.data.points.length + 1,
+    });
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    this.renderMap();
+    this._busy(false);
+  },
+
+  // โยงเส้น: แตะจุดต้นทาง → แตะจุดปลายทาง
+  // ทิศของลูกศรคำนวณจากตำแหน่งบนแปลนให้อัตโนมัติ (ปรับละเอียดทีหลังได้ด้วยค่าปรับหมุนของภาพ)
+  async onPointClick(pointId) {
+    if (this.data.mapTool !== 'link') return;
+    if (!this.data.linkFrom) { this.data.linkFrom = pointId; return this.renderMap(); }
+    if (this.data.linkFrom === pointId) { this.data.linkFrom = null; return this.renderMap(); }
+
+    const a = this._pt(this.data.linkFrom), b = this._pt(pointId);
+    const dx = (Number(b.plan_x) || 0) - (Number(a.plan_x) || 0);
+    const dy = (Number(b.plan_y) || 0) - (Number(a.plan_y) || 0);
+    let yaw = Math.atan2(dx, -dy) * 180 / Math.PI;   // แกน y ของรูปโตลงล่าง → กลับเครื่องหมาย
+    if (yaw > 180) yaw -= 360;
+
+    this._busy(true, 'กำลังบันทึกเส้นทาง…');
+    const res = await API.tourSaveLink({
+      from_point: a.point_id, to_point: b.point_id, yaw: yaw, pitch: -10, label: '',
+    });
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    this.data.linkFrom = null;
+    await this.loadConfig(true);
+    this.renderMap();
+    this._busy(false);
+    Modal.toast('✅ โยงเส้นทางแล้ว');
+  },
+
+  async removePoint(pointId) {
+    const ok = await Modal.confirm({
+      title: 'ปิดจุดนี้?',
+      desc: 'ภาพเก่าของจุดนี้ยังอยู่ครบเป็นหลักฐาน แค่ไม่แสดงในทัวร์อีกต่อไป',
+      confirmText: 'ปิดจุด',
+    });
+    if (!ok) return;
+    this._busy(true, 'กำลังปิดจุด…');
+    const res = await API.tourDeletePoint(pointId);
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    this.renderMap();
+    this._busy(false);
+  },
+};
+
+window.Tour = Tour;
