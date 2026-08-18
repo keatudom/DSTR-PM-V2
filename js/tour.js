@@ -103,10 +103,10 @@ const Tour = {
       empty.innerHTML =
         '<div style="text-align:center;padding:24px">' +
         '<div style="font-size:15px;line-height:1.7;margin-bottom:16px">' +
-        this._esc(msg || 'โครงการนี้ยังไม่ได้วางจุดถ่าย — วางจุดครั้งเดียว แล้วรอบต่อไปแค่ถ่ายทับ') +
+        this._esc(msg || 'ยังไม่มีภาพในโครงการนี้ — เริ่มถ่ายได้เลย ไม่ต้องตั้งค่าอะไรก่อน') +
         '</div>' +
-        '<button class="btn btn-primary" onclick="Tour.switchMode(\'map\')">วางจุดและเส้นทาง</button> ' +
-        '<button class="btn btn-secondary" onclick="Tour.enterCaptureMode()">ถ่ายเวอร์ชันใหม่</button>' +
+        '<button class="btn btn-primary" onclick="Tour.enterCaptureMode()">📷 เริ่มถ่าย</button> ' +
+        '<button class="btn btn-secondary" onclick="Tour.switchMode(\'map\')">จัดการจุด/เส้นทาง</button>' +
         '</div>';
     }
     const warn = document.getElementById('tv-fallback-warn');
@@ -457,10 +457,12 @@ const Tour = {
   renderCaptureList() {
     const list = document.getElementById('tc-point-list');
     if (!list) return;
+    // ยังไม่มีจุดเลย = ไม่ต้องไปตั้งค่าอะไรก่อน ถ่ายได้เลย แล้วจุดจะถูกสร้างให้ตอนตั้งชื่อ
     if (!this.data.points.length) {
-      list.innerHTML = '<div class="text-muted" style="padding:12px;text-align:center">' +
-        'ยังไม่มีจุดถ่าย — ไป "วางจุดและเส้นทาง" ก่อน<br>' +
-        '<button class="btn btn-secondary btn-sm mt-2" onclick="Tour.switchMode(\'map\')">วางจุด</button></div>';
+      list.innerHTML = '<div class="text-muted" style="padding:16px;text-align:center;line-height:1.8">' +
+        'ยังไม่มีจุดถ่ายในโครงการนี้<br><span style="font-size:13px">ถ่ายได้เลย — ตั้งชื่อห้องตอนอัปรูป จุดจะถูกสร้างให้อัตโนมัติ</span>' +
+        '<div style="margin-top:12px"><button class="btn btn-primary" onclick="Tour.captureNewPoint()">📷 เริ่มจากจุดแรก</button></div>' +
+        '</div>';
       document.getElementById('tc-progress-text').innerText = '0/0 จุด';
       document.getElementById('tc-progress-bar').style.width = '0%';
       return;
@@ -478,6 +480,9 @@ const Tour = {
         'onclick="Tour.pickPhotoFor(\'' + p.point_id + '\')">' + (ok ? 'ถ่ายใหม่' : '+ รูป') + '</button>' +
         '</div>';
     }).join('');
+
+    list.innerHTML += '<div style="text-align:center;margin-top:12px">' +
+      '<button class="btn btn-ghost btn-sm" onclick="Tour.captureNewPoint()">➕ เพิ่มจุดใหม่แล้วถ่ายเลย</button></div>';
 
     const n = Object.keys(done).length;
     document.getElementById('tc-progress-text').innerText = n + '/' + this.data.points.length + ' จุด';
@@ -504,6 +509,27 @@ const Tour = {
    * กล้องที่เปิดจากหน้าเว็บ (capture) ไม่มีโหมดพาโนรามาให้เลือก → ถ่ายพาโนไม่ได้เลย
    * ขั้นตอนจริง: ถ่ายพาโนด้วยแอปกล้องปกติให้ครบก่อน แล้วค่อยเข้ามาเลือกรูป
    */
+  // ทางลัด "ถ่ายเลยไม่ต้องตั้งค่าก่อน" — ตั้งชื่อห้อง → เลือกรูป → ระบบสร้างจุดให้แล้วอัปให้เสร็จในทีเดียว
+  async captureNewPoint() {
+    const name = prompt('ห้องนี้ชื่ออะไร (เช่น ห้องนอนใหญ่)');
+    if (!name) return;
+    const i = this.data.points.length;
+    this._busy(true, 'กำลังสร้างจุด…');
+    const res = await API.tourSavePoint({
+      name: name,
+      plan_id: (this.data.plans[0] || {}).plan_id || '',
+      plan_x: Math.min(0.9, 0.15 + (i % 4) * 0.23),
+      plan_y: Math.min(0.9, 0.2 + Math.floor(i / 4) * 0.22),
+      sort_order: i + 1,
+    });
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    this._busy(false);
+    this.renderCaptureList();
+    const d = res.data || res;
+    this.pickPhotoFor(d.point_id);
+  },
+
   pickPhotoFor(pointId) {
     const inp = document.createElement('input');
     inp.type = 'file';
@@ -614,10 +640,15 @@ const Tour = {
     const btn = document.getElementById('map-tool-' + this.data.mapTool);
     if (btn) btn.classList.add('active');
 
+    // ไม่มีแปลนก็ใช้งานได้ — แปลนเป็นแค่ "แผนที่ช่วยจำ" ไม่ใช่ของบังคับ
     if (!plan) {
       wrap.innerHTML = '<div class="center-msg text-muted"><i data-lucide="map"></i>' +
-        '<div style="margin:12px 0">ยังไม่มีแปลนพื้น — อัปแปลนก่อน แล้วค่อยแตะวางจุด</div>' +
-        '<button class="btn btn-primary btn-sm" onclick="Tour.pickPlan()">อัปแปลนพื้น</button></div>';
+        '<div style="margin:12px 0;line-height:1.7">ยังไม่มีแปลนพื้น<br>' +
+        '<span style="font-size:13px">เพิ่มจุดเป็นรายชื่อห้องได้เลย · แปลนใส่ทีหลังก็ได้</span></div>' +
+        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
+        '<button class="btn btn-primary btn-sm" onclick="Tour.addPointManually()">➕ เพิ่มจุด</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="Tour.pickPlan()">อัปแปลนพื้น</button>' +
+        '</div></div>';
       if (window.lucide) lucide.createIcons();
       this.renderMapPointList();
       return;
@@ -647,18 +678,55 @@ const Tour = {
   renderMapPointList() {
     const box = document.getElementById('map-point-list');
     if (!box) return;
-    if (!this.data.points.length) { box.innerHTML = ''; return; }
+    const linking = this.data.mapTool === 'link';
+    const addBtn = '<button class="btn btn-secondary btn-sm" onclick="Tour.addPointManually()">➕ เพิ่มจุด</button>';
+
+    if (!this.data.points.length) {
+      box.innerHTML = '<div style="margin-top:16px;text-align:center">' + addBtn + '</div>';
+      return;
+    }
+
     box.innerHTML =
-      '<div class="form-label" style="margin-top:16px">จุดทั้งหมด (' + this.data.points.length + ')</div>' +
+      '<div class="flex justify-between items-center" style="margin-top:16px">' +
+      '<div class="form-label mb-0">จุดทั้งหมด (' + this.data.points.length + ')</div>' + addBtn + '</div>' +
+      (linking ? '<div class="text-sm text-muted" style="margin:6px 0">' +
+        (this.data.linkFrom
+          ? 'แตะจุดปลายทาง (จาก "' + this._esc((this._pt(this.data.linkFrom) || {}).name) + '")'
+          : 'แตะจุดต้นทางก่อน — ไม่ต้องมีแปลนก็โยงได้') + '</div>' : '') +
       this.data.points.map((p) => {
         const outs = this.data.links.filter((l) => l.from_point === p.point_id)
           .map((l) => (this._pt(l.to_point) || {}).name || '?').join(', ');
-        return '<div class="point-row">' +
+        const picked = this.data.linkFrom === p.point_id;
+        return '<div class="point-row" ' +
+          (linking ? 'onclick="Tour.onPointClick(\'' + p.point_id + '\')" style="cursor:pointer;' +
+            (picked ? 'outline:2px solid var(--color-warning-500)' : '') + '"' : '') + '>' +
           '<div><div class="font-semibold">' + this._esc(p.name) + '</div>' +
           '<div class="text-sm text-muted">' + (outs ? '→ ' + this._esc(outs) : 'ยังไม่มีทางเดินออก') + '</div></div>' +
-          '<button class="btn btn-ghost btn-sm" onclick="Tour.removePoint(\'' + p.point_id + '\')">ลบ</button>' +
+          (linking ? '<i data-lucide="' + (picked ? 'crosshair' : 'chevron-right') + '"></i>'
+            : '<button class="btn btn-ghost btn-sm" onclick="Tour.removePoint(\'' + p.point_id + '\')">ลบ</button>') +
           '</div>';
       }).join('');
+    if (window.lucide) lucide.createIcons();
+  },
+
+  // เพิ่มจุดโดยไม่ต้องมีแปลน — วางตำแหน่งบนแผนผังให้อัตโนมัติแบบเรียงตาราง
+  // (ไว้ให้แผนผังจิ๋วยังพอใช้ได้ · ถ้าอัปแปลนทีหลังก็ลากย้ายให้ตรงจริงได้)
+  async addPointManually() {
+    const name = prompt('ชื่อจุดนี้ (เช่น ห้องนอนใหญ่ – มุมประตู)');
+    if (!name) return;
+    const i = this.data.points.length;
+    this._busy(true, 'กำลังบันทึกจุด…');
+    const res = await API.tourSavePoint({
+      name: name,
+      plan_id: (this.data.plans[0] || {}).plan_id || '',
+      plan_x: Math.min(0.9, 0.15 + (i % 4) * 0.23),
+      plan_y: Math.min(0.9, 0.2 + Math.floor(i / 4) * 0.22),
+      sort_order: i + 1,
+    });
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    this.renderMap();
+    this._busy(false);
   },
 
   pickPlan() {
