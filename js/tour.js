@@ -145,6 +145,7 @@ const Tour = {
     const pt = this._pt(pointId);
     if (!pt) return;
     this.data.pointId = pointId;
+    this.closeAdjust();   // ย้ายห้องแล้วแผงปรับภาพของห้องเก่าต้องหายไปด้วย
 
     document.getElementById('tv-point-name').innerText = pt.name;
     const idx = this.data.points.findIndex((p) => p.point_id === pointId) + 1;
@@ -357,6 +358,74 @@ const Tour = {
     if (!res || res.ok === false) return this._err(res);
     Modal.toast('✅ บันทึกหมุดแล้ว');
     await this.loadVersion(this.data.version.version_id);
+  },
+
+  // ── ปรับภาพ (แก้ตอนระบบเดาความกว้างผิด / ภาพหันเบี้ยวจากรอบก่อน) ──
+  // ระบบเดาความกว้างของพาโนจากสัดส่วนภาพ ซึ่งถูกเกือบทุกครั้งแต่ไม่เสมอไป
+  // ถ้าเดาผิด ภาพจะดูยืดหรือหด — ตรงนี้คือที่ให้คนแก้เองโดยไม่ต้องถ่ายใหม่
+  adjustShot() {
+    const entry = this._shot(this.data.pointId);
+    if (!entry || entry.no_image || !entry.shot) return Modal.toast('⚠️ จุดนี้ยังไม่มีภาพ');
+    if (entry.fallback_from_version) return Modal.toast('⚠️ ปรับได้เฉพาะภาพของเวอร์ชันนี้เอง');
+
+    const shot = entry.shot;
+    const old = document.getElementById('tour-adjust');
+    if (old) old.remove();
+
+    const isSphere = shot.kind === 'sphere';
+    const haov = Number(shot.haov) || (isSphere ? 360 : 180);
+    const panel = document.createElement('div');
+    panel.id = 'tour-adjust';
+    panel.style.cssText = 'position:absolute;left:12px;right:12px;bottom:76px;z-index:30;padding:14px 16px;' +
+      'border-radius:14px;background:rgba(15,23,42,.92);color:#fff;backdrop-filter:blur(6px);' +
+      'box-shadow:0 8px 28px rgba(0,0,0,.4);font-size:14px';
+    panel.innerHTML =
+      '<div style="font-weight:600;margin-bottom:10px">ปรับภาพ</div>' +
+      (isSphere ? '' :
+        '<label style="display:block;margin-bottom:4px">ความกว้างของภาพ <b id="adj-haov-v">' + Math.round(haov) + '°</b>' +
+        '<div style="opacity:.7;font-size:12px">กวาดครึ่งห้อง ≈ 120° · กวาดสุดของ iPhone ≈ 240°</div></label>' +
+        '<input type="range" id="adj-haov" min="60" max="300" step="5" value="' + Math.round(haov) + '" style="width:100%;margin-bottom:12px">') +
+      '<label style="display:block;margin-bottom:4px">หันหน้าเริ่มต้น' +
+      '<div style="opacity:.7;font-size:12px">ส่ายภาพให้หันทางเดียวกับเวอร์ชันอื่น แล้วกดบันทึก</div></label>' +
+      '<div style="display:flex;gap:8px;margin-top:12px">' +
+      '<button class="btn btn-secondary btn-sm" style="flex:1" onclick="Tour.closeAdjust()">ปิด</button>' +
+      '<button class="btn btn-primary btn-sm" style="flex:1" onclick="Tour.saveAdjust()">บันทึก</button>' +
+      '</div>';
+    document.getElementById('mode-view').appendChild(panel);
+
+    const sl = document.getElementById('adj-haov');
+    if (sl) {
+      sl.oninput = () => { document.getElementById('adj-haov-v').innerText = sl.value + '°'; };
+      // เปลี่ยนความกว้างต้องสร้างตัวเล่นใหม่ → ทำตอนปล่อยนิ้วเท่านั้น ไม่งั้นกระตุก
+      sl.onchange = () => {
+        shot.haov = Number(sl.value);
+        shot.vaov = Math.max(40, Math.min(90, Number(sl.value) / 4));
+        shot.yaw_offset = this.viewer && this.viewer.getYaw ? this.viewer.getYaw() : shot.yaw_offset;
+        this._renderShot(shot, this.data.pointId);
+      };
+    }
+  },
+
+  closeAdjust() {
+    const el = document.getElementById('tour-adjust');
+    if (el) el.remove();
+  },
+
+  async saveAdjust() {
+    const entry = this._shot(this.data.pointId);
+    if (!entry || !entry.shot) return this.closeAdjust();
+    const shot = entry.shot;
+    const yaw = this.viewer && this.viewer.getYaw ? this.viewer.getYaw() : Number(shot.yaw_offset) || 0;
+    this._busy(true, 'กำลังบันทึก…');
+    const res = await API.tourUpdateShot({
+      shot_id: shot.shot_id, yaw_offset: yaw,
+      kind: shot.kind, haov: shot.haov, vaov: shot.vaov,
+    });
+    this._busy(false);
+    if (!res || res.ok === false) return this._err(res);
+    shot.yaw_offset = yaw;
+    this.closeAdjust();
+    Modal.toast('✅ บันทึกการปรับแล้ว');
   },
 
   toggleCompare() { Modal.toast('ระบบเทียบ 2 เวอร์ชันอยู่ในเฟสถัดไป'); },
