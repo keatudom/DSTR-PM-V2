@@ -31,7 +31,7 @@
   }
 
   /* 🚶 --- VIEW MODE --- */
-  #mode-view { flex: 1; position: relative; display: flex; flex-direction: column; background: #000; }
+  #mode-view { flex: 1; position: relative; display: none; flex-direction: column; background: #000; }
   
   .tour-top-bar {
     position: absolute; top: 0; left: 0; right: 0;
@@ -157,6 +157,19 @@
   .mm-point.active { background: var(--color-blue-600); width: 16px; height: 16px; z-index: 2; box-shadow: 0 0 0 4px rgba(59,130,246,0.3); }
 
   /* 📸 --- CAPTURE MODE --- */
+  #mode-home { display: flex; flex: 1; flex-direction: column; background: var(--color-slate-50); padding: var(--space-4); overflow-y: auto; padding-bottom: 100px; }
+  .th-bar { display:flex; gap:8px; align-items:center; margin-bottom:var(--space-4); flex-wrap:wrap; }
+  .th-ver { flex:1; min-width:180px; display:flex; align-items:center; gap:8px; min-height:48px; padding:0 14px;
+            border:1.5px solid var(--color-slate-300); border-radius:12px; background:#fff; cursor:pointer;
+            font-weight:600; color:var(--color-slate-800); }
+  .th-draft { display:flex; gap:10px; align-items:center; padding:12px 14px; border-radius:12px; margin-bottom:var(--space-4);
+              background:var(--color-warning-50); border:1.5px solid var(--color-warning-500); color:var(--color-warning-700); font-size:14px; }
+  .th-room { display:flex; gap:12px; align-items:center; padding:10px; background:#fff; border:1px solid var(--color-slate-200);
+             border-radius:14px; margin-bottom:10px; }
+  .th-room-thumb { width:78px; height:58px; border-radius:10px; object-fit:cover; background:var(--color-slate-200); flex:none; }
+  .th-room-main { flex:1; min-width:0; cursor:pointer; }
+  .th-room-name { font-weight:700; font-size:15px; }
+  .th-room-sub { font-size:12.5px; color:var(--color-slate-500); margin-top:2px; }
   #mode-capture { display: none; flex: 1; flex-direction: column; background: var(--color-slate-50); padding: var(--space-4); overflow-y: auto; padding-bottom: 100px; }
   .tour-form-card { background: #fff; border-radius: var(--radius-lg); padding: var(--space-4); margin-bottom: var(--space-4); border: 1px solid var(--color-slate-200); box-shadow: var(--shadow-sm); }
   .point-row { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3); border: 1px solid var(--color-slate-200); border-radius: var(--radius-md); margin-bottom: var(--space-2); background: #fff; }
@@ -177,11 +190,25 @@
       <div class="page-content">
         
         <div id="tour-root">
+          <!-- 🏠 HOME — รายการห้อง (หน้าแรกที่เจอ) -->
+          <div id="mode-home">
+            <div class="th-bar">
+              <button class="th-ver" onclick="Tour.openVersionSelector()">
+                <i data-lucide="calendar"></i><span id="th-version">กำลังโหลด…</span><i data-lucide="chevron-down"></i>
+              </button>
+              <button class="btn btn-primary" style="min-height:48px" onclick="Tour.enterCaptureMode()"><i data-lucide="camera"></i> สแกน</button>
+              <button class="btn btn-secondary" style="min-height:48px" onclick="Tour.switchMode('map')"><i data-lucide="map-pin"></i> จัดการจุด</button>
+            </div>
+            <div id="th-draft" style="display:none"></div>
+            <div id="th-plan" style="display:none;margin-bottom:var(--space-4)"></div>
+            <div id="th-list"></div>
+          </div>
+
           <!-- 🚶 VIEW MODE -->
           <div id="mode-view">
             <!-- Top Bar -->
             <div class="tour-top-bar">
-              <button class="tour-icon-btn shadow" onclick="Tour.goHome()"><i data-lucide="arrow-left"></i></button>
+              <button class="tour-icon-btn shadow" onclick="Tour.switchMode('home')"><i data-lucide="arrow-left"></i></button>
               <div class="tour-title-box">
                 <div class="tour-title-name" id="tv-point-name">กำลังโหลด...</div>
                 <div class="tour-title-stats" id="tv-point-stats">--</div>
@@ -236,7 +263,7 @@
           <!-- 📸 CAPTURE MODE -->
           <div id="mode-capture">
             <div class="flex justify-between items-center mb-4">
-              <button class="btn btn-ghost px-0" onclick="Tour.switchMode('view')"><i data-lucide="arrow-left"></i> กลับ</button>
+              <button class="btn btn-ghost px-0" onclick="Tour.switchMode('home')"><i data-lucide="arrow-left"></i> กลับ</button>
               <h2 class="text-lg font-bold">สร้างเวอร์ชันใหม่</h2>
               <div style="width:40px"></div>
             </div>
@@ -264,14 +291,18 @@
             </div>
 
             <div class="mt-4">
-              <button class="btn btn-primary btn-block btn-lg" onclick="Tour.publishNewVersion()">🚀 เผยแพร่ให้ทีมดู</button>
+              <button class="btn btn-primary btn-block btn-lg" onclick="Tour.previewDraft()"><i data-lucide="eye"></i> ดูผลก่อน (ยังไม่เผยแพร่)</button>
+              <button class="btn btn-secondary btn-block" style="margin-top:8px" onclick="Tour.publishNewVersion()">🚀 เผยแพร่ให้ทีมดู</button>
+              <p class="text-sm text-muted" style="margin-top:10px;text-align:center;line-height:1.7">
+                ภาพที่สแกนถูกบันทึกไว้แล้วตั้งแต่ตอนอัป — ตอนนี้<b>เห็นแค่คุณคนเดียว</b><br>ทีมจะเห็นก็ต่อเมื่อคุณกดเผยแพร่
+              </p>
             </div>
           </div>
 
           <!-- 🗺️ MAP MODE (Setup) -->
           <div id="mode-map">
             <div class="flex justify-between items-center mb-4">
-              <button class="btn btn-ghost px-0" onclick="Tour.switchMode('view')"><i data-lucide="arrow-left"></i> ออก</button>
+              <button class="btn btn-ghost px-0" onclick="Tour.switchMode('home')"><i data-lucide="arrow-left"></i> กลับ</button>
               <h2 class="text-lg font-bold">วางจุดและเส้นทาง</h2>
               <button class="btn btn-ghost btn-sm" onclick="Tour.pickPlan()"><i data-lucide="image-up"></i> แปลน</button>
             </div>

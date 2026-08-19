@@ -68,21 +68,107 @@ const Tour = {
   },
 
   // ── เริ่มต้น ──────────────────────────────────────────────
+  // ⚠️ เข้ามาต้องเจอ "รายการห้อง" ก่อน ไม่ใช่โยนเข้าจอ 360 เลย (เจ้าของงานทัก 2026-08-19)
+  //    ของเดิมเปิดมาเจอจอดำ ไม่รู้ว่ามีห้องอะไรบ้าง ไม่รู้จะกดตรงไหน และหาปุ่มจัดการไม่เจอ
   async init() {
-    this._busy(true, 'กำลังโหลดทัวร์…');
+    this._busy(true, 'กำลังโหลด…');
     try {
-      await this.loadConfig(true);
-      if (!this.data.points.length) { this._busy(false); return this.showSetupNeeded(); }
-      if (!this.data.versions.filter((v) => v.status === 'published').length) {
-        this._busy(false);
-        return this.showSetupNeeded('ยังไม่มีเวอร์ชันที่เผยแพร่ — กด "ถ่ายเวอร์ชันใหม่" เพื่อเริ่มบันทึกสภาพหน้างาน');
-      }
-      await this.loadVersion('');           // '' = ล่าสุดที่เผยแพร่แล้ว (หลังบ้านเลือกให้)
-      this.goToPoint(this.data.points[0].point_id, true);
+      await this.loadConfig(true);          // รวมเวอร์ชันที่ยังไม่เผยแพร่ด้วย
+
+      // เลือกเวอร์ชันที่จะแสดง: เผยแพร่แล้วล่าสุด · ถ้ายังไม่มีเลยก็ใช้ฉบับร่างล่าสุด
+      // (เจ้าของงานต้องดูงานที่ตัวเองเพิ่งสแกนได้ก่อนตัดสินใจเผยแพร่)
+      const pub = this.data.versions.filter((v) => v.status === 'published');
+      const target = (pub[0] || this.data.versions[0] || {}).version_id;
+      if (target) await this.loadVersion(target);
+
+      this.switchMode('home');
     } catch (e) {
-      this._err({ error: e.message }, 'โหลดทัวร์ไม่สำเร็จ');
+      this._err({ error: e.message }, 'โหลดไม่สำเร็จ');
+      this.switchMode('home');
     }
     this._busy(false);
+  },
+
+  // ── หน้าแรก: รายการห้อง ──────────────────────────────────
+  renderHome() {
+    const v = this.data.version;
+    const verEl = document.getElementById('th-version');
+    if (verEl) verEl.textContent = v ? (v.name + ' · ' + this._thaiDate(v.captured_at)) : 'ยังไม่มีเวอร์ชัน';
+
+    // แถบเตือนว่ายังไม่เผยแพร่ — ให้รู้ชัดว่าตอนนี้ทีมยังไม่เห็น
+    const dr = document.getElementById('th-draft');
+    if (dr) {
+      if (v && v.status === 'draft') {
+        dr.style.display = 'flex'; dr.className = 'th-draft';
+        dr.innerHTML = '<i data-lucide="eye-off"></i>' +
+          '<div style="flex:1;line-height:1.6">เวอร์ชันนี้<b>ยังไม่เผยแพร่</b> — ตอนนี้เห็นแค่คุณคนเดียว ทีมยังไม่เห็น</div>' +
+          '<button class="btn btn-primary btn-sm" onclick="Tour.publishVersion(\'' + v.version_id + '\')">เผยแพร่</button>';
+      } else dr.style.display = 'none';
+    }
+
+    const list = document.getElementById('th-list');
+    if (!list) return;
+
+    if (!this.data.points.length) {
+      list.innerHTML = '<div style="text-align:center;padding:32px 16px;line-height:1.9;color:var(--color-slate-600)">' +
+        'ยังไม่มีห้องในโครงการนี้<br><span style="font-size:13px">กด "สแกน" ได้เลย — ตั้งชื่อห้องตอนถ่าย ระบบสร้างให้เอง</span>' +
+        '<div style="margin-top:16px"><button class="btn btn-primary" onclick="Tour.enterCaptureMode()">📷 สแกนห้องแรก</button></div></div>';
+      return;
+    }
+
+    list.innerHTML = '<div class="form-label">ห้องทั้งหมด (' + this.data.points.length + ')</div>' +
+      this.data.points.map((p) => {
+        const e = this._shot(p.point_id);
+        let icon = 'circle-dashed', tone = 'var(--color-slate-400)', sub = 'ยังไม่มีภาพ';
+        if (e && e.shot && e.fallback_from_version) {
+          icon = 'alert-triangle'; tone = 'var(--color-warning-500)';
+          sub = 'ภาพจาก "' + this._esc(e.fallback_from_version.name) + '" ' + this._thaiDate(e.fallback_from_version.captured_at);
+        } else if (e && e.shot) {
+          icon = 'check-circle-2'; tone = 'var(--color-success-500)';
+          sub = 'มีภาพของเวอร์ชันนี้';
+        }
+        return '<div class="th-room">' +
+          '<i data-lucide="' + icon + '" style="color:' + tone + ';width:26px;height:26px;flex:none"></i>' +
+          '<div class="th-room-main" onclick="Tour.openPoint(\'' + p.point_id + '\')">' +
+          '<div class="th-room-name">' + this._esc(p.name) + '</div>' +
+          '<div class="th-room-sub">' + sub + '</div></div>' +
+          '<button onclick="Tour.removePoint(\'' + p.point_id + '\')" title="ทิ้งลงถังขยะ" ' +
+          'style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;' +
+          'border:1.5px solid var(--color-error-500);border-radius:10px;background:var(--color-error-50);' +
+          'color:var(--color-error-700);cursor:pointer">' +
+          '<i data-lucide="trash-2" style="width:18px;height:18px"></i></button>' +
+          '</div>';
+      }).join('');
+    if (window.lucide) lucide.createIcons();
+  },
+
+  // วาดใหม่ตามโหมดที่เปิดอยู่ — เดิม hardcode renderMap ทำให้ลบจุดจากหน้าแรกแล้วรายการไม่อัปเดต
+  _refresh() {
+    if (this.data.mode === 'map') this.renderMap();
+    else this.renderHome();
+  },
+
+  // แตะห้องในรายการ → เข้าจอ 360 ของห้องนั้น
+  openPoint(pointId) {
+    this.switchMode('view');
+    this.goToPoint(pointId, true);
+  },
+
+  async publishVersion(versionId) {
+    const ok = await Modal.confirm({
+      title: 'เผยแพร่ให้ทีมดู?',
+      desc: 'หลังเผยแพร่แล้วทุกคนในโครงการจะเห็นเวอร์ชันนี้',
+      icon: '🚀', iconClass: 'info', confirmText: 'เผยแพร่เลย',
+    });
+    if (!ok) return;
+    this._busy(true, 'กำลังเผยแพร่…');
+    const res = await API.tourPublishVersion(versionId);
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    await this.loadVersion(versionId);
+    this.renderHome();
+    this._busy(false);
+    Modal.toast('✅ เผยแพร่แล้ว ทีมเห็นได้แล้ว');
   },
 
   async loadConfig(includeDraft) {
@@ -298,7 +384,8 @@ const Tour = {
     this._busy(true, 'กำลังเปลี่ยนเวอร์ชัน…');
     try {
       await this.loadVersion(vid);
-      this.goToPoint(keep || (this.data.points[0] || {}).point_id, true);
+      if (this.data.mode === 'home') this.renderHome();
+      else this.goToPoint(keep || (this.data.points[0] || {}).point_id, true);
     } catch (e) { this._err({ error: e.message }); }
     this._busy(false);
   },
@@ -429,14 +516,17 @@ const Tour = {
   },
 
   toggleCompare() { Modal.toast('ระบบเทียบ 2 เวอร์ชันอยู่ในเฟสถัดไป'); },
-  goHome() { window.location.href = 'dashboard.html' + (location.search || ''); },
+  goHome() { this.switchMode('home'); },
 
   // ── สลับโหมด ─────────────────────────────────────────────
   switchMode(mode) {
+    this.data.mode = mode;
+    document.getElementById('mode-home').style.display = mode === 'home' ? 'flex' : 'none';
     document.getElementById('mode-view').style.display = mode === 'view' ? 'flex' : 'none';
     document.getElementById('mode-capture').style.display = mode === 'capture' ? 'block' : 'none';
     document.getElementById('mode-map').style.display = mode === 'map' ? 'block' : 'none';
     this.closeVersionSelector();
+    if (mode === 'home') this.renderHome();
     if (mode === 'capture') this.renderCaptureList();
     if (mode === 'map') { this.renderMap(); this.loadTrash().then(() => this.renderTrash()); }
   },
@@ -622,6 +712,20 @@ const Tour = {
     });
   },
 
+  // ดูผลที่เพิ่งสแกนโดยยังไม่เผยแพร่ — เจ้าของงานต้องเช็คงานตัวเองก่อนให้ทีมเห็น (2026-08-19)
+  async previewDraft() {
+    const vid = this.data.draftVersionId;
+    if (!vid) return Modal.toast('⚠️ ยังไม่ได้สแกนสักห้อง');
+    this._busy(true, 'กำลังเปิดดู…');
+    try {
+      await this.loadConfig(true);
+      await this.loadVersion(vid);
+      this.switchMode('home');
+      Modal.toast('👀 นี่คือฉบับร่าง — ทีมยังไม่เห็น');
+    } catch (e) { this._err({ error: e.message }); }
+    this._busy(false);
+  },
+
   async publishNewVersion() {
     const vid = this.data.draftVersionId;
     if (!vid) return Modal.toast('⚠️ ยังไม่ได้ถ่ายรูปสักจุด');
@@ -646,9 +750,8 @@ const Tour = {
     try {
       await this.loadConfig(true);
       await this.loadVersion(vid);
-      this.switchMode('view');
-      this.goToPoint(this.data.pointId || this.data.points[0].point_id, true);
-      Modal.toast('✅ เผยแพร่แล้ว');
+      this.switchMode('home');
+      Modal.toast('✅ เผยแพร่แล้ว ทีมเห็นได้แล้ว');
     } catch (e) { this._err({ error: e.message }); }
     this._busy(false);
   },
@@ -893,8 +996,9 @@ const Tour = {
     const res = await API.tourDeletePoint(pointId);
     if (!res || res.ok === false) { this._busy(false); return this._err(res); }
     await this.loadConfig(true);
+    if (this.data.version) { try { await this.loadVersion(this.data.version.version_id); } catch (e) { /* */ } }
     await this.loadTrash();
-    this.renderMap();
+    this._refresh();
     this._busy(false);
     Modal.toast('🗑️ ทิ้งลงถังขยะแล้ว — กู้คืนได้ 30 วัน');
   },
@@ -936,7 +1040,7 @@ const Tour = {
     if (!res || res.ok === false) { this._busy(false); return this._err(res); }
     await this.loadConfig(true);
     await this.loadTrash();
-    this.renderMap();
+    this._refresh();
     this._busy(false);
     Modal.toast('✅ กู้คืนแล้ว');
   },
