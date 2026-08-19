@@ -72,6 +72,8 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
       return tour.restorePoint(env, p);
     case 'tour_get_trash':
       return tour.getTrash(env, p);
+    case 'tour_purge':
+      return tour.purgeItem(env, p);
     case 'tour_save_link':
       return tour.saveLink(env, p);
     case 'tour_delete_link':

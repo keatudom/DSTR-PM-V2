@@ -1280,11 +1280,19 @@ const Tour = {
     const t = this.data.trash;
     if (!t || (!t.points.length && !t.versions.length)) { box.innerHTML = ''; return; }
 
-    const row = (name, sub, left, onRestore) =>
+    const row = (name, sub, left, kind, id) =>
       '<div class="point-row">' +
-      '<div><div class="font-semibold">' + name + '</div>' +
+      '<div style="flex:1;min-width:0"><div class="font-semibold">' + name + '</div>' +
       '<div class="text-sm text-muted">' + sub + ' · เหลืออีก ' + left + ' วัน</div></div>' +
-      '<button class="btn btn-secondary btn-sm" onclick="' + onRestore + '">กู้คืน</button></div>';
+      '<div style="display:flex;gap:6px;flex:none">' +
+      '<button class="btn btn-secondary btn-sm" onclick="Tour.restore' +
+      (kind === 'point' ? 'Point' : 'Version') + '(&quot;' + id + '&quot;)">กู้คืน</button>' +
+      '<button onclick="Tour.purge(&quot;' + kind + '&quot;,&quot;' + id + '&quot;)" title="ลบถาวร" ' +
+      'style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;' +
+      'border:1.5px solid var(--color-error-500);border-radius:10px;background:var(--color-error-50);' +
+      'color:var(--color-error-700);cursor:pointer">' +
+      '<i data-lucide="trash-2" style="width:16px;height:16px"></i></button>' +
+      '</div></div>';
 
     box.innerHTML =
       '<div class="form-label" style="margin-top:20px"><i data-lucide="trash-2" style="width:15px;height:15px;vertical-align:-2px"></i> ถังขยะ (' +
@@ -1292,10 +1300,43 @@ const Tour = {
       '<div class="text-sm text-muted" style="margin-bottom:6px">ระบบลบถาวรอัตโนมัติเมื่อครบ ' + t.days + ' วัน</div>' +
       t.points.map((p) => row(
         this._esc(p.name), 'จุดถ่าย · มีภาพ ' + (p.shot_count || 0) + ' ใบ',
-        p.days_left, "Tour.restorePoint('" + p.point_id + "')")).join('') +
+        p.days_left, 'point', p.point_id)).join('') +
       t.versions.map((v) => row(
         this._esc(v.name), 'เวอร์ชัน ' + this._thaiDate(v.captured_at),
-        v.days_left, "Tour.restoreVersion('" + v.version_id + "')")).join('');
+        v.days_left, 'version', v.version_id)).join('');
+    if (window.lucide) lucide.createIcons();
+  },
+
+  // ลบถาวรทันที ไม่ต้องรอครบ 30 วัน (เจ้าของงานเคาะ 2026-08-19: "ถังขยะต้องมีปุ่มลบด้วย")
+  // ⚠️ กู้ไม่ได้ — ถามยืนยันพร้อมบอกจำนวนภาพที่จะหายไป
+  async purge(kind, id) {
+    const t = this.data.trash || { points: [], versions: [] };
+    const item = kind === 'point'
+      ? t.points.find((p) => p.point_id === id)
+      : t.versions.find((v) => v.version_id === id);
+    const name = item ? item.name : id;
+    const n = kind === 'point' ? (item && item.shot_count) || 0 : 0;
+
+    const ok = await Modal.confirm({
+      title: 'ลบ "' + this._esc(name) + '" ถาวร?',
+      desc: kind === 'point'
+        ? 'ภาพ 360 ของจุดนี้ทุกเวอร์ชัน' + (n ? ' (' + n + ' ใบ)' : '') +
+          ' จะถูกลบทิ้งจากระบบและจากที่เก็บไฟล์ กู้กลับมาไม่ได้อีกเลย'
+        : 'ภาพ 360 ทุกจุดในเวอร์ชันนี้จะถูกลบทิ้งจากระบบและจากที่เก็บไฟล์ กู้กลับมาไม่ได้อีกเลย',
+      info: 'ถ้าแค่ไม่อยากให้แสดง ปล่อยไว้ในถังขยะก็พอ — ระบบจะลบให้เองเมื่อครบ 30 วัน',
+      icon: '⚠️', iconClass: 'warn',
+      confirmText: 'ลบถาวร', cancelText: 'ไม่ลบ',
+    });
+    if (!ok) return;
+
+    this._busy(true, 'กำลังลบถาวร…');
+    const res = await API.tourPurge(kind, id);
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    await this.loadTrash();
+    this._refresh();
+    this._busy(false);
+    Modal.toast('✓ ลบถาวรแล้ว');
   },
 
   async restorePoint(pointId) {

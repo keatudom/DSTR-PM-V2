@@ -101,6 +101,7 @@ addCap('SITECFG', [
   'tour_save_link', 'tour_delete_link',
   'tour_create_version', 'tour_update_version', 'tour_publish_version',
   'tour_delete_version', 'tour_restore_version',
+  'tour_purge',   // ลบถาวร กู้ไม่ได้ — ระดับวิศวกรไซต์/PM ขึ้นไปเท่านั้น
 ]);
 addCap('ATTEND', ['get_attendance_all', 'update_checkin', 'set_id_card']);
 addCap('ADMIN', [

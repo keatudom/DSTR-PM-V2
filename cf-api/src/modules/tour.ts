@@ -126,6 +126,46 @@ export async function getTrash(env: Env, p: Record<string, unknown>): Promise<un
   };
 }
 
+// ── SITECFG: tour_purge — ลบถาวรทันที ไม่ต้องรอครบ 30 วัน ────
+// เจ้าของงานเคาะ 2026-08-19: "ถังขยะมีแต่กู้คืน ต้องมีปุ่มลบด้วย"
+// ⚠️ ลบจริง กู้ไม่ได้ — ลบทั้งแถวในฐานข้อมูล **และไฟล์รูปใน R2**
+//    ฝั่งหน้าเว็บต้องถามยืนยันพร้อมบอกจำนวนภาพที่จะหายไปก่อนเรียกมา
+export async function purgeItem(env: Env, p: Record<string, unknown>): Promise<unknown> {
+  const pid = pidOf(p);
+  const kind = str(p.kind);
+  const id = str(p.id);
+  if (!id) throw new Error('id required');
+
+  const killMedia = async (rows: { media_key: string }[]) => {
+    if (!env.MEDIA) return;
+    for (const r of rows) {
+      if (r.media_key) { try { await env.MEDIA.delete(String(r.media_key)); } catch { /* ไฟล์หายไปแล้วก็ข้าม */ } }
+    }
+  };
+
+  if (kind === 'point') {
+    const shots = await queryAll<{ media_key: string }>(env,
+      'SELECT media_key FROM tour_shots WHERE project_id = ? AND point_id = ?', pid, id);
+    await killMedia(shots);
+    await exec(env, 'DELETE FROM tour_shots WHERE project_id = ? AND point_id = ?', pid, id);
+    await exec(env, 'DELETE FROM tour_pins WHERE project_id = ? AND point_id = ?', pid, id);
+    await exec(env, 'DELETE FROM tour_links WHERE project_id = ? AND (from_point = ? OR to_point = ?)', pid, id, id);
+    await exec(env, 'DELETE FROM tour_points WHERE project_id = ? AND point_id = ?', pid, id);
+    return { ok: true, purged: 'point', shots: shots.length };
+  }
+
+  if (kind === 'version') {
+    const shots = await queryAll<{ media_key: string }>(env,
+      'SELECT media_key FROM tour_shots WHERE project_id = ? AND version_id = ?', pid, id);
+    await killMedia(shots);
+    await exec(env, 'DELETE FROM tour_shots WHERE project_id = ? AND version_id = ?', pid, id);
+    await exec(env, 'DELETE FROM tour_versions WHERE project_id = ? AND version_id = ?', pid, id);
+    return { ok: true, purged: 'version', shots: shots.length };
+  }
+
+  throw new Error('kind ต้องเป็น point หรือ version');
+}
+
 // ── READ: tour_get_config ───────────────────────────────────
 // ก้อนเดียวจบ (แผนผัง + จุด + ลูกศร + รายการเวอร์ชัน) — ลดจำนวนคำขอบนเน็ตหน้างาน
 // param: include_draft ('true' = เอาเวอร์ชันที่ยังถ่ายไม่เสร็จมาด้วย — ใช้ในโหมดถ่าย)

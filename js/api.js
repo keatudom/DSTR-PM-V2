@@ -1184,6 +1184,12 @@ const API = {
     return this.callRead('tour_get_trash');
   },
 
+  /** ⚠️ ลบถาวรทันที กู้ไม่ได้ — ลบทั้งแถวในฐานข้อมูลและไฟล์รูปใน R2
+   *  kind = 'point' | 'version' · ต้องถามยืนยันให้ชัดก่อนเรียก */
+  tourPurge: function(kind, id) {
+    return this.callPost('tour_purge', { kind: kind, id: id });
+  },
+
   /** วาง/แก้ลูกศรเดิน — { link_id?, from_point, to_point, yaw, pitch, label } */
   tourSaveLink: function(data) {
     return this.callPost('tour_save_link', data);
