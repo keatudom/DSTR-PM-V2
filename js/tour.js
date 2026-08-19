@@ -461,7 +461,7 @@ const Tour = {
     if (!this.data.points.length) {
       list.innerHTML = '<div class="text-muted" style="padding:16px;text-align:center;line-height:1.8">' +
         'ยังไม่มีจุดถ่ายในโครงการนี้<br><span style="font-size:13px">ถ่ายได้เลย — ตั้งชื่อห้องตอนอัปรูป จุดจะถูกสร้างให้อัตโนมัติ</span>' +
-        '<div style="margin-top:12px"><button class="btn btn-primary" onclick="Tour.captureNewPoint()">📷 เริ่มจากจุดแรก</button></div>' +
+        '<div style="margin-top:12px"><button class="btn btn-primary" onclick="Tour.captureNewPoint()">📷 สแกนจุดแรก</button></div>' +
         '</div>';
       document.getElementById('tc-progress-text').innerText = '0/0 จุด';
       document.getElementById('tc-progress-bar').style.width = '0%';
@@ -476,8 +476,12 @@ const Tour = {
         (ok ? '<i data-lucide="check-circle-2" style="color:var(--color-success-500)"></i>'
             : '<i data-lucide="circle" class="text-muted"></i>') +
         '<span class="font-semibold">' + this._esc(p.name) + '</span></div>' +
-        '<button class="btn ' + (ok ? 'btn-ghost' : 'btn-secondary') + ' btn-sm" ' +
-        'onclick="Tour.pickPhotoFor(\'' + p.point_id + '\')">' + (ok ? 'ถ่ายใหม่' : '+ รูป') + '</button>' +
+        '<div style="display:flex;gap:6px">' +
+        '<button class="btn ' + (ok ? 'btn-ghost' : 'btn-primary') + ' btn-sm" ' +
+        'onclick="Tour.scanFor(\'' + p.point_id + '\')">📷 ' + (ok ? 'สแกนใหม่' : 'สแกน') + '</button>' +
+        '<button class="btn btn-ghost btn-sm" title="เลือกรูปจากคลังภาพ" ' +
+        'onclick="Tour.pickPhotoFor(\'' + p.point_id + '\')">🖼️</button>' +
+        '</div>' +
         '</div>';
     }).join('');
 
@@ -527,7 +531,34 @@ const Tour = {
     this._busy(false);
     this.renderCaptureList();
     const d = res.data || res;
-    this.pickPhotoFor(d.point_id);
+    this.scanFor(d.point_id);
+  },
+
+  // สแกน 360 ในแอปเลย (ไม่ต้องพึ่งแอปนอก) — ดู js/pano-capture.js
+  async scanFor(pointId) {
+    if (!window.PanoCapture) return this.pickPhotoFor(pointId);
+    const vid = await this._ensureDraft();
+    if (!vid) return;
+    PanoCapture.start({
+      onDone: (res) => this.uploadDataUrl(pointId, res.dataUrl, res.w, res.h),
+    });
+  },
+
+  // อัปรูปที่ได้จากตัวสแกน (เป็น dataURL อยู่แล้ว ไม่ต้องบีบซ้ำ)
+  async uploadDataUrl(pointId, dataUrl, w, h) {
+    const vid = await this._ensureDraft();
+    if (!vid) return;
+    this._busy(true, 'กำลังอัปโหลดภาพ 360…');
+    const res = await API.tourUploadShot({
+      version_id: vid, point_id: pointId,
+      image_base64: dataUrl, width: w, height: h, taken_at: '',
+    });
+    this._busy(false);
+    if (!res || res.ok === false) return this._err(res, 'อัปรูปไม่สำเร็จ');
+    this.data.captureDone = this.data.captureDone || {};
+    this.data.captureDone[pointId] = true;
+    this.renderCaptureList();
+    Modal.toast('✅ อัปภาพ 360 แล้ว');
   },
 
   pickPhotoFor(pointId) {

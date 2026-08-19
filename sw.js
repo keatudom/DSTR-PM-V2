@@ -3,7 +3,7 @@
 // ⚠️ เลข CACHE ต้องเปลี่ยนทุกครั้งที่ shell เปลี่ยนชุดไฟล์ — activate จะล้างถังเก่าทิ้งให้เอง
 //    'dstr-v3' = หลังตัดยอดดีไซน์ใหม่ 2026-08-13 (design-system.css + shell.js + Lucide)
 //    'dstr-v4' = แก้เมนู/มือถือ 2026-08-13 รอบบ่าย (shell.js + design-system.css เปลี่ยน)
-var CACHE = 'dstr-v9';
+var CACHE = 'dstr-v10';
 var SHELL = [
   'index.html', 'dashboard.html', 'checkin.html', 'daily.html', 'content.html', 'tour.html',
   'css/design-system.css',
@@ -11,7 +11,7 @@ var SHELL = [
   'vendor/lucide/lucide.min.js',
   'vendor/pannellum/pannellum.css', 'vendor/pannellum/pannellum.js',
   'js/config.js', 'js/auth.js', 'js/api.js', 'js/state.js', 'js/modal.js',
-  'js/shell.js', 'js/pwa-install.js', 'js/tour.js',
+  'js/shell.js', 'js/pwa-install.js', 'js/tour.js', 'js/pano-capture.js',
   'manifest.json'
 ];
 
