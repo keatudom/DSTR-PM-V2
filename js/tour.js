@@ -33,6 +33,7 @@ const Tour = {
     ff: [],                 // รายการชิ้นงานของโครงการ (ไว้เลือกตอนปักป้าย)
     showTags: true,         // แสดงป้ายชิ้นงานในภาพ 360 ไหม
     pinMode: false,         // กำลังอยู่ในโหมดปักป้ายหรือเปล่า
+    aimLinkId: null,        // ทางเดินที่กำลังตั้งทิศอยู่
     homeTool: 'view',       // เครื่องมือบนแปลนหน้าแรก: view | add | move | link
     planIdx: 0,             // ชั้นที่กำลังดู
     moveId: null,           // หมุดที่เลือกไว้เพื่อย้าย
@@ -473,7 +474,10 @@ const Tour = {
     if (!pt) return;
     this.data.pointId = pointId;
     this.closeAdjust();   // ย้ายห้องแล้วแผงปรับภาพของห้องเก่าต้องหายไปด้วย
-    if (this.data.pinMode) { this.data.pinMode = false; const pb = document.getElementById('tv-pinbar'); if (pb) pb.style.display = 'none'; }
+    if (this.data.pinMode || this.data.aimLinkId) {
+      this.data.pinMode = false; this.data.aimLinkId = null;
+      const pb = document.getElementById('tv-pinbar'); if (pb) pb.style.display = 'none';
+    }
 
     document.getElementById('tv-point-name').innerText = pt.name;
     const idx = this.data.points.findIndex((p) => p.point_id === pointId) + 1;
@@ -713,6 +717,101 @@ const Tour = {
   },
 
   // ════════════════════════════════════════════════════════
+  // 🧭 จัดการทางเดิน (ตั้งทิศลูกศร / ลบทางเดิน)
+  // ════════════════════════════════════════════════════════
+  // เจ้าของงานเจอ 2026-08-19: "ลูกศรชี้คนละทิศละทาง"
+  //
+  // ต้นเหตุ: ทิศลูกศรคำนวณจากตำแหน่งบนแปลน (บนแปลน = 0°) แต่ภาพ 360 แต่ละใบ
+  //   "0° อยู่คนละที่กัน" เพราะ iOS ให้ค่ามุมหมุนแบบอ้างอิงจุดเริ่มจับสัญญาณ ไม่ใช่ทิศเหนือจริง
+  //   → ต่อให้แปลนถูก ลูกศรก็ไปคนละทาง และแต่ละห้องเพี้ยนไม่เท่ากันด้วย
+  //
+  // ทำไมไม่ใช้เข็มทิศแก้: ไซต์งานเต็มไปด้วยเหล็ก (โครงสร้าง เหล็กเส้น ตู้เหล็ก)
+  //   เข็มทิศในอาคารเพี้ยนได้หลายสิบองศาแบบเดาไม่ได้ → พึ่งไม่ได้
+  // ทางที่แน่นอนกว่า: ให้คนแตะบอกในภาพว่า "ทางเดินอยู่ตรงนี้" ครั้งเดียวจบ ใช้ได้ตลอด
+  //   (ทิศจากแปลนยังใช้เป็นค่าเริ่มต้นให้ ไม่ต้องเริ่มจากศูนย์)
+
+  openLinks() {
+    const pid = this.data.pointId;
+    const outs = this.data.links.filter((l) => l.from_point === pid);
+    const rows = outs.length
+      ? outs.map((l) => {
+        const to = this._pt(l.to_point) || {};
+        return '<div style="display:flex;gap:8px;align-items:center;padding:11px 8px;border-bottom:1px solid var(--color-slate-200)">' +
+          '<span style="flex:1;min-width:0;text-align:left">' +
+          '<span style="display:block;font-weight:700">ไป ' + this._esc(to.name || '?') + '</span>' +
+          '<small style="color:var(--color-slate-500)">ทิศตอนนี้ ' + Math.round(Number(l.yaw) || 0) + '°</small></span>' +
+          '<button class="btn btn-secondary btn-sm" onclick="Tour.aimLink(&quot;' + l.link_id + '&quot;)">ตั้งทิศ</button>' +
+          '<button onclick="Tour.removeLink(&quot;' + l.link_id + '&quot;)" title="ลบทางเดิน" ' +
+          'style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;flex:none;' +
+          'border:1.5px solid var(--color-error-500);border-radius:10px;background:var(--color-error-50);' +
+          'color:var(--color-error-700);cursor:pointer">✕</button>' +
+          '</div>';
+      }).join('')
+      : '<div style="padding:16px;text-align:center;color:var(--color-slate-500);line-height:1.8">' +
+        'ห้องนี้ยังไม่มีทางเดินออก<br><small>ไปโยงเส้นได้ที่หน้าแปลน (เครื่องมือ "ทางเดิน")</small></div>';
+
+    Modal.show(
+      '<div class="modal-title">ทางเดินจากห้องนี้</div>' +
+      '<div class="modal-desc">กด "ตั้งทิศ" แล้วแตะตรงประตู/ทางเดินในภาพ ลูกศรจะย้ายไปอยู่ตรงนั้น</div>' +
+      '<div style="max-height:44vh;overflow:auto;margin:8px 0;border:1px solid var(--color-slate-200);border-radius:12px">' + rows + '</div>' +
+      '<div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button></div>');
+  },
+
+  aimLink(linkId) {
+    Modal.close();
+    this.data.aimLinkId = linkId;
+    this.data.pinMode = false;
+    const bar = document.getElementById('tv-pinbar');
+    if (bar) {
+      const l = this.data.links.find((x) => x.link_id === linkId) || {};
+      const to = this._pt(l.to_point) || {};
+      bar.style.display = 'flex';
+      bar.firstElementChild.textContent = 'แตะตรงทางเดินไป "' + (to.name || '') + '" ในภาพ';
+    }
+  },
+
+  async _saveLinkAim(yaw, pitch) {
+    const linkId = this.data.aimLinkId;
+    const l = this.data.links.find((x) => x.link_id === linkId);
+    this.data.aimLinkId = null;
+    const bar = document.getElementById('tv-pinbar');
+    if (bar) bar.style.display = 'none';
+    if (!l) return;
+
+    this._busy(true, 'กำลังตั้งทิศลูกศร…');
+    const res = await API.tourSaveLink({
+      link_id: l.link_id, from_point: l.from_point, to_point: l.to_point,
+      yaw: yaw, pitch: pitch, label: l.label || '',
+    });
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    const e = this._shot(this.data.pointId);
+    if (e && e.shot) this._renderShot(e.shot, this.data.pointId);
+    this._busy(false);
+    Modal.toast('✓ ตั้งทิศลูกศรแล้ว');
+  },
+
+  async removeLink(linkId) {
+    Modal.close();
+    const l = this.data.links.find((x) => x.link_id === linkId);
+    const to = l ? (this._pt(l.to_point) || {}).name : '';
+    const ok = await Modal.confirm({
+      title: 'ลบทางเดินนี้?',
+      desc: 'ลูกศรไป "' + this._esc(to || '') + '" จะหายไป — โยงใหม่ได้ตลอดที่หน้าแปลน',
+      icon: '🗑️', confirmText: 'ลบทางเดิน',
+    });
+    if (!ok) return;
+    this._busy(true, 'กำลังลบ…');
+    const res = await API.tourDeleteLink(linkId);
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    const e = this._shot(this.data.pointId);
+    if (e && e.shot) this._renderShot(e.shot, this.data.pointId);
+    this._busy(false);
+    Modal.toast('✓ ลบทางเดินแล้ว');
+  },
+
+  // ════════════════════════════════════════════════════════
   // 🏷️ ป้ายชิ้นงานในภาพ 360 (FF tag)
   // ════════════════════════════════════════════════════════
   // เจ้าของงานเคาะ 2026-08-19: "เข้าไปดูใน 360 แล้วอยากกดปุ่มชี้ว่าตรงนี้คือ FF-02"
@@ -770,11 +869,13 @@ const Tour = {
     });
     container.addEventListener('pointerup', (ev) => {
       // ลากเพื่อส่ายภาพ ไม่ใช่การแตะ — ไม่งั้นส่ายทีปักหมุดที
-      if (!this.data.pinMode || moved || !this.viewer) return;
+      if (moved || !this.viewer) return;
+      if (!this.data.pinMode && !this.data.aimLinkId) return;
       let c = null;
       try { c = this.viewer.mouseEventToCoords(ev); } catch (err) { c = null; }
       if (!c) return;
-      this.pickFFAt(c[1], c[0]);      // pannellum คืน [pitch, yaw]
+      if (this.data.aimLinkId) return this._saveLinkAim(c[1], c[0]);   // pannellum คืน [pitch, yaw]
+      this.pickFFAt(c[1], c[0]);
     });
   },
 
