@@ -133,34 +133,46 @@ const PanoCapture = {
     opts = opts || {};
     if (this._state) return;
 
-    // เตือนล่วงหน้าถ้าเปิดจากไอคอนที่ติดตั้งไว้บน iOS (กล้องจะไม่ทำงานตั้งแต่ iOS 18)
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const standalone = window.navigator.standalone === true ||
-      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-    if (isIOS && standalone) {
-      const ok = await Modal.confirm({
-        title: 'เปิดใน Safari ก่อนนะครับ',
-        desc: 'ตั้งแต่ iOS 18 กล้องใช้ไม่ได้เมื่อเปิดจากไอคอนที่ติดตั้งไว้ ' +
-          'ให้เปิดหน้านี้ใน Safari แล้วค่อยสแกน (หรือใช้ปุ่มเลือกรูปจากคลังภาพแทน)',
-        icon: '📷', iconClass: 'warn',
-        confirmText: 'ลองต่อเลย', cancelText: 'ไว้ก่อน',
-      });
-      if (!ok) return;
-    }
-
     const ui = this._buildUI();
+    this._onFallback = opts.onFallback || null;
     this._state = { ui: ui, frames: [], targets: [], q: [0, 0, 0, 1], onDone: opts.onDone, running: true };
 
     try {
       await this._askMotion();
       await this._openCamera(ui.video);
     } catch (e) {
-      this._toast(ui, e.message || 'เปิดกล้องไม่สำเร็จ', true);
-      return;
+      this.close();
+      return this._cameraFailed(e && e.message);
     }
 
     this._listenOrientation();
     this._loop();
+  },
+
+  // กล้องเปิดไม่ได้ — บอกสาเหตุที่เป็นไปได้ + ให้ทางออกที่กดได้จริง ไม่ใช่แค่บ่น
+  // ⚠️ iOS 18 ขึ้นไป กล้องใช้ไม่ได้ใน PWA ที่ติดตั้งลงหน้าจอ (บั๊กของ WebKit เอง เราแก้ไม่ได้)
+  //    แต่กดเปิดหน้าเดิมใน Safari ได้จากในแอป → สแกนที่นั่นแล้วข้อมูลอยู่ที่เดียวกัน
+  async _cameraFailed(msg) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const standalone = window.navigator.standalone === true ||
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+
+    if (isIOS && standalone) {
+      const ok = await Modal.confirm({
+        title: 'ต้องสแกนใน Safari',
+        desc: 'iOS ไม่ยอมให้เปิดกล้องเมื่อเข้าจากไอคอนแอปที่ติดตั้งไว้ (เป็นข้อจำกัดของ iOS เอง) ' +
+          'กดปุ่มด้านล่างเพื่อเปิดหน้านี้ใน Safari แล้วสแกนที่นั่น — ข้อมูลเป็นชุดเดียวกัน เห็นในแอปทันที',
+        icon: '📷', iconClass: 'warn',
+        confirmText: 'เปิดใน Safari', cancelText: 'เลือกรูปจากคลังแทน',
+      });
+      if (ok) {
+        window.open(location.href, '_blank');
+      } else if (this._onFallback) {
+        this._onFallback();
+      }
+      return;
+    }
+    Modal.toast('❌ ' + (msg || 'เปิดกล้องไม่สำเร็จ'));
   },
 
   // ── ขอสิทธิ์เซ็นเซอร์หมุน (iOS 13+ ต้องขอ และต้องมาจากการแตะของผู้ใช้) ──

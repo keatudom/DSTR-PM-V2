@@ -3,7 +3,7 @@
 // ⚠️ เลข CACHE ต้องเปลี่ยนทุกครั้งที่ shell เปลี่ยนชุดไฟล์ — activate จะล้างถังเก่าทิ้งให้เอง
 //    'dstr-v3' = หลังตัดยอดดีไซน์ใหม่ 2026-08-13 (design-system.css + shell.js + Lucide)
 //    'dstr-v4' = แก้เมนู/มือถือ 2026-08-13 รอบบ่าย (shell.js + design-system.css เปลี่ยน)
-var CACHE = 'dstr-v22';
+var CACHE = 'dstr-v23';
 var SHELL = [
   'index.html', 'dashboard.html', 'checkin.html', 'daily.html', 'content.html', 'tour.html',
   'css/design-system.css',

@@ -35,6 +35,8 @@ const Tour = {
     pinMode: false,         // กำลังอยู่ในโหมดปักป้ายหรือเปล่า
     aimLinkId: null,        // ทางเดินที่กำลังตั้งทิศอยู่
     aimPinId: null,         // แท็กที่กำลังย้ายตำแหน่งอยู่
+    planZoom: 1,            // ระดับซูมแปลน
+    planPan: { x: 0, y: 0 },// เลื่อนแปลนตอนซูมเข้า
     homeTool: 'view',       // เครื่องมือบนแปลนหน้าแรก: view | add | move | link
     planIdx: 0,             // ชั้นที่กำลังดู
     moveId: null,           // หมุดที่เลือกไว้เพื่อย้าย
@@ -187,14 +189,123 @@ const Tour = {
       }).join('');
 
     box.innerHTML = floors + tools +
+      '<div class="th-planvp" id="th-planvp">' +
       '<div class="th-planbox" id="th-planbox" onclick="Tour.onPlanTap(event)">' +
-      '<img src="' + plan.url + '" alt="แปลนบ้าน" draggable="false">' + pins + '</div>' +
+      '<img src="' + plan.url + '" alt="แปลนบ้าน" draggable="false" style="width:100%;display:block">' + pins + '</div>' +
+      '</div>' +
+      '<div class="th-zoombar">' +
+      '<button class="th-zoombtn" onclick="Tour.zoomPlan(-1)">−</button>' +
+      '<span id="th-zoomval" style="min-width:56px;text-align:center;font-weight:700;color:var(--color-slate-600)">100%</span>' +
+      '<button class="th-zoombtn" onclick="Tour.zoomPlan(1)">+</button>' +
+      '<button class="th-zoombtn" style="width:auto;padding:0 12px" onclick="Tour.resetPlanZoom()">พอดีจอ</button>' +
+      '</div>' +
       '<div class="th-hint">' + hint + '</div>' +
       '<div class="th-tools" style="justify-content:center">' +
       '<button class="th-tool" onclick="Tour.replacePlan()"><i data-lucide="image-up"></i> เปลี่ยนรูปแปลน</button>' +
       '<button class="th-tool" onclick="Tour.rotatePlan()"><i data-lucide="rotate-cw"></i> หมุน</button>' +
       '<button class="th-tool" onclick="Tour.addPlan()"><i data-lucide="plus"></i> เพิ่มชั้น</button>' +
       '</div>';
+    this._bindPlanGestures();
+    this._applyPlanTf();
+  },
+
+  // ── ซูม/เลื่อนแปลน (เขียนเอง เพราะ PWA ปิดการซูมของเบราว์เซอร์ไว้) ──
+  // เจ้าของงานเจอ 2026-08-19: "เข้าจากไอคอนแอปแล้วขยายแปลนไม่ได้ ต่างจากเปิดใน Safari"
+  // สาเหตุ: หน้านี้ตั้ง user-scalable=no (กันจอเด้งตอนพิมพ์) → นิ้วถ่างซูมไม่ได้ทั้งหน้า
+  // จึงทำระบบซูมเฉพาะกรอบแปลนขึ้นมาเอง ไม่กระทบส่วนอื่นของหน้า
+  _applyPlanTf() {
+    const box = document.getElementById('th-planbox');
+    const vp = document.getElementById('th-planvp');
+    if (!box || !vp) return;
+    const z = this.data.planZoom || 1;
+    const p = this.data.planPan || { x: 0, y: 0 };
+    // กันเลื่อนจนภาพหลุดออกนอกกรอบ
+    const w = vp.clientWidth, h = vp.clientHeight;
+    const maxX = 0, minX = Math.min(0, w - w * z);
+    const maxY = 0, minY = Math.min(0, h - h * z);
+    p.x = Math.max(minX, Math.min(maxX, p.x));
+    p.y = Math.max(minY, Math.min(maxY, p.y));
+    box.style.transform = 'translate(' + p.x + 'px,' + p.y + 'px) scale(' + z + ')';
+    const lab = document.getElementById('th-zoomval');
+    if (lab) lab.textContent = Math.round(z * 100) + '%';
+  },
+
+  zoomPlan(dir) {
+    const vp = document.getElementById('th-planvp');
+    if (!vp) return;
+    const z0 = this.data.planZoom || 1;
+    const z1 = Math.max(1, Math.min(5, dir > 0 ? z0 * 1.4 : z0 / 1.4));
+    // ซูมเข้า/ออกโดยยึดจุดกึ่งกลางกรอบไว้ ไม่ให้ภาพกระโดด
+    const cx = vp.clientWidth / 2, cy = vp.clientHeight / 2;
+    const p = this.data.planPan;
+    p.x = cx - (cx - p.x) * (z1 / z0);
+    p.y = cy - (cy - p.y) * (z1 / z0);
+    this.data.planZoom = z1;
+    this._applyPlanTf();
+  },
+
+  resetPlanZoom() {
+    this.data.planZoom = 1;
+    this.data.planPan = { x: 0, y: 0 };
+    this._applyPlanTf();
+  },
+
+  _bindPlanGestures() {
+    const vp = document.getElementById('th-planvp');
+    if (!vp || vp._zoomBound) return;
+    vp._zoomBound = true;
+    const pts = new Map();
+    let startDist = 0, startZoom = 1, startPan = null, startMid = null, moved = false;
+
+    const midOf = () => {
+      const a = [...pts.values()];
+      const r = vp.getBoundingClientRect();
+      return { x: (a[0].x + a[1].x) / 2 - r.left, y: (a[0].y + a[1].y) / 2 - r.top };
+    };
+    const distOf = () => {
+      const a = [...pts.values()];
+      return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y);
+    };
+
+    vp.addEventListener('pointerdown', (e) => {
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      moved = false;
+      if (pts.size === 2) {
+        startDist = distOf(); startZoom = this.data.planZoom;
+        startPan = { x: this.data.planPan.x, y: this.data.planPan.y };
+        startMid = midOf();
+      }
+    });
+
+    vp.addEventListener('pointermove', (e) => {
+      if (!pts.has(e.pointerId)) return;
+      const prev = pts.get(e.pointerId);
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (pts.size === 2 && startDist > 0) {            // ถ่างนิ้ว = ซูม
+        moved = true;
+        const z1 = Math.max(1, Math.min(5, startZoom * (distOf() / startDist)));
+        this.data.planPan.x = startMid.x - (startMid.x - startPan.x) * (z1 / startZoom);
+        this.data.planPan.y = startMid.y - (startMid.y - startPan.y) * (z1 / startZoom);
+        this.data.planZoom = z1;
+        this._applyPlanTf();
+      } else if (pts.size === 1 && this.data.planZoom > 1.01) {   // นิ้วเดียวตอนซูมอยู่ = เลื่อนดู
+        const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
+        this.data.planPan.x += dx;
+        this.data.planPan.y += dy;
+        this._applyPlanTf();
+      }
+    });
+
+    const end = (e) => {
+      pts.delete(e.pointerId);
+      if (pts.size < 2) startDist = 0;
+      // เลื่อน/ซูมอยู่ ไม่ใช่การแตะวางหมุด — บอกให้ onPlanTap ข้ามรอบนี้
+      if (moved) { this._planMoved = true; setTimeout(() => { this._planMoved = false; }, 60); }
+    };
+    vp.addEventListener('pointerup', end);
+    vp.addEventListener('pointercancel', end);
   },
 
   setPlanIdx(i) { this.data.planIdx = i; this.data.linkFrom = null; this.data.moveId = null; this.renderPlan(); if (window.lucide) lucide.createIcons(); },
@@ -214,6 +325,7 @@ const Tour = {
 
   // แตะบนแปลน (ไม่โดนหมุด)
   async onPlanTap(ev) {
+    if (this._planMoved) return;             // เพิ่งเลื่อน/ซูมอยู่ ไม่ใช่การแตะวางหมุด
     const tool = this.data.homeTool || 'view';
     if (tool !== 'add' && !(tool === 'move' && this.data.moveId)) return;
     const box = document.getElementById('th-planbox');
@@ -375,6 +487,11 @@ const Tour = {
           '<div class="th-room-main" onclick="Tour.openPoint(\'' + p.point_id + '\')">' +
           '<div class="th-room-name">' + this._esc(p.name) + '</div>' +
           '<div class="th-room-sub">' + sub + '</div></div>' +
+          '<button onclick="Tour.renamePoint(\'' + p.point_id + '\')" title="แก้ชื่อห้อง" ' +
+          'style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;' +
+          'margin-right:6px;border:1.5px solid var(--color-slate-300);border-radius:10px;background:#fff;' +
+          'color:var(--color-slate-600);cursor:pointer">' +
+          '<i data-lucide="pencil" style="width:18px;height:18px"></i></button>' +
           '<button onclick="Tour.removePoint(\'' + p.point_id + '\')" title="ทิ้งลงถังขยะ" ' +
           'style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;' +
           'border:1.5px solid var(--color-error-500);border-radius:10px;background:var(--color-error-50);' +
@@ -390,6 +507,30 @@ const Tour = {
     else this.renderHome();
   },
 
+
+  // แก้ชื่อห้อง — เก็บพิกัดบนแปลนและลำดับไว้เหมือนเดิม แก้แค่ชื่อ
+  async renamePoint(pointId) {
+    const p = this._pt(pointId);
+    if (!p) return;
+    const name = prompt('ชื่อห้อง/จุดนี้', p.name || '');
+    if (name === null) return;
+    const n = String(name).trim();
+    if (!n || n === p.name) return;
+    this._busy(true, 'กำลังบันทึกชื่อ…');
+    const res = await API.tourSavePoint({
+      point_id: p.point_id, name: n, plan_id: p.plan_id,
+      plan_x: p.plan_x, plan_y: p.plan_y, sort_order: p.sort_order,
+    });
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    this._refresh();
+    if (this.data.pointId === pointId) {
+      const el = document.getElementById('tv-point-name');
+      if (el) el.innerText = n;
+    }
+    this._busy(false);
+    Modal.toast('✓ เปลี่ยนชื่อแล้ว');
+  },
 
   // แตะห้องในรายการ → เข้าจอ 360 ของห้องนั้น
   openPoint(pointId) {
@@ -1265,6 +1406,7 @@ const Tour = {
     if (!vid) return;
     PanoCapture.start({
       onDone: (res) => this.uploadDataUrl(pointId, res.dataUrl, res.w, res.h),
+      onFallback: () => this.pickPhotoFor(pointId),   // กล้องไม่ได้ → ไปเลือกรูปจากคลังแทน
     });
   },
 
