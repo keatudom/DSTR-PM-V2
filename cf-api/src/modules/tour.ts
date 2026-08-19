@@ -21,6 +21,10 @@ import { putMedia } from '../lib/r2.ts';
 import { autoLog } from '../lib/activity.ts';
 import type { TokenPayload } from '../lib/auth.ts';
 
+// เก็บของในถังขยะกี่วันก่อนลบจริง — กติกาเดียวกับโมดูล QC (เจ้าของงานเคาะ 30 วัน)
+const TRASH_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 // ── ตัวช่วยเล็กๆ ────────────────────────────────────────────
 function actorOf(p: Record<string, unknown>): string {
   const a = p.__actor as { name?: string; staff_id?: string } | undefined;
@@ -58,6 +62,70 @@ export function guessKind(w: number, h: number): { kind: string; haov: number; v
   return { kind: 'flat', haov: 0, vaov: 0 };
 }
 
+// ── กวาดถังขยะ: ลบจริงของที่ทิ้งเกิน 30 วัน ──────────────────
+// ทำแบบ lazy (ตอนมีคนเปิดหน้าทัวร์) เพราะ cron ของโปรเจกต์นี้มีตัวเดียวไว้ส่ง LINE
+// ผลจากมุมผู้ใช้เหมือนกัน — ต่างแค่ลบตอนมีคนเข้ามาใช้ ไม่ใช่ตอนเที่ยงคืนเป๊ะ
+async function purgeExpiredTrash(env: Env): Promise<void> {
+  const cutoff = nowStr(Date.now() - TRASH_DAYS * DAY_MS);
+  const gone = (col: string) => `${col} IS NOT NULL AND ${col} != '' AND ${col} < ?`;
+  try {
+    // ไฟล์ใน R2 ต้องลบด้วย ไม่งั้นรูปค้างกินที่ไปเรื่อยๆ ทั้งที่แถวในฐานข้อมูลหายแล้ว
+    const shots = await queryAll<{ shot_id: string; media_key: string }>(env,
+      `SELECT shot_id, media_key FROM tour_shots WHERE ${gone('trashed_at')}`, cutoff);
+    if (env.MEDIA) {
+      for (const s of shots) {
+        if (s.media_key) { try { await env.MEDIA.delete(String(s.media_key)); } catch { /* ไฟล์หายไปแล้วก็ข้าม */ } }
+      }
+    }
+    await exec(env, `DELETE FROM tour_shots WHERE ${gone('trashed_at')}`, cutoff);
+    await exec(env, `DELETE FROM tour_links WHERE ${gone('trashed_at')}`, cutoff);
+    await exec(env, `DELETE FROM tour_pins WHERE point_id IN (SELECT point_id FROM tour_points WHERE ${gone('trashed_at')})`, cutoff);
+    await exec(env, `DELETE FROM tour_points WHERE ${gone('trashed_at')}`, cutoff);
+    await exec(env, `DELETE FROM tour_versions WHERE ${gone('trashed_at')}`, cutoff);
+  } catch { /* กวาดไม่สำเร็จไม่ควรทำให้เปิดหน้าไม่ได้ */ }
+}
+
+// เหลืออีกกี่วันก่อนลบจริง (เวลาที่เก็บเป็นเวลาไทย 'YYYY-MM-DD HH:mm:ss')
+function daysLeft(stamp: unknown): number {
+  const ms = Date.parse(String(stamp || '').replace(' ', 'T') + 'Z') - 7 * 60 * 60 * 1000;
+  if (!Number.isFinite(ms)) return TRASH_DAYS;
+  return Math.max(0, TRASH_DAYS - Math.floor((Date.now() - ms) / DAY_MS));
+}
+
+// ── READ: tour_get_trash — ของในถังขยะ + เหลืออีกกี่วัน ──────
+export async function getTrash(env: Env, p: Record<string, unknown>): Promise<unknown> {
+  await purgeExpiredTrash(env);
+  const pid = pidOf(p);
+  const sc = projectScope(pid);
+  const g = `trashed_at IS NOT NULL AND trashed_at != ''`;
+
+  const points = await queryAll(env,
+    `SELECT * FROM tour_points WHERE ${sc.sql} AND ${g} ORDER BY trashed_at DESC`, ...sc.binds);
+  const versions = await queryAll(env,
+    `SELECT * FROM tour_versions WHERE ${sc.sql} AND ${g} ORDER BY trashed_at DESC`, ...sc.binds);
+
+  // จุดที่ทิ้งไปแล้วเคยมีภาพกี่ใบ — ให้คนตัดสินใจได้ว่าจะกู้คืนไหม
+  const counts = await queryAll<{ point_id: string; n: number }>(env,
+    `SELECT point_id, COUNT(*) AS n FROM tour_shots WHERE ${sc.sql} GROUP BY point_id`, ...sc.binds);
+  const cmap: Record<string, number> = {};
+  for (const c of counts) cmap[String(c.point_id)] = Number(c.n) || 0;
+
+  return {
+    trash_days: TRASH_DAYS,
+    points: points.map((r) => {
+      const o = blankNulls(r);
+      o.days_left = daysLeft(r.trashed_at);
+      o.shot_count = cmap[String(r.point_id)] || 0;
+      return o;
+    }),
+    versions: versions.map((r) => {
+      const o = blankNulls(r);
+      o.days_left = daysLeft(r.trashed_at);
+      return o;
+    }),
+  };
+}
+
 // ── READ: tour_get_config ───────────────────────────────────
 // ก้อนเดียวจบ (แผนผัง + จุด + ลูกศร + รายการเวอร์ชัน) — ลดจำนวนคำขอบนเน็ตหน้างาน
 // param: include_draft ('true' = เอาเวอร์ชันที่ยังถ่ายไม่เสร็จมาด้วย — ใช้ในโหมดถ่าย)
@@ -67,8 +135,8 @@ export async function getConfig(env: Env, p: Record<string, unknown>): Promise<u
   const includeDraft = p.include_draft === true || p.include_draft === 'true';
 
   const plans = await queryAll(env, `SELECT * FROM tour_plans WHERE ${sc.sql} ORDER BY sort_order, plan_id`, ...sc.binds);
-  const points = await queryAll(env, `SELECT * FROM tour_points WHERE ${sc.sql} AND active = 1 ORDER BY sort_order, point_id`, ...sc.binds);
-  const links = await queryAll(env, `SELECT * FROM tour_links WHERE ${sc.sql} ORDER BY from_point, yaw`, ...sc.binds);
+  const points = await queryAll(env, `SELECT * FROM tour_points WHERE ${sc.sql} AND active = 1 AND trashed_at IS NULL ORDER BY sort_order, point_id`, ...sc.binds);
+  const links = await queryAll(env, `SELECT * FROM tour_links WHERE ${sc.sql} AND trashed_at IS NULL ORDER BY from_point, yaw`, ...sc.binds);
 
   const statusSql = includeDraft
     ? `status IN ('draft','published')`
@@ -118,7 +186,7 @@ export async function getVersion(env: Env, p: Record<string, unknown>): Promise<
 
   const curKey = verKey(cur);
   const points = await queryAll(env,
-    `SELECT * FROM tour_points WHERE ${sc.sql} AND active = 1 ORDER BY sort_order, point_id`, ...sc.binds);
+    `SELECT * FROM tour_points WHERE ${sc.sql} AND active = 1 AND trashed_at IS NULL ORDER BY sort_order, point_id`, ...sc.binds);
 
   // ดึงภาพทั้งโครงการมาครั้งเดียว แล้วเลือกในหน่วยความจำ
   // (จำนวนภาพต่อโครงการหลักร้อย — ถูกกว่ายิง query ต่อจุด และทำให้ตรรกะ "ย้อนหลัง" อ่านง่าย)
@@ -227,12 +295,33 @@ export async function savePoint(env: Env, p: Record<string, unknown>): Promise<u
   return { ok: true, point_id: pointId };
 }
 
-// ปิดจุด = active 0 (ไม่ลบจริง — ภาพเก่าของจุดนั้นยังต้องอยู่เป็นหลักฐาน)
+// ── ทิ้งจุดลงถังขยะ (กู้คืนได้ 30 วัน) ──────────────────────
+// ⚠️ ลูกศรที่เกี่ยวข้อง "ประทับเวลาทิ้ง" ไม่ใช่ลบถาวร
+//    ไม่งั้นกู้จุดกลับมาแล้วทางเดินหายหมด ต้องมานั่งโยงใหม่ทีละเส้น
 export async function deletePoint(env: Env, p: Record<string, unknown>): Promise<unknown> {
   const pointId = str(p.point_id);
   if (!pointId) throw new Error('point_id required');
-  await exec(env, 'UPDATE tour_points SET active = 0 WHERE point_id = ?', pointId);
-  await exec(env, 'DELETE FROM tour_links WHERE from_point = ? OR to_point = ?', pointId, pointId);
+  const ts = nowStr();
+  await exec(env, 'UPDATE tour_points SET active = 0, trashed_at = ? WHERE point_id = ?', ts, pointId);
+  await exec(env,
+    'UPDATE tour_links SET trashed_at = ? WHERE (from_point = ? OR to_point = ?) AND trashed_at IS NULL',
+    ts, pointId, pointId);
+  return { ok: true, trashed_at: ts, trash_days: TRASH_DAYS };
+}
+
+// กู้คืนจุดจากถังขยะ — ลูกศรกลับมาด้วย เฉพาะเส้นที่ปลายทางอีกฝั่งยังอยู่
+export async function restorePoint(env: Env, p: Record<string, unknown>): Promise<unknown> {
+  const pointId = str(p.point_id);
+  if (!pointId) throw new Error('point_id required');
+  const cur = await queryFirst(env, 'SELECT point_id FROM tour_points WHERE point_id = ?', pointId);
+  if (!cur) throw new Error('กู้คืนไม่ได้ — จุดนี้ถูกลบถาวรไปแล้ว (เกิน ' + TRASH_DAYS + ' วัน)');
+  await exec(env, 'UPDATE tour_points SET active = 1, trashed_at = NULL WHERE point_id = ?', pointId);
+  await exec(env,
+    `UPDATE tour_links SET trashed_at = NULL
+     WHERE (from_point = ? OR to_point = ?)
+       AND from_point IN (SELECT point_id FROM tour_points WHERE active = 1 AND trashed_at IS NULL)
+       AND to_point   IN (SELECT point_id FROM tour_points WHERE active = 1 AND trashed_at IS NULL)`,
+    pointId, pointId);
   return { ok: true };
 }
 

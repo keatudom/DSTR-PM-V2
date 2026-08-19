@@ -438,7 +438,7 @@ const Tour = {
     document.getElementById('mode-map').style.display = mode === 'map' ? 'block' : 'none';
     this.closeVersionSelector();
     if (mode === 'capture') this.renderCaptureList();
-    if (mode === 'map') this.renderMap();
+    if (mode === 'map') { this.renderMap(); this.loadTrash().then(() => this.renderTrash()); }
   },
 
   // ════════════════════════════════════════════════════════
@@ -682,6 +682,7 @@ const Tour = {
         '</div></div>';
       if (window.lucide) lucide.createIcons();
       this.renderMapPointList();
+      this.renderTrash();
       return;
     }
 
@@ -703,6 +704,7 @@ const Tour = {
       '<div class="text-sm text-muted" style="margin-top:8px;text-align:center">' + hint + '</div>';
 
     this.renderMapPointList();
+    this.renderTrash();
     if (window.lucide) lucide.createIcons();
   },
 
@@ -829,18 +831,76 @@ const Tour = {
   },
 
   async removePoint(pointId) {
+    const pt = this._pt(pointId) || {};
     const ok = await Modal.confirm({
-      title: 'ปิดจุดนี้?',
-      desc: 'ภาพเก่าของจุดนี้ยังอยู่ครบเป็นหลักฐาน แค่ไม่แสดงในทัวร์อีกต่อไป',
-      confirmText: 'ปิดจุด',
+      title: 'ทิ้ง "' + this._esc(pt.name) + '" ลงถังขยะ?',
+      desc: 'กู้คืนได้ภายใน 30 วัน — ภาพและทางเดินที่โยงไว้กลับมาครบตอนกู้ ' +
+        'พ้น 30 วันแล้วระบบจะลบถาวรพร้อมไฟล์รูป',
+      icon: '🗑️',
+      confirmText: 'ทิ้งลงถังขยะ',
     });
     if (!ok) return;
-    this._busy(true, 'กำลังปิดจุด…');
+    this._busy(true, 'กำลังทิ้ง…');
     const res = await API.tourDeletePoint(pointId);
     if (!res || res.ok === false) { this._busy(false); return this._err(res); }
     await this.loadConfig(true);
+    await this.loadTrash();
     this.renderMap();
     this._busy(false);
+    Modal.toast('🗑️ ทิ้งลงถังขยะแล้ว — กู้คืนได้ 30 วัน');
+  },
+
+  // ── ถังขยะ 30 วัน (กติกาเดียวกับโมดูล QC) ──────────────────
+  async loadTrash() {
+    const res = await API.tourGetTrash();
+    const d = (res && (res.data || res)) || {};
+    this.data.trash = { points: d.points || [], versions: d.versions || [], days: d.trash_days || 30 };
+  },
+
+  renderTrash() {
+    const box = document.getElementById('map-trash');
+    if (!box) return;
+    const t = this.data.trash;
+    if (!t || (!t.points.length && !t.versions.length)) { box.innerHTML = ''; return; }
+
+    const row = (name, sub, left, onRestore) =>
+      '<div class="point-row">' +
+      '<div><div class="font-semibold">' + name + '</div>' +
+      '<div class="text-sm text-muted">' + sub + ' · เหลืออีก ' + left + ' วัน</div></div>' +
+      '<button class="btn btn-secondary btn-sm" onclick="' + onRestore + '">กู้คืน</button></div>';
+
+    box.innerHTML =
+      '<div class="form-label" style="margin-top:20px">🗑️ ถังขยะ (' +
+      (t.points.length + t.versions.length) + ')</div>' +
+      '<div class="text-sm text-muted" style="margin-bottom:6px">ระบบลบถาวรอัตโนมัติเมื่อครบ ' + t.days + ' วัน</div>' +
+      t.points.map((p) => row(
+        this._esc(p.name), 'จุดถ่าย · มีภาพ ' + (p.shot_count || 0) + ' ใบ',
+        p.days_left, "Tour.restorePoint('" + p.point_id + "')")).join('') +
+      t.versions.map((v) => row(
+        this._esc(v.name), 'เวอร์ชัน ' + this._thaiDate(v.captured_at),
+        v.days_left, "Tour.restoreVersion('" + v.version_id + "')")).join('');
+  },
+
+  async restorePoint(pointId) {
+    this._busy(true, 'กำลังกู้คืน…');
+    const res = await API.tourRestorePoint(pointId);
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    await this.loadTrash();
+    this.renderMap();
+    this._busy(false);
+    Modal.toast('✅ กู้คืนแล้ว');
+  },
+
+  async restoreVersion(versionId) {
+    this._busy(true, 'กำลังกู้คืน…');
+    const res = await API.tourRestoreVersion(versionId);
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    await this.loadTrash();
+    this.renderMap();
+    this._busy(false);
+    Modal.toast('✅ กู้คืนแล้ว (อยู่ในสถานะยังไม่เผยแพร่)');
   },
 };
 

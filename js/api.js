@@ -1169,9 +1169,19 @@ const API = {
     return this.callPost('tour_save_point', data);
   },
 
-  /** ปิดจุด (ไม่ลบจริง — ภาพเก่ายังต้องอยู่เป็นหลักฐาน) */
+  /** ทิ้งจุดลงถังขยะ (กู้คืนได้ 30 วัน · ลูกศรที่โยงไว้กลับมาด้วยตอนกู้) */
   tourDeletePoint: function(pointId) {
     return this.callPost('tour_delete_point', { point_id: pointId });
+  },
+
+  /** กู้คืนจุดจากถังขยะ */
+  tourRestorePoint: function(pointId) {
+    return this.callPost('tour_restore_point', { point_id: pointId });
+  },
+
+  /** ของในถังขยะของโครงการ (จุด + เวอร์ชัน) + เหลืออีกกี่วันก่อนลบจริง */
+  tourGetTrash: function() {
+    return this.callRead('tour_get_trash');
   },
 
   /** วาง/แก้ลูกศรเดิน — { link_id?, from_point, to_point, yaw, pitch, label } */

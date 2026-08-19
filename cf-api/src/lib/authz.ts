@@ -58,7 +58,7 @@ addCap('READ', [
   // ท่อคอนเทนต์: อ่านคิว/วัตถุดิบ/คู่มือเสียงแบรนด์ = ใครในทีมก็ดูได้
   'get_content_candidates', 'list_content', 'get_brand_voice', 'content_stats',
   // เดินดูหน้างาน 360: ดูทัวร์ = ทุกคนในโครงการ (เฟส 1 ยังไม่เปิดฝั่งเจ้าบ้าน)
-  'tour_get_config', 'tour_get_version',
+  'tour_get_config', 'tour_get_version', 'tour_get_trash',
 ]);
 addCap('OPS', [
   'updateTask', 'team_checkin', 'withdraw_material', 'create_daily',
@@ -97,7 +97,7 @@ addCap('PRICING', ['create_project']);
 addCap('SITECFG', [
   'set_site_location',
   // 🧭 เดินดูหน้างาน 360 — วางแผนที่จุด/ลูกศร + คุมเวอร์ชัน = งานตั้งค่าไซต์ (วิศวกรไซต์/PM ขึ้นไป)
-  'tour_save_plan', 'tour_delete_plan', 'tour_save_point', 'tour_delete_point',
+  'tour_save_plan', 'tour_delete_plan', 'tour_save_point', 'tour_delete_point', 'tour_restore_point',
   'tour_save_link', 'tour_delete_link',
   'tour_create_version', 'tour_update_version', 'tour_publish_version',
   'tour_delete_version', 'tour_restore_version',

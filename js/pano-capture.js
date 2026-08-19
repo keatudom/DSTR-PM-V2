@@ -23,7 +23,8 @@ const PanoCapture = {
   OUT_W: 3072,          // ผืนผ้า 360 (2:1 เป๊ะ ตามนิยาม equirectangular)
   OUT_H: 1536,
   FRAME_MAX: 800,       // ย่อภาพที่เก็บแต่ละใบ (กันมือถือหน่วย/หน่วยความจำบวม)
-  HIT_DEG: 7,           // เล็งใกล้จุดเป้ากี่องศาถึงจะเก็บภาพอัตโนมัติ
+  HIT_DEG: 8,           // เล็งใกล้จุดเป้ากี่องศาถึงจะเริ่มนับ
+  HOLD_MS: 700,         // ต้องเล็งค้างกี่มิลลิวินาทีถึงจะเก็บ (กันภาพเบลอจากการหมุนเร็ว)
   FOV_KEY: 'dstr_pano_fov',   // มุมกล้องด้านยาว — จำไว้ต่อเครื่อง (ปรับได้ในจอสแกน)
 
   _state: null,
@@ -195,6 +196,14 @@ const PanoCapture = {
       st.hFov = 2 * Math.atan(Math.tan(long / 2) * W / H);
     }
     st.frameW = W; st.frameH = H;
+
+    // กรอบภาพกลางจอ — เว้นที่รอบๆ ให้จุดเป้าที่ยังไม่ถึงลอยอยู่นอกกรอบได้
+    const rw = st.ui.root.clientWidth, rh = st.ui.root.clientHeight;
+    const bw = Math.min(rw * 0.6, rh * 0.42 * W / H);
+    const bh = bw * H / W;
+    v.style.width = Math.round(bw) + 'px';
+    v.style.height = Math.round(bh) + 'px';
+    st.box = { x: rw / 2, y: rh / 2, w: bw, h: bh };
     st.targets = this._targets(st.hFov * 180 / Math.PI, st.vFov * 180 / Math.PI);
     this._updateHud();
   },
@@ -209,16 +218,20 @@ const PanoCapture = {
     window.addEventListener('deviceorientation', st.onOri, true);
   },
 
-  // ── วนวาดจุดเป้า + เก็บภาพอัตโนมัติ ───────────────────────
+  // ── วนวาดจุดเป้า + เก็บภาพเมื่อเล็งค้างครบเวลา ─────────────
+  // ผังจอเลียนแบบ Teleport 360 (เจ้าของงานส่งภาพตัวอย่างมา 2026-08-19):
+  //   ภาพกล้องเป็น "กรอบเล็กกลางจอ" ไม่เต็มจอ → จุดเป้าที่ยังไม่ถึงจึงลอยอยู่นอกกรอบให้เห็นว่าต้องหันไปไหน
+  //   ถ้าให้ภาพเต็มจอ (แบบที่ทำไว้ตอนแรก) จุดที่อยู่นอกมุมกล้องจะมองไม่เห็นเลย ต้องเดาทิศเอง
   _loop() {
     const st = this._state;
     if (!st || !st.running) return;
     const cv = st.ui.overlay, ctx = cv.getContext('2d');
-    const rect = st.ui.video.getBoundingClientRect();
-    if (cv.width !== Math.round(rect.width) || cv.height !== Math.round(rect.height)) {
-      cv.width = Math.round(rect.width); cv.height = Math.round(rect.height);
-    }
-    ctx.clearRect(0, 0, cv.width, cv.height);
+    const w = st.ui.root.clientWidth, h = st.ui.root.clientHeight;
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    ctx.clearRect(0, 0, w, h);
+
+    const box = st.box || { x: w / 2, y: h / 2, w: w * 0.6, h: h * 0.45 };
+    const cx = box.x, cy = box.y;
 
     if (st.hasOri && st.targets.length) {
       const ax = this._axes(st.q);
@@ -229,29 +242,56 @@ const PanoCapture = {
         const d = this._dirOf(t.lon, t.lat);
         const f = this._dot(d, ax.fwd);
         const ang = Math.acos(Math.max(-1, Math.min(1, f))) * 180 / Math.PI;
-        if (ang < nearestAng && !t.done) { nearestAng = ang; nearest = t; }
-        if (f <= 0.05) continue;                       // อยู่หลังกล้อง
-        const px = (this._dot(d, ax.right) / f) / tanH;
-        const py = (this._dot(d, ax.up) / f) / tanV;
-        if (Math.abs(px) > 1.15 || Math.abs(py) > 1.15) continue;
-        const sx = (px + 1) / 2 * cv.width;
-        const sy = (1 - py) / 2 * cv.height;
+        if (!t.done && ang < nearestAng) { nearestAng = ang; nearest = t; }
+        if (f <= 0.12) continue;                                  // อยู่หลังกล้อง
 
+        // -1..1 = ขอบกรอบภาพ · เกินกว่านั้นวาดออกไปนอกกรอบได้ (พื้นที่ดำรอบๆ)
+        const u = (this._dot(d, ax.right) / f) / tanH;
+        const vv = (this._dot(d, ax.up) / f) / tanV;
+        if (Math.abs(u) > 3.2 || Math.abs(vv) > 3.2) continue;
+        const sx = cx + u * box.w / 2;
+        const sy = cy - vv * box.h / 2;
+
+        const r = Math.max(9, 30 / (1 + ang / 26));               // ไกล = เล็กลง ใกล้ = ใหญ่ขึ้น
         ctx.beginPath();
-        ctx.arc(sx, sy, t.done ? 9 : 13, 0, Math.PI * 2);
-        ctx.fillStyle = t.done ? 'rgba(16,185,129,.85)' : 'rgba(255,255,255,.18)';
+        ctx.arc(sx, sy, r, 0, Math.PI * 2);
+        ctx.fillStyle = t.done ? 'rgba(34,197,94,.35)' : 'rgba(74,222,128,.72)';
         ctx.fill();
-        ctx.lineWidth = 2.5;
-        ctx.strokeStyle = t.done ? '#10b981' : (t === nearest && ang < this.HIT_DEG * 2 ? '#f59e0b' : 'rgba(255,255,255,.85)');
-        ctx.stroke();
+        if (t.done) { ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(34,197,94,.9)'; ctx.stroke(); }
       }
 
-      // เป้ากลางจอ
-      ctx.beginPath();
-      ctx.arc(cv.width / 2, cv.height / 2, 5, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff'; ctx.fill();
+      // ── เล็งค้างถึงจะเก็บ (กันภาพเบลอจากการหมุนเร็ว) ──
+      const holding = nearest && nearestAng <= this.HIT_DEG;
+      if (holding) {
+        if (st.aimId !== nearest.id) { st.aimId = nearest.id; st.aimAt = Date.now(); }
+      } else { st.aimId = null; st.aimAt = 0; }
+      const prog = holding ? Math.min(1, (Date.now() - st.aimAt) / this.HOLD_MS) : 0;
 
-      if (nearest && nearestAng <= this.HIT_DEG) this._grab(nearest);
+      // วงเล็งกลางจอ + พายบอกความคืบหน้า
+      const R = 44;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.lineWidth = 5; ctx.strokeStyle = '#fff'; ctx.stroke();
+      if (prog > 0) {
+        ctx.beginPath(); ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, R - 4, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2);
+        ctx.closePath(); ctx.fillStyle = 'rgba(74,222,128,.9)'; ctx.fill();
+      }
+
+      if (prog >= 1) { this._grab(nearest); st.aimId = null; st.aimAt = 0; }
+
+      // ลูกศรบอกทางไปจุดถัดไป ถ้ามันอยู่นอกกรอบ
+      if (nearest && nearestAng > this.HIT_DEG) {
+        const d = this._dirOf(nearest.lon, nearest.lat);
+        const f = this._dot(d, ax.fwd);
+        const u = (this._dot(d, ax.right) / f) / tanH;
+        const vv = (this._dot(d, ax.up) / f) / tanV;
+        if (f <= 0.12 || Math.abs(u) > 1 || Math.abs(vv) > 1) {
+          const a = Math.atan2(-(f > 0.12 ? vv : 0) || -vv, (f > 0.12 ? u : this._dot(d, ax.right)) || 1);
+          ctx.save(); ctx.translate(cx + Math.cos(a) * (R + 34), cy + Math.sin(a) * (R + 34)); ctx.rotate(a);
+          ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-8, -9); ctx.lineTo(-8, 9); ctx.closePath();
+          ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+        }
+      }
     }
 
     st.raf = requestAnimationFrame(() => this._loop());
@@ -264,32 +304,50 @@ const PanoCapture = {
     st.grabbing = true;
     try {
       const v = st.ui.video;
-      const scale = this.FRAME_MAX / Math.max(v.videoWidth, v.videoHeight);
-      const w = Math.max(1, Math.round(v.videoWidth * Math.min(1, scale)));
-      const h = Math.max(1, Math.round(v.videoHeight * Math.min(1, scale)));
+      const scale = Math.min(1, this.FRAME_MAX / Math.max(v.videoWidth, v.videoHeight));
+      const w = Math.max(1, Math.round(v.videoWidth * scale));
+      const h = Math.max(1, Math.round(v.videoHeight * scale));
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
-      c.getContext('2d').drawImage(v, 0, 0, w, h);
-      st.frames.push({ data: c.getContext('2d').getImageData(0, 0, w, h), w: w, h: h, q: st.q.slice() });
+      const cc = c.getContext('2d');
+      cc.drawImage(v, 0, 0, w, h);
+      st.frames.push({ data: cc.getImageData(0, 0, w, h), w: w, h: h, q: st.q.slice(), targetId: target.id });
       target.done = true;
-      if (navigator.vibrate) navigator.vibrate(25);
+      if (navigator.vibrate) navigator.vibrate(30);
       this._updateHud();
     } catch (e) { /* ข้ามใบนี้ไป ไม่ให้ทั้งจอค้าง */ }
-    setTimeout(() => { st.grabbing = false; }, 220);
+    setTimeout(() => { st.grabbing = false; }, 250);
+  },
+
+  // ย้อนกลับ 1 ใบ (ถ่ายพลาด/มีคนเดินผ่าน) — ปุ่มมุมซ้ายบน
+  undo() {
+    const st = this._state;
+    if (!st || !st.frames.length) return;
+    const fr = st.frames.pop();
+    const t = st.targets.find((x) => x.id === fr.targetId);
+    if (t) t.done = false;
+    st.aimId = null; st.aimAt = 0;
+    this._updateHud();
   },
 
   _updateHud() {
     const st = this._state;
     if (!st) return;
     const done = st.targets.filter((t) => t.done).length;
+    const total = st.targets.length;
     const mid = st.targets.filter((t) => t.ring === 'mid');
     const midDone = mid.filter((t) => t.done).length;
-    st.ui.hud.textContent = 'เก็บแล้ว ' + done + '/' + st.targets.length + ' จุด';
+
+    st.ui.hud.textContent = done + ' / ' + total;
+    st.ui.bar.style.width = Math.round(done / total * 100) + '%';
+    st.ui.undo.style.visibility = done ? 'visible' : 'hidden';
+
     const enough = midDone >= mid.length;              // ครบวงแนวนอน = พอใช้งานได้แล้ว
     st.ui.done.disabled = !enough;
-    st.ui.done.textContent = enough ? '✅ เสร็จแล้ว ต่อภาพเลย' : 'ไล่ให้ครบวงกลางก่อน (' + midDone + '/' + mid.length + ')';
+    st.ui.done.textContent = enough
+      ? (done < total ? '✅ พอแล้ว ต่อภาพเลย (' + done + '/' + total + ')' : '✅ ครบทุกจุด ต่อภาพเลย')
+      : 'ไล่ให้ครบวงแนวสายตาก่อน (' + midDone + '/' + mid.length + ')';
   },
-
   // ════════════════════════════════════════════════════════
   // ต่อภาพเป็นผืน 360
   // ════════════════════════════════════════════════════════
@@ -465,24 +523,35 @@ const PanoCapture = {
   _buildUI() {
     const root = document.createElement('div');
     root.id = 'pano-capture';
-    root.style.cssText = 'position:fixed;inset:0;z-index:10000;background:#000;overflow:hidden';
+    root.style.cssText = 'position:fixed;inset:0;z-index:10000;background:#000;overflow:hidden;' +
+      'font-family:var(--font-family-base,sans-serif)';
     root.innerHTML =
       '<video id="pc-video" playsinline autoplay muted ' +
-      'style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>' +
+      'style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);' +
+      'width:60%;border-radius:4px;background:#111"></video>' +
       '<canvas id="pc-overlay" style="position:absolute;inset:0;width:100%;height:100%"></canvas>' +
+
+      // แถวบน: ย้อนกลับ 1 ใบ · ตัวนับ · ปรับมุมกล้อง · ปิด
       '<div style="position:absolute;top:0;left:0;right:0;padding:14px 16px;display:flex;' +
-      'justify-content:space-between;align-items:center;gap:10px;color:#fff;' +
-      'background:linear-gradient(rgba(0,0,0,.6),transparent)">' +
-      '<button id="pc-close" style="all:unset;cursor:pointer;font-size:15px;font-weight:600">✕ ยกเลิก</button>' +
-      '<div id="pc-hud" style="font-size:14px;font-weight:600">กำลังเปิดกล้อง…</div>' +
-      '<button id="pc-cal" style="all:unset;cursor:pointer;font-size:13px;opacity:.8">ปรับมุมกล้อง</button>' +
+      'justify-content:space-between;align-items:center;gap:10px;color:#fff">' +
+      '<button id="pc-undo" style="all:unset;cursor:pointer;width:42px;height:42px;border-radius:50%;' +
+      'background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-size:20px">↺</button>' +
+      '<div style="text-align:center;line-height:1.3">' +
+      '<div id="pc-hud" style="font-size:15px;font-weight:700">กำลังเปิดกล้อง…</div>' +
+      '<button id="pc-cal" style="all:unset;cursor:pointer;font-size:12px;opacity:.7">ปรับมุมกล้อง</button>' +
       '</div>' +
-      '<div style="position:absolute;left:0;right:0;bottom:0;padding:16px;' +
-      'background:linear-gradient(transparent,rgba(0,0,0,.75))">' +
+      '<button id="pc-close" style="all:unset;cursor:pointer;width:42px;height:42px;border-radius:50%;' +
+      'background:#ef4444;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px">✕</button>' +
+      '</div>' +
+
+      // แถวล่าง: คำแนะนำ + แถบความคืบหน้า + ปุ่มจบ
+      '<div style="position:absolute;left:0;right:0;bottom:0;padding:16px">' +
       '<div style="color:#fff;font-size:13px;text-align:center;margin-bottom:10px;line-height:1.6;opacity:.9">' +
-      'ยืนอยู่กับที่ แล้วหมุนตัวช้าๆ เล็งจุดกลางจอให้ตรงวงกลม<br>วงจะเปลี่ยนเป็นสีเขียวเมื่อเก็บภาพแล้ว</div>' +
+      'ยืนอยู่กับที่ตลอดการสแกน แล้วหมุนตัวเล็งวงกลางจอไปที่จุดเขียว<br>เล็งค้างไว้จนวงเต็ม = เก็บภาพแล้ว</div>' +
+      '<div style="height:8px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;margin-bottom:12px">' +
+      '<div id="pc-bar" style="height:100%;width:0%;background:#4ade80;transition:width .2s"></div></div>' +
       '<button id="pc-done" disabled style="width:100%;padding:14px;border:none;border-radius:12px;' +
-      'font-size:16px;font-weight:700;color:#fff;background:#2563eb">ไล่ให้ครบวงกลางก่อน</button>' +
+      'font-size:16px;font-weight:700;color:#fff;background:#2563eb">กำลังเตรียม…</button>' +
       '</div>';
     document.body.appendChild(root);
 
@@ -491,10 +560,14 @@ const PanoCapture = {
       video: root.querySelector('#pc-video'),
       overlay: root.querySelector('#pc-overlay'),
       hud: root.querySelector('#pc-hud'),
+      bar: root.querySelector('#pc-bar'),
+      undo: root.querySelector('#pc-undo'),
       done: root.querySelector('#pc-done'),
     };
+    ui.undo.style.visibility = 'hidden';
     root.querySelector('#pc-close').onclick = () => this.close();
     root.querySelector('#pc-cal').onclick = () => this.calibrate();
+    ui.undo.onclick = () => this.undo();
     ui.done.onclick = () => this.finish();
     return ui;
   },
