@@ -34,6 +34,7 @@ const Tour = {
     showTags: true,         // แสดงป้ายชิ้นงานในภาพ 360 ไหม
     pinMode: false,         // กำลังอยู่ในโหมดปักป้ายหรือเปล่า
     aimLinkId: null,        // ทางเดินที่กำลังตั้งทิศอยู่
+    aimPinId: null,         // แท็กที่กำลังย้ายตำแหน่งอยู่
     homeTool: 'view',       // เครื่องมือบนแปลนหน้าแรก: view | add | move | link
     planIdx: 0,             // ชั้นที่กำลังดู
     moveId: null,           // หมุดที่เลือกไว้เพื่อย้าย
@@ -474,8 +475,8 @@ const Tour = {
     if (!pt) return;
     this.data.pointId = pointId;
     this.closeAdjust();   // ย้ายห้องแล้วแผงปรับภาพของห้องเก่าต้องหายไปด้วย
-    if (this.data.pinMode || this.data.aimLinkId) {
-      this.data.pinMode = false; this.data.aimLinkId = null;
+    if (this.data.pinMode || this.data.aimLinkId || this.data.aimPinId) {
+      this.data.pinMode = false; this.data.aimLinkId = null; this.data.aimPinId = null;
       const pb = document.getElementById('tv-pinbar'); if (pb) pb.style.display = 'none';
     }
 
@@ -792,7 +793,9 @@ const Tour = {
   },
 
   async removeLink(linkId) {
-    Modal.close();
+    // ⚠️ ห้าม Modal.close() ตรงนี้ — close ตั้งเวลาล้างเนื้อหาไว้ 200ms
+    //    เปิด confirm ทันทีจะโดนล้างทิ้ง เหลือกล่องขาวเปล่า (เจ้าของงานเจอ 2026-08-19)
+    //    Modal.show ทับของเดิมได้อยู่แล้ว ไม่ต้องปิดก่อน
     const l = this.data.links.find((x) => x.link_id === linkId);
     const to = l ? (this._pt(l.to_point) || {}).name : '';
     const ok = await Modal.confirm({
@@ -818,6 +821,100 @@ const Tour = {
   // ป้ายผูกกับ "จุด" ไม่ใช่ "เวอร์ชัน" → ปักครั้งเดียวเห็นทุกเวอร์ชัน
   //   (ตู้ตัวเดิมอยู่ที่เดิมทุกรอบ ไม่ต้องมาปักใหม่ทุกครั้งที่สแกน)
 
+  // ── แผงจัดการแท็กชิ้นงาน (ปุ่มเดียวจบ) ────────────────────
+  // เจ้าของงานเคาะ 2026-08-19: "เอาเป็นปุ่มแท็ก กดแล้วเลือกว่าจัดการแท็ก หรือซ่อนแท็ก"
+  // รวม 3 อย่างไว้ปุ่มเดียว: ปักใหม่ / จัดการของเดิม / ซ่อน-แสดง → ลดปุ่มบนจอลง 1 ปุ่ม
+  async openTags() {
+    await this.loadFF();
+    const pins = (this.data.pins || []).filter((p) => p.point_id === this.data.pointId);
+    const e = this._shot(this.data.pointId);
+    const canPin = !!(e && e.shot && !e.fallback_from_version);
+
+    const rows = pins.length
+      ? pins.map((p) => {
+        const ff = p.kind === 'ff' ? this._ffOf(p.ref_id) : null;
+        const top = p.kind === 'ff' ? this._esc(p.ref_id) : this._esc((p.text || 'หมายเหตุ').slice(0, 30));
+        const sub = ff ? this._esc(ff.name) : (p.kind === 'ff' ? 'ไม่พบชิ้นงานนี้ในระบบแล้ว' : '');
+        return '<div style="display:flex;gap:8px;align-items:center;padding:11px 8px;border-bottom:1px solid var(--color-slate-200)">' +
+          '<span style="flex:1;min-width:0;text-align:left">' +
+          '<span style="display:block;font-weight:700;color:var(--color-blue-700)">' + top + '</span>' +
+          (sub ? '<small style="color:var(--color-slate-500)">' + sub + '</small>' : '') + '</span>' +
+          '<button class="btn btn-secondary btn-sm" onclick="Tour.moveTag(&quot;' + p.pin_id + '&quot;)">ย้าย</button>' +
+          '<button onclick="Tour.deleteTag(&quot;' + p.pin_id + '&quot;)" title="ลบแท็ก" ' +
+          'style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;flex:none;' +
+          'border:1.5px solid var(--color-error-500);border-radius:10px;background:var(--color-error-50);' +
+          'color:var(--color-error-700);cursor:pointer">✕</button>' +
+          '</div>';
+      }).join('')
+      : '<div style="padding:18px;text-align:center;color:var(--color-slate-500);line-height:1.8">' +
+        'ห้องนี้ยังไม่มีแท็ก<br><small>กด "ปักแท็กใหม่" แล้วแตะตรงเฟอร์นิเจอร์ในภาพ</small></div>';
+
+    Modal.show(
+      '<div class="modal-title">แท็กชิ้นงานในห้องนี้ (' + pins.length + ')</div>' +
+      '<div style="max-height:38vh;overflow:auto;margin:10px 0;border:1px solid var(--color-slate-200);border-radius:12px">' + rows + '</div>' +
+      (canPin
+        ? '<button class="btn btn-primary btn-block" onclick="Tour.startPinMode()">ปักแท็กใหม่</button>'
+        : '<div class="modal-info">ปักแท็กได้เฉพาะภาพของเวอร์ชันนี้เอง (ตอนนี้กำลังดูภาพสำรอง)</div>') +
+      '<button class="btn btn-secondary btn-block" style="margin-top:8px" onclick="Tour.toggleTags()">' +
+      (this.data.showTags ? 'ซ่อนแท็กทั้งหมด' : 'แสดงแท็ก') + '</button>' +
+      '<div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button></div>');
+  },
+
+  startPinMode() {
+    Modal.close();
+    this.data.pinMode = true;
+    this.data.aimLinkId = null;
+    this.data.aimPinId = null;
+    this.data.showTags = true;
+    const bar = document.getElementById('tv-pinbar');
+    if (bar) { bar.style.display = 'flex'; bar.firstElementChild.textContent = 'แตะตรงชิ้นงานในภาพเพื่อปักแท็ก'; }
+  },
+
+  moveTag(pinId) {
+    Modal.close();
+    this.data.aimPinId = pinId;
+    this.data.pinMode = false;
+    this.data.aimLinkId = null;
+    const bar = document.getElementById('tv-pinbar');
+    if (bar) { bar.style.display = 'flex'; bar.firstElementChild.textContent = 'แตะตำแหน่งใหม่ของแท็กในภาพ'; }
+  },
+
+  async _saveTagAim(yaw, pitch) {
+    const pinId = this.data.aimPinId;
+    this.data.aimPinId = null;
+    const bar = document.getElementById('tv-pinbar');
+    if (bar) bar.style.display = 'none';
+    const pin = (this.data.pins || []).find((p) => p.pin_id === pinId);
+    if (!pin) return;
+    await this._savePin({
+      pin_id: pinId, kind: pin.kind, ref_id: pin.ref_id, text: pin.text, yaw: yaw, pitch: pitch,
+    });
+  },
+
+  // ⚠️ ห้ามเรียก Modal.close() ก่อน Modal.confirm() — close ตั้งเวลาล้างเนื้อหาไว้ 200ms
+  //    ถ้าเปิดอันใหม่ทันที เนื้อหาจะถูกล้างทิ้ง เหลือกล่องขาวเปล่าๆ
+  //    (บทเรียนเดิมของโปรเจกต์นี้ — เจ้าของงานเจอซ้ำ 2026-08-19 ตอนกดลบทางเดิน)
+  async deleteTag(pinId) {
+    const pin = (this.data.pins || []).find((p) => p.pin_id === pinId);
+    const ff = pin && pin.kind === 'ff' ? this._ffOf(pin.ref_id) : null;
+    const ok = await Modal.confirm({
+      title: 'ลบแท็กนี้?',
+      desc: ff ? (pin.ref_id + ' · ' + ff.name) : ((pin && pin.text) || ''),
+      icon: '🗑️', confirmText: 'ลบแท็ก',
+    });
+    if (!ok) return;
+    this._busy(true, 'กำลังลบแท็ก…');
+    const res = await API.tourDeletePin(pinId);
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    try {
+      await this.loadVersion(this.data.version.version_id);
+      const e = this._shot(this.data.pointId);
+      if (e && e.shot) this._renderShot(e.shot, this.data.pointId);
+    } catch (err) { /* */ }
+    this._busy(false);
+    Modal.toast('✓ ลบแท็กแล้ว');
+  },
+
   async loadFF() {
     if (this.data.ff && this.data.ff.length) return this.data.ff;
     try {
@@ -832,10 +929,11 @@ const Tour = {
   },
 
   toggleTags() {
+    Modal.close();
     this.data.showTags = !this.data.showTags;
     const b = document.getElementById('btn-tags');
     if (b) b.style.opacity = this.data.showTags ? '1' : '0.45';
-    Modal.toast(this.data.showTags ? 'แสดงป้ายชิ้นงาน' : 'ซ่อนป้ายชิ้นงาน');
+    Modal.toast(this.data.showTags ? 'แสดงแท็กชิ้นงาน' : 'ซ่อนแท็กชิ้นงาน');
     const e = this._shot(this.data.pointId);
     if (e && e.shot) this._renderShot(e.shot, this.data.pointId);
   },
@@ -870,11 +968,12 @@ const Tour = {
     container.addEventListener('pointerup', (ev) => {
       // ลากเพื่อส่ายภาพ ไม่ใช่การแตะ — ไม่งั้นส่ายทีปักหมุดที
       if (moved || !this.viewer) return;
-      if (!this.data.pinMode && !this.data.aimLinkId) return;
+      if (!this.data.pinMode && !this.data.aimLinkId && !this.data.aimPinId) return;
       let c = null;
       try { c = this.viewer.mouseEventToCoords(ev); } catch (err) { c = null; }
       if (!c) return;
       if (this.data.aimLinkId) return this._saveLinkAim(c[1], c[0]);   // pannellum คืน [pitch, yaw]
+      if (this.data.aimPinId) return this._saveTagAim(c[1], c[0]);
       this.pickFFAt(c[1], c[0]);
     });
   },
@@ -924,6 +1023,7 @@ const Tour = {
   async _savePin(o) {
     this._busy(true, 'กำลังบันทึกป้าย…');
     const res = await API.tourSavePin({
+      pin_id: o.pin_id || '',               // มี = แก้ของเดิม (ย้ายตำแหน่ง) · ว่าง = ปักใหม่
       point_id: this.data.pointId,
       version_id: '',                       // ว่าง = ติดทุกเวอร์ชัน (ตู้ตัวเดิมอยู่ที่เดิมทุกรอบ)
       yaw: o.yaw, pitch: o.pitch,
