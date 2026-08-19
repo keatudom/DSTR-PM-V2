@@ -1,6 +1,8 @@
 .playwright-mcp/
 *.png
 !icons/*.png
+# โลโก้ปิดพื้นภาพ 360 — ต้องขึ้น production ด้วย (ไม่ใช่ภาพหน้าจอชั่วคราว)
+!assets/nadir-logo.png
 tutorial_sample.gif
 tutorial_preview.png
 PROD-*.png

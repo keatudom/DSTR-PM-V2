@@ -681,6 +681,55 @@ const PanoCapture = {
     }
   },
 
+  // ── ปิดพื้นใต้เท้าด้วยโลโก้ (nadir patch) ────────────────
+  // ตรงพื้นจะเห็นเท้าคนถ่ายเสมอ เพราะยืนอยู่ตรงนั้น — วงการภาพ 360 แก้ด้วยการแปะโลโก้ทับ
+  // เจ้าของงานเคาะ 2026-08-19: ใช้โลโก้ DESIGNTERIOR เป็นวงกลม
+  //
+  // วิธีวาง: ผืนผ้า 360 แถวล่างสุด = จุดใต้เท้าพอดี · ยิ่งขึ้นไปยิ่งเป็นวงกว้างขึ้น
+  //   จึงแปลงพิกัดเป็น "รัศมี+มุม" บนแผ่นวงกลม → เวลาก้มมองในทัวร์จะเห็นเป็นวงกลมกลมจริง
+  async _nadirPatch(out, W, H) {
+    const img = await new Promise((res) => {
+      const im = new Image();
+      im.onload = () => res(im);
+      im.onerror = () => res(null);
+      im.src = 'assets/nadir-logo.png';
+    });
+    if (!img) return;
+
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = S; c.height = S;
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0, S, S);
+    const lg = g.getImageData(0, 0, S, S).data;
+
+    const EDGE = -62 * Math.PI / 180;          // แปะจากใต้เท้าขึ้นมาถึงมุมก้ม 62°
+    const span = EDGE + Math.PI / 2;
+    const yStart = Math.max(0, Math.floor((0.5 - EDGE / Math.PI) * H));
+    for (let y = yStart; y < H; y++) {
+      const lat = (0.5 - (y + 0.5) / H) * Math.PI;
+      const r = (lat + Math.PI / 2) / span;
+      if (r > 1) continue;
+      const fade = r > 0.86 ? Math.max(0, (1 - r) / 0.14) : 1;   // ขอบนอกค่อยๆ จางเข้าหาพื้นจริง
+      for (let x = 0; x < W; x++) {
+        const lon = ((x + 0.5) / W - 0.5) * 2 * Math.PI;
+        const u = 0.5 + 0.5 * r * Math.sin(lon);
+        const v = 0.5 - 0.5 * r * Math.cos(lon);
+        let sx = (u * S) | 0, sy = (v * S) | 0;
+        sx = sx < 0 ? 0 : (sx > S - 1 ? S - 1 : sx);
+        sy = sy < 0 ? 0 : (sy > S - 1 ? S - 1 : sy);
+        const si = (sy * S + sx) * 4;
+        const a = (lg[si + 3] / 255) * fade;
+        if (a <= 0.01) continue;
+        const di = (y * W + x) * 4;
+        out[di] = out[di] * (1 - a) + lg[si] * a;
+        out[di + 1] = out[di + 1] * (1 - a) + lg[si + 1] * a;
+        out[di + 2] = out[di + 2] * (1 - a) + lg[si + 2] * a;
+        out[di + 3] = 255;
+      }
+    }
+  },
+
   async _stitch() {
     const st = this._state;
     await this._align();
@@ -819,6 +868,9 @@ const PanoCapture = {
       if (!filled[i]) { gap++; const d = i * 4; out[d] = 24; out[d + 1] = 30; out[d + 2] = 42; out[d + 3] = 255; }
     }
     PanoCapture._coverGap = Math.round(gap / (W * H) * 1000) / 10;
+
+    st.ui.hud.textContent = 'กำลังปิดพื้นด้วยโลโก้…';
+    try { await this._nadirPatch(out, W, H); } catch (e) { /* ไม่มีโลโก้ก็ปล่อยพื้นเดิม */ }
 
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
