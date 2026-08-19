@@ -675,7 +675,7 @@ const Tour = {
     if (!plan) {
       wrap.innerHTML = '<div class="center-msg text-muted"><i data-lucide="map"></i>' +
         '<div style="margin:12px 0;line-height:1.7">ยังไม่มีแปลนพื้น<br>' +
-        '<span style="font-size:13px">เพิ่มจุดเป็นรายชื่อห้องได้เลย · แปลนใส่ทีหลังก็ได้</span></div>' +
+        '<span style="font-size:13px">เพิ่มจุดเป็นรายชื่อห้องได้เลย · แปลนใส่ทีหลังก็ได้<br>รองรับทั้งรูปภาพและไฟล์ PDF</span></div>' +
         '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
         '<button class="btn btn-primary btn-sm" onclick="Tour.addPointManually()">➕ เพิ่มจุด</button>' +
         '<button class="btn btn-secondary btn-sm" onclick="Tour.pickPlan()">อัปแปลนพื้น</button>' +
@@ -735,8 +735,14 @@ const Tour = {
             (picked ? 'outline:2px solid var(--color-warning-500)' : '') + '"' : '') + '>' +
           '<div><div class="font-semibold">' + this._esc(p.name) + '</div>' +
           '<div class="text-sm text-muted">' + (outs ? '→ ' + this._esc(outs) : 'ยังไม่มีทางเดินออก') + '</div></div>' +
+          // ปุ่มลบต้องเห็นชัดว่าเป็นปุ่ม — เดิมใช้ btn-ghost แล้วมันจางจนดูเหมือนตัวหนังสือ
+          // เจ้าของงานหาไม่เจอจริงๆ ตอนจะลบจุดที่เพิ่มผิด (2026-08-19)
           (linking ? '<i data-lucide="' + (picked ? 'crosshair' : 'chevron-right') + '"></i>'
-            : '<button class="btn btn-ghost btn-sm" onclick="Tour.removePoint(\'' + p.point_id + '\')">ลบ</button>') +
+            : '<button onclick="Tour.removePoint(\'' + p.point_id + '\')" ' +
+              'style="display:flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;' +
+              'border:1.5px solid var(--color-error-500);border-radius:10px;background:var(--color-error-50);' +
+              'color:var(--color-error-700);font-weight:600;font-size:14px;cursor:pointer">' +
+              '<i data-lucide="trash-2" style="width:16px;height:16px"></i> ลบ</button>') +
           '</div>';
       }).join('');
     if (window.lucide) lucide.createIcons();
@@ -762,15 +768,58 @@ const Tour = {
     this._busy(false);
   },
 
+  // ── อ่านแปลนจากไฟล์ PDF ──────────────────────────────────
+  // แบบแปลนที่สถาปนิกส่งมาเป็น PDF แทบทั้งนั้น (เจ้าของงานแจ้ง 2026-08-19)
+  // แปลงหน้าที่เลือกเป็นรูปตั้งแต่ตอนอัป → ที่เก็บและโค้ดส่วนอื่นไม่ต้องรู้จัก PDF เลย
+  // ตัวอ่าน PDF โหลดเฉพาะตอนเจอไฟล์ PDF (1.4 MB) — ไม่ถ่วงคนที่อัปแค่รูป
+  _loadPdfJs() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'vendor/pdfjs/pdf.min.js';
+      s.onload = () => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdfjs/pdf.worker.min.js';
+        resolve(window.pdfjsLib);
+      };
+      s.onerror = () => reject(new Error('โหลดตัวอ่าน PDF ไม่สำเร็จ'));
+      document.head.appendChild(s);
+    });
+  },
+
+  async _pdfToImage(file, maxDim) {
+    const lib = await this._loadPdfJs();
+    const doc = await lib.getDocument({ data: await file.arrayBuffer() }).promise;
+
+    let pageNo = 1;
+    if (doc.numPages > 1) {
+      const v = prompt('ไฟล์นี้มี ' + doc.numPages + ' หน้า — ใช้แปลนหน้าไหน?', '1');
+      if (v === null) return null;
+      pageNo = Math.min(doc.numPages, Math.max(1, parseInt(v, 10) || 1));
+    }
+
+    const page = await doc.getPage(pageNo);
+    const base = page.getViewport({ scale: 1 });
+    const vp = page.getViewport({ scale: Math.min(4, maxDim / Math.max(base.width, base.height)) });
+    const c = document.createElement('canvas');
+    c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff';                       // PDF พื้นโปร่งใส ถ้าไม่รองพื้นขาวจะได้แปลนพื้นดำ
+    ctx.fillRect(0, 0, c.width, c.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    return { dataUrl: c.toDataURL('image/jpeg', 0.88), w: c.width, h: c.height };
+  },
+
   pickPlan() {
     const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = 'image/*';
+    inp.type = 'file'; inp.accept = 'image/*,application/pdf,.pdf';
     inp.onchange = async () => {
       const f = inp.files && inp.files[0];
       if (!f) return;
-      this._busy(true, 'กำลังอัปแปลน…');
+      const isPdf = /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name || '');
+      this._busy(true, isPdf ? 'กำลังอ่านไฟล์ PDF…' : 'กำลังอัปแปลน…');
       try {
-        const img = await this._compress(f, 2000, 0.85);
+        const img = isPdf ? await this._pdfToImage(f, 2000) : await this._compress(f, 2000, 0.85);
+        if (!img) { this._busy(false); return; }        // ผู้ใช้กดยกเลิกตอนเลือกหน้า
         const res = await API.tourSavePlan({
           plan_id: (this.data.plans[0] || {}).plan_id || '',
           floor_label: (this.data.plans[0] || {}).floor_label || 'ชั้น 1',
