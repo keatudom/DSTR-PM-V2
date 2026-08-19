@@ -102,6 +102,17 @@
   }
   .custom-hotspot:hover { transform: scale(1.1); background: rgba(15,23,42,0.8); }
   .custom-hotspot i { width: 36px; height: 36px; stroke-width: 3; }
+  .ff-hotspot { width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%;
+                background:var(--color-blue-500); border:2.5px solid #fff; cursor:pointer;
+                box-shadow:0 2px 10px rgba(0,0,0,.45); }
+  .ff-hotspot:hover { transform:scale(1.15); }
+  .ff-chip { position:absolute; left:34px; top:-6px; white-space:nowrap; padding:5px 10px; border-radius:8px;
+             background:rgba(15,23,42,.92); color:#fff; font-size:13px; font-weight:700; line-height:1.35;
+             border:1px solid rgba(255,255,255,.25); box-shadow:0 2px 10px rgba(0,0,0,.4); }
+  .ff-chip small { display:block; font-weight:500; opacity:.8; font-size:11px; }
+  .tour-pinbar { position:absolute; left:0; right:0; top:64px; z-index:22; display:flex; justify-content:center; }
+  .tour-pinbar > div { background:var(--color-blue-600, #2563eb); color:#fff; padding:9px 16px; border-radius:99px;
+                       font-size:13px; font-weight:600; box-shadow:0 4px 14px rgba(0,0,0,.35); }
   .custom-hotspot-label {
     position: absolute; top: -34px; left: 50%; transform: translateX(-50%);
     background: rgba(15,23,42,0.85); color: #fff; padding: 4px 10px; border-radius: var(--radius-md);
@@ -244,9 +255,12 @@
               <button class="btn btn-primary mt-4" onclick="Tour.jumpToStart()">กลับไปจุดเริ่มต้น</button>
             </div>
 
+            <div class="tour-pinbar" id="tv-pinbar" style="display:none"><div>แตะตรงชิ้นงานในภาพเพื่อปักป้าย</div></div>
+
             <!-- Mid Actions -->
             <div class="tour-mid-actions">
-              <button class="tour-icon-btn shadow" id="btn-pin" onclick="Tour.togglePins()"><i data-lucide="map-pin"></i></button>
+              <button class="tour-icon-btn shadow" id="btn-pin" onclick="Tour.togglePinMode()" title="ปักป้ายชิ้นงาน"><i data-lucide="map-pin"></i></button>
+              <button class="tour-icon-btn shadow" id="btn-tags" onclick="Tour.toggleTags()" title="แสดง/ซ่อนป้ายชิ้นงาน"><i data-lucide="tag"></i></button>
               <button class="tour-icon-btn shadow" id="btn-adjust" onclick="Tour.adjustShot()" title="ปรับภาพ"><i data-lucide="sliders-horizontal"></i></button>
               <button class="tour-icon-btn shadow" id="btn-compare" onclick="Tour.toggleCompare()"><i data-lucide="split-square-horizontal"></i></button>
             </div>

@@ -30,6 +30,9 @@ const Tour = {
     tray: [],               // รูปที่เลือกมาจากคลังภาพ รอจับคู่กับจุด
     mapTool: 'point',       // point | link
     linkFrom: null,
+    ff: [],                 // รายการชิ้นงานของโครงการ (ไว้เลือกตอนปักป้าย)
+    showTags: true,         // แสดงป้ายชิ้นงานในภาพ 360 ไหม
+    pinMode: false,         // กำลังอยู่ในโหมดปักป้ายหรือเปล่า
     homeTool: 'view',       // เครื่องมือบนแปลนหน้าแรก: view | add | move | link
     planIdx: 0,             // ชั้นที่กำลังดู
     moveId: null,           // หมุดที่เลือกไว้เพื่อย้าย
@@ -470,6 +473,7 @@ const Tour = {
     if (!pt) return;
     this.data.pointId = pointId;
     this.closeAdjust();   // ย้ายห้องแล้วแผงปรับภาพของห้องเก่าต้องหายไปด้วย
+    if (this.data.pinMode) { this.data.pinMode = false; const pb = document.getElementById('tv-pinbar'); if (pb) pb.style.display = 'none'; }
 
     document.getElementById('tv-point-name').innerText = pt.name;
     const idx = this.data.points.findIndex((p) => p.point_id === pointId) + 1;
@@ -550,6 +554,27 @@ const Tour = {
       clickHandlerFunc: () => this.goToPoint(l.to_point),
     }));
 
+    // ป้ายชิ้นงานที่ปักไว้ในภาพ (FF tag)
+    if (this.data.showTags) {
+      for (const pin of (this.data.pins || []).filter((p) => p.point_id === pointId)) {
+        const ff = pin.kind === 'ff' ? this._ffOf(pin.ref_id) : null;
+        hotSpots.push({
+          pitch: Number(pin.pitch) || 0,
+          yaw: Number(pin.yaw) || 0,
+          cssClass: 'ff-hotspot',
+          createTooltipFunc: (div, args) => {
+            div.innerHTML = '<span class="ff-chip">' + args.top +
+              (args.sub ? '<small>' + args.sub + '</small>' : '') + '</span>';
+          },
+          createTooltipArgs: {
+            top: this._esc(pin.kind === 'ff' ? pin.ref_id : (pin.text || 'หมายเหตุ').slice(0, 28)),
+            sub: this._esc(ff ? ff.name : ''),
+          },
+          clickHandlerFunc: () => this.openPin(pin.pin_id),
+        });
+      }
+    }
+
     const cfg = {
       type: 'equirectangular',
       panorama: shot.url,
@@ -568,6 +593,8 @@ const Tour = {
     }
     try {
       this.viewer = pannellum.viewer('panorama-container', cfg);
+      this._bindPinTap(container);
+      this.loadFF();                      // โหลดรายการชิ้นงานไว้ล่วงหน้า (ใช้ตอนแตะป้าย)
     } catch (e) {
       container.innerHTML = '<img src="' + shot.url + '" style="width:100%;height:100%;object-fit:contain">';
     }
@@ -656,7 +683,7 @@ const Tour = {
       'onclick="event.stopPropagation(); Tour.goToPoint(\'' + p.point_id + '\'); Tour.toggleMinimap();"></div>').join('');
   },
 
-  // ── หมุดคอมเมนต์ ─────────────────────────────────────────
+  // ── หมุดคอมเมนต์ (ของเดิม เก็บไว้เผื่อเรียกจากที่อื่น) ──────
   async togglePins() {
     const pins = this.data.pins.filter((p) => p.point_id === this.data.pointId);
     const list = pins.length
@@ -683,6 +710,158 @@ const Tour = {
     if (!res || res.ok === false) return this._err(res);
     Modal.toast('✅ บันทึกหมุดแล้ว');
     await this.loadVersion(this.data.version.version_id);
+  },
+
+  // ════════════════════════════════════════════════════════
+  // 🏷️ ป้ายชิ้นงานในภาพ 360 (FF tag)
+  // ════════════════════════════════════════════════════════
+  // เจ้าของงานเคาะ 2026-08-19: "เข้าไปดูใน 360 แล้วอยากกดปุ่มชี้ว่าตรงนี้คือ FF-02"
+  // ป้ายผูกกับ "จุด" ไม่ใช่ "เวอร์ชัน" → ปักครั้งเดียวเห็นทุกเวอร์ชัน
+  //   (ตู้ตัวเดิมอยู่ที่เดิมทุกรอบ ไม่ต้องมาปักใหม่ทุกครั้งที่สแกน)
+
+  async loadFF() {
+    if (this.data.ff && this.data.ff.length) return this.data.ff;
+    try {
+      const r = await API.getFFList();
+      this.data.ff = (r && (r.data || r)) || [];
+    } catch (e) { this.data.ff = []; }
+    return this.data.ff;
+  },
+
+  _ffOf(code) {
+    return (this.data.ff || []).find((f) => String(f.code) === String(code)) || null;
+  },
+
+  toggleTags() {
+    this.data.showTags = !this.data.showTags;
+    const b = document.getElementById('btn-tags');
+    if (b) b.style.opacity = this.data.showTags ? '1' : '0.45';
+    Modal.toast(this.data.showTags ? 'แสดงป้ายชิ้นงาน' : 'ซ่อนป้ายชิ้นงาน');
+    const e = this._shot(this.data.pointId);
+    if (e && e.shot) this._renderShot(e.shot, this.data.pointId);
+  },
+
+  // เปิด/ปิดโหมดปัก — ปักได้เฉพาะภาพของเวอร์ชันนี้เอง (ไม่ใช่ภาพสำรอง)
+  async togglePinMode() {
+    const e = this._shot(this.data.pointId);
+    if (!e || !e.shot) return Modal.toast('⚠️ จุดนี้ยังไม่มีภาพ');
+    if (e.fallback_from_version) return Modal.toast('⚠️ ปักได้เฉพาะภาพของเวอร์ชันนี้เอง');
+
+    this.data.pinMode = !this.data.pinMode;
+    const bar = document.getElementById('tv-pinbar');
+    if (bar) bar.style.display = this.data.pinMode ? 'flex' : 'none';
+    const b = document.getElementById('btn-pin');
+    if (b) b.style.background = this.data.pinMode ? 'var(--color-blue-500)' : '';
+    if (this.data.pinMode) {
+      this.data.showTags = true;
+      await this.loadFF();
+      Modal.toast('แตะตรงชิ้นงานในภาพได้เลย');
+    }
+  },
+
+  // แตะบนภาพ 360 ตอนอยู่ในโหมดปัก → รู้ว่าแตะตรงมุมไหน
+  _bindPinTap(container) {
+    if (!container || container._pinBound) return;
+    container._pinBound = true;
+    let sx = 0, sy = 0, moved = false;
+    container.addEventListener('pointerdown', (ev) => { sx = ev.clientX; sy = ev.clientY; moved = false; });
+    container.addEventListener('pointermove', (ev) => {
+      if (Math.abs(ev.clientX - sx) > 8 || Math.abs(ev.clientY - sy) > 8) moved = true;
+    });
+    container.addEventListener('pointerup', (ev) => {
+      // ลากเพื่อส่ายภาพ ไม่ใช่การแตะ — ไม่งั้นส่ายทีปักหมุดที
+      if (!this.data.pinMode || moved || !this.viewer) return;
+      let c = null;
+      try { c = this.viewer.mouseEventToCoords(ev); } catch (err) { c = null; }
+      if (!c) return;
+      this.pickFFAt(c[1], c[0]);      // pannellum คืน [pitch, yaw]
+    });
+  },
+
+  // เลือกว่าตรงนั้นคือชิ้นงานไหน
+  async pickFFAt(yaw, pitch) {
+    await this.loadFF();
+    const list = this.data.ff;
+    const rows = list.length
+      ? list.map((f) =>
+        '<div onclick="Tour._savePinFF(&quot;' + this._esc(f.code) + '&quot;)" ' +
+        'style="display:flex;gap:10px;align-items:center;padding:11px 8px;border-bottom:1px solid var(--color-slate-200);cursor:pointer;text-align:left">' +
+        '<span style="flex:none;min-width:52px;font-weight:800;color:var(--color-blue-700)">' + this._esc(f.code) + '</span>' +
+        '<span style="flex:1;min-width:0"><span style="display:block;font-weight:600">' + this._esc(f.name) + '</span>' +
+        '<small style="color:var(--color-slate-500)">' + this._esc(f.area || '') + '</small></span></div>').join('')
+      : '<div style="padding:16px;text-align:center;color:var(--color-slate-500)">โครงการนี้ยังไม่มีรายการชิ้นงาน</div>';
+
+    this._pendingPin = { yaw: yaw, pitch: pitch };
+    Modal.show(
+      '<div class="modal-title">ตรงนี้คือชิ้นงานอะไร</div>' +
+      '<div class="modal-desc">เลือกจากรายการงานของโครงการ</div>' +
+      '<div style="max-height:46vh;overflow:auto;margin:8px 0;border:1px solid var(--color-slate-200);border-radius:12px">' + rows + '</div>' +
+      '<div class="modal-btns">' +
+      '<button class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>' +
+      '<button class="modal-btn" onclick="Tour._savePinNote()">พิมพ์หมายเหตุแทน</button>' +
+      '</div>');
+  },
+
+  async _savePinFF(code) {
+    Modal.close();
+    const p = this._pendingPin;
+    if (!p) return;
+    this._pendingPin = null;
+    await this._savePin({ kind: 'ff', ref_id: code, text: '', yaw: p.yaw, pitch: p.pitch });
+  },
+
+  async _savePinNote() {
+    Modal.close();
+    const p = this._pendingPin;
+    if (!p) return;
+    this._pendingPin = null;
+    const text = prompt('พิมพ์หมายเหตุสำหรับจุดนี้');
+    if (!text) return;
+    await this._savePin({ kind: 'note', ref_id: '', text: text, yaw: p.yaw, pitch: p.pitch });
+  },
+
+  async _savePin(o) {
+    this._busy(true, 'กำลังบันทึกป้าย…');
+    const res = await API.tourSavePin({
+      point_id: this.data.pointId,
+      version_id: '',                       // ว่าง = ติดทุกเวอร์ชัน (ตู้ตัวเดิมอยู่ที่เดิมทุกรอบ)
+      yaw: o.yaw, pitch: o.pitch,
+      kind: o.kind, ref_id: o.ref_id, text: o.text,
+    });
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    try {
+      await this.loadVersion(this.data.version.version_id);
+      const e = this._shot(this.data.pointId);
+      if (e && e.shot) this._renderShot(e.shot, this.data.pointId);
+    } catch (e) { /* */ }
+    this._busy(false);
+    Modal.toast('✓ ปักป้ายแล้ว');
+  },
+
+  // แตะป้ายที่ปักไว้ → ดูรายละเอียด / ลบ
+  async openPin(pinId) {
+    const pin = (this.data.pins || []).find((p) => p.pin_id === pinId);
+    if (!pin) return;
+    const ff = pin.kind === 'ff' ? this._ffOf(pin.ref_id) : null;
+    const ok = await Modal.confirm({
+      title: ff ? (pin.ref_id + ' · ' + ff.name) : (pin.ref_id || 'หมายเหตุ'),
+      desc: ff ? ('พื้นที่: ' + (ff.area || '-') + '\nสถานะ: ' + (ff.status || '-')) : (pin.text || ''),
+      info: 'ปักโดย ' + this._esc(pin.created_by || '-'),
+      icon: '🏷️', iconClass: 'info',
+      confirmText: 'ลบป้ายนี้', cancelText: 'ปิด',
+      confirmClass: 'modal-btn-warn',
+    });
+    if (!ok) return;
+    this._busy(true, 'กำลังลบป้าย…');
+    const res = await API.tourDeletePin(pinId);
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    try {
+      await this.loadVersion(this.data.version.version_id);
+      const e = this._shot(this.data.pointId);
+      if (e && e.shot) this._renderShot(e.shot, this.data.pointId);
+    } catch (e) { /* */ }
+    this._busy(false);
+    Modal.toast('✓ ลบป้ายแล้ว');
   },
 
   // ── ปรับภาพ (แก้ตอนระบบเดาความกว้างผิด / ภาพหันเบี้ยวจากรอบก่อน) ──
