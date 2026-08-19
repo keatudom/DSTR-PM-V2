@@ -345,7 +345,7 @@ const PanoCapture = {
     const enough = midDone >= mid.length;              // ครบวงแนวนอน = พอใช้งานได้แล้ว
     st.ui.done.disabled = !enough;
     st.ui.done.textContent = enough
-      ? (done < total ? '✅ พอแล้ว ต่อภาพเลย (' + done + '/' + total + ')' : '✅ ครบทุกจุด ต่อภาพเลย')
+      ? (done < total ? 'พอแล้ว ต่อภาพเลย (' + done + '/' + total + ')' : 'ครบทุกจุด ต่อภาพเลย')
       : 'ไล่ให้ครบวงแนวสายตาก่อน (' + midDone + '/' + mid.length + ')';
   },
   // ════════════════════════════════════════════════════════
@@ -535,13 +535,15 @@ const PanoCapture = {
       '<div style="position:absolute;top:0;left:0;right:0;padding:14px 16px;display:flex;' +
       'justify-content:space-between;align-items:center;gap:10px;color:#fff">' +
       '<button id="pc-undo" style="all:unset;cursor:pointer;width:42px;height:42px;border-radius:50%;' +
-      'background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-size:20px">↺</button>' +
+      'background:#fff;color:#000;display:flex;align-items:center;justify-content:center;">' +
+      '<i data-lucide="rotate-ccw" style="width:20px;height:20px"></i></button>' +
       '<div style="text-align:center;line-height:1.3">' +
       '<div id="pc-hud" style="font-size:15px;font-weight:700">กำลังเปิดกล้อง…</div>' +
       '<button id="pc-cal" style="all:unset;cursor:pointer;font-size:12px;opacity:.7">ปรับมุมกล้อง</button>' +
       '</div>' +
       '<button id="pc-close" style="all:unset;cursor:pointer;width:42px;height:42px;border-radius:50%;' +
-      'background:#ef4444;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px">✕</button>' +
+      'background:#ef4444;color:#fff;display:flex;align-items:center;justify-content:center;">' +
+      '<i data-lucide="x" style="width:20px;height:20px"></i></button>' +
       '</div>' +
 
       // แถวล่าง: คำแนะนำ + แถบความคืบหน้า + ปุ่มจบ
@@ -565,6 +567,7 @@ const PanoCapture = {
       done: root.querySelector('#pc-done'),
     };
     ui.undo.style.visibility = 'hidden';
+    if (window.lucide) lucide.createIcons();   // ไอคอน Lucide เท่านั้น — ห้ามอีโมจิในปุ่ม (กติกาโปรเจกต์)
     root.querySelector('#pc-close').onclick = () => this.close();
     root.querySelector('#pc-cal').onclick = () => this.calibrate();
     ui.undo.onclick = () => this.undo();

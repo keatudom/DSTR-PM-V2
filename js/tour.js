@@ -30,6 +30,9 @@ const Tour = {
     tray: [],               // รูปที่เลือกมาจากคลังภาพ รอจับคู่กับจุด
     mapTool: 'point',       // point | link
     linkFrom: null,
+    homeTool: 'view',       // เครื่องมือบนแปลนหน้าแรก: view | add | move | link
+    planIdx: 0,             // ชั้นที่กำลังดู
+    moveId: null,           // หมุดที่เลือกไว้เพื่อย้าย
   },
   viewer: null,
   busy: false,
@@ -89,7 +92,9 @@ const Tour = {
     this._busy(false);
   },
 
-  // ── หน้าแรก: รายการห้อง ──────────────────────────────────
+  // ── หน้าแรก: แปลนบ้านเป็นพระเอก ──────────────────────────
+  // เจ้าของงานเคาะ 2026-08-19: "เวลาอยากดู F-01 หรือห้องโถง ก็กดในแปลนจะดีกว่า"
+  // ทีมคิดงานจากแปลนอยู่แล้ว (แบบ Furniture Plan มีรหัส FF กำกับทุกห้อง) แปลนจึงเป็นแผนที่เดินเรื่อง
   renderHome() {
     const v = this.data.version;
     const verEl = document.getElementById('th-version');
@@ -106,29 +111,262 @@ const Tour = {
       } else dr.style.display = 'none';
     }
 
+    this.renderPlan();
+    this.renderRoomList();
+    this.loadTrash().then(() => this.renderTrash()).catch(() => {});
+    if (window.lucide) lucide.createIcons();
+  },
+
+  _planIdx() {
+    const n = this.data.plans.length;
+    if (!n) return -1;
+    let i = Number(this.data.planIdx) || 0;
+    return Math.max(0, Math.min(n - 1, i));
+  },
+  _plan() { const i = this._planIdx(); return i < 0 ? null : this.data.plans[i]; },
+
+  // สถานะภาพของจุด → สีหมุด (ดูปราดเดียวรู้ว่าห้องไหนถ่ายแล้ว)
+  _pinTone(pointId) {
+    const e = this._shot(pointId);
+    if (e && e.shot && !e.fallback_from_version) return { bg: 'var(--color-success-500)', label: 'มีภาพของเวอร์ชันนี้', icon: 'check-circle-2' };
+    if (e && e.shot) return { bg: 'var(--color-warning-500)', label: 'ภาพจากเวอร์ชันก่อน', icon: 'alert-triangle' };
+    return { bg: 'var(--color-slate-400)', label: 'ยังไม่มีภาพ', icon: 'circle-dashed' };
+  },
+
+  renderPlan() {
+    const box = document.getElementById('th-planwrap');
+    if (!box) return;
+    const plan = this._plan();
+    const tool = this.data.homeTool || 'view';
+
+    if (!plan) {
+      box.innerHTML =
+        '<div style="background:#fff;border:1px dashed var(--color-slate-300);border-radius:14px;padding:28px 16px;text-align:center;margin-bottom:14px">' +
+        '<i data-lucide="map" style="width:34px;height:34px;color:var(--color-slate-400)"></i>' +
+        '<div style="margin:10px 0 14px;line-height:1.8;color:var(--color-slate-600)">ยังไม่มีแปลนบ้าน<br>' +
+        '<span style="font-size:13px">อัปแปลนแล้วปักหมุดจุดถ่ายบนแปลนได้เลย — รองรับทั้งรูปภาพและไฟล์ PDF</span></div>' +
+        '<button class="btn btn-primary" onclick="Tour.addPlan()"><i data-lucide="upload"></i> อัปแปลนบ้าน</button>' +
+        '</div>';
+      return;
+    }
+
+    // แถบเลือกชั้น (โชว์เมื่อมีมากกว่า 1 ชั้น)
+    const floors = this.data.plans.length > 1
+      ? '<div class="th-tools">' + this.data.plans.map((p, i) =>
+        '<button class="th-tool ' + (i === this._planIdx() ? 'on' : '') + '" onclick="Tour.setPlanIdx(' + i + ')">' +
+        this._esc(p.floor_label || ('ชั้น ' + (i + 1))) + '</button>').join('') + '</div>'
+      : '';
+
+    const tools =
+      '<div class="th-tools">' +
+      '<button class="th-tool ' + (tool === 'view' ? 'on' : '') + '" onclick="Tour.setHomeTool(\'view\')"><i data-lucide="eye"></i> ดู</button>' +
+      '<button class="th-tool ' + (tool === 'add' ? 'on' : '') + '" onclick="Tour.setHomeTool(\'add\')"><i data-lucide="plus"></i> เพิ่มจุด</button>' +
+      '<button class="th-tool ' + (tool === 'move' ? 'on' : '') + '" onclick="Tour.setHomeTool(\'move\')"><i data-lucide="move"></i> ย้ายจุด</button>' +
+      '<button class="th-tool ' + (tool === 'link' ? 'on' : '') + '" onclick="Tour.setHomeTool(\'link\')"><i data-lucide="git-branch"></i> ทางเดิน</button>' +
+      '</div>';
+
+    const sel = this.data.linkFrom || this.data.moveId;
+    const hint = tool === 'add' ? 'แตะบนแปลนตรงที่จะยืนถ่าย แล้วตั้งชื่อห้อง'
+      : tool === 'move' ? (this.data.moveId ? 'แตะตำแหน่งใหม่บนแปลน' : 'แตะหมุดที่จะย้าย')
+        : tool === 'link' ? (this.data.linkFrom ? 'แตะหมุดปลายทาง' : 'แตะหมุดต้นทางก่อน')
+          : 'แตะหมุดเพื่อดูภาพ 360 ของห้องนั้น';
+
+    const pins = this.data.points
+      .filter((p) => !p.plan_id || p.plan_id === plan.plan_id)
+      .map((p, i) => {
+        const t = this._pinTone(p.point_id);
+        return '<div class="th-pin ' + (sel === p.point_id ? 'sel' : '') + '" ' +
+          'style="left:' + ((Number(p.plan_x) || 0.5) * 100) + '%;top:' + ((Number(p.plan_y) || 0.5) * 100) + '%;background:' + t.bg + '" ' +
+          'title="' + this._esc(p.name) + '" ' +
+          'onclick="event.stopPropagation(); Tour.onPinTap(\'' + p.point_id + '\')">' + (i + 1) + '</div>';
+      }).join('');
+
+    box.innerHTML = floors + tools +
+      '<div class="th-planbox" id="th-planbox" onclick="Tour.onPlanTap(event)">' +
+      '<img src="' + plan.url + '" alt="แปลนบ้าน" draggable="false">' + pins + '</div>' +
+      '<div class="th-hint">' + hint + '</div>' +
+      '<div class="th-tools" style="justify-content:center">' +
+      '<button class="th-tool" onclick="Tour.replacePlan()"><i data-lucide="image-up"></i> เปลี่ยนรูปแปลน</button>' +
+      '<button class="th-tool" onclick="Tour.rotatePlan()"><i data-lucide="rotate-cw"></i> หมุน</button>' +
+      '<button class="th-tool" onclick="Tour.addPlan()"><i data-lucide="plus"></i> เพิ่มชั้น</button>' +
+      '</div>';
+  },
+
+  setPlanIdx(i) { this.data.planIdx = i; this.data.linkFrom = null; this.data.moveId = null; this.renderPlan(); if (window.lucide) lucide.createIcons(); },
+  setHomeTool(t) { this.data.homeTool = t; this.data.linkFrom = null; this.data.moveId = null; this.renderPlan(); if (window.lucide) lucide.createIcons(); },
+
+  // แตะหมุดบนแปลน — ทำอะไรขึ้นกับเครื่องมือที่เลือกอยู่
+  async onPinTap(pointId) {
+    const tool = this.data.homeTool || 'view';
+    if (tool === 'view') return this.openPoint(pointId);
+    if (tool === 'move') { this.data.moveId = pointId; return this.renderPlan(); }
+    if (tool === 'link') {
+      if (!this.data.linkFrom) { this.data.linkFrom = pointId; return this.renderPlan(); }
+      if (this.data.linkFrom === pointId) { this.data.linkFrom = null; return this.renderPlan(); }
+      return this.saveLinkBetween(this.data.linkFrom, pointId);
+    }
+  },
+
+  // แตะบนแปลน (ไม่โดนหมุด)
+  async onPlanTap(ev) {
+    const tool = this.data.homeTool || 'view';
+    if (tool !== 'add' && !(tool === 'move' && this.data.moveId)) return;
+    const box = document.getElementById('th-planbox');
+    const r = box.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+    const y = Math.max(0, Math.min(1, (ev.clientY - r.top) / r.height));
+    const plan = this._plan();
+
+    if (tool === 'move') {
+      const p = this._pt(this.data.moveId);
+      this._busy(true, 'กำลังย้ายหมุด…');
+      const res = await API.tourSavePoint({
+        point_id: p.point_id, name: p.name, plan_id: plan ? plan.plan_id : '',
+        plan_x: x, plan_y: y, sort_order: p.sort_order,
+      });
+      if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+      this.data.moveId = null;
+      await this.loadConfig(true);
+      this.renderHome();
+      this._busy(false);
+      return;
+    }
+
+    const name = prompt('ห้อง/จุดนี้ชื่ออะไร (เช่น ห้องโถง, F-01 ตู้ TV)');
+    if (!name) return;
+    this._busy(true, 'กำลังบันทึกจุด…');
+    const res = await API.tourSavePoint({
+      name: name, plan_id: plan ? plan.plan_id : '',
+      plan_x: x, plan_y: y, sort_order: this.data.points.length + 1,
+    });
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    this.renderHome();
+    this._busy(false);
+
+    const d = res.data || res;
+    const go = await Modal.confirm({
+      title: 'ปักหมุด "' + this._esc(name) + '" แล้ว',
+      desc: 'จะสแกน 360 ของจุดนี้เลยไหม หรือไว้ปักหมุดให้ครบก่อนก็ได้',
+      icon: '📍', iconClass: 'info',
+      confirmText: 'สแกนเลย', cancelText: 'ปักหมุดต่อ',
+    });
+    if (go) this.scanFor(d.point_id);
+  },
+
+  // ทิศของลูกศรคำนวณจากตำแหน่งบนแปลนให้อัตโนมัติ (ปรับละเอียดทีหลังได้ที่ "ปรับภาพ")
+  async saveLinkBetween(fromId, toId) {
+    const a = this._pt(fromId), b = this._pt(toId);
+    const dx = (Number(b.plan_x) || 0) - (Number(a.plan_x) || 0);
+    const dy = (Number(b.plan_y) || 0) - (Number(a.plan_y) || 0);
+    let yaw = Math.atan2(dx, -dy) * 180 / Math.PI;
+    if (yaw > 180) yaw -= 360;
+    this._busy(true, 'กำลังบันทึกทางเดิน…');
+    const res = await API.tourSaveLink({ from_point: fromId, to_point: toId, yaw: yaw, pitch: -10, label: '' });
+    this.data.linkFrom = null;
+    if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+    await this.loadConfig(true);
+    this.renderHome();
+    this._busy(false);
+    Modal.toast('✓ โยงทางเดินแล้ว');
+  },
+
+  // ── แปลน: อัป / เปลี่ยนรูป / เพิ่มชั้น / หมุน ────────────
+  addPlan() { this._pickPlanFile(''); },
+  replacePlan() { const p = this._plan(); this._pickPlanFile(p ? p.plan_id : ''); },
+
+  _pickPlanFile(planId) {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*,application/pdf,.pdf';
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0];
+      if (!f) return;
+      const isPdf = /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name || '');
+      this._busy(true, isPdf ? 'กำลังอ่านไฟล์ PDF…' : 'กำลังอัปแปลน…');
+      try {
+        const img = isPdf ? await this._pdfToImage(f, 2000) : await this._compress(f, 2000, 0.85);
+        if (!img) { this._busy(false); return; }
+        let label = '';
+        if (!planId) {
+          label = prompt('แปลนนี้คือชั้นไหน', 'ชั้น ' + (this.data.plans.length + 1)) || ('ชั้น ' + (this.data.plans.length + 1));
+        }
+        const res = await API.tourSavePlan({
+          plan_id: planId,
+          floor_label: label || (this._plan() || {}).floor_label || 'ชั้น 1',
+          image_base64: img.dataUrl, width: img.w, height: img.h,
+        });
+        if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+        await this.loadConfig(true);
+        if (!planId) this.data.planIdx = this.data.plans.length - 1;
+        this.renderHome();
+        Modal.toast('✓ อัปแปลนแล้ว');
+      } catch (e) { this._err({ error: e.message }); }
+      this._busy(false);
+    };
+    inp.click();
+  },
+
+  // แบบที่สถาปนิกส่งมามักเป็นแนวนอนวางบนหน้ากระดาษแนวตั้ง → ต้องหมุนดู
+  // หมุนรูปที่เก็บไว้เลย (ไม่เก็บค่าองศาแยก) → ส่วนอื่นของระบบไม่ต้องรู้เรื่ององศา
+  async rotatePlan() {
+    const plan = this._plan();
+    if (!plan) return;
+    this._busy(true, 'กำลังหมุนแปลน…');
+    try {
+      const img = await new Promise((resolve, reject) => {
+        const im = new Image();
+        im.crossOrigin = 'anonymous';
+        im.onload = () => resolve(im);
+        im.onerror = () => reject(new Error('โหลดรูปแปลนไม่สำเร็จ'));
+        im.src = plan.url + (plan.url.indexOf('?') >= 0 ? '&' : '?') + 'r=' + Date.now();
+      });
+      const c = document.createElement('canvas');
+      c.width = img.naturalHeight; c.height = img.naturalWidth;
+      const ctx = c.getContext('2d');
+      ctx.translate(c.width / 2, c.height / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+      const res = await API.tourSavePlan({
+        plan_id: plan.plan_id, floor_label: plan.floor_label,
+        image_base64: c.toDataURL('image/jpeg', 0.88), width: c.width, height: c.height,
+      });
+      if (!res || res.ok === false) { this._busy(false); return this._err(res); }
+
+      // หมุนรูปแล้วพิกัดหมุดต้องหมุนตาม ไม่งั้นหมุดกระเด็นไปคนละห้อง
+      for (const p of this.data.points.filter((p) => p.plan_id === plan.plan_id)) {
+        const nx = 1 - (Number(p.plan_y) || 0.5);
+        const ny = Number(p.plan_x) || 0.5;
+        await API.tourSavePoint({
+          point_id: p.point_id, name: p.name, plan_id: p.plan_id,
+          plan_x: nx, plan_y: ny, sort_order: p.sort_order,
+        });
+      }
+      await this.loadConfig(true);
+      this.renderHome();
+    } catch (e) { this._err({ error: e.message }); }
+    this._busy(false);
+  },
+
+  // ── รายการห้อง (ใต้แปลน) ─────────────────────────────────
+  renderRoomList() {
     const list = document.getElementById('th-list');
     if (!list) return;
 
     if (!this.data.points.length) {
-      list.innerHTML = '<div style="text-align:center;padding:32px 16px;line-height:1.9;color:var(--color-slate-600)">' +
-        'ยังไม่มีห้องในโครงการนี้<br><span style="font-size:13px">กด "สแกน" ได้เลย — ตั้งชื่อห้องตอนถ่าย ระบบสร้างให้เอง</span>' +
-        '<div style="margin-top:16px"><button class="btn btn-primary" onclick="Tour.enterCaptureMode()">📷 สแกนห้องแรก</button></div></div>';
+      list.innerHTML = '<div style="text-align:center;padding:24px 16px;line-height:1.9;color:var(--color-slate-600)">' +
+        'ยังไม่มีจุดถ่าย<br><span style="font-size:13px">ปักหมุดบนแปลนด้วยเครื่องมือ "เพิ่มจุด" หรือกด "สแกน" แล้วตั้งชื่อห้องได้เลย</span></div>';
       return;
     }
 
     list.innerHTML = '<div class="form-label">ห้องทั้งหมด (' + this.data.points.length + ')</div>' +
-      this.data.points.map((p) => {
+      this.data.points.map((p, i) => {
+        const t = this._pinTone(p.point_id);
         const e = this._shot(p.point_id);
-        let icon = 'circle-dashed', tone = 'var(--color-slate-400)', sub = 'ยังไม่มีภาพ';
-        if (e && e.shot && e.fallback_from_version) {
-          icon = 'alert-triangle'; tone = 'var(--color-warning-500)';
-          sub = 'ภาพจาก "' + this._esc(e.fallback_from_version.name) + '" ' + this._thaiDate(e.fallback_from_version.captured_at);
-        } else if (e && e.shot) {
-          icon = 'check-circle-2'; tone = 'var(--color-success-500)';
-          sub = 'มีภาพของเวอร์ชันนี้';
-        }
+        const sub = (e && e.fallback_from_version)
+          ? 'ภาพจาก "' + this._esc(e.fallback_from_version.name) + '" ' + this._thaiDate(e.fallback_from_version.captured_at)
+          : t.label;
         return '<div class="th-room">' +
-          '<i data-lucide="' + icon + '" style="color:' + tone + ';width:26px;height:26px;flex:none"></i>' +
+          '<div class="th-pin" style="position:static;margin:0;background:' + t.bg + ';flex:none">' + (i + 1) + '</div>' +
           '<div class="th-room-main" onclick="Tour.openPoint(\'' + p.point_id + '\')">' +
           '<div class="th-room-name">' + this._esc(p.name) + '</div>' +
           '<div class="th-room-sub">' + sub + '</div></div>' +
@@ -139,7 +377,6 @@ const Tour = {
           '<i data-lucide="trash-2" style="width:18px;height:18px"></i></button>' +
           '</div>';
       }).join('');
-    if (window.lucide) lucide.createIcons();
   },
 
   // วาดใหม่ตามโหมดที่เปิดอยู่ — เดิม hardcode renderMap ทำให้ลบจุดจากหน้าแรกแล้วรายการไม่อัปเดต
@@ -147,6 +384,7 @@ const Tour = {
     if (this.data.mode === 'map') this.renderMap();
     else this.renderHome();
   },
+
 
   // แตะห้องในรายการ → เข้าจอ 360 ของห้องนั้น
   openPoint(pointId) {
@@ -191,7 +429,7 @@ const Tour = {
         '<div style="font-size:15px;line-height:1.7;margin-bottom:16px">' +
         this._esc(msg || 'ยังไม่มีภาพในโครงการนี้ — เริ่มถ่ายได้เลย ไม่ต้องตั้งค่าอะไรก่อน') +
         '</div>' +
-        '<button class="btn btn-primary" onclick="Tour.enterCaptureMode()">📷 เริ่มถ่าย</button> ' +
+        '<button class="btn btn-primary" onclick="Tour.enterCaptureMode()"><i data-lucide="camera"></i> เริ่มถ่าย</button> ' +
         '<button class="btn btn-secondary" onclick="Tour.switchMode(\'map\')">จัดการจุด/เส้นทาง</button>' +
         '</div>';
     }
@@ -551,7 +789,7 @@ const Tour = {
     if (!this.data.points.length) {
       list.innerHTML = '<div class="text-muted" style="padding:16px;text-align:center;line-height:1.8">' +
         'ยังไม่มีจุดถ่ายในโครงการนี้<br><span style="font-size:13px">ถ่ายได้เลย — ตั้งชื่อห้องตอนอัปรูป จุดจะถูกสร้างให้อัตโนมัติ</span>' +
-        '<div style="margin-top:12px"><button class="btn btn-primary" onclick="Tour.captureNewPoint()">📷 สแกนจุดแรก</button></div>' +
+        '<div style="margin-top:12px"><button class="btn btn-primary" onclick="Tour.captureNewPoint()"><i data-lucide="camera"></i> สแกนจุดแรก</button></div>' +
         '</div>';
       document.getElementById('tc-progress-text').innerText = '0/0 จุด';
       document.getElementById('tc-progress-bar').style.width = '0%';
@@ -568,15 +806,15 @@ const Tour = {
         '<span class="font-semibold">' + this._esc(p.name) + '</span></div>' +
         '<div style="display:flex;gap:6px">' +
         '<button class="btn ' + (ok ? 'btn-ghost' : 'btn-primary') + ' btn-sm" ' +
-        'onclick="Tour.scanFor(\'' + p.point_id + '\')">📷 ' + (ok ? 'สแกนใหม่' : 'สแกน') + '</button>' +
+        'onclick="Tour.scanFor(\'' + p.point_id + '\')"><i data-lucide="camera" style="width:16px;height:16px"></i> ' + (ok ? 'สแกนใหม่' : 'สแกน') + '</button>' +
         '<button class="btn btn-ghost btn-sm" title="เลือกรูปจากคลังภาพ" ' +
-        'onclick="Tour.pickPhotoFor(\'' + p.point_id + '\')">🖼️</button>' +
+        'onclick="Tour.pickPhotoFor(\'' + p.point_id + '\')"><i data-lucide="image" style="width:16px;height:16px"></i></button>' +
         '</div>' +
         '</div>';
     }).join('');
 
     list.innerHTML += '<div style="text-align:center;margin-top:12px">' +
-      '<button class="btn btn-ghost btn-sm" onclick="Tour.captureNewPoint()">➕ เพิ่มจุดใหม่แล้วถ่ายเลย</button></div>';
+      '<button class="btn btn-ghost btn-sm" onclick="Tour.captureNewPoint()"><i data-lucide="plus"></i> เพิ่มจุดใหม่แล้วถ่ายเลย</button></div>';
 
     const n = Object.keys(done).length;
     document.getElementById('tc-progress-text').innerText = n + '/' + this.data.points.length + ' จุด';
@@ -780,7 +1018,7 @@ const Tour = {
         '<div style="margin:12px 0;line-height:1.7">ยังไม่มีแปลนพื้น<br>' +
         '<span style="font-size:13px">เพิ่มจุดเป็นรายชื่อห้องได้เลย · แปลนใส่ทีหลังก็ได้<br>รองรับทั้งรูปภาพและไฟล์ PDF</span></div>' +
         '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
-        '<button class="btn btn-primary btn-sm" onclick="Tour.addPointManually()">➕ เพิ่มจุด</button>' +
+        '<button class="btn btn-primary btn-sm" onclick="Tour.addPointManually()"><i data-lucide="plus"></i> เพิ่มจุด</button>' +
         '<button class="btn btn-secondary btn-sm" onclick="Tour.pickPlan()">อัปแปลนพื้น</button>' +
         '</div></div>';
       if (window.lucide) lucide.createIcons();
@@ -815,7 +1053,7 @@ const Tour = {
     const box = document.getElementById('map-point-list');
     if (!box) return;
     const linking = this.data.mapTool === 'link';
-    const addBtn = '<button class="btn btn-secondary btn-sm" onclick="Tour.addPointManually()">➕ เพิ่มจุด</button>';
+    const addBtn = '<button class="btn btn-secondary btn-sm" onclick="Tour.addPointManually()"><i data-lucide="plus"></i> เพิ่มจุด</button>';
 
     if (!this.data.points.length) {
       box.innerHTML = '<div style="margin-top:16px;text-align:center">' + addBtn + '</div>';
@@ -1011,7 +1249,7 @@ const Tour = {
   },
 
   renderTrash() {
-    const box = document.getElementById('map-trash');
+    const box = document.getElementById('th-trash') || document.getElementById('map-trash');
     if (!box) return;
     const t = this.data.trash;
     if (!t || (!t.points.length && !t.versions.length)) { box.innerHTML = ''; return; }
@@ -1023,7 +1261,7 @@ const Tour = {
       '<button class="btn btn-secondary btn-sm" onclick="' + onRestore + '">กู้คืน</button></div>';
 
     box.innerHTML =
-      '<div class="form-label" style="margin-top:20px">🗑️ ถังขยะ (' +
+      '<div class="form-label" style="margin-top:20px"><i data-lucide="trash-2" style="width:15px;height:15px;vertical-align:-2px"></i> ถังขยะ (' +
       (t.points.length + t.versions.length) + ')</div>' +
       '<div class="text-sm text-muted" style="margin-bottom:6px">ระบบลบถาวรอัตโนมัติเมื่อครบ ' + t.days + ' วัน</div>' +
       t.points.map((p) => row(

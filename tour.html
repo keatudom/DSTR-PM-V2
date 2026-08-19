@@ -164,6 +164,18 @@
             font-weight:600; color:var(--color-slate-800); }
   .th-draft { display:flex; gap:10px; align-items:center; padding:12px 14px; border-radius:12px; margin-bottom:var(--space-4);
               background:var(--color-warning-50); border:1.5px solid var(--color-warning-500); color:var(--color-warning-700); font-size:14px; }
+  .th-tools { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .th-tool { display:flex; align-items:center; gap:6px; min-height:40px; padding:0 12px; border-radius:10px; cursor:pointer;
+             border:1.5px solid var(--color-slate-300); background:#fff; font-size:14px; font-weight:600; color:var(--color-slate-700); }
+  .th-tool.on { border-color:var(--color-blue-500); background:var(--color-blue-50); color:var(--color-blue-700); }
+  .th-planbox { position:relative; background:#fff; border:1px solid var(--color-slate-200); border-radius:14px;
+                overflow:hidden; margin-bottom:10px; }
+  .th-planbox img { width:100%; display:block; }
+  .th-pin { position:absolute; width:30px; height:30px; margin:-15px 0 0 -15px; border-radius:50%; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff;
+            border:2.5px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.35); }
+  .th-pin.sel { outline:3px solid var(--color-warning-500); }
+  .th-hint { font-size:13px; color:var(--color-slate-500); text-align:center; margin-bottom:10px; line-height:1.6; }
   .th-room { display:flex; gap:12px; align-items:center; padding:10px; background:#fff; border:1px solid var(--color-slate-200);
              border-radius:14px; margin-bottom:10px; }
   .th-room-thumb { width:78px; height:58px; border-radius:10px; object-fit:cover; background:var(--color-slate-200); flex:none; }
@@ -190,18 +202,18 @@
       <div class="page-content">
         
         <div id="tour-root">
-          <!-- 🏠 HOME — รายการห้อง (หน้าแรกที่เจอ) -->
+          <!-- 🏠 HOME — แปลนบ้านเป็นหน้าหลัก (เจ้าของงานเคาะ 2026-08-19) -->
           <div id="mode-home">
             <div class="th-bar">
               <button class="th-ver" onclick="Tour.openVersionSelector()">
                 <i data-lucide="calendar"></i><span id="th-version">กำลังโหลด…</span><i data-lucide="chevron-down"></i>
               </button>
               <button class="btn btn-primary" style="min-height:48px" onclick="Tour.enterCaptureMode()"><i data-lucide="camera"></i> สแกน</button>
-              <button class="btn btn-secondary" style="min-height:48px" onclick="Tour.switchMode('map')"><i data-lucide="map-pin"></i> จัดการจุด</button>
             </div>
             <div id="th-draft" style="display:none"></div>
-            <div id="th-plan" style="display:none;margin-bottom:var(--space-4)"></div>
+            <div id="th-planwrap"></div>
             <div id="th-list"></div>
+            <div id="th-trash"></div>
           </div>
 
           <!-- 🚶 VIEW MODE -->
@@ -292,7 +304,7 @@
 
             <div class="mt-4">
               <button class="btn btn-primary btn-block btn-lg" onclick="Tour.previewDraft()"><i data-lucide="eye"></i> ดูผลก่อน (ยังไม่เผยแพร่)</button>
-              <button class="btn btn-secondary btn-block" style="margin-top:8px" onclick="Tour.publishNewVersion()">🚀 เผยแพร่ให้ทีมดู</button>
+              <button class="btn btn-secondary btn-block" style="margin-top:8px" onclick="Tour.publishNewVersion()"><i data-lucide="send"></i> เผยแพร่ให้ทีมดู</button>
               <p class="text-sm text-muted" style="margin-top:10px;text-align:center;line-height:1.7">
                 ภาพที่สแกนถูกบันทึกไว้แล้วตั้งแต่ตอนอัป — ตอนนี้<b>เห็นแค่คุณคนเดียว</b><br>ทีมจะเห็นก็ต่อเมื่อคุณกดเผยแพร่
               </p>
@@ -307,8 +319,8 @@
               <button class="btn btn-ghost btn-sm" onclick="Tour.pickPlan()"><i data-lucide="image-up"></i> แปลน</button>
             </div>
             <div class="map-toolbar">
-              <button class="btn btn-secondary flex-1 active" id="map-tool-point" onclick="Tour.setMapTool('point')">📍 วางจุด</button>
-              <button class="btn btn-secondary flex-1" id="map-tool-link" onclick="Tour.setMapTool('link')">↗️ โยงเส้น</button>
+              <button class="btn btn-secondary flex-1 active" id="map-tool-point" onclick="Tour.setMapTool('point')"><i data-lucide="map-pin"></i> วางจุด</button>
+              <button class="btn btn-secondary flex-1" id="map-tool-link" onclick="Tour.setMapTool('link')"><i data-lucide="git-branch"></i> โยงเส้น</button>
             </div>
             <div class="map-canvas-wrap" id="map-canvas-wrap">
               <div class="center-msg text-muted">
@@ -340,7 +352,6 @@
        <div class="bs-list" id="tv-version-list"></div>
        <div class="bs-btn-wrap">
          <button class="btn btn-primary btn-block btn-lg" onclick="Tour.enterCaptureMode()"><i data-lucide="camera"></i> ถ่ายเวอร์ชันใหม่</button>
-         <button class="btn btn-secondary btn-block" style="margin-top:8px" onclick="Tour.closeVersionSelector(); Tour.switchMode('map')"><i data-lucide="map-pin"></i> จัดการจุด / ลบจุด / ถังขยะ</button>
        </div>
      </div>
   </div>
