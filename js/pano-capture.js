@@ -24,7 +24,11 @@ const PanoCapture = {
   OUT_H: 1536,
   FRAME_MAX: 800,       // ย่อภาพที่เก็บแต่ละใบ (กันมือถือหน่วย/หน่วยความจำบวม)
   HIT_DEG: 8,           // เล็งใกล้จุดเป้ากี่องศาถึงจะเริ่มนับ
-  HOLD_MS: 700,         // ต้องเล็งค้างกี่มิลลิวินาทีถึงจะเก็บ (กันภาพเบลอจากการหมุนเร็ว)
+  HOLD_MS: 1200,        // ต้องเล็งค้างกี่มิลลิวินาทีถึงจะเก็บ
+  STEADY_DPS: 18,       // ถ้าหมุนเร็วกว่านี้ (องศา/วินาที) ยังไม่นับ — ต้องถือนิ่งก่อน
+  //   ⚠️ เจ้าของงานทัก 2026-08-19: "ของเราเร็วมาก ยังไม่ได้จับรายละเอียดเลยสแกนเสร็จแล้ว
+  //      อย่างงี้อาจจะทำให้รูปมันหลุดกันได้" — ถูกต้อง ภาพที่ถ่ายตอนมือยังขยับ = เบลอ + องศาคลาด
+  //      จึงต้องทั้ง "ค้างนานขึ้น" และ "นิ่งจริง" ถึงจะเก็บ
   FOV_KEY: 'dstr_pano_fov',   // มุมกล้องด้านยาว — จำไว้ต่อเครื่อง (ปรับได้ในจอสแกน)
 
   _state: null,
@@ -238,6 +242,44 @@ const PanoCapture = {
       const tanH = Math.tan(st.hFov / 2), tanV = Math.tan(st.vFov / 2);
       let nearest = null, nearestAng = 999;
 
+      // ── วัดความนิ่งของมือ (องศา/วินาที) ──
+      const now = Date.now();
+      if (st.prevFwd && st.prevAt) {
+        const d = Math.acos(Math.max(-1, Math.min(1, this._dot(st.prevFwd, ax.fwd)))) * 180 / Math.PI;
+        const dt = Math.max(16, now - st.prevAt) / 1000;
+        st.dps = st.dps == null ? d / dt : st.dps * 0.6 + (d / dt) * 0.4;
+      }
+      st.prevFwd = ax.fwd; st.prevAt = now;
+      const steady = (st.dps || 0) <= this.STEADY_DPS;
+
+      // ── วาดภาพที่ถ่ายไปแล้วซ้อนรอบตัว (เห็นว่าครอบคลุมตรงไหนแล้ว — แบบ Teleport) ──
+      // วางด้วยการแปลงเชิงเส้น (ไม่ใช่เพอร์สเปกทีฟเต็มรูป) — เป็นภาพนำทาง ไม่ใช่ผลลัพธ์จริง
+      const proj = (v) => {
+        const f = this._dot(v, ax.fwd);
+        if (f <= 0.12) return null;
+        return { x: cx + ((this._dot(v, ax.right) / f) / tanH) * box.w / 2,
+                 y: cy - ((this._dot(v, ax.up) / f) / tanV) * box.h / 2 };
+      };
+      ctx.globalAlpha = 0.85;
+      for (const fr of st.frames) {
+        if (!fr.ghost) continue;
+        const fa = this._axes(fr.q);
+        if (this._dot(fa.fwd, ax.fwd) < -0.1) continue;          // อยู่หลังตัวเรา ข้าม
+        const add = (a, b, k) => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
+        const pC = proj(fa.fwd);
+        const pR = proj(add(fa.fwd, fa.right, tanH));
+        const pU = proj(add(fa.fwd, fa.up, tanV));
+        if (!pC || !pR || !pU) continue;
+        const gw = fr.ghost.width, gh = fr.ghost.height;
+        ctx.setTransform((pR.x - pC.x) / (gw / 2), (pR.y - pC.y) / (gw / 2),
+                         -(pU.x - pC.x) / (gh / 2), -(pU.y - pC.y) / (gh / 2), pC.x, pC.y);
+        try { ctx.drawImage(fr.ghost, -gw / 2, -gh / 2); } catch (e) { /* */ }
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1;
+      // เจาะช่องให้เห็นภาพกล้องสดตรงกลาง (วิดีโออยู่ใต้ canvas)
+      ctx.clearRect(cx - box.w / 2, cy - box.h / 2, box.w, box.h);
+
       for (const t of st.targets) {
         const d = this._dirOf(t.lon, t.lat);
         const f = this._dot(d, ax.fwd);
@@ -261,11 +303,18 @@ const PanoCapture = {
       }
 
       // ── เล็งค้างถึงจะเก็บ (กันภาพเบลอจากการหมุนเร็ว) ──
-      const holding = nearest && nearestAng <= this.HIT_DEG;
+      const holding = nearest && nearestAng <= this.HIT_DEG && steady;
       if (holding) {
         if (st.aimId !== nearest.id) { st.aimId = nearest.id; st.aimAt = Date.now(); }
       } else { st.aimId = null; st.aimAt = 0; }
       const prog = holding ? Math.min(1, (Date.now() - st.aimAt) / this.HOLD_MS) : 0;
+
+      // เล็งโดนแล้วแต่มือยังสั่น → บอกให้รู้ว่าทำไมยังไม่เก็บ
+      if (nearest && nearestAng <= this.HIT_DEG && !steady) {
+        ctx.font = '600 14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillText('ถือนิ่งๆ ก่อน', cx, cy + box.h / 2 + 28);
+      }
 
       // วงเล็งกลางจอ + พายบอกความคืบหน้า
       const R = 44;
@@ -311,7 +360,12 @@ const PanoCapture = {
       c.width = w; c.height = h;
       const cc = c.getContext('2d');
       cc.drawImage(v, 0, 0, w, h);
-      st.frames.push({ data: cc.getImageData(0, 0, w, h), w: w, h: h, q: st.q.slice(), targetId: target.id });
+      // เก็บภาพย่อไว้วาดซ้อนบนจอ ให้เห็นว่าถ่ายครอบคลุมตรงไหนไปแล้ว (แบบ Teleport)
+      const gs = 240 / Math.max(w, h);
+      const gc = document.createElement('canvas');
+      gc.width = Math.max(1, Math.round(w * gs)); gc.height = Math.max(1, Math.round(h * gs));
+      gc.getContext('2d').drawImage(c, 0, 0, gc.width, gc.height);
+      st.frames.push({ data: cc.getImageData(0, 0, w, h), w: w, h: h, q: st.q.slice(), targetId: target.id, ghost: gc });
       target.done = true;
       if (navigator.vibrate) navigator.vibrate(30);
       this._updateHud();
@@ -338,7 +392,7 @@ const PanoCapture = {
     const mid = st.targets.filter((t) => t.ring === 'mid');
     const midDone = mid.filter((t) => t.done).length;
 
-    st.ui.hud.textContent = done + ' / ' + total;
+    st.ui.hud.textContent = 'เก็บแล้ว ' + done + '/' + total + ' จุด';
     st.ui.bar.style.width = Math.round(done / total * 100) + '%';
     st.ui.undo.style.visibility = done ? 'visible' : 'hidden';
 
@@ -346,140 +400,309 @@ const PanoCapture = {
     st.ui.done.disabled = !enough;
     st.ui.done.textContent = enough
       ? (done < total ? 'พอแล้ว ต่อภาพเลย (' + done + '/' + total + ')' : 'ครบทุกจุด ต่อภาพเลย')
-      : 'ไล่ให้ครบวงแนวสายตาก่อน (' + midDone + '/' + mid.length + ')';
+      : 'วงระดับสายตาให้ครบก่อน ' + midDone + '/' + mid.length + ' จุด';
+    if (st.ui.sub) {
+      st.ui.sub.textContent = enough
+        ? 'ครบวงระดับสายตาแล้ว — เก็บวงบน/ล่างต่อได้ถ้าอยากได้เพดานกับพื้น'
+        : 'ต้องครบ ' + mid.length + ' จุดรอบตัวระดับสายตาก่อน (ทั้งหมดมี ' + total + ' จุดรวมเพดานกับพื้น)';
+    }
   },
   // ════════════════════════════════════════════════════════
   // ต่อภาพเป็นผืน 360
   // ════════════════════════════════════════════════════════
-  // วิธี: ไล่ทีละใบ ฉายลงผืนผ้าเฉพาะบริเวณที่ใบนั้นครอบคลุม
-  //   พิกเซลไหนมีหลายใบทับกัน → เลือกใบที่จุดนั้น "อยู่ใกล้กลางภาพที่สุด" (คมกว่า ขอบเพี้ยนน้อยกว่า)
-  //   ไม่เกลี่ยสีเฉลี่ย เพราะกินหน่วยความจำเป็นสองเท่าและทำให้ภาพเบลอเวลาเครื่องหมุนคลาด
-  async _stitch() {
+  // 3 ขั้น (เพิ่ม 2 ขั้นแรกหลังเจ้าของงานบอกว่า "ของ Teleport เนียนเหมือน VR" 2026-08-19):
+  //   1. จูนมุมกล้อง  — เดามุมผิดแค่ 3° ก็ทำให้ภาพเหลื่อมสะสมทั้งใบ หาค่าที่ดีที่สุดให้เอง
+  //   2. ขยับให้เข้าที่ — เซ็นเซอร์หมุนของมือถือมี "ดริฟต์" สะสมระหว่างสแกน
+  //      จึงเลื่อนภาพแต่ละใบทีละองศาเทียบกับใบที่วางไปแล้ว จนทับกันพอดีที่สุด
+  //      (นี่คือสิ่งที่แอปเนทีฟทำด้วย ARKit — เราทำด้วยการเทียบภาพแทน)
+  //   3. เกลี่ยรอยต่อ — ไม่ตัดขอบแข็ง แต่ค่อยๆ จางเข้าหากัน + ปรับความสว่างให้เท่ากัน
+  //      (กล้องมือถือปรับแสงเองทุกใบ ถ้าไม่ปรับจะเห็นเป็นแถบสว่าง-มืดสลับ)
+
+  // แปลง quaternion เป็นแกน แล้วหมุนเพิ่มอีกนิดตามค่าที่ปรับ (yaw/pitch/roll เป็นองศา)
+  _axesAdj(q, dy, dp, dr) {
+    const d2r = Math.PI / 180;
+    let qq = q;
+    if (dr) { const h = dr * d2r / 2; qq = this._qmul(qq, [0, 0, Math.sin(h), Math.cos(h)]); }
+    if (dp) { const h = dp * d2r / 2; qq = this._qmul(qq, [Math.sin(h), 0, 0, Math.cos(h)]); }
+    if (dy) { const h = dy * d2r / 2; qq = this._qmul(qq, [0, Math.sin(h), 0, Math.cos(h)]); }
+    return this._axes(qq);
+  },
+
+  // ── ขั้น 1+2: หาค่ามุมกล้อง + ขยับแต่ละใบให้ทับกันพอดี ──
+  // ทำบนผืนผ้าย่อส่วนขาวดำ (เร็วกว่าของจริง ~40 เท่า) แล้วค่อยเอาค่าที่ได้ไปวาดจริง
+  async _align() {
     const st = this._state;
-    const W = this.OUT_W, H = this.OUT_H;
-    const out = new Uint8ClampedArray(W * H * 4);
-    const best = new Float32Array(W * H);
+    const GW = 1024, GH = 512;
+    const gray = new Float32Array(GW * GH);
+    const seen = new Uint8Array(GW * GH);
+
+    // ย่อภาพแต่ละใบเป็นขาวดำไว้เทียบ (ไม่แตะภาพจริง)
+    const small = st.frames.map((fr) => {
+      const sw = 96, sh = Math.max(1, Math.round(96 * fr.h / fr.w));
+      const g = new Float32Array(sw * sh);
+      const d = fr.data.data;
+      for (let y = 0; y < sh; y++) {
+        const sy = ((y + 0.5) / sh * fr.h) | 0;
+        for (let x = 0; x < sw; x++) {
+          const sx = ((x + 0.5) / sw * fr.w) | 0;
+          const i = (sy * fr.w + sx) * 4;
+          g[y * sw + x] = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+        }
+      }
+      return { g: g, w: sw, h: sh };
+    });
+
+    // เทียบใบหนึ่งกับสิ่งที่วางไว้แล้ว → คืนค่าความต่างเฉลี่ย (ยิ่งน้อยยิ่งทับกันดี)
+    const score = (fi, ax, tanH, tanV) => {
+      const s = small[fi];
+      let sum = 0, n = 0, sa = 0, sb = 0;
+      for (let y = 2; y < s.h - 2; y += 2) {
+        const py = 1 - (y + 0.5) / s.h * 2;
+        for (let x = 2; x < s.w - 2; x += 2) {
+          const px = (x + 0.5) / s.w * 2 - 1;
+          const vx = ax.fwd[0] + px * tanH * ax.right[0] + py * tanV * ax.up[0];
+          const vy = ax.fwd[1] + px * tanH * ax.right[1] + py * tanV * ax.up[1];
+          const vz = ax.fwd[2] + px * tanH * ax.right[2] + py * tanV * ax.up[2];
+          const len = Math.sqrt(vx * vx + vy * vy + vz * vz);
+          const lat = Math.asin(vy / len), lon = Math.atan2(vx / len, -vz / len);
+          const gx = ((lon / (2 * Math.PI) + 0.5) * GW) | 0;
+          const gy = ((0.5 - lat / Math.PI) * GH) | 0;
+          if (gx < 0 || gx >= GW || gy < 0 || gy >= GH) continue;
+          const gi = gy * GW + gx;
+          if (!seen[gi]) continue;
+          const a = s.g[y * s.w + x], b = gray[gi];
+          sum += Math.abs(a - b); n++; sa += a; sb += b;
+        }
+      }
+      return { err: n < 40 ? 1e9 : sum / n, n: n, gain: (n && sa) ? sb / sa : 1 };
+    };
+
+    const paint = (fi, ax, tanH, tanV, gain) => {
+      const s = small[fi];
+      for (let y = 0; y < s.h; y++) {
+        const py = 1 - (y + 0.5) / s.h * 2;
+        for (let x = 0; x < s.w; x++) {
+          const px = (x + 0.5) / s.w * 2 - 1;
+          const vx = ax.fwd[0] + px * tanH * ax.right[0] + py * tanV * ax.up[0];
+          const vy = ax.fwd[1] + px * tanH * ax.right[1] + py * tanV * ax.up[1];
+          const vz = ax.fwd[2] + px * tanH * ax.right[2] + py * tanV * ax.up[2];
+          const len = Math.sqrt(vx * vx + vy * vy + vz * vz);
+          const lat = Math.asin(vy / len), lon = Math.atan2(vx / len, -vz / len);
+          const gx = ((lon / (2 * Math.PI) + 0.5) * GW) | 0;
+          const gy = ((0.5 - lat / Math.PI) * GH) | 0;
+          if (gx < 0 || gx >= GW || gy < 0 || gy >= GH) continue;
+          const gi = gy * GW + gx;
+          if (seen[gi]) continue;                       // ใบแรกที่ถึงเป็นเจ้าของ (กันเบลอตอนเทียบ)
+          gray[gi] = s.g[y * s.w + x] * gain; seen[gi] = 1;
+        }
+      }
+    };
+
+    // ── ขั้น 1: ลองมุมกล้องหลายค่ากับ 6 ใบแรก เลือกค่าที่ต่อกันเนียนสุด ──
+    const baseLong = this.fovLong();
+    let bestFov = baseLong, bestErr = Infinity;
+    const probe = Math.min(6, st.frames.length);
+    for (const cand of [baseLong - 8, baseLong - 4, baseLong, baseLong + 4, baseLong + 8]) {
+      if (cand < 40 || cand > 90) continue;
+      gray.fill(0); seen.fill(0);
+      const long = cand * Math.PI / 180;
+      const W = st.frameW, H = st.frameH;
+      const hF = W >= H ? long : 2 * Math.atan(Math.tan(long / 2) * W / H);
+      const vF = W >= H ? 2 * Math.atan(Math.tan(long / 2) * H / W) : long;
+      const tH = Math.tan(hF / 2), tV = Math.tan(vF / 2);
+      let tot = 0, cnt = 0;
+      for (let i = 0; i < probe; i++) {
+        const ax = this._axes(st.frames[i].q);
+        if (i) { const r = score(i, ax, tH, tV); if (r.err < 1e8 && r.n > 60) { tot += r.err; cnt++; } }
+        paint(i, ax, tH, tV, 1);
+      }
+      const e = cnt ? tot / cnt : Infinity;
+      if (e < bestErr) { bestErr = e; bestFov = cand; }
+    }
+    st.fovLongUsed = bestFov;
+    const long = bestFov * Math.PI / 180;
+    const W = st.frameW, H = st.frameH;
+    st.hFov = W >= H ? long : 2 * Math.atan(Math.tan(long / 2) * W / H);
+    st.vFov = W >= H ? 2 * Math.atan(Math.tan(long / 2) * H / W) : long;
     const tanH = Math.tan(st.hFov / 2), tanV = Math.tan(st.vFov / 2);
 
-    // ตารางไซน์/โคไซน์ของลองจิจูด — คิดครั้งเดียวใช้ทุกใบ
-    // (เดิมคิดใหม่ทุกพิกเซล = ตรีโกณ 2 ครั้ง × 4.7 ล้านพิกเซล × 19 ใบ → ตรงนี้แหละที่ทำให้ช้า 52 วินาที)
+    // ── ขั้น 2: ไล่ขยับทีละใบให้ทับกับที่วางไว้แล้วพอดีที่สุด ──
+    gray.fill(0); seen.fill(0);
+    for (let i = 0; i < st.frames.length; i++) {
+      const fr = st.frames[i];
+      let best = { dy: 0, dp: 0, dr: 0, err: Infinity, gain: 1 };
+      if (i > 0) {
+        // ⚠️ กับดัก: ถ้าตัดสินด้วย "ค่าต่างเฉลี่ย" ล้วน ระบบจะชอบท่าที่ทับกันน้อยที่สุด
+        //    (ทับน้อย = จุดเทียบน้อย = เฉลี่ยแล้วดูดี) → ภาพจะถูกดันออกจากกันจนหลุด
+        //    จึงต้องกำหนดว่าต้องทับกันไม่น้อยกว่า 75% ของท่าเริ่มต้นถึงจะนับ
+        const base = score(i, this._axes(fr.q), tanH, tanV);
+        best = { dy: 0, dp: 0, dr: 0, err: base.err, gain: base.gain };
+        const needN = Math.max(40, base.n * 0.75);
+        // ค้นหยาบก่อน (ทีละ 2°) แล้วค่อยละเอียด (ทีละ 0.5°) รอบค่าที่ดีที่สุด
+        for (const step of [2, 0.5]) {
+          const c = { dy: best.dy, dp: best.dp, dr: best.dr };
+          for (let dy = -2; dy <= 2; dy++) {
+            for (let dp = -2; dp <= 2; dp++) {
+              for (let dr = -1; dr <= 1; dr++) {
+                const Y = c.dy + dy * step, P = c.dp + dp * step, R = c.dr + dr * step;
+                const ax = this._axesAdj(fr.q, Y, P, R);
+                const s = score(i, ax, tanH, tanV);
+                // ⚠️ ต้องดีขึ้น "อย่างมีนัย" (>8%) ถึงจะยอมขยับ
+                //    ผนังขาวเรียบๆ ในไซต์งานแทบไม่มีลวดลายให้เทียบ ถ้ายอมขยับตามความต่างเล็กน้อย
+                //    ระบบจะเลื่อนภาพมั่วตามสัญญาณรบกวน (เจอตอนทดสอบกับภาพสีเรียบ)
+                if (s.n >= needN && s.err < best.err * 0.92) best = { dy: Y, dp: P, dr: R, err: s.err, gain: s.gain };
+              }
+            }
+          }
+        }
+      }
+      if (Math.abs(best.dy) > 3 || Math.abs(best.dp) > 3 || Math.abs(best.dr) > 3) {
+        best = { dy: 0, dp: 0, dr: 0, err: best.err, gain: best.gain };   // ขยับเยอะผิดปกติ = ไม่เชื่อ
+      }
+      fr.adj = best;
+      fr.gain = Math.max(0.75, Math.min(1.33, best.gain || 1));
+      paint(i, this._axesAdj(fr.q, best.dy, best.dp, best.dr), tanH, tanV, fr.gain);
+      st.ui.hud.textContent = 'กำลังจัดภาพให้เข้าที่ ' + (i + 1) + '/' + st.frames.length + '…';
+      if (i % 4 === 3) await new Promise((r) => setTimeout(r, 0));
+    }
+  },
+
+  async _stitch() {
+    const st = this._state;
+    await this._align();
+
+    const W = this.OUT_W, H = this.OUT_H;
+    const out = new Uint8ClampedArray(W * H * 4);
+    const tanH = Math.tan(st.hFov / 2), tanV = Math.tan(st.vFov / 2);
+
     const sinLon = new Float64Array(W), cosLon = new Float64Array(W);
     for (let x = 0; x < W; x++) {
       const lo = ((x + 0.5) / W - 0.5) * 2 * Math.PI;
       sinLon[x] = Math.sin(lo); cosLon[x] = Math.cos(lo);
     }
-
-    // รัศมีเชิงมุมที่ภาพ 1 ใบครอบคลุม (วัดถึงมุมภาพ ไม่ใช่แค่กลางขอบ)
     const capR = Math.atan(Math.sqrt(tanH * tanH + tanV * tanV)) + 0.02;
 
-    for (let fi = 0; fi < st.frames.length; fi++) {
-      const fr = st.frames[fi];
-      const ax = this._axes(fr.q);
-      const src = fr.data.data;
-      const fw = fr.w, fh = fr.h;
-      const rX = ax.right[0], rY = ax.right[1], rZ = ax.right[2];
-      const uX = ax.up[0], uY = ax.up[1], uZ = ax.up[2];
-      const fX = ax.fwd[0], fY = ax.fwd[1], fZ = ax.fwd[2];
+    // เตรียมข้อมูลรายใบไว้ล่วงหน้า (แกนหลังปรับ + ขอบเขตบนผืนผ้า)
+    const F = st.frames.map((fr) => {
+      const a = fr.adj || { dy: 0, dp: 0, dr: 0 };
+      const ax = this._axesAdj(fr.q, a.dy, a.dp, a.dr);
+      const cLat = Math.asin(Math.max(-1, Math.min(1, ax.fwd[1])));
+      return {
+        ax: ax, src: fr.data.data, w: fr.w, h: fr.h, gain: fr.gain || 1,
+        cLat: cLat, cLon: Math.atan2(ax.fwd[0], -ax.fwd[2]),
+        sinC: Math.sin(cLat), cosC: Math.cos(cLat),
+        y0: Math.max(0, Math.floor((0.5 - (cLat + capR) / Math.PI) * H)),
+        y1: Math.min(H - 1, Math.ceil((0.5 - (cLat - capR) / Math.PI) * H)),
+      };
+    });
 
-      const cLat = Math.asin(Math.max(-1, Math.min(1, fY)));
-      const cLon = Math.atan2(fX, -fZ);
-      const sinC = Math.sin(cLat), cosC = Math.cos(cLat);
-      const cosCapR = Math.cos(capR);
+    // ── เกลี่ยรอยต่อ: ทำทีละแถบ (กันหน่วยความจำบวมบนมือถือ) ──
+    const BAND = 128;
+    const cosCapR = Math.cos(capR);
+    const accR = new Float32Array(W * BAND), accG = new Float32Array(W * BAND);
+    const accB = new Float32Array(W * BAND), accW = new Float32Array(W * BAND);
 
-      const y0 = Math.max(0, Math.floor((0.5 - (cLat + capR) / Math.PI) * H));
-      const y1 = Math.min(H - 1, Math.ceil((0.5 - (cLat - capR) / Math.PI) * H));
+    for (let by = 0; by < H; by += BAND) {
+      const bh = Math.min(BAND, H - by);
+      accR.fill(0); accG.fill(0); accB.fill(0); accW.fill(0);
 
-      for (let y = y0; y <= y1; y++) {
-        const la = (0.5 - (y + 0.5) / H) * Math.PI;
-        const cosLa = Math.cos(la), sinLa = Math.sin(la);
+      for (const f of F) {
+        if (f.y1 < by || f.y0 >= by + bh) continue;
+        const ax = f.ax, src = f.src, fw = f.w, fh = f.h, gain = f.gain;
+        const rX = ax.right[0], rY = ax.right[1], rZ = ax.right[2];
+        const uX = ax.up[0], uY = ax.up[1], uZ = ax.up[2];
+        const fX = ax.fwd[0], fY = ax.fwd[1], fZ = ax.fwd[2];
 
-        // ช่วงลองจิจูดที่วงกลมรัศมี capR รอบ (cLat,cLon) ตัดกับเส้นละติจูดนี้
-        // (สูตรมาตรฐานของ "หมวกทรงกลม" — ตัดพิกเซลนอกวงทิ้งตั้งแต่ต้น ไม่ต้องคำนวณทีละจุด)
-        const denom = cosC * cosLa;
-        let xStart = 0, xCount = W;
-        if (Math.abs(denom) > 1e-6) {
-          const cosD = (cosCapR - sinC * sinLa) / denom;
-          if (cosD >= 1) continue;                       // เส้นนี้อยู่นอกวงทั้งเส้น
-          if (cosD > -1) {
-            const dLon = Math.acos(cosD);
-            const half = Math.ceil(dLon / (2 * Math.PI) * W) + 1;
-            const cx = Math.round((cLon / (2 * Math.PI) + 0.5) * W);
-            xStart = cx - half; xCount = half * 2 + 1;
-            if (xCount >= W) { xStart = 0; xCount = W; }
+        const yA = Math.max(by, f.y0), yB = Math.min(by + bh - 1, f.y1);
+        for (let y = yA; y <= yB; y++) {
+          const la = (0.5 - (y + 0.5) / H) * Math.PI;
+          const cosLa = Math.cos(la), sinLa = Math.sin(la);
+          const denom = f.cosC * cosLa;
+          let xStart = 0, xCount = W;
+          if (Math.abs(denom) > 1e-6) {
+            const cosD = (cosCapR - f.sinC * sinLa) / denom;
+            if (cosD >= 1) continue;
+            if (cosD > -1) {
+              const half = Math.ceil(Math.acos(cosD) / (2 * Math.PI) * W) + 1;
+              xStart = Math.round((f.cLon / (2 * Math.PI) + 0.5) * W) - half;
+              xCount = half * 2 + 1;
+              if (xCount >= W) { xStart = 0; xCount = W; }
+            }
+          }
+          const rowOut = (y - by) * W;
+          for (let k = 0; k < xCount; k++) {
+            let x = xStart + k;
+            if (x < 0) x += W; else if (x >= W) x -= W;
+            const dx = cosLa * sinLon[x], dy = sinLa, dz = -cosLa * cosLon[x];
+            const fd = dx * fX + dy * fY + dz * fZ;
+            if (fd <= 0.08) continue;
+            const px = (dx * rX + dy * rY + dz * rZ) / fd / tanH;
+            if (px < -1 || px > 1) continue;
+            const py = (dx * uX + dy * uY + dz * uZ) / fd / tanV;
+            if (py < -1 || py > 1) continue;
+
+            // น้ำหนัก = ระยะจากขอบภาพ ยกกำลัง → ตรงกลางเด่น ขอบจางหายไปเนียนๆ
+            const e1 = 1 - Math.abs(px), e2 = 1 - Math.abs(py);
+            const wgt = e1 * e1 * e2 * e2 * fd + 1e-4;
+
+            const sx = ((px + 1) * 0.5 * fw) | 0;
+            const sy = ((1 - py) * 0.5 * fh) | 0;
+            const si = ((sy < fh ? sy : fh - 1) * fw + (sx < fw ? sx : fw - 1)) * 4;
+            const oi = rowOut + x;
+            accR[oi] += src[si] * gain * wgt;
+            accG[oi] += src[si + 1] * gain * wgt;
+            accB[oi] += src[si + 2] * gain * wgt;
+            accW[oi] += wgt;
           }
         }
+      }
 
-        const rowBase = y * W;
-        for (let k = 0; k < xCount; k++) {
-          let x = xStart + k;
-          if (x < 0) x += W; else if (x >= W) x -= W;
-
-          const dx = cosLa * sinLon[x], dy = sinLa, dz = -cosLa * cosLon[x];
-          const f = dx * fX + dy * fY + dz * fZ;
-          if (f <= 0.08) continue;
-          const px = (dx * rX + dy * rY + dz * rZ) / f / tanH;
-          if (px < -1 || px > 1) continue;
-          const py = (dx * uX + dy * uY + dz * uZ) / f / tanV;
-          if (py < -1 || py > 1) continue;
-
-          // ยิ่งใกล้กลางภาพยิ่งดี (ขอบเลนส์เพี้ยนกว่า) — พิกเซลทับกันเลือกใบที่ดีกว่า
-          const w8 = (1 - Math.abs(px)) * (1 - Math.abs(py)) * f;
-          const oi = rowBase + x;
-          if (w8 <= best[oi]) continue;
-          best[oi] = w8;
-
-          const sx = ((px + 1) * 0.5 * fw) | 0;
-          const sy = ((1 - py) * 0.5 * fh) | 0;
-          const si = ((sy < fh ? sy : fh - 1) * fw + (sx < fw ? sx : fw - 1)) * 4;
-          const di = oi * 4;
-          out[di] = src[si]; out[di + 1] = src[si + 1]; out[di + 2] = src[si + 2]; out[di + 3] = 255;
+      for (let i = 0; i < W * bh; i++) {
+        const di = ((by * W) + i) * 4;
+        const w8 = accW[i];
+        if (w8 > 0) {
+          out[di] = accR[i] / w8; out[di + 1] = accG[i] / w8; out[di + 2] = accB[i] / w8; out[di + 3] = 255;
         }
       }
-      st.ui.hud.textContent = 'กำลังต่อภาพ ' + (fi + 1) + '/' + st.frames.length + '…';
-      await new Promise((r) => setTimeout(r, 0));   // คืนจังหวะให้จอไม่ค้าง
+      st.ui.hud.textContent = 'กำลังเกลี่ยรอยต่อ ' + Math.min(100, Math.round((by + bh) / H * 100)) + '%';
+      await new Promise((r) => setTimeout(r, 0));
     }
 
-    // ── ปิดรูเล็กๆ ที่หลงเหลือ ──
-    // รูขนาด 1-2 พิกเซลตามรอยต่อทำให้ภาพดูเหมือนเสีย ทั้งที่รอบข้างมีสีอยู่แล้ว
-    // จึงลามสีจากเพื่อนบ้านเข้ามาเติมทีละชั้น (ซ้ายขวาวนรอบขอบภาพได้ เพราะ 360 องศาต่อกัน)
+    // ── ปิดรูเล็กที่หลงเหลือด้วยการลามสีจากเพื่อนบ้าน ──
+    const filled = new Uint8Array(W * H);
+    for (let i = 0; i < W * H; i++) if (out[i * 4 + 3]) filled[i] = 1;
     for (let pass = 0; pass < 6; pass++) {
-      let filled = 0;
+      let n = 0;
       for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
           const i = y * W + x;
-          if (best[i] !== 0) continue;
-          let r = 0, g = 0, b = 0, n = 0;
-          const nb = [
-            y > 0 ? i - W : -1, y < H - 1 ? i + W : -1,
-            y * W + (x === 0 ? W - 1 : x - 1), y * W + (x === W - 1 ? 0 : x + 1),
-          ];
-          for (const j of nb) {
-            if (j < 0 || best[j] === 0) continue;
-            const d = j * 4; r += out[d]; g += out[d + 1]; b += out[d + 2]; n++;
-          }
-          if (!n) continue;
+          if (filled[i]) continue;
+          let r = 0, g = 0, b = 0, c = 0;
+          const nb = [y > 0 ? i - W : -1, y < H - 1 ? i + W : -1,
+            y * W + (x === 0 ? W - 1 : x - 1), y * W + (x === W - 1 ? 0 : x + 1)];
+          for (const j of nb) { if (j < 0 || filled[j] !== 1) continue; const d = j * 4; r += out[d]; g += out[d + 1]; b += out[d + 2]; c++; }
+          if (!c) continue;
           const d = i * 4;
-          out[d] = r / n; out[d + 1] = g / n; out[d + 2] = b / n; out[d + 3] = 255;
-          best[i] = -1;                                  // -1 = เติมมาแล้ว (กันลามซ้ำในรอบเดียวกัน)
-          filled++;
+          out[d] = r / c; out[d + 1] = g / c; out[d + 2] = b / c; out[d + 3] = 255;
+          filled[i] = 2; n++;
         }
       }
-      if (!filled) break;
-      for (let i = 0; i < W * H; i++) if (best[i] === -1) best[i] = 1e-6;
+      if (!n) break;
+      for (let i = 0; i < W * H; i++) if (filled[i] === 2) filled[i] = 1;
     }
 
-    // ที่ยังเหลือคือช่องใหญ่จริงๆ (เช่นพื้นใต้เท้าถ้าไม่ได้ก้มถ่าย) → เทาเข้ม ดีกว่าปล่อยดำสนิท
     let gap = 0;
     for (let i = 0; i < W * H; i++) {
-      if (best[i] === 0) { gap++; const d = i * 4; out[d] = 24; out[d + 1] = 30; out[d + 2] = 42; out[d + 3] = 255; }
+      if (!filled[i]) { gap++; const d = i * 4; out[d] = 24; out[d + 1] = 30; out[d + 2] = 42; out[d + 3] = 255; }
     }
     PanoCapture._coverGap = Math.round(gap / (W * H) * 1000) / 10;
 
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
     c.getContext('2d').putImageData(new ImageData(out, W, H), 0, 0);
-    return { dataUrl: c.toDataURL('image/jpeg', 0.85), w: W, h: H };
+    return { dataUrl: c.toDataURL('image/jpeg', 0.88), w: W, h: H };
   },
+
   async finish() {
     const st = this._state;
     if (!st || st.busy) return;
@@ -549,11 +772,12 @@ const PanoCapture = {
       // แถวล่าง: คำแนะนำ + แถบความคืบหน้า + ปุ่มจบ
       '<div style="position:absolute;left:0;right:0;bottom:0;padding:16px">' +
       '<div style="color:#fff;font-size:13px;text-align:center;margin-bottom:10px;line-height:1.6;opacity:.9">' +
-      'ยืนอยู่กับที่ตลอดการสแกน แล้วหมุนตัวเล็งวงกลางจอไปที่จุดเขียว<br>เล็งค้างไว้จนวงเต็ม = เก็บภาพแล้ว</div>' +
+      'ยืนอยู่กับที่ หมุนตัวช้าๆ เล็งวงกลางจอไปที่จุดเขียว<br><b>หยุดนิ่งจนวงเต็ม</b> ระบบจะเก็บภาพให้เอง — ยิ่งนิ่ง ภาพยิ่งต่อเนียน</div>' +
       '<div style="height:8px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;margin-bottom:12px">' +
       '<div id="pc-bar" style="height:100%;width:0%;background:#4ade80;transition:width .2s"></div></div>' +
       '<button id="pc-done" disabled style="width:100%;padding:14px;border:none;border-radius:12px;' +
       'font-size:16px;font-weight:700;color:#fff;background:#2563eb">กำลังเตรียม…</button>' +
+      '<div id="pc-sub" style="color:#cbd5e1;font-size:12px;text-align:center;margin-top:8px;line-height:1.6"></div>' +
       '</div>';
     document.body.appendChild(root);
 
@@ -565,6 +789,7 @@ const PanoCapture = {
       bar: root.querySelector('#pc-bar'),
       undo: root.querySelector('#pc-undo'),
       done: root.querySelector('#pc-done'),
+      sub: root.querySelector('#pc-sub'),
     };
     ui.undo.style.visibility = 'hidden';
     if (window.lucide) lucide.createIcons();   // ไอคอน Lucide เท่านั้น — ห้ามอีโมจิในปุ่ม (กติกาโปรเจกต์)

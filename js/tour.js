@@ -823,11 +823,27 @@ const Tour = {
     if (window.lucide) lucide.createIcons();
   },
 
-  // ต้องมีเวอร์ชัน draft ก่อนถึงจะอัปรูปได้ — สร้างให้อัตโนมัติตอนกดรูปแรก
+  // ต้องมีเวอร์ชัน draft ก่อนถึงจะอัปรูปได้ — จัดให้เองทั้งหมด ไม่เด้งไปถามชื่อกลางทาง
+  // ⚠️ เดิม: ปักหมุดบนแปลนแล้วกด "สแกนเลย" จะโดนเด้งว่า "ใส่ชื่อเวอร์ชันก่อน"
+  //    ต้องออกไปกดปุ่มสแกนมุมขวาบน ตั้งชื่อ แล้วค่อยกลับมา = ฟริกชันเปล่าๆ (เจ้าของงานเจอเอง 2026-08-19)
   async _ensureDraft() {
     if (this.data.draftVersionId) return this.data.draftVersionId;
-    const name = (document.getElementById('tc-name').value || '').trim();
-    if (!name) { Modal.toast('⚠️ ใส่ชื่อเวอร์ชันก่อน'); return null; }
+
+    // มีฉบับร่างค้างอยู่แล้วก็ใช้ต่อ — สแกนทีละห้องจะได้อยู่ในเวอร์ชันเดียวกัน ไม่แตกเป็นหลายเวอร์ชัน
+    const draft = (this.data.versions || []).find((v) => v.status === 'draft');
+    if (draft) {
+      this.data.draftVersionId = draft.version_id;
+      this.data.captureDone = this.data.captureDone || {};
+      return draft.version_id;
+    }
+
+    let name = ((document.getElementById('tc-name') || {}).value || '').trim();
+    if (!name) {                                   // ไม่ได้ตั้งชื่อ = ตั้งให้เลย แก้ทีหลังได้
+      const d = new Date();
+      name = 'สภาพหน้างาน ' + d.getDate() + '/' + (d.getMonth() + 1);
+      const el = document.getElementById('tc-name');
+      if (el) el.value = name;
+    }
     const res = await API.tourCreateVersion({ name: name });
     if (!res || res.ok === false) { this._err(res, 'สร้างเวอร์ชันไม่สำเร็จ'); return null; }
     const d = res.data || res;
@@ -885,8 +901,18 @@ const Tour = {
     if (!res || res.ok === false) return this._err(res, 'อัปรูปไม่สำเร็จ');
     this.data.captureDone = this.data.captureDone || {};
     this.data.captureDone[pointId] = true;
-    this.renderCaptureList();
-    Modal.toast('✅ อัปภาพ 360 แล้ว');
+
+    // สแกนจากแปลน → หมุดต้องเปลี่ยนเป็นสีเขียวทันที ไม่ต้องรีเฟรชเอง
+    if (this.data.mode === 'home') {
+      try {
+        await this.loadConfig(true);
+        await this.loadVersion(this.data.draftVersionId);
+        this.renderHome();
+      } catch (e) { /* โหลดไม่ได้ก็ไม่เป็นไร รูปอัปไปแล้ว */ }
+    } else {
+      this.renderCaptureList();
+    }
+    Modal.toast('✓ เก็บภาพ 360 แล้ว');
   },
 
   pickPhotoFor(pointId) {
