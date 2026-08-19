@@ -22,10 +22,16 @@ const PanoCapture = {
   // ── ค่าตั้งต้น ────────────────────────────────────────────
   OUT_W: 4096,          // ผืนผ้า 360 (2:1 เป๊ะ ตามนิยาม equirectangular)
   OUT_H: 2048,
-  FRAME_MAX: 800,       // ย่อภาพที่เก็บแต่ละใบ (กันมือถือหน่วย/หน่วยความจำบวม)
+  FRAME_MAX: 1280,      // ความละเอียดภาพที่เก็บแต่ละใบ (ด้านยาว)
+  //   ⚠️ เดิมตั้งไว้ 800 = ทิ้งรายละเอียดกล้องไปกว่าครึ่งตั้งแต่ตอนถ่าย
+  //      ภาพ 1 ใบคลุมราว 63° ถ้ากว้าง 800px = 12.7 จุด/องศา ส่วนผลลัพธ์ 4096px/360° = 11.4 จุด/องศา
+  //      ต้นทางแทบไม่เหลือรายละเอียดให้เกลี่ย → ภาพออกมานุ่มๆ ไม่คม (เจ้าของงานสังเกตออก 2026-08-19)
+  //      1280px = 20.3 จุด/องศา ≈ 1.8 เท่าของผลลัพธ์ กำลังพอดีให้คมจริง
+  //      (ไม่ขึ้นไปกว่านี้เพราะ 32 ใบ x 1440px = ~112MB เสี่ยงเบราว์เซอร์มือถือดับกลางคัน)
+  //   เก็บเป็น RGB 3 ไบต์ (ไม่เก็บช่องโปร่งใส) → ประหยัดหน่วยความจำ 25% ชดเชยที่ภาพใหญ่ขึ้น
   HIT_DEG: 4.5,         // เล็งใกล้จุดเป้ากี่องศาถึงจะเริ่มนับ (แคบลง = ต้องเล็งเป๊ะขึ้น ภาพต่อเนียนขึ้น)
   HOLD_MS: 1200,        // ต้องเล็งค้างกี่มิลลิวินาทีถึงจะเก็บ
-  STEADY_DPS: 18,       // ถ้าหมุนเร็วกว่านี้ (องศา/วินาที) ยังไม่นับ — ต้องถือนิ่งก่อน
+  STEADY_DPS: 13,       // ถ้าหมุนเร็วกว่านี้ (องศา/วินาที) ยังไม่นับ — ต้องถือนิ่งก่อน
   //   ⚠️ เจ้าของงานทัก 2026-08-19: "ของเราเร็วมาก ยังไม่ได้จับรายละเอียดเลยสแกนเสร็จแล้ว
   //      อย่างงี้อาจจะทำให้รูปมันหลุดกันได้" — ถูกต้อง ภาพที่ถ่ายตอนมือยังขยับ = เบลอ + องศาคลาด
   //      จึงต้องทั้ง "ค้างนานขึ้น" และ "นิ่งจริง" ถึงจะเก็บ
@@ -174,7 +180,7 @@ const PanoCapture = {
       throw new Error('เบราว์เซอร์นี้เปิดกล้องไม่ได้ — ลองเปิดใน Safari');
     }
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1440 } },
       audio: false,
     }).catch(() => { throw new Error('เปิดกล้องไม่สำเร็จ — เช็คว่าอนุญาตกล้องให้เว็บนี้แล้วหรือยัง'); });
     this._state.stream = stream;
@@ -340,7 +346,10 @@ const PanoCapture = {
       c.width = w; c.height = h;
       const cc = c.getContext('2d');
       cc.drawImage(v, 0, 0, w, h);
-      const fr = { data: cc.getImageData(0, 0, w, h), w: w, h: h, q: st.q.slice(), targetId: target.id };
+      const id = cc.getImageData(0, 0, w, h).data;
+      const rgb = new Uint8Array(w * h * 3);         // ตัดช่องโปร่งใสทิ้ง ประหยัดหน่วยความจำ 25%
+      for (let i = 0, j = 0; j < rgb.length; i += 4, j += 3) { rgb[j] = id[i]; rgb[j + 1] = id[i + 1]; rgb[j + 2] = id[i + 2]; }
+      const fr = { rgb: rgb, w: w, h: h, q: st.q.slice(), targetId: target.id };
       st.frames.push(fr);
       this._mosPaint(fr);            // ต่อลงผืนผ้าทันที → จอโชว์ภาพที่ต่อกันแล้ว
       target.done = true;
@@ -375,15 +384,17 @@ const PanoCapture = {
     st.ui.bar.style.width = Math.round(done / total * 100) + '%';
     st.ui.undo.style.visibility = done ? 'visible' : 'hidden';
 
-    const enough = midDone >= mid.length;              // ครบวงแนวนอน = พอใช้งานได้แล้ว
+    // เจ้าของงานเคาะ 2026-08-19: "ถ้าสแกนไม่ครบจุด ไม่ให้กดปุ่มเสร็จเลย"
+    // เหตุผลที่ถูก: ปล่อยให้จบทั้งที่ยังโหว่ = ได้ภาพมีรูดำ สุดท้ายต้องกลับไปถ่ายใหม่ทั้งห้องอยู่ดี
+    const enough = done >= total;
     st.ui.done.disabled = !enough;
     st.ui.done.textContent = enough
-      ? (done < total ? 'พอแล้ว ต่อภาพเลย (' + done + '/' + total + ')' : 'ครบทุกจุด ต่อภาพเลย')
-      : 'วงระดับสายตาให้ครบก่อน ' + midDone + '/' + mid.length + ' จุด';
+      ? 'ครบทุกจุดแล้ว — ต่อภาพเลย'
+      : 'เหลืออีก ' + (total - done) + ' จุด';
     if (st.ui.sub) {
       st.ui.sub.textContent = enough
-        ? 'ครบวงระดับสายตาแล้ว — เก็บวงบน/ล่างต่อได้ถ้าอยากได้เพดานกับพื้น'
-        : 'ต้องครบ ' + mid.length + ' จุดรอบตัวระดับสายตาก่อน (ทั้งหมดมี ' + total + ' จุดรวมเพดานกับพื้น)';
+        ? 'ต่อภาพใช้เวลา 1-3 นาที ระหว่างนี้อย่าปิดหน้าจอ'
+        : 'ระดับสายตา ' + midDone + '/' + mid.length + ' · ต้องเก็บให้ครบทั้ง ' + total + ' จุด (รวมเพดานกับพื้น) ถึงจะต่อภาพได้';
     }
   },
   // ════════════════════════════════════════════════════════
@@ -415,7 +426,7 @@ const PanoCapture = {
     const cLat = Math.asin(Math.max(-1, Math.min(1, ax.fwd[1])));
     const cLon = Math.atan2(ax.fwd[0], -ax.fwd[2]);
     const sinC = Math.sin(cLat), cosC = Math.cos(cLat), cosCapR = Math.cos(capR);
-    const src = fr.data.data;
+    const src = fr.rgb;
 
     const y0 = Math.max(0, Math.floor((0.5 - (cLat + capR) / Math.PI) * H));
     const y1 = Math.min(H - 1, Math.ceil((0.5 - (cLat - capR) / Math.PI) * H));
@@ -446,7 +457,7 @@ const PanoCapture = {
         const py = (dx * ax.up[0] + dy * ax.up[1] + dz * ax.up[2]) / f / tanV;
         if (py < -1 || py > 1) continue;
         const sx = ((px + 1) * 0.5 * fr.w) | 0, sy = ((1 - py) * 0.5 * fr.h) | 0;
-        const si = ((sy < fr.h ? sy : fr.h - 1) * fr.w + (sx < fr.w ? sx : fr.w - 1)) * 4;
+        const si = ((sy < fr.h ? sy : fr.h - 1) * fr.w + (sx < fr.w ? sx : fr.w - 1)) * 3;
         const oi = y * W + x, di = oi * 4;
         st.mos[di] = src[si]; st.mos[di + 1] = src[si + 1]; st.mos[di + 2] = src[si + 2]; st.mos[di + 3] = 255;
         st.mosSeen[oi] = 1;
@@ -530,12 +541,12 @@ const PanoCapture = {
     const small = st.frames.map((fr) => {
       const sw = 96, sh = Math.max(1, Math.round(96 * fr.h / fr.w));
       const g = new Float32Array(sw * sh);
-      const d = fr.data.data;
+      const d = fr.rgb;
       for (let y = 0; y < sh; y++) {
         const sy = ((y + 0.5) / sh * fr.h) | 0;
         for (let x = 0; x < sw; x++) {
           const sx = ((x + 0.5) / sw * fr.w) | 0;
-          const i = (sy * fr.w + sx) * 4;
+          const i = (sy * fr.w + sx) * 3;
           g[y * sw + x] = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
         }
       }
@@ -691,7 +702,7 @@ const PanoCapture = {
       const ax = this._axesAdj(fr.q, a.dy, a.dp, a.dr);
       const cLat = Math.asin(Math.max(-1, Math.min(1, ax.fwd[1])));
       return {
-        ax: ax, src: fr.data.data, w: fr.w, h: fr.h, gain: fr.gain || 1,
+        ax: ax, src: fr.rgb, w: fr.w, h: fr.h, gain: fr.gain || 1,
         cLat: cLat, cLon: Math.atan2(ax.fwd[0], -ax.fwd[2]),
         sinC: Math.sin(cLat), cosC: Math.cos(cLat),
         y0: Math.max(0, Math.floor((0.5 - (cLat + capR) / Math.PI) * H)),
@@ -744,17 +755,26 @@ const PanoCapture = {
             const py = (dx * uX + dy * uY + dz * uZ) / fd / tanV;
             if (py < -1 || py > 1) continue;
 
-            // น้ำหนัก = ระยะจากขอบภาพ ยกกำลัง → ตรงกลางเด่น ขอบจางหายไปเนียนๆ
+            // น้ำหนัก = ระยะจากขอบภาพ ยกกำลังสูง → ใบที่ "เห็นจุดนี้ชัดที่สุด" ครองภาพเกือบทั้งหมด
+            // ⚠️ เดิมยกกำลังต่ำ = เฉลี่ยหลายใบเท่าๆ กัน ถ้าใบไหนคลาดนิดเดียวภาพจะเบลอทันที
+            //    (นี่คือสาเหตุที่บางจุด "เลือนๆ" — เจ้าของงานสังเกตออก 2026-08-19)
             const e1 = 1 - Math.abs(px), e2 = 1 - Math.abs(py);
-            const wgt = e1 * e1 * e2 * e2 * fd + 1e-4;
+            const e = e1 * e2;
+            const wgt = e * e * e * e * e * e * fd + 1e-6;
 
-            const sx = ((px + 1) * 0.5 * fw) | 0;
-            const sy = ((1 - py) * 0.5 * fh) | 0;
-            const si = ((sy < fh ? sy : fh - 1) * fw + (sx < fw ? sx : fw - 1)) * 4;
+            // สุ่มสีแบบเฉลี่ย 4 จุดข้างเคียง (bilinear) — คมกว่าหยิบจุดเดียวแบบเดิมชัดเจน
+            const fx = (px + 1) * 0.5 * (fw - 1), fy = (1 - py) * 0.5 * (fh - 1);
+            const x0 = fx | 0, y0b = fy | 0;
+            const x1 = x0 + 1 < fw ? x0 + 1 : fw - 1, y1b = y0b + 1 < fh ? y0b + 1 : fh - 1;
+            const tx = fx - x0, ty = fy - y0b;
+            const i00 = (y0b * fw + x0) * 3, i10 = (y0b * fw + x1) * 3;
+            const i01 = (y1b * fw + x0) * 3, i11 = (y1b * fw + x1) * 3;
+            const w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
             const oi = rowOut + x;
-            accR[oi] += src[si] * gain * wgt;
-            accG[oi] += src[si + 1] * gain * wgt;
-            accB[oi] += src[si + 2] * gain * wgt;
+            const gw = gain * wgt;
+            accR[oi] += (src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11) * gw;
+            accG[oi] += (src[i00 + 1] * w00 + src[i10 + 1] * w10 + src[i01 + 1] * w01 + src[i11 + 1] * w11) * gw;
+            accB[oi] += (src[i00 + 2] * w00 + src[i10 + 2] * w10 + src[i01 + 2] * w01 + src[i11 + 2] * w11) * gw;
             accW[oi] += wgt;
           }
         }
@@ -803,7 +823,7 @@ const PanoCapture = {
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
     c.getContext('2d').putImageData(new ImageData(out, W, H), 0, 0);
-    return { dataUrl: c.toDataURL('image/jpeg', 0.88), w: W, h: H };
+    return { dataUrl: c.toDataURL('image/jpeg', 0.93), w: W, h: H };
   },
 
   async finish() {
