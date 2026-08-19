@@ -20,10 +20,10 @@
 
 const PanoCapture = {
   // ── ค่าตั้งต้น ────────────────────────────────────────────
-  OUT_W: 3072,          // ผืนผ้า 360 (2:1 เป๊ะ ตามนิยาม equirectangular)
-  OUT_H: 1536,
+  OUT_W: 4096,          // ผืนผ้า 360 (2:1 เป๊ะ ตามนิยาม equirectangular)
+  OUT_H: 2048,
   FRAME_MAX: 800,       // ย่อภาพที่เก็บแต่ละใบ (กันมือถือหน่วย/หน่วยความจำบวม)
-  HIT_DEG: 8,           // เล็งใกล้จุดเป้ากี่องศาถึงจะเริ่มนับ
+  HIT_DEG: 4.5,         // เล็งใกล้จุดเป้ากี่องศาถึงจะเริ่มนับ (แคบลง = ต้องเล็งเป๊ะขึ้น ภาพต่อเนียนขึ้น)
   HOLD_MS: 1200,        // ต้องเล็งค้างกี่มิลลิวินาทีถึงจะเก็บ
   STEADY_DPS: 18,       // ถ้าหมุนเร็วกว่านี้ (องศา/วินาที) ยังไม่นับ — ต้องถือนิ่งก่อน
   //   ⚠️ เจ้าของงานทัก 2026-08-19: "ของเราเร็วมาก ยังไม่ได้จับรายละเอียดเลยสแกนเสร็จแล้ว
@@ -209,6 +209,7 @@ const PanoCapture = {
     v.style.height = Math.round(bh) + 'px';
     st.box = { x: rw / 2, y: rh / 2, w: bw, h: bh };
     st.targets = this._targets(st.hFov * 180 / Math.PI, st.vFov * 180 / Math.PI);
+    this._mosInit();
     this._updateHud();
   },
 
@@ -252,33 +253,12 @@ const PanoCapture = {
       st.prevFwd = ax.fwd; st.prevAt = now;
       const steady = (st.dps || 0) <= this.STEADY_DPS;
 
-      // ── วาดภาพที่ถ่ายไปแล้วซ้อนรอบตัว (เห็นว่าครอบคลุมตรงไหนแล้ว — แบบ Teleport) ──
-      // วางด้วยการแปลงเชิงเส้น (ไม่ใช่เพอร์สเปกทีฟเต็มรูป) — เป็นภาพนำทาง ไม่ใช่ผลลัพธ์จริง
-      const proj = (v) => {
-        const f = this._dot(v, ax.fwd);
-        if (f <= 0.12) return null;
-        return { x: cx + ((this._dot(v, ax.right) / f) / tanH) * box.w / 2,
-                 y: cy - ((this._dot(v, ax.up) / f) / tanV) * box.h / 2 };
-      };
-      ctx.globalAlpha = 0.85;
-      for (const fr of st.frames) {
-        if (!fr.ghost) continue;
-        const fa = this._axes(fr.q);
-        if (this._dot(fa.fwd, ax.fwd) < -0.1) continue;          // อยู่หลังตัวเรา ข้าม
-        const add = (a, b, k) => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
-        const pC = proj(fa.fwd);
-        const pR = proj(add(fa.fwd, fa.right, tanH));
-        const pU = proj(add(fa.fwd, fa.up, tanV));
-        if (!pC || !pR || !pU) continue;
-        const gw = fr.ghost.width, gh = fr.ghost.height;
-        ctx.setTransform((pR.x - pC.x) / (gw / 2), (pR.y - pC.y) / (gw / 2),
-                         -(pU.x - pC.x) / (gh / 2), -(pU.y - pC.y) / (gh / 2), pC.x, pC.y);
-        try { ctx.drawImage(fr.ghost, -gw / 2, -gh / 2); } catch (e) { /* */ }
-      }
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.globalAlpha = 1;
+      // ── วาดผืนภาพที่สแกนไปแล้วเต็มจอ ต่อกันเป็นผืนเดียว ──
+      this._mosRender(ctx, w, h, ax, box);
       // เจาะช่องให้เห็นภาพกล้องสดตรงกลาง (วิดีโออยู่ใต้ canvas)
       ctx.clearRect(cx - box.w / 2, cy - box.h / 2, box.w, box.h);
+      ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 2;
+      ctx.strokeRect(cx - box.w / 2, cy - box.h / 2, box.w, box.h);
 
       for (const t of st.targets) {
         const d = this._dirOf(t.lon, t.lat);
@@ -360,12 +340,9 @@ const PanoCapture = {
       c.width = w; c.height = h;
       const cc = c.getContext('2d');
       cc.drawImage(v, 0, 0, w, h);
-      // เก็บภาพย่อไว้วาดซ้อนบนจอ ให้เห็นว่าถ่ายครอบคลุมตรงไหนไปแล้ว (แบบ Teleport)
-      const gs = 240 / Math.max(w, h);
-      const gc = document.createElement('canvas');
-      gc.width = Math.max(1, Math.round(w * gs)); gc.height = Math.max(1, Math.round(h * gs));
-      gc.getContext('2d').drawImage(c, 0, 0, gc.width, gc.height);
-      st.frames.push({ data: cc.getImageData(0, 0, w, h), w: w, h: h, q: st.q.slice(), targetId: target.id, ghost: gc });
+      const fr = { data: cc.getImageData(0, 0, w, h), w: w, h: h, q: st.q.slice(), targetId: target.id };
+      st.frames.push(fr);
+      this._mosPaint(fr);            // ต่อลงผืนผ้าทันที → จอโชว์ภาพที่ต่อกันแล้ว
       target.done = true;
       if (navigator.vibrate) navigator.vibrate(30);
       this._updateHud();
@@ -380,6 +357,8 @@ const PanoCapture = {
     const fr = st.frames.pop();
     const t = st.targets.find((x) => x.id === fr.targetId);
     if (t) t.done = false;
+    this._mosInit();
+    for (const f2 of st.frames) this._mosPaint(f2);
     st.aimId = null; st.aimAt = 0;
     this._updateHud();
   },
@@ -407,6 +386,117 @@ const PanoCapture = {
         : 'ต้องครบ ' + mid.length + ' จุดรอบตัวระดับสายตาก่อน (ทั้งหมดมี ' + total + ' จุดรวมเพดานกับพื้น)';
     }
   },
+  // ════════════════════════════════════════════════════════
+  // ภาพตัวอย่างระหว่างสแกน — ต่อกันเป็นผืนเดียวจริงๆ
+  // ════════════════════════════════════════════════════════
+  // เจ้าของงานทัก 2026-08-19: "ของ Teleport พอสแกนเขียวแล้วรูปมันประติดประต่อกันเลย
+  //   ของคุณทำแล้วแต่แค่มันไม่ประติดประต่อ" — ถูกต้อง
+  // เดิมวางภาพทีละใบด้วยการบิดแบบง่าย (affine) → ขอบไม่ต่อกัน
+  // ใหม่: สะสมทุกใบลง "ผืนผ้า 360 ย่อส่วน" แล้ววาดออกจอตามมุมที่หันอยู่จริง
+  //   → เป็นผืนเดียวกันทั้งจอ ต่อเนียน เหมือนยืนอยู่ในภาพจริงๆ
+  MOS_W: 1024,
+  MOS_H: 512,
+
+  _mosInit() {
+    const st = this._state;
+    st.mos = new Uint8ClampedArray(this.MOS_W * this.MOS_H * 4);
+    st.mosSeen = new Uint8Array(this.MOS_W * this.MOS_H);
+    st.mosBuf = null;
+  },
+
+  // ลงภาพใบใหม่บนผืนผ้าย่อส่วน (ทำครั้งเดียวตอนเก็บภาพ ไม่ได้ทำทุกเฟรม)
+  _mosPaint(fr) {
+    const st = this._state;
+    if (!st.mos) this._mosInit();
+    const W = this.MOS_W, H = this.MOS_H;
+    const ax = this._axes(fr.q);
+    const tanH = Math.tan(st.hFov / 2), tanV = Math.tan(st.vFov / 2);
+    const capR = Math.atan(Math.sqrt(tanH * tanH + tanV * tanV)) + 0.03;
+    const cLat = Math.asin(Math.max(-1, Math.min(1, ax.fwd[1])));
+    const cLon = Math.atan2(ax.fwd[0], -ax.fwd[2]);
+    const sinC = Math.sin(cLat), cosC = Math.cos(cLat), cosCapR = Math.cos(capR);
+    const src = fr.data.data;
+
+    const y0 = Math.max(0, Math.floor((0.5 - (cLat + capR) / Math.PI) * H));
+    const y1 = Math.min(H - 1, Math.ceil((0.5 - (cLat - capR) / Math.PI) * H));
+    for (let y = y0; y <= y1; y++) {
+      const la = (0.5 - (y + 0.5) / H) * Math.PI;
+      const cosLa = Math.cos(la), sinLa = Math.sin(la);
+      const denom = cosC * cosLa;
+      let xs = 0, xc = W;
+      if (Math.abs(denom) > 1e-6) {
+        const cd = (cosCapR - sinC * sinLa) / denom;
+        if (cd >= 1) continue;
+        if (cd > -1) {
+          const half = Math.ceil(Math.acos(cd) / (2 * Math.PI) * W) + 1;
+          xs = Math.round((cLon / (2 * Math.PI) + 0.5) * W) - half;
+          xc = half * 2 + 1;
+          if (xc >= W) { xs = 0; xc = W; }
+        }
+      }
+      for (let k = 0; k < xc; k++) {
+        let x = xs + k;
+        if (x < 0) x += W; else if (x >= W) x -= W;
+        const lo = ((x + 0.5) / W - 0.5) * 2 * Math.PI;
+        const dx = cosLa * Math.sin(lo), dy = sinLa, dz = -cosLa * Math.cos(lo);
+        const f = dx * ax.fwd[0] + dy * ax.fwd[1] + dz * ax.fwd[2];
+        if (f <= 0.1) continue;
+        const px = (dx * ax.right[0] + dy * ax.right[1] + dz * ax.right[2]) / f / tanH;
+        if (px < -1 || px > 1) continue;
+        const py = (dx * ax.up[0] + dy * ax.up[1] + dz * ax.up[2]) / f / tanV;
+        if (py < -1 || py > 1) continue;
+        const sx = ((px + 1) * 0.5 * fr.w) | 0, sy = ((1 - py) * 0.5 * fr.h) | 0;
+        const si = ((sy < fr.h ? sy : fr.h - 1) * fr.w + (sx < fr.w ? sx : fr.w - 1)) * 4;
+        const oi = y * W + x, di = oi * 4;
+        st.mos[di] = src[si]; st.mos[di + 1] = src[si + 1]; st.mos[di + 2] = src[si + 2]; st.mos[di + 3] = 255;
+        st.mosSeen[oi] = 1;
+      }
+    }
+  },
+
+  // วาดผืนผ้าออกจอตามมุมที่หันอยู่ (ความละเอียดต่ำแล้วขยาย — ลื่นพอที่ 30 เฟรม/วินาที)
+  _mosRender(ctx, cw, ch, ax, box) {
+    const st = this._state;
+    if (!st.mos) return;
+    const RW = 168, RH = Math.max(1, Math.round(168 * ch / cw));
+    if (!st.mosBuf || st.mosBuf.width !== RW || st.mosBuf.height !== RH) {
+      st.mosBuf = document.createElement('canvas');
+      st.mosBuf.width = RW; st.mosBuf.height = RH;
+      st.mosImg = st.mosBuf.getContext('2d').createImageData(RW, RH);
+    }
+    const out = st.mosImg.data;
+    const W = this.MOS_W, H = this.MOS_H;
+    // มุมมองของ "ทั้งจอ" กว้างกว่ากรอบกล้องตามสัดส่วน — จุดนอกมุมกล้องจึงมีที่อยู่
+    const tH = Math.tan(st.hFov / 2) * (cw / box.w);
+    const tV = Math.tan(st.vFov / 2) * (ch / box.h);
+    const r = ax.right, u = ax.up, f = ax.fwd;
+
+    for (let y = 0; y < RH; y++) {
+      const py = (1 - (y + 0.5) / RH * 2) * tV;
+      for (let x = 0; x < RW; x++) {
+        const px = ((x + 0.5) / RW * 2 - 1) * tH;
+        const vx = f[0] + px * r[0] + py * u[0];
+        const vy = f[1] + px * r[1] + py * u[1];
+        const vz = f[2] + px * r[2] + py * u[2];
+        const len = Math.sqrt(vx * vx + vy * vy + vz * vz);
+        const lat = Math.asin(vy / len);
+        const lon = Math.atan2(vx / len, -vz / len);
+        const mx = ((lon / (2 * Math.PI) + 0.5) * W) | 0;
+        const my = ((0.5 - lat / Math.PI) * H) | 0;
+        const oi = (y * RW + x) * 4;
+        if (mx < 0 || mx >= W || my < 0 || my >= H || !st.mosSeen[my * W + mx]) {
+          out[oi] = 0; out[oi + 1] = 0; out[oi + 2] = 0; out[oi + 3] = 255;   // ยังไม่ได้สแกน = ดำ
+          continue;
+        }
+        const si = (my * W + mx) * 4;
+        out[oi] = st.mos[si]; out[oi + 1] = st.mos[si + 1]; out[oi + 2] = st.mos[si + 2]; out[oi + 3] = 255;
+      }
+    }
+    st.mosBuf.getContext('2d').putImageData(st.mosImg, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(st.mosBuf, 0, 0, cw, ch);
+  },
+
   // ════════════════════════════════════════════════════════
   // ต่อภาพเป็นผืน 360
   // ════════════════════════════════════════════════════════
@@ -527,16 +617,28 @@ const PanoCapture = {
     const tanH = Math.tan(st.hFov / 2), tanV = Math.tan(st.vFov / 2);
 
     // ── ขั้น 2: ไล่ขยับทีละใบให้ทับกับที่วางไว้แล้วพอดีที่สุด ──
-    gray.fill(0); seen.fill(0);
-    for (let i = 0; i < st.frames.length; i++) {
-      const fr = st.frames[i];
-      let best = { dy: 0, dp: 0, dr: 0, err: Infinity, gain: 1 };
-      if (i > 0) {
+    // ทำ 2 รอบ: รอบแรกไล่ไปหน้า รอบสองไล่ย้อนกลับ
+    //   เพราะใบแรกๆ ตอนรอบแรกยังไม่มีอะไรให้เทียบเลย (วางตามเซ็นเซอร์ล้วน)
+    //   รอบสองมันจะได้เทียบกับใบหลังที่จัดเข้าที่แล้ว → ดริฟต์สะสมหายไปเกือบหมด
+    const N = st.frames.length;
+    for (let pass = 0; pass < 2; pass++) {
+      const order = pass === 0
+        ? st.frames.map((_, k) => k)
+        : st.frames.map((_, k) => N - 1 - k);
+      gray.fill(0); seen.fill(0);
+      for (let oi = 0; oi < order.length; oi++) {
+        const i = order[oi];
+        const fr = st.frames[i];
+        const isFirst = oi === 0;
+      let best = fr.adj ? { dy: fr.adj.dy, dp: fr.adj.dp, dr: fr.adj.dr, err: Infinity, gain: fr.gain || 1 }
+        : { dy: 0, dp: 0, dr: 0, err: Infinity, gain: 1 };
+      if (!isFirst) {
         // ⚠️ กับดัก: ถ้าตัดสินด้วย "ค่าต่างเฉลี่ย" ล้วน ระบบจะชอบท่าที่ทับกันน้อยที่สุด
         //    (ทับน้อย = จุดเทียบน้อย = เฉลี่ยแล้วดูดี) → ภาพจะถูกดันออกจากกันจนหลุด
         //    จึงต้องกำหนดว่าต้องทับกันไม่น้อยกว่า 75% ของท่าเริ่มต้นถึงจะนับ
-        const base = score(i, this._axes(fr.q), tanH, tanV);
-        best = { dy: 0, dp: 0, dr: 0, err: base.err, gain: base.gain };
+        const b0 = best;
+        const base = score(i, this._axesAdj(fr.q, b0.dy, b0.dp, b0.dr), tanH, tanV);
+        best = { dy: b0.dy, dp: b0.dp, dr: b0.dr, err: base.err, gain: base.gain };
         const needN = Math.max(40, base.n * 0.75);
         // ค้นหยาบก่อน (ทีละ 2°) แล้วค่อยละเอียด (ทีละ 0.5°) รอบค่าที่ดีที่สุด
         for (const step of [2, 0.5]) {
@@ -562,8 +664,9 @@ const PanoCapture = {
       fr.adj = best;
       fr.gain = Math.max(0.75, Math.min(1.33, best.gain || 1));
       paint(i, this._axesAdj(fr.q, best.dy, best.dp, best.dr), tanH, tanV, fr.gain);
-      st.ui.hud.textContent = 'กำลังจัดภาพให้เข้าที่ ' + (i + 1) + '/' + st.frames.length + '…';
-      if (i % 4 === 3) await new Promise((r) => setTimeout(r, 0));
+        st.ui.hud.textContent = 'จัดภาพให้เข้าที่ (รอบ ' + (pass + 1) + '/2) ' + (oi + 1) + '/' + N + '…';
+        if (oi % 3 === 2) await new Promise((r) => setTimeout(r, 0));
+      }
     }
   },
 
