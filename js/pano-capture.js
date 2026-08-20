@@ -22,15 +22,20 @@ const PanoCapture = {
   // ── ค่าตั้งต้น ────────────────────────────────────────────
   OUT_W: 4096,          // ผืนผ้า 360 (2:1 เป๊ะ ตามนิยาม equirectangular)
   OUT_H: 2048,
-  FRAME_MAX: 1280,      // ความละเอียดภาพที่เก็บแต่ละใบ (ด้านยาว)
+  FRAME_MAX: 1000,      // ความละเอียดภาพที่เก็บแต่ละใบ (ด้านยาว)
   //   ⚠️ เดิมตั้งไว้ 800 = ทิ้งรายละเอียดกล้องไปกว่าครึ่งตั้งแต่ตอนถ่าย
   //      ภาพ 1 ใบคลุมราว 63° ถ้ากว้าง 800px = 12.7 จุด/องศา ส่วนผลลัพธ์ 4096px/360° = 11.4 จุด/องศา
   //      ต้นทางแทบไม่เหลือรายละเอียดให้เกลี่ย → ภาพออกมานุ่มๆ ไม่คม (เจ้าของงานสังเกตออก 2026-08-19)
-  //      1280px = 20.3 จุด/องศา ≈ 1.8 เท่าของผลลัพธ์ กำลังพอดีให้คมจริง
-  //      (ไม่ขึ้นไปกว่านี้เพราะ 32 ใบ x 1440px = ~112MB เสี่ยงเบราว์เซอร์มือถือดับกลางคัน)
+  //      1000px = 14.8 จุด/องศา ≈ 1.3 เท่าของผลลัพธ์ — ยังเหลือรายละเอียดให้เกลี่ย
+  //   ⚠️ เพดานคือ "หน่วยความจำรวมตอนต่อภาพ" ไม่ใช่แค่ตัวภาพ — ต้องบวกผืนผลลัพธ์ + ตารางตะเข็บด้วย
+  //      53 ใบ x 1000px = 90MB + ผืนผลลัพธ์ 34MB + ตารางอีก ~35MB ≈ 155MB
+  //      เกินกว่านี้เสี่ยง Safari ปิดแท็บทิ้งกลางคัน = เสียงานทั้งห้อง ต้องสแกนใหม่หมด
   //   เก็บเป็น RGB 3 ไบต์ (ไม่เก็บช่องโปร่งใส) → ประหยัดหน่วยความจำ 25% ชดเชยที่ภาพใหญ่ขึ้น
   HIT_DEG: 3.5,         // เล็งใกล้จุดเป้ากี่องศาถึงจะเริ่มนับ (แคบลง = ต้องเล็งเป๊ะขึ้น ภาพต่อเนียนขึ้น)
-  HOLD_MS: 1200,        // ต้องเล็งค้างกี่มิลลิวินาทีถึงจะเก็บ
+  HOLD_MS: 260,         // กวาดผ่านจุดแล้วเก็บเลย ไม่ต้องหยุดนิ่ง (แค่กันเก็บซ้ำ)
+  DENSITY: 1.5,         // ถ่ายถี่กว่าขั้นต่ำกี่เท่า — ยิ่งถี่ ของใกล้ยิ่งเหลื่อมน้อย
+  //   วัดจริงด้วยฉากจำลองพารัลแลกซ์: ถี่ 2 เท่า → รอยขาดกลางลาย 0.35% → 0.22%
+  //   แต่ 2 เท่า = 72 ใบ = 176MB เสี่ยงแอปดับ · 1.5 เท่าได้ประโยชน์เกือบเต็มที่ ~104MB
   STEADY_DPS: 13,       // ถ้าหมุนเร็วกว่านี้ (องศา/วินาที) ยังไม่นับ — ต้องถือนิ่งก่อน
   //   ⚠️ เจ้าของงานทัก 2026-08-19: "ของเราเร็วมาก ยังไม่ได้จับรายละเอียดเลยสแกนเสร็จแล้ว
   //      อย่างงี้อาจจะทำให้รูปมันหลุดกันได้" — ถูกต้อง ภาพที่ถ่ายตอนมือยังขยับ = เบลอ + องศาคลาด
@@ -64,14 +69,22 @@ const PanoCapture = {
       if (l + vFovDeg / 2 >= 90) break;                 // คลุมถึงขั้วแล้ว พอ
     }
 
+    // เรียงวงจากกลางออกไปบน-ล่างสลับกัน แล้วกวาดสลับทิศทุกวง (งูเลื้อย)
+    // → กวาดต่อเนื่องได้โดยไม่ต้องย้อนกลับไปต้นแถวทุกรอบ
+    lats.sort((a, b) => Math.abs(a) - Math.abs(b) || b - a);
+    let flip = false;
     for (const lat of lats) {
       const cos = Math.max(0.15, Math.cos(lat * Math.PI / 180));
-      const n = Math.max(2, Math.round(360 / (hStep / cos)));
+      const n = Math.max(2, Math.round(360 / (hStep / cos) * this.DENSITY));
+      const ring = [];
       for (let i = 0; i < n; i++) {
-        out.push({ lon: (360 / n) * i - 180, lat: lat, ring: lat === 0 ? 'mid' : 'edge' });
+        ring.push({ lon: (360 / n) * i - 180, lat: lat, ring: lat === 0 ? 'mid' : 'edge' });
       }
+      if (flip) ring.reverse();
+      flip = !flip;
+      for (const t of ring) out.push(t);
     }
-    return out.map((t, i) => Object.assign(t, { id: i, done: false }));
+    return out.map((t, i) => Object.assign(t, { id: i, order: i, done: false }));
   },
 
   // ════════════════════════════════════════════════════════
@@ -283,6 +296,32 @@ const PanoCapture = {
       ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 2;
       ctx.strokeRect(cx - box.w / 2, cy - box.h / 2, box.w, box.h);
 
+      // จุดถัดไปตามเส้นทางกวาด (ไม่ใช่จุดที่ใกล้ที่สุด) — คนจะได้กวาดต่อเนื่องไม่ต้องกระโดดไปมา
+      const guide = st.targets.find((t) => !t.done) || null;
+
+      // ── วาดเส้นทางกวาด ──
+      const proj2 = (t) => {
+        const d = this._dirOf(t.lon, t.lat);
+        const f = this._dot(d, ax.fwd);
+        if (f <= 0.12) return null;
+        const u = (this._dot(d, ax.right) / f) / tanH;
+        const v2 = (this._dot(d, ax.up) / f) / tanV;
+        if (Math.abs(u) > 3.4 || Math.abs(v2) > 3.4) return null;
+        return { x: cx + u * box.w / 2, y: cy - v2 * box.h / 2 };
+      };
+      ctx.beginPath();
+      ctx.setLineDash([7, 9]);
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(255,255,255,.4)';
+      let pen = false;
+      for (let i = 0; i < st.targets.length; i++) {
+        const q = proj2(st.targets[i]);
+        if (!q) { pen = false; continue; }
+        if (!pen) { ctx.moveTo(q.x, q.y); pen = true; } else ctx.lineTo(q.x, q.y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
       for (const t of st.targets) {
         const d = this._dirOf(t.lon, t.lat);
         const f = this._dot(d, ax.fwd);
@@ -297,12 +336,14 @@ const PanoCapture = {
         const sx = cx + u * box.w / 2;
         const sy = cy - vv * box.h / 2;
 
-        const r = Math.max(9, 30 / (1 + ang / 26));               // ไกล = เล็กลง ใกล้ = ใหญ่ขึ้น
+        const isGuide = guide && t.id === guide.id;
+        const r = Math.max(9, 30 / (1 + ang / 26)) * (isGuide ? 1.35 : 1);
         ctx.beginPath();
         ctx.arc(sx, sy, r, 0, Math.PI * 2);
-        ctx.fillStyle = t.done ? 'rgba(34,197,94,.35)' : 'rgba(74,222,128,.72)';
+        ctx.fillStyle = t.done ? 'rgba(34,197,94,.32)' : (isGuide ? 'rgba(250,204,21,.9)' : 'rgba(74,222,128,.6)');
         ctx.fill();
         if (t.done) { ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(34,197,94,.9)'; ctx.stroke(); }
+        else if (isGuide) { ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke(); }
       }
 
       // ── เล็งค้างถึงจะเก็บ (กันภาพเบลอจากการหมุนเร็ว) ──
@@ -316,7 +357,7 @@ const PanoCapture = {
       if (nearest && nearestAng <= this.HIT_DEG && !steady) {
         ctx.font = '600 14px sans-serif'; ctx.textAlign = 'center';
         ctx.fillStyle = '#fbbf24';
-        ctx.fillText('ถือนิ่งๆ ก่อน', cx, cy + box.h / 2 + 28);
+        ctx.fillText('กวาดช้าลงหน่อย', cx, cy + box.h / 2 + 28);
       }
 
       // วงเล็งกลางจอ + พายบอกความคืบหน้า
@@ -332,8 +373,8 @@ const PanoCapture = {
       if (prog >= 1) { this._grab(nearest); st.aimId = null; st.aimAt = 0; }
 
       // ลูกศรบอกทางไปจุดถัดไป ถ้ามันอยู่นอกกรอบ
-      if (nearest && nearestAng > this.HIT_DEG) {
-        const d = this._dirOf(nearest.lon, nearest.lat);
+      if (guide) {
+        const d = this._dirOf(guide.lon, guide.lat);
         const f = this._dot(d, ax.fwd);
         const u = (this._dot(d, ax.right) / f) / tanH;
         const vv = (this._dot(d, ax.up) / f) / tanV;
@@ -411,7 +452,7 @@ const PanoCapture = {
     if (st.ui.sub) {
       st.ui.sub.textContent = enough
         ? 'ต่อภาพใช้เวลา 1-3 นาที ระหว่างนี้อย่าปิดหน้าจอ'
-        : 'ระดับสายตา ' + midDone + '/' + mid.length + ' · ต้องเก็บให้ครบทั้ง ' + total + ' จุด (รวมเพดานกับพื้น) ถึงจะต่อภาพได้';
+        : 'กวาดตามเส้นประให้ครบทั้ง ' + total + ' จุด (วงระดับสายตา ' + midDone + '/' + mid.length + ' · แล้วค่อยเงยขึ้น–ก้มลง)';
     }
   },
   // ════════════════════════════════════════════════════════
@@ -1067,18 +1108,25 @@ const PanoCapture = {
               fullLab[y * W + xl] !== l || fullLab[y * W + xr] !== l) edge[i] = 1;
         }
       }
-      const cp = new Uint8ClampedArray(out);       // อ่านจากสำเนา ไม่งั้นเกลี่ยทับตัวเอง
+      // ⚠️ เดิมสำเนาทั้งผืนไว้อ่าน (34 MB) — เปลี่ยนเป็นเก็บแค่ 3 แถวที่กำลังใช้
+      //    เพราะหน่วยความจำรวมตอนต่อภาพเป็นตัวจำกัดจริง ไม่ใช่ความเร็ว
+      const rowBytes = W * 4;
+      const ring = [new Uint8ClampedArray(rowBytes), new Uint8ClampedArray(rowBytes), new Uint8ClampedArray(rowBytes)];
+      const loadRow = (y, slot) => { ring[slot].set(out.subarray(y * rowBytes, (y + 1) * rowBytes)); };
+      loadRow(0, 0); loadRow(1, 1);
       for (let y = 1; y < H - 1; y++) {
+        loadRow(y + 1, (y + 1) % 3);
         for (let x = 0; x < W; x++) {
           const i = y * W + x;
           if (!edge[i]) continue;
           let r = 0, g = 0, b = 0, n = 0;
           for (let dy = -1; dy <= 1; dy++) {
+            const row = ring[(y + dy) % 3];
             for (let dx = -1; dx <= 1; dx++) {
               let xx = x + dx; if (xx < 0) xx += W; else if (xx >= W) xx -= W;
-              const j = ((y + dy) * W + xx) * 4;
-              if (!cp[j + 3]) continue;
-              r += cp[j]; g += cp[j + 1]; b += cp[j + 2]; n++;
+              const j = xx * 4;
+              if (!row[j + 3]) continue;
+              r += row[j]; g += row[j + 1]; b += row[j + 2]; n++;
             }
           }
           if (!n) continue;
@@ -1254,7 +1302,7 @@ const PanoCapture = {
       // แถวล่าง: คำแนะนำ + แถบความคืบหน้า + ปุ่มจบ
       '<div style="position:absolute;left:0;right:0;bottom:0;padding:16px">' +
       '<div style="color:#fff;font-size:13px;text-align:center;margin-bottom:10px;line-height:1.6;opacity:.9">' +
-      '<b>ถือมือถือชิดกลางลำตัว</b> แล้วหมุนทั้งตัวช้าๆ (อย่ายื่นแขนกวาด — ของใกล้จะต่อไม่สนิท)<br>เล็งวงกลางจอไปที่จุดเขียว แล้ว<b>หยุดนิ่งจนวงเต็ม</b></div>' +
+      '<b>ถือมือถือชิดกลางลำตัว</b> แล้วหมุนทั้งตัว<b>ช้าๆ ต่อเนื่อง</b> ตามเส้นประ<br>ไม่ต้องหยุด — กวาดผ่านจุดเหลืองไปเรื่อยๆ ระบบเก็บภาพให้เอง</div>' +
       '<div style="height:8px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;margin-bottom:12px">' +
       '<div id="pc-bar" style="height:100%;width:0%;background:#4ade80;transition:width .2s"></div></div>' +
       '<button id="pc-done" disabled style="width:100%;padding:14px;border:none;border-radius:12px;' +
