@@ -892,6 +892,60 @@ const PanoCapture = {
     };
     await buildCands();
 
+    // ── ปรับความสว่างทุกใบให้เข้าชุดกัน (แก้พร้อมกันทั้งหมด ไม่ใช่ไล่ทีละใบ) ──
+    // เจ้าของงานเจอ 2026-08-20: เพดานสีขาวเดียวกันแต่ความสว่างวิ่ง 89-155 กระโดดทีละ 46 ระดับ
+    //   สาเหตุ: กล้องมือถือปรับแสงเองทุกใบ (หันไปทางหน้าต่างก็หรี่ลง หันเข้ามุมมืดก็เปิดขึ้น)
+    //   ของเดิมแก้แบบ "ไล่ทีละใบเทียบกับใบก่อนหน้า" → ความคลาดสะสมไปเรื่อยๆ ยิ่งหลายใบยิ่งเพี้ยน
+    //   ใหม่: ตั้งเป็นระบบสมการแล้วแก้พร้อมกันทุกใบ (วิธีเดียวกับ GainCompensator ของ OpenCV)
+    //         หาค่าคูณของแต่ละใบที่ทำให้ "ตรงที่ภาพทับกัน สว่างเท่ากันที่สุด" ทั้งวง
+    {
+      const NF = F.length;
+      const sumIJ = new Float64Array(NF * NF);   // ความสว่างเฉลี่ยของใบ i ตรงที่ทับกับใบ j
+      const cntIJ = new Float64Array(NF * NF);
+      for (let i = 0; i < NC; i++) {
+        const b = i * MAXC;
+        if (!candL[b] || !candL[b + 1]) continue;
+        for (let k = 0; k < MAXC && candL[b + k]; k++) {
+          for (let m = k + 1; m < MAXC && candL[b + m]; m++) {
+            const a = candL[b + k] - 1, c = candL[b + m] - 1;
+            sumIJ[a * NF + c] += candG[b + k]; cntIJ[a * NF + c]++;
+            sumIJ[c * NF + a] += candG[b + m]; cntIJ[c * NF + a]++;
+          }
+        }
+      }
+
+      const g = new Float64Array(NF).fill(1);
+      const SN = 10 * 10, SG = 0.35 * 0.35;      // ยอมให้ค่าคูณเบี่ยงจาก 1 ได้แค่ไหน (±35% = ช่วงที่กล้องมือถือแกว่งจริง)
+      for (let it = 0; it < 60; it++) {          // แก้สมการแบบวนซ้ำ (Gauss-Seidel)
+        for (let i = 0; i < NF; i++) {
+          let num = 0, den = 0;
+          for (let j = 0; j < NF; j++) {
+            if (i === j) continue;
+            const n = cntIJ[i * NF + j];
+            if (n < 40) continue;                // ทับกันน้อยเกินไป ไม่น่าเชื่อถือ
+            const Iij = sumIJ[i * NF + j] / n;
+            const Iji = sumIJ[j * NF + i] / n;
+            if (Iij < 6 || Iji < 6) continue;    // มืดเกินไป อัตราส่วนจะเพี้ยน
+            num += n * (Iij * Iji * g[j] / SN + 1 / SG);
+            den += n * (Iij * Iij / SN + 1 / SG);
+          }
+          if (den > 0) g[i] = Math.max(0.7, Math.min(1.45, num / den));
+        }
+      }
+
+      // ดึงค่าเฉลี่ยกลับมาที่ 1 ไม่ให้ภาพรวมสว่างขึ้น/มืดลงทั้งใบ
+      let mean = 0;
+      for (let i = 0; i < NF; i++) mean += g[i];
+      mean /= NF || 1;
+      for (let i = 0; i < NF; i++) {
+        F[i].gain = Math.max(0.6, Math.min(1.6, F[i].gain * (g[i] / (mean || 1))));
+        st.frames[i].gain = F[i].gain;
+      }
+      st.ui.hud.textContent = 'ปรับความสว่างให้เข้าชุด…';
+      await new Promise((r) => setTimeout(r, 0));
+      await buildCands();                        // ความสว่างเปลี่ยนแล้ว ต้องคิดตะเข็บใหม่
+    }
+
     // ── เลือกตะเข็บ: วนปรับทีละจุดให้พลังงานรวมต่ำสุด ──
     // พลังงาน = (เห็นไม่ชัดเท่าไหร่) + (ถ้าติดกับเพื่อนบ้านคนละใบ ให้บวกค่าความต่างของสีตรงนั้น)
     // ผลคือเส้นตะเข็บจะไหลไปอยู่ตรงที่สองใบเห็นเหมือนกัน = มองไม่ออกว่าต่อตรงไหน
@@ -1140,45 +1194,61 @@ const PanoCapture = {
 
     // ── ลบรอยขั้นสีข้ามตะเข็บ (แก้เฉพาะความถี่ต่ำ ไม่แตะรายละเอียด) ──
     // เทียบ "สีเฉลี่ยแบบนุ่มๆ ของทุกใบ" กับ "สีที่วาดจริง" แล้วค่อยๆ ปรับให้เท่ากัน
-    // ทำบนตารางย่อแล้วขยายกลับ → ได้ผลเหมือน multi-band blending แต่เบากว่ามาก
+    // ทำบนตารางหยาบมากแล้วขยายกลับ → ได้ผลเหมือน multi-band blending แต่เบากว่ามาก
+    //
+    // ปรับ 2026-08-20 (เจ้าของงานเจอตะเข็บที่จุดที่ 5): ของเดิมเกลี่ยบนตาราง 1024×512 แค่ 4 รอบ
+    //   = แผ่กว้างแค่ ~8 จุดภาพจริง แคบเกินกว่าจะกลบ "ทั้งใบสว่างกว่าเพื่อน"
+    //   ใหม่: ย่อเป็น 128×64 แล้วเกลี่ย 10 รอบ = แผ่กว้าง ~80 จุดภาพจริง แล้วขยายกลับแบบไล่สี
     {
-      const cr = new Float32Array(NC), cg = new Float32Array(NC), cb = new Float32Array(NC);
-      const sc = Math.max(1, (W / LW) | 0), sr = Math.max(1, (H / LH) | 0);
+      const CW = 128, CH = 64, NCC = CW * CH;      // ตารางหยาบสำหรับ "ส่วนต่างความสว่าง"
+      const cs = new Float32Array(NCC), cw = new Float32Array(NCC);
       for (let y = 0; y < LH; y++) {
+        const cy = ((y * CH / LH) | 0) * CW;
         for (let x = 0; x < LW; x++) {
           const i = y * LW + x;
           const b = i * MAXC;
-          if (!candL[b]) continue;
+          if (!candL[b] || !candL[b + 1]) continue;   // มีใบเดียว ไม่มีอะไรให้เทียบ
           // เป้าหมาย = เฉลี่ยนุ่มๆ ของทุกใบ (ความถี่ต่ำของมันถูกต้อง แม้ความถี่สูงจะซ้อนกัน)
           let tw = 0, tg = 0;
           for (let k = 0; k < MAXC && candL[b + k]; k++) { tw += candQ[b + k]; tg += candG[b + k] * candQ[b + k]; }
-          const target = tw ? tg / tw : 0;
           const actual = grayOf(i, label[i]);
           if (actual < 0 || !tw) continue;
-          const d = target - actual;
-          cr[i] = d; cg[i] = d; cb[i] = d;
+          let d = tg / tw - actual;
+          if (d > 30) d = 30; else if (d < -30) d = -30;
+          const ci = cy + ((x * CW / LW) | 0);
+          cs[ci] += d; cw[ci] += 1;
         }
       }
-      // เกลี่ยแผนที่ส่วนต่างให้นุ่ม (ไม่งั้นจะกลายเป็นขอบใหม่)
-      const tmp = new Float32Array(NC);
-      for (let pass = 0; pass < 4; pass++) {
-        for (let y = 0; y < LH; y++) {
-          for (let x = 0; x < LW; x++) {
-            const i = y * LW + x;
-            const l = y * LW + (x === 0 ? LW - 1 : x - 1), r = y * LW + (x === LW - 1 ? 0 : x + 1);
-            const u = y > 0 ? i - LW : i, d2 = y < LH - 1 ? i + LW : i;
-            tmp[i] = (cr[i] * 2 + cr[l] + cr[r] + cr[u] + cr[d2]) / 6;
+      for (let i = 0; i < NCC; i++) cs[i] = cw[i] ? cs[i] / cw[i] : 0;
+
+      // เกลี่ยให้นุ่มมาก (ไม่งั้นตัวแก้เองจะกลายเป็นขอบใหม่)
+      const tmp = new Float32Array(NCC);
+      for (let pass = 0; pass < 10; pass++) {
+        for (let y = 0; y < CH; y++) {
+          for (let x = 0; x < CW; x++) {
+            const i = y * CW + x;
+            const l = y * CW + (x === 0 ? CW - 1 : x - 1), r = y * CW + (x === CW - 1 ? 0 : x + 1);
+            const u = y > 0 ? i - CW : i, dn = y < CH - 1 ? i + CW : i;
+            tmp[i] = (cs[i] * 2 + cs[l] + cs[r] + cs[u] + cs[dn]) / 6;
           }
         }
-        cr.set(tmp);
+        cs.set(tmp);
       }
+
+      // ขยายกลับแบบไล่สี (bilinear) ไม่งั้นจะเห็นเป็นตาราง
       for (let y = 0; y < H; y++) {
-        const ly = ((y * LH / H) | 0) * LW;
+        const fy = Math.min(CH - 1.001, Math.max(0, (y + 0.5) * CH / H - 0.5));
+        const y0 = fy | 0, ty = fy - y0, y1 = Math.min(CH - 1, y0 + 1);
+        const r0 = y0 * CW, r1 = y1 * CW;
         for (let x = 0; x < W; x++) {
           const oi = y * W + x;
           if (!fullLab[oi]) continue;
-          const d = cr[ly + ((x * LW / W) | 0)];
-          if (d === 0) continue;
+          const fx = (x + 0.5) * CW / W - 0.5;
+          const x0 = Math.floor(fx), tx = fx - x0;
+          const xa = ((x0 % CW) + CW) % CW, xb = (xa + 1) % CW;
+          const d = (cs[r0 + xa] * (1 - tx) + cs[r0 + xb] * tx) * (1 - ty) +
+                    (cs[r1 + xa] * (1 - tx) + cs[r1 + xb] * tx) * ty;
+          if (d > -0.15 && d < 0.15) continue;
           const di = oi * 4;
           out[di] += d; out[di + 1] += d; out[di + 2] += d;
         }
