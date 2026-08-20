@@ -579,9 +579,9 @@ const PanoCapture = {
       const s = small[fi];
       const skipFloor = ax.fwd[1] > FLOOR_CUT;      // ใบที่ไม่ได้เล็งพื้นอยู่แล้ว
       let sum = 0, n = 0, sa = 0, sb = 0;
-      for (let y = 2; y < s.h - 2; y += 2) {
+      for (let y = 2; y < s.h - 2; y += 3) {
         const py = 1 - (y + 0.5) / s.h * 2;
-        for (let x = 2; x < s.w - 2; x += 2) {
+        for (let x = 2; x < s.w - 2; x += 3) {
           const px = (x + 0.5) / s.w * 2 - 1;
           const vx = ax.fwd[0] + px * tanH * ax.right[0] + py * tanV * ax.up[0];
           const vy = ax.fwd[1] + px * tanH * ax.right[1] + py * tanV * ax.up[1];
@@ -654,8 +654,10 @@ const PanoCapture = {
     // ทำ 2 รอบ: รอบแรกไล่ไปหน้า รอบสองไล่ย้อนกลับ
     //   เพราะใบแรกๆ ตอนรอบแรกยังไม่มีอะไรให้เทียบเลย (วางตามเซ็นเซอร์ล้วน)
     //   รอบสองมันจะได้เทียบกับใบหลังที่จัดเข้าที่แล้ว → ดริฟต์สะสมหายไปเกือบหมด
+    // เดิมทำ 2 รอบ + ค้นละเอียด = 40 วินาที · ตอนนี้เหลือรอบเดียวแบบหยาบ
+    // (ความละเอียดไปทำที่ขั้น "จูนรอยต่อ" แทน ซึ่งตรงประเด็นกว่าเพราะดูเฉพาะเส้นที่จะตัดจริง)
     const N = st.frames.length;
-    for (let pass = 0; pass < 2; pass++) {
+    for (let pass = 0; pass < 1; pass++) {
       const order = pass === 0
         ? st.frames.map((_, k) => k)
         : st.frames.map((_, k) => N - 1 - k);
@@ -675,10 +677,11 @@ const PanoCapture = {
         best = { dy: b0.dy, dp: b0.dp, dr: b0.dr, err: base.err, gain: base.gain };
         const needN = Math.max(40, base.n * 0.75);
         // ค้นหยาบก่อน (ทีละ 2°) แล้วค่อยละเอียด (ทีละ 0.5°) รอบค่าที่ดีที่สุด
-        for (const step of [2, 0.5]) {
+        // รอบแรกกวาดกว้าง (ครอบคลุมความคลาดตอนเล็ง ±3.5°) รอบสองเก็บละเอียด
+        for (const [step, span] of [[2, 2], [0.7, 1]]) {
           const c = { dy: best.dy, dp: best.dp, dr: best.dr };
-          for (let dy = -2; dy <= 2; dy++) {
-            for (let dp = -2; dp <= 2; dp++) {
+          for (let dy = -span; dy <= span; dy++) {
+            for (let dp = -span; dp <= span; dp++) {
               for (let dr = -1; dr <= 1; dr++) {
                 const Y = c.dy + dy * step, P = c.dp + dp * step, R = c.dr + dr * step;
                 const ax = this._axesAdj(fr.q, Y, P, R);
@@ -809,6 +812,8 @@ const PanoCapture = {
     }
 
     // ── เก็บว่าแต่ละจุดมีใบไหนคลุมบ้าง + เห็นชัดแค่ไหน ──
+    const buildCands = async () => {
+    candL.fill(0); candG.fill(0); candQ.fill(0);
     for (let fi = 0; fi < F.length; fi++) {
       const f = F[fi], ax = f.ax, src = f.src, fw = f.w, fh = f.h;
       const y0 = Math.max(0, Math.floor((0.5 - (f.cLat + capR) / Math.PI) * LH));
@@ -843,12 +848,13 @@ const PanoCapture = {
       }
       if (fi % 6 === 5) { st.ui.hud.textContent = 'วางแนวตะเข็บ ' + (fi + 1) + '/' + F.length + '…'; await new Promise((r) => setTimeout(r, 0)); }
     }
+    };
+    await buildCands();
 
     // ── เลือกตะเข็บ: วนปรับทีละจุดให้พลังงานรวมต่ำสุด ──
     // พลังงาน = (เห็นไม่ชัดเท่าไหร่) + (ถ้าติดกับเพื่อนบ้านคนละใบ ให้บวกค่าความต่างของสีตรงนั้น)
     // ผลคือเส้นตะเข็บจะไหลไปอยู่ตรงที่สองใบเห็นเหมือนกัน = มองไม่ออกว่าต่อตรงไหน
     const label = new Uint8Array(NC);
-    for (let i = 0; i < NC; i++) label[i] = candL[i * MAXC];       // เริ่มจากใบที่เห็นชัดสุด
 
     const grayOf = (i, lab) => {
       const b = i * MAXC;
@@ -857,7 +863,9 @@ const PanoCapture = {
     };
     const W_SMOOTH = 2.2;
 
-    for (let iter = 0; iter < 6; iter++) {
+    const pickSeams = async (rounds) => {
+    for (let i = 0; i < NC; i++) label[i] = candL[i * MAXC];       // เริ่มจากใบที่เห็นชัดสุด
+    for (let iter = 0; iter < rounds; iter++) {
       let changed = 0;
       for (let y = 0; y < LH; y++) {
         for (let x = 0; x < LW; x++) {
@@ -886,9 +894,104 @@ const PanoCapture = {
           if (bestLab !== label[i]) { label[i] = bestLab; changed++; }
         }
       }
-      st.ui.hud.textContent = 'ปรับแนวตะเข็บ รอบ ' + (iter + 1) + '/6…';
+      st.ui.hud.textContent = 'ปรับแนวตะเข็บ รอบ ' + (iter + 1) + '/' + rounds + '…';
       await new Promise((r) => setTimeout(r, 0));
       if (!changed) break;
+    }
+    };
+    await pickSeams(6);
+
+    // ════════════════════════════════════════════════════════
+    // จัดตำแหน่งซ้ำ โดยดูเฉพาะ "แนวตะเข็บ" (seam-guided alignment)
+    // ════════════════════════════════════════════════════════
+    // แนวคิดจากงานวิจัย SEAGULL: พอมีพารัลแลกซ์ เราจัดให้ทั้งภาพตรงกันไม่ได้อยู่แล้ว
+    //   แต่ "ไม่จำเป็นต้องตรงทั้งภาพ" — ตรงแค่ตรงเส้นที่เราจะตัดก็พอ
+    //   เพราะนอกเส้นตัดเราไม่ได้ใช้ภาพนั้นแล้ว
+    // จึงขยับแต่ละใบอีกนิด โดยวัดความต่างเฉพาะจุดที่อยู่บนเส้นตะเข็บของมัน
+    // แล้ววางตะเข็บใหม่อีกรอบ → รอยต่อกลืนขึ้นชัดเจน โดยไม่ต้องพึ่งเซิร์ฟเวอร์
+    {
+      const seamPts = [];                       // [{i, me, other}] จุดที่อยู่บนรอยต่อ
+      for (let y = 1; y < LH - 1; y++) {
+        for (let x = 0; x < LW; x++) {
+          const i = y * LW + x;
+          const me = label[i];
+          if (!me) continue;
+          const xr = x === LW - 1 ? 0 : x + 1;
+          for (const j of [i + LW, y * LW + xr]) {
+            const on = label[j];
+            if (on && on !== me) { seamPts.push([i, me, on]); break; }
+          }
+        }
+      }
+
+      if (seamPts.length > 30) {
+        // เตรียมทิศทางของจุดตะเข็บไว้ล่วงหน้า (ไม่ต้องคิดตรีโกณซ้ำในลูปค้นหา)
+        const n = seamPts.length;
+        const dirs = new Float64Array(n * 3), tgt = new Float32Array(n);
+        const owner = new Int32Array(n);
+        for (let k = 0; k < n; k++) {
+          const [i, me, other] = seamPts[k];
+          const y = (i / LW) | 0, x = i % LW;
+          const la = (0.5 - (y + 0.5) / LH) * Math.PI;
+          const cosLa = Math.cos(la);
+          dirs[k * 3] = cosLa * sinL[x]; dirs[k * 3 + 1] = Math.sin(la); dirs[k * 3 + 2] = -cosLa * cosL[x];
+          tgt[k] = grayOf(i, other);
+          owner[k] = me - 1;
+        }
+
+        for (let fi = 0; fi < F.length; fi++) {
+          const idx = [];
+          for (let k = 0; k < n; k++) if (owner[k] === fi && tgt[k] >= 0) idx.push(k);
+          if (idx.length < 25) continue;                 // ตะเข็บสั้นเกินไป ไม่ต้องขยับ
+
+          const fr = st.frames[fi], base = fr.adj || { dy: 0, dp: 0, dr: 0 };
+          const f = F[fi], src = f.src, fw = f.w, fh = f.h, gain = f.gain;
+          let best = { dy: base.dy, dp: base.dp }, bestErr = Infinity;
+          for (const [step, span] of [[0.5, 2], [0.15, 2]]) {
+          const c0 = { dy: best.dy, dp: best.dp };
+          for (let a = -span; a <= span; a++) {
+            for (let b = -span; b <= span; b++) {
+              const dy = c0.dy + a * step, dp = c0.dp + b * step;
+              const ax = this._axesAdj(fr.q, dy, dp, base.dr);
+              let sum = 0, cnt = 0;
+              for (const k of idx) {
+                const vx = dirs[k * 3], vy = dirs[k * 3 + 1], vz = dirs[k * 3 + 2];
+                const fd = vx * ax.fwd[0] + vy * ax.fwd[1] + vz * ax.fwd[2];
+                if (fd <= 0.1) continue;
+                const px = (vx * ax.right[0] + vy * ax.right[1] + vz * ax.right[2]) / fd / tanH;
+                if (px < -1 || px > 1) continue;
+                const py = (vx * ax.up[0] + vy * ax.up[1] + vz * ax.up[2]) / fd / tanV;
+                if (py < -1 || py > 1) continue;
+                const sx = ((px + 1) * 0.5 * (fw - 1)) | 0, sy = ((1 - py) * 0.5 * (fh - 1)) | 0;
+                const si = (sy * fw + sx) * 3;
+                const g = (src[si] * 0.299 + src[si + 1] * 0.587 + src[si + 2] * 0.114) * gain;
+                sum += Math.abs(g - tgt[k]); cnt++;
+              }
+              if (cnt < idx.length * 0.6) continue;       // ขยับจนหลุดตะเข็บ ไม่นับ
+              const err = sum / cnt;
+              if (err < bestErr) { bestErr = err; best = { dy: dy, dp: dp }; }
+            }
+          }
+          }
+          if (best && (best.dy !== base.dy || best.dp !== base.dp)) {
+            fr.adj = { dy: best.dy, dp: best.dp, dr: base.dr };
+            const ax = this._axesAdj(fr.q, best.dy, best.dp, base.dr);
+            f.ax = ax;
+            f.cLat = Math.asin(Math.max(-1, Math.min(1, ax.fwd[1])));
+            f.cLon = Math.atan2(ax.fwd[0], -ax.fwd[2]);
+            f.sinC = Math.sin(f.cLat); f.cosC = Math.cos(f.cLat);
+            f.y0 = Math.max(0, Math.floor((0.5 - (f.cLat + capR) / Math.PI) * H));
+            f.y1 = Math.min(H - 1, Math.ceil((0.5 - (f.cLat - capR) / Math.PI) * H));
+          }
+          if (fi % 8 === 7) {
+            st.ui.hud.textContent = 'จูนรอยต่อ ' + (fi + 1) + '/' + F.length + '…';
+            await new Promise((r) => setTimeout(r, 0));
+          }
+        }
+
+        await buildCands();          // ตำแหน่งเปลี่ยนแล้ว ต้องคิดใหม่
+        await pickSeams(3);
+      }
     }
 
     // ── วาดจริง: ทุกจุดเอาสีจาก "ใบเดียว" ตามที่ตะเข็บเลือกไว้ ──
