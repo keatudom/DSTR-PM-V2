@@ -571,8 +571,13 @@ const PanoCapture = {
     });
 
     // เทียบใบหนึ่งกับสิ่งที่วางไว้แล้ว → คืนค่าความต่างเฉลี่ย (ยิ่งน้อยยิ่งทับกันดี)
+    // ⚠️ จัดภาพโดยยึด "ของไกล" เป็นหลัก — ของใกล้พื้นเลื่อนตำแหน่งเยอะเวลาหมุนตัว
+    //    (กล้องไม่ได้อยู่บนแกนหมุนพอดี ของห่าง 1 ม. เลื่อนได้สิบกว่าองศา ของห่าง 10 ม. เลื่อนไม่ถึง 2 องศา)
+    //    ถ้าเอาพื้นมาคิดด้วย มันจะดึงทั้งใบให้เบี้ยว ผนังที่ควรตรงเป๊ะกลับเหลื่อมตาม
+    const FLOOR_CUT = -0.60;        // sin(-37°) — ต่ำกว่านี้ถือว่าเป็นพื้น
     const score = (fi, ax, tanH, tanV) => {
       const s = small[fi];
+      const skipFloor = ax.fwd[1] > FLOOR_CUT;      // ใบที่ไม่ได้เล็งพื้นอยู่แล้ว
       let sum = 0, n = 0, sa = 0, sb = 0;
       for (let y = 2; y < s.h - 2; y += 2) {
         const py = 1 - (y + 0.5) / s.h * 2;
@@ -582,6 +587,7 @@ const PanoCapture = {
           const vy = ax.fwd[1] + px * tanH * ax.right[1] + py * tanV * ax.up[1];
           const vz = ax.fwd[2] + px * tanH * ax.right[2] + py * tanV * ax.up[2];
           const len = Math.sqrt(vx * vx + vy * vy + vz * vz);
+          if (skipFloor && vy / len < FLOOR_CUT) continue;
           const lat = Math.asin(vy / len), lon = Math.atan2(vx / len, -vz / len);
           const gx = ((lon / (2 * Math.PI) + 0.5) * GW) | 0;
           const gy = ((0.5 - lat / Math.PI) * GH) | 0;
@@ -972,7 +978,7 @@ const PanoCapture = {
       // แถวล่าง: คำแนะนำ + แถบความคืบหน้า + ปุ่มจบ
       '<div style="position:absolute;left:0;right:0;bottom:0;padding:16px">' +
       '<div style="color:#fff;font-size:13px;text-align:center;margin-bottom:10px;line-height:1.6;opacity:.9">' +
-      'ยืนอยู่กับที่ หมุนตัวช้าๆ เล็งวงกลางจอไปที่จุดเขียว<br><b>หยุดนิ่งจนวงเต็ม</b> ระบบจะเก็บภาพให้เอง — ยิ่งนิ่ง ภาพยิ่งต่อเนียน</div>' +
+      '<b>ถือมือถือชิดกลางลำตัว</b> แล้วหมุนทั้งตัวช้าๆ (อย่ายื่นแขนกวาด — ของใกล้จะต่อไม่สนิท)<br>เล็งวงกลางจอไปที่จุดเขียว แล้ว<b>หยุดนิ่งจนวงเต็ม</b></div>' +
       '<div style="height:8px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;margin-bottom:12px">' +
       '<div id="pc-bar" style="height:100%;width:0%;background:#4ade80;transition:width .2s"></div></div>' +
       '<button id="pc-done" disabled style="width:100%;padding:14px;border:none;border-radius:12px;' +
