@@ -782,84 +782,257 @@ const PanoCapture = {
       };
     });
 
-    // ── เกลี่ยรอยต่อ: ทำทีละแถบ (กันหน่วยความจำบวมบนมือถือ) ──
-    const BAND = 128;
-    const cosCapR = Math.cos(capR);
-    const accR = new Float32Array(W * BAND), accG = new Float32Array(W * BAND);
-    const accB = new Float32Array(W * BAND), accW = new Float32Array(W * BAND);
+    // ════════════════════════════════════════════════════════
+    // ต่อภาพแบบ "เลือกตะเข็บ" แทนการเฉลี่ยสี
+    // ════════════════════════════════════════════════════════
+    // ค้นงานวิจัยแล้วพบว่าวงการไม่ได้ "แก้" พารัลแลกซ์ แต่ "ซ่อน" มัน 2 ชั้น
+    // (OpenCV GraphCutSeamFinder + MultiBandBlender · Zhang & Liu 2014 Parallax-tolerant Stitching)
+    //
+    //   ชั้นที่ 1 — ทุกจุดบนภาพเอามาจาก "ใบเดียว" ไม่เฉลี่ยกัน → ไม่มีเงาซ้อนเด็ดขาด
+    //              แล้วเลือก "แนวตะเข็บ" ให้วิ่งผ่านที่ที่สองใบเห็นตรงกันที่สุด
+    //              (เช่น ผนังเรียบ พื้นเรียบ) ไม่ตัดกลางแผ่นไม้หรือกลางของที่มีลาย
+    //   ชั้นที่ 2 — แก้สีเฉพาะ "ความถี่ต่ำ" ข้ามตะเข็บ (แสงเข้ม/อ่อนต่างกัน)
+    //              โดยไม่แตะรายละเอียด → รอยต่อหายไปแต่ภาพยังคม
+    //
+    // ของเดิมเฉลี่ยสีทุกใบที่ทับกัน = สาเหตุที่แผ่นไม้ขาดเป็นท่อนและภาพเบลอตรงรอยต่อ
 
-    for (let by = 0; by < H; by += BAND) {
-      const bh = Math.min(BAND, H - by);
-      accR.fill(0); accG.fill(0); accB.fill(0); accW.fill(0);
+    const LW = 1024, LH = 512, MAXC = 4;      // ตารางย่อสำหรับคิดแนวตะเข็บ
+    const NC = LW * LH;
+    const candL = new Uint8Array(NC * MAXC);  // ใบไหนคลุมจุดนี้บ้าง (เก็บ index+1, 0 = ไม่มี)
+    const candG = new Uint8Array(NC * MAXC);  // ค่าความสว่างที่ใบนั้นเห็น (ใช้เทียบว่าตรงกันไหม)
+    const candQ = new Float32Array(NC * MAXC); // เห็นชัดแค่ไหน (ใกล้กลางภาพ = ดี)
 
-      for (const f of F) {
-        if (f.y1 < by || f.y0 >= by + bh) continue;
-        const ax = f.ax, src = f.src, fw = f.w, fh = f.h, gain = f.gain;
-        const rX = ax.right[0], rY = ax.right[1], rZ = ax.right[2];
-        const uX = ax.up[0], uY = ax.up[1], uZ = ax.up[2];
-        const fX = ax.fwd[0], fY = ax.fwd[1], fZ = ax.fwd[2];
+    const sinL = new Float64Array(LW), cosL = new Float64Array(LW);
+    for (let x = 0; x < LW; x++) {
+      const lo = ((x + 0.5) / LW - 0.5) * 2 * Math.PI;
+      sinL[x] = Math.sin(lo); cosL[x] = Math.cos(lo);
+    }
 
-        const yA = Math.max(by, f.y0), yB = Math.min(by + bh - 1, f.y1);
-        for (let y = yA; y <= yB; y++) {
-          const la = (0.5 - (y + 0.5) / H) * Math.PI;
-          const cosLa = Math.cos(la), sinLa = Math.sin(la);
-          const denom = f.cosC * cosLa;
-          let xStart = 0, xCount = W;
-          if (Math.abs(denom) > 1e-6) {
-            const cosD = (cosCapR - f.sinC * sinLa) / denom;
-            if (cosD >= 1) continue;
-            if (cosD > -1) {
-              const half = Math.ceil(Math.acos(cosD) / (2 * Math.PI) * W) + 1;
-              xStart = Math.round((f.cLon / (2 * Math.PI) + 0.5) * W) - half;
-              xCount = half * 2 + 1;
-              if (xCount >= W) { xStart = 0; xCount = W; }
+    // ── เก็บว่าแต่ละจุดมีใบไหนคลุมบ้าง + เห็นชัดแค่ไหน ──
+    for (let fi = 0; fi < F.length; fi++) {
+      const f = F[fi], ax = f.ax, src = f.src, fw = f.w, fh = f.h;
+      const y0 = Math.max(0, Math.floor((0.5 - (f.cLat + capR) / Math.PI) * LH));
+      const y1 = Math.min(LH - 1, Math.ceil((0.5 - (f.cLat - capR) / Math.PI) * LH));
+      for (let y = y0; y <= y1; y++) {
+        const la = (0.5 - (y + 0.5) / LH) * Math.PI;
+        const cosLa = Math.cos(la), sinLa = Math.sin(la);
+        for (let x = 0; x < LW; x++) {
+          const dx = cosLa * sinL[x], dy = sinLa, dz = -cosLa * cosL[x];
+          const fd = dx * ax.fwd[0] + dy * ax.fwd[1] + dz * ax.fwd[2];
+          if (fd <= 0.08) continue;
+          const px = (dx * ax.right[0] + dy * ax.right[1] + dz * ax.right[2]) / fd / tanH;
+          if (px < -1 || px > 1) continue;
+          const py = (dx * ax.up[0] + dy * ax.up[1] + dz * ax.up[2]) / fd / tanV;
+          if (py < -1 || py > 1) continue;
+          const q = (1 - Math.abs(px)) * (1 - Math.abs(py)) * fd;
+          const sx = ((px + 1) * 0.5 * (fw - 1)) | 0, sy = ((1 - py) * 0.5 * (fh - 1)) | 0;
+          const si = (sy * fw + sx) * 3;
+          const g = (src[si] * 0.299 + src[si + 1] * 0.587 + src[si + 2] * 0.114) * f.gain;
+
+          const base = (y * LW + x) * MAXC;
+          for (let k = 0; k < MAXC; k++) {                 // แทรกแบบเรียงจากเห็นชัดสุด
+            if (candL[base + k] === 0 || q > candQ[base + k]) {
+              for (let j = MAXC - 1; j > k; j--) {
+                candL[base + j] = candL[base + j - 1]; candG[base + j] = candG[base + j - 1]; candQ[base + j] = candQ[base + j - 1];
+              }
+              candL[base + k] = fi + 1; candG[base + k] = g > 255 ? 255 : g; candQ[base + k] = q;
+              break;
             }
           }
-          const rowOut = (y - by) * W;
-          for (let k = 0; k < xCount; k++) {
-            let x = xStart + k;
-            if (x < 0) x += W; else if (x >= W) x -= W;
-            const dx = cosLa * sinLon[x], dy = sinLa, dz = -cosLa * cosLon[x];
-            const fd = dx * fX + dy * fY + dz * fZ;
-            if (fd <= 0.08) continue;
-            const px = (dx * rX + dy * rY + dz * rZ) / fd / tanH;
-            if (px < -1 || px > 1) continue;
-            const py = (dx * uX + dy * uY + dz * uZ) / fd / tanV;
-            if (py < -1 || py > 1) continue;
+        }
+      }
+      if (fi % 6 === 5) { st.ui.hud.textContent = 'วางแนวตะเข็บ ' + (fi + 1) + '/' + F.length + '…'; await new Promise((r) => setTimeout(r, 0)); }
+    }
 
-            // น้ำหนัก = ระยะจากขอบภาพ ยกกำลังสูง → ใบที่ "เห็นจุดนี้ชัดที่สุด" ครองภาพเกือบทั้งหมด
-            // ⚠️ เดิมยกกำลังต่ำ = เฉลี่ยหลายใบเท่าๆ กัน ถ้าใบไหนคลาดนิดเดียวภาพจะเบลอทันที
-            //    (นี่คือสาเหตุที่บางจุด "เลือนๆ" — เจ้าของงานสังเกตออก 2026-08-19)
-            const e1 = 1 - Math.abs(px), e2 = 1 - Math.abs(py);
-            const e = e1 * e2;
-            const wgt = e * e * e * e * e * e * fd + 1e-6;
+    // ── เลือกตะเข็บ: วนปรับทีละจุดให้พลังงานรวมต่ำสุด ──
+    // พลังงาน = (เห็นไม่ชัดเท่าไหร่) + (ถ้าติดกับเพื่อนบ้านคนละใบ ให้บวกค่าความต่างของสีตรงนั้น)
+    // ผลคือเส้นตะเข็บจะไหลไปอยู่ตรงที่สองใบเห็นเหมือนกัน = มองไม่ออกว่าต่อตรงไหน
+    const label = new Uint8Array(NC);
+    for (let i = 0; i < NC; i++) label[i] = candL[i * MAXC];       // เริ่มจากใบที่เห็นชัดสุด
 
-            // สุ่มสีแบบเฉลี่ย 4 จุดข้างเคียง (bilinear) — คมกว่าหยิบจุดเดียวแบบเดิมชัดเจน
-            const fx = (px + 1) * 0.5 * (fw - 1), fy = (1 - py) * 0.5 * (fh - 1);
-            const x0 = fx | 0, y0b = fy | 0;
-            const x1 = x0 + 1 < fw ? x0 + 1 : fw - 1, y1b = y0b + 1 < fh ? y0b + 1 : fh - 1;
-            const tx = fx - x0, ty = fy - y0b;
-            const i00 = (y0b * fw + x0) * 3, i10 = (y0b * fw + x1) * 3;
-            const i01 = (y1b * fw + x0) * 3, i11 = (y1b * fw + x1) * 3;
-            const w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
-            const oi = rowOut + x;
-            const gw = gain * wgt;
-            accR[oi] += (src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11) * gw;
-            accG[oi] += (src[i00 + 1] * w00 + src[i10 + 1] * w10 + src[i01 + 1] * w01 + src[i11 + 1] * w11) * gw;
-            accB[oi] += (src[i00 + 2] * w00 + src[i10 + 2] * w10 + src[i01 + 2] * w01 + src[i11 + 2] * w11) * gw;
-            accW[oi] += wgt;
+    const grayOf = (i, lab) => {
+      const b = i * MAXC;
+      for (let k = 0; k < MAXC; k++) if (candL[b + k] === lab) return candG[b + k];
+      return -1;                                                    // ใบนี้ไม่คลุมจุดนั้น
+    };
+    const W_SMOOTH = 2.2;
+
+    for (let iter = 0; iter < 6; iter++) {
+      let changed = 0;
+      for (let y = 0; y < LH; y++) {
+        for (let x = 0; x < LW; x++) {
+          const i = y * LW + x;
+          const b = i * MAXC;
+          if (candL[b] === 0 || candL[b + 1] === 0) continue;        // มีใบเดียว ไม่ต้องเลือก
+          const nb = [
+            y > 0 ? i - LW : -1, y < LH - 1 ? i + LW : -1,
+            y * LW + (x === 0 ? LW - 1 : x - 1), y * LW + (x === LW - 1 ? 0 : x + 1),
+          ];
+          let bestLab = label[i], bestE = Infinity;
+          for (let k = 0; k < MAXC && candL[b + k]; k++) {
+            const lab = candL[b + k];
+            let E = (1 - candQ[b + k] / (candQ[b] + 1e-6)) * 1.0;
+            for (const j of nb) {
+              if (j < 0) continue;
+              const ln = label[j];
+              if (!ln || ln === lab) continue;
+              const a1 = grayOf(i, lab), a2 = grayOf(i, ln);
+              const c1 = grayOf(j, lab), c2 = grayOf(j, ln);
+              if (a1 < 0 || a2 < 0 || c1 < 0 || c2 < 0) { E += W_SMOOTH * 0.9; continue; }
+              E += W_SMOOTH * ((Math.abs(a1 - a2) + Math.abs(c1 - c2)) / 510);
+            }
+            if (E < bestE) { bestE = E; bestLab = lab; }
+          }
+          if (bestLab !== label[i]) { label[i] = bestLab; changed++; }
+        }
+      }
+      st.ui.hud.textContent = 'ปรับแนวตะเข็บ รอบ ' + (iter + 1) + '/6…';
+      await new Promise((r) => setTimeout(r, 0));
+      if (!changed) break;
+    }
+
+    // ── วาดจริง: ทุกจุดเอาสีจาก "ใบเดียว" ตามที่ตะเข็บเลือกไว้ ──
+    const fullLab = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) {
+      const ly = ((y * LH / H) | 0) * LW;
+      const la = (0.5 - (y + 0.5) / H) * Math.PI;
+      const cosLa = Math.cos(la), sinLa = Math.sin(la);
+      for (let x = 0; x < W; x++) {
+        let lab = label[ly + ((x * LW / W) | 0)];
+        const dx = cosLa * sinLon[x], dy = sinLa, dz = -cosLa * cosLon[x];
+
+        // ใบที่ตะเข็บเลือกอาจคลุมไม่ถึงจุดนี้พอดี (ขอบภาพ) → หาใบที่เห็นชัดสุดแทน
+        let f = lab ? F[lab - 1] : null;
+        let ok = false, px = 0, py = 0, fd = 0;
+        if (f) {
+          fd = dx * f.ax.fwd[0] + dy * f.ax.fwd[1] + dz * f.ax.fwd[2];
+          if (fd > 0.08) {
+            px = (dx * f.ax.right[0] + dy * f.ax.right[1] + dz * f.ax.right[2]) / fd / tanH;
+            py = (dx * f.ax.up[0] + dy * f.ax.up[1] + dz * f.ax.up[2]) / fd / tanV;
+            ok = px >= -1 && px <= 1 && py >= -1 && py <= 1;
           }
         }
-      }
+        if (!ok) {
+          let bq = 0;
+          for (let k = 0; k < F.length; k++) {
+            const g = F[k];
+            const d2 = dx * g.ax.fwd[0] + dy * g.ax.fwd[1] + dz * g.ax.fwd[2];
+            if (d2 <= 0.08) continue;
+            const a = (dx * g.ax.right[0] + dy * g.ax.right[1] + dz * g.ax.right[2]) / d2 / tanH;
+            if (a < -1 || a > 1) continue;
+            const c = (dx * g.ax.up[0] + dy * g.ax.up[1] + dz * g.ax.up[2]) / d2 / tanV;
+            if (c < -1 || c > 1) continue;
+            const q = (1 - Math.abs(a)) * (1 - Math.abs(c)) * d2;
+            if (q > bq) { bq = q; lab = k + 1; f = g; px = a; py = c; fd = d2; ok = true; }
+          }
+        }
+        const oi = y * W + x, di = oi * 4;
+        if (!ok) { fullLab[oi] = 0; continue; }
+        fullLab[oi] = lab;
 
-      for (let i = 0; i < W * bh; i++) {
-        const di = ((by * W) + i) * 4;
-        const w8 = accW[i];
-        if (w8 > 0) {
-          out[di] = accR[i] / w8; out[di + 1] = accG[i] / w8; out[di + 2] = accB[i] / w8; out[di + 3] = 255;
+        const fw = f.w, fh = f.h, src = f.src, gain = f.gain;
+        const fx = (px + 1) * 0.5 * (fw - 1), fy = (1 - py) * 0.5 * (fh - 1);
+        const x0 = fx | 0, y0b = fy | 0;
+        const x1 = x0 + 1 < fw ? x0 + 1 : fw - 1, y1b = y0b + 1 < fh ? y0b + 1 : fh - 1;
+        const tx = fx - x0, ty = fy - y0b;
+        const i00 = (y0b * fw + x0) * 3, i10 = (y0b * fw + x1) * 3;
+        const i01 = (y1b * fw + x0) * 3, i11 = (y1b * fw + x1) * 3;
+        const w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
+        out[di] = (src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11) * gain;
+        out[di + 1] = (src[i00 + 1] * w00 + src[i10 + 1] * w10 + src[i01 + 1] * w01 + src[i11 + 1] * w11) * gain;
+        out[di + 2] = (src[i00 + 2] * w00 + src[i10 + 2] * w10 + src[i01 + 2] * w01 + src[i11 + 2] * w11) * gain;
+        out[di + 3] = 255;
+      }
+      if ((y & 255) === 255) {
+        st.ui.hud.textContent = 'วาดภาพ ' + Math.round(y / H * 100) + '%';
+        await new Promise((r) => setTimeout(r, 0));
+      }
+    }
+
+    // ── เกลี่ยขอบตะเข็บให้ไม่เป็นขั้นบันได ──
+    // แนวตะเข็บคิดบนตารางย่อ (1024x512) แล้วขยายมาใช้กับภาพจริง (4096x2048)
+    // ขอบเลยเป็นขั้นละ 4 จุด → เกลี่ยเฉพาะแถวที่อยู่ติดรอยต่อ ไม่แตะส่วนอื่นของภาพ
+    {
+      const edge = new Uint8Array(W * H);
+      for (let y = 1; y < H - 1; y++) {
+        for (let x = 0; x < W; x++) {
+          const i = y * W + x;
+          const l = fullLab[i];
+          if (!l) continue;
+          const xl = x === 0 ? W - 1 : x - 1, xr = x === W - 1 ? 0 : x + 1;
+          if (fullLab[i - W] !== l || fullLab[i + W] !== l ||
+              fullLab[y * W + xl] !== l || fullLab[y * W + xr] !== l) edge[i] = 1;
         }
       }
-      st.ui.hud.textContent = 'กำลังเกลี่ยรอยต่อ ' + Math.min(100, Math.round((by + bh) / H * 100)) + '%';
+      const cp = new Uint8ClampedArray(out);       // อ่านจากสำเนา ไม่งั้นเกลี่ยทับตัวเอง
+      for (let y = 1; y < H - 1; y++) {
+        for (let x = 0; x < W; x++) {
+          const i = y * W + x;
+          if (!edge[i]) continue;
+          let r = 0, g = 0, b = 0, n = 0;
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              let xx = x + dx; if (xx < 0) xx += W; else if (xx >= W) xx -= W;
+              const j = ((y + dy) * W + xx) * 4;
+              if (!cp[j + 3]) continue;
+              r += cp[j]; g += cp[j + 1]; b += cp[j + 2]; n++;
+            }
+          }
+          if (!n) continue;
+          const di = i * 4;
+          out[di] = r / n; out[di + 1] = g / n; out[di + 2] = b / n;
+        }
+      }
+      st.ui.hud.textContent = 'เกลี่ยขอบตะเข็บ…';
+      await new Promise((r) => setTimeout(r, 0));
+    }
+
+    // ── ลบรอยขั้นสีข้ามตะเข็บ (แก้เฉพาะความถี่ต่ำ ไม่แตะรายละเอียด) ──
+    // เทียบ "สีเฉลี่ยแบบนุ่มๆ ของทุกใบ" กับ "สีที่วาดจริง" แล้วค่อยๆ ปรับให้เท่ากัน
+    // ทำบนตารางย่อแล้วขยายกลับ → ได้ผลเหมือน multi-band blending แต่เบากว่ามาก
+    {
+      const cr = new Float32Array(NC), cg = new Float32Array(NC), cb = new Float32Array(NC);
+      const sc = Math.max(1, (W / LW) | 0), sr = Math.max(1, (H / LH) | 0);
+      for (let y = 0; y < LH; y++) {
+        for (let x = 0; x < LW; x++) {
+          const i = y * LW + x;
+          const b = i * MAXC;
+          if (!candL[b]) continue;
+          // เป้าหมาย = เฉลี่ยนุ่มๆ ของทุกใบ (ความถี่ต่ำของมันถูกต้อง แม้ความถี่สูงจะซ้อนกัน)
+          let tw = 0, tg = 0;
+          for (let k = 0; k < MAXC && candL[b + k]; k++) { tw += candQ[b + k]; tg += candG[b + k] * candQ[b + k]; }
+          const target = tw ? tg / tw : 0;
+          const actual = grayOf(i, label[i]);
+          if (actual < 0 || !tw) continue;
+          const d = target - actual;
+          cr[i] = d; cg[i] = d; cb[i] = d;
+        }
+      }
+      // เกลี่ยแผนที่ส่วนต่างให้นุ่ม (ไม่งั้นจะกลายเป็นขอบใหม่)
+      const tmp = new Float32Array(NC);
+      for (let pass = 0; pass < 4; pass++) {
+        for (let y = 0; y < LH; y++) {
+          for (let x = 0; x < LW; x++) {
+            const i = y * LW + x;
+            const l = y * LW + (x === 0 ? LW - 1 : x - 1), r = y * LW + (x === LW - 1 ? 0 : x + 1);
+            const u = y > 0 ? i - LW : i, d2 = y < LH - 1 ? i + LW : i;
+            tmp[i] = (cr[i] * 2 + cr[l] + cr[r] + cr[u] + cr[d2]) / 6;
+          }
+        }
+        cr.set(tmp);
+      }
+      for (let y = 0; y < H; y++) {
+        const ly = ((y * LH / H) | 0) * LW;
+        for (let x = 0; x < W; x++) {
+          const oi = y * W + x;
+          if (!fullLab[oi]) continue;
+          const d = cr[ly + ((x * LW / W) | 0)];
+          if (d === 0) continue;
+          const di = oi * 4;
+          out[di] += d; out[di + 1] += d; out[di + 2] += d;
+        }
+      }
+      st.ui.hud.textContent = 'เกลี่ยสีข้ามตะเข็บ…';
       await new Promise((r) => setTimeout(r, 0));
     }
 
