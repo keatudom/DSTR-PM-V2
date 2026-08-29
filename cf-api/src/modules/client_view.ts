@@ -8,11 +8,17 @@
 //     → ใช้ตาราง projects แทน · tasks/milestones/photos ต้นฉบับไม่ scope project (ตามเดิม)
 // ============================================================
 import type { Env } from '../lib/env.ts';
-import { queryAll, queryFirst, pidOf, fmtDate, fmtDateTime } from '../lib/db.ts';
+import { queryAll, queryFirst, pidOf, projectScope, fmtDate, fmtDateTime } from '../lib/db.ts';
 import { todayStr } from '../lib/time.ts';
 import { getTodayStats, getActivityFeed } from './daily.ts';
 import { clientMilestonesForView } from './teams_finance.ts';
 
+
+// ⚠️⚠️ 2026-08-29 — ทุกคิวรีในไฟล์นี้ "ต้องกรองโครงการ" เสมอ
+// หน้านี้คือหน้าที่ "เจ้าบ้าน" (คนนอกบริษัท) เห็น — คิวรีที่ลืมกรองโครงการ
+// = เจ้าบ้านหลังหนึ่งเห็นรูป ความคืบหน้า และตารางงวดเงินของบ้านอีกหลัง
+// เดิมมี 6 คิวรีที่ดึงทั้งตารางโดยไม่กรองเลย (task_photos ×2, tasks ×2, milestones ×2, payments)
+// ตอนมีบ้านเดียวจึงไม่มีใครเห็นปัญหา
 function cvTrue(v: unknown): boolean { return v === true || v === 'TRUE' || v === 'true'; }
 
 // ── client_get_overview (Code.js:4731) ──
@@ -32,7 +38,8 @@ export async function clientGetOverview(env: Env, p: Record<string, unknown>): P
   let coverPhotoUrl = '';
   let lastUpdate = '';
   try {
-    const photos = await queryAll<Record<string, unknown>>(env, 'SELECT * FROM task_photos');
+    const ps = projectScope(pid);
+    const photos = await queryAll<Record<string, unknown>>(env, `SELECT * FROM task_photos WHERE ${ps.sql}`, ...ps.binds);
     let newest: { drive_id: string; drive_url: string; _ts: string } | null = null;
     for (const r of photos) {
       if (!cvTrue(r.client_visible)) continue;
@@ -57,7 +64,8 @@ export async function clientGetOverview(env: Env, p: Record<string, unknown>): P
   // 4) current phase — จาก task Done ratio (ต้นฉบับไม่ scope project)
   let currentPhase = '';
   try {
-    const tasks = await queryAll<Record<string, unknown>>(env, 'SELECT status FROM tasks');
+    const ts_ = projectScope(pid);
+    const tasks = await queryAll<Record<string, unknown>>(env, `SELECT status FROM tasks WHERE ${ts_.sql}`, ...ts_.binds);
     if (tasks.length > 0) {
       const done = tasks.filter((t) => String(t.status || '') === 'Done').length;
       const ratio = done / tasks.length;
@@ -73,7 +81,8 @@ export async function clientGetOverview(env: Env, p: Record<string, unknown>): P
   // 5) expected completion — milestone ที่ยังไม่ done เรียง seq มาก→น้อย เอาตัวแรก
   let expectedCompletion = '';
   try {
-    const ms = await queryAll<Record<string, unknown>>(env, 'SELECT * FROM milestones');
+    const ms_ = projectScope(pid);
+    const ms = await queryAll<Record<string, unknown>>(env, `SELECT * FROM milestones WHERE ${ms_.sql}`, ...ms_.binds);
     const pending = ms.filter((m) => { const st = String(m.status || '').toLowerCase(); return st !== 'paid' && st !== 'done' && st !== 'completed'; });
     if (pending.length > 0) {
       pending.sort((a, b) => Number(b.seq || 0) - Number(a.seq || 0));
@@ -95,10 +104,11 @@ export async function clientGetOverview(env: Env, p: Record<string, unknown>): P
 export async function clientGetPhotos(env: Env, p: Record<string, unknown>): Promise<unknown> {
   const limit = Math.min(100, Math.max(1, Number(p.limit || 20)));
   let photos: Record<string, unknown>[];
-  try { photos = await queryAll<Record<string, unknown>>(env, 'SELECT * FROM task_photos'); } catch { return []; }
+  const phScope = projectScope(pidOf(p));
+  try { photos = await queryAll<Record<string, unknown>>(env, `SELECT * FROM task_photos WHERE ${phScope.sql}`, ...phScope.binds); } catch { return []; }
   if (!photos.length) return [];
   const taskMap: Record<string, { name: string; ff: string }> = {};
-  try { for (const t of await queryAll<Record<string, unknown>>(env, 'SELECT * FROM tasks')) { const tid = String(t.id || ''); if (tid) taskMap[tid] = { name: String(t.name || ''), ff: String(t.ff_code || '') }; } } catch { /* ignore */ }
+  try { for (const t of await queryAll<Record<string, unknown>>(env, `SELECT * FROM tasks WHERE ${phScope.sql}`, ...phScope.binds)) { const tid = String(t.id || ''); if (tid) taskMap[tid] = { name: String(t.name || ''), ff: String(t.ff_code || '') }; } } catch { /* ignore */ }
   const out: Record<string, unknown>[] = [];
   for (const r of photos) {
     if (!cvTrue(r.client_visible)) continue;
@@ -112,9 +122,10 @@ export async function clientGetPhotos(env: Env, p: Record<string, unknown>): Pro
 }
 
 // ── client_get_milestones (Code.js:4926) ──
-export async function clientGetMilestones(env: Env): Promise<unknown> {
+export async function clientGetMilestones(env: Env, p: Record<string, unknown>): Promise<unknown> {
   let rows: Record<string, unknown>[];
-  try { rows = await queryAll<Record<string, unknown>>(env, 'SELECT * FROM milestones'); } catch { return []; }
+  const msScope = projectScope(pidOf(p));
+  try { rows = await queryAll<Record<string, unknown>>(env, `SELECT * FROM milestones WHERE ${msScope.sql}`, ...msScope.binds); } catch { return []; }
   if (!rows.length) return [];
   rows.sort((a, b) => Number(a.seq || 0) - Number(b.seq || 0));
   let inProgressIdx = -1;
@@ -134,7 +145,8 @@ export async function clientGetMilestones(env: Env): Promise<unknown> {
 export async function clientGetPayments(env: Env, p: Record<string, unknown>): Promise<unknown> {
   try { const fromContract = await clientMilestonesForView(env, pidOf(p)); if (fromContract) return fromContract; } catch { /* ignore */ }
   let rows: Record<string, unknown>[];
-  try { rows = await queryAll<Record<string, unknown>>(env, 'SELECT * FROM payments'); } catch { return []; }
+  const payScope = projectScope(pidOf(p));
+  try { rows = await queryAll<Record<string, unknown>>(env, `SELECT * FROM payments WHERE ${payScope.sql}`, ...payScope.binds); } catch { return []; }
   if (!rows.length) return [];
   const cleaned = rows.filter((r) => { const id = String(r.payment_id || '').trim(); const mst = String(r.milestone || '').trim().toUpperCase(); if (!id) return false; if (mst === 'GRAND TOTAL' || mst === 'PAID' || mst === 'REMAINING' || mst === 'TOTAL') return false; return true; });
   const today = todayStr();

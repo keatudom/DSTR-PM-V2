@@ -154,7 +154,7 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
     case 'client_get_photos':
       return clientView.clientGetPhotos(env, p);
     case 'client_get_milestones':
-      return clientView.clientGetMilestones(env);
+      return clientView.clientGetMilestones(env, p);
     case 'client_get_payments':
       return clientView.clientGetPayments(env, p);
 
