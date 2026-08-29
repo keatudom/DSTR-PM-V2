@@ -446,12 +446,15 @@ export async function cloneProject(env: Env, p: Record<string, unknown>): Promis
     const sourceTasks = await queryAll<Record<string, unknown>>(env, `SELECT * FROM tasks WHERE ${sScope.sql}`, ...sScope.binds);
     for (const t of sourceTasks) {
       const id = await nextId(env, 'T', 3);
-      // ต้นฉบับ clone "ไม่ copy weight" (row ใหม่เว้นว่าง → getTasks อ่านเป็น 1) → reset = NULL
+      // ★ 2026-08-29: copy "น้ำหนักความเหนื่อย" มาด้วย
+      //   ต้นฉบับ (Apps Script) reset weight เป็น NULL → ทุกงานกลายเป็นน้ำหนัก 1 เท่ากันหมด
+      //   = ความรู้ว่างานไหนหนักงานไหนเบาหายทั้งชุด ทั้งที่นั่นคือคุณค่าหลักของการใช้ template
+      //   ผลคือโครงการที่ clone มาคิด % แบบ "นับจำนวนงาน" แทน "ถ่วงตามแรงที่ลงจริง"
       await exec(
         env,
         `INSERT INTO tasks (id, project_id, ff_code, zone, phase, name, status, start_date, end_date, done_date, person_in_charge, notes, weight)
-         VALUES (?, ?, ?, ?, ?, ?, 'Not Started', '', '', '', '', ?, NULL)`,
-        id, target, t.ff_code || '', t.zone || '', t.phase || '', t.name || '', t.notes || '',
+         VALUES (?, ?, ?, ?, ?, ?, 'Not Started', '', '', '', '', ?, ?)`,
+        id, target, t.ff_code || '', t.zone || '', t.phase || '', t.name || '', t.notes || '', t.weight ?? null,
       );
       tasksCloned++;
     }
