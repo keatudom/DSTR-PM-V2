@@ -10,6 +10,7 @@
 //   คืน object/updated ที่ใช้ "ชื่อ header เดิม" (contract เดิม) — ห้ามแก้
 // ============================================================
 import type { Env } from '../lib/env.ts';
+import { getFFPlans } from './ff_plans.ts';
 import type { TokenPayload } from '../lib/auth.ts';
 import { queryAll, queryFirst, exec, pidOf, projectScope, fmtDate } from '../lib/db.ts';
 import { nextId } from '../lib/ids.ts';
@@ -33,6 +34,9 @@ export async function getAll(env: Env, p: Record<string, unknown>): Promise<unkn
     risks: await getRisksAsObjects(env, projectId),
     contractors: await getContractors(env), // shared — ไม่กรอง
     materials: await getMaterials(env, undefined, undefined, projectId),
+    // แผนไทม์ไลน์รายโครงการ (2026-08-29) — เดิม frontend อ่านจาก CONFIG.GANTT_PLAN
+    // ที่ฝังตายไว้ให้บ้านคุณโบว์หลังเดียว
+    ffPlans: await getFFPlans(env, projectId),
   };
 }
 
