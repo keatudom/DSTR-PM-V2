@@ -222,6 +222,27 @@
   .ffd-legend-d { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:middle; margin-right:4px; }
   .ffd-empty { font-size:var(--text-xs); color:var(--color-slate-400); padding:var(--space-3) 0; text-align:center; line-height:1.6; }
 
+  /* ── เริ่มต้นโครงการ (checklist) ── */
+  .setup-card { border-left:3px solid var(--color-blue-500); margin-bottom:var(--space-6); }
+  .su-item { display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid var(--color-slate-100); }
+  .su-item:last-child { border-bottom:none; }
+  .su-ic { width:22px; height:22px; border-radius:99px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-top:1px; }
+  .su-ic.done { background:var(--color-success-50); color:var(--color-success-700); }
+  .su-ic.todo { background:var(--color-slate-100); color:var(--color-slate-400); }
+  .su-body { flex:1; min-width:0; }
+  .su-t { font-size:13px; font-weight:600; color:var(--color-slate-900); }
+  .su-t.done { color:var(--color-slate-400); text-decoration:line-through; font-weight:500; }
+  .su-s { font-size:11px; color:var(--color-slate-500); margin-top:2px; line-height:1.5; }
+  .su-go { border:none; background:var(--color-blue-50); color:var(--color-blue-700); font-size:12px; font-weight:600; padding:8px 14px; min-height:36px; border-radius:var(--radius-md); cursor:pointer; flex-shrink:0; font-family:inherit; }
+  .su-go:hover { background:var(--color-blue-500); color:#fff; }
+
+  /* ── ตั้งแผนไทม์ไลน์ / ตั้งค่าโครงการ ── */
+  .plan-row { display:grid; grid-template-columns:64px 1fr 1fr; gap:8px; align-items:center; margin-bottom:8px; }
+  .plan-row-lb { font-size:12px; color:var(--color-slate-600); font-weight:600; }
+  .plan-hint { font-size:11px; color:var(--color-slate-500); line-height:1.6; background:var(--color-slate-50); border:1px dashed var(--color-slate-300); border-radius:var(--radius-md); padding:10px 12px; margin-bottom:14px; }
+  .ps-row { display:grid; grid-template-columns:1fr 1fr 88px; gap:8px; align-items:center; margin-bottom:8px; }
+  .ps-total { font-size:12px; font-weight:600; text-align:right; padding-top:6px; }
+
   /* ── FF Wizard (S2b-2) ── */
   .ffw-modal { max-width:720px !important; }
   .ffw-input { width:100%; padding:9px 10px; border:1px solid var(--color-slate-300); border-radius:var(--radius-md); font-size:var(--text-sm); font-family:inherit; color:var(--color-slate-900); background:#fff; }
@@ -451,6 +472,9 @@
             <div class="proj-pills" id="projPills"></div>
           </div>
           <div class="flex gap-2 items-center">
+            <button class="btn btn-ghost btn-icon" id="projSettingsBtn" onclick="PS.open()" title="ตั้งค่าโครงการ">
+              <i data-lucide="settings"></i>
+            </button>
             <button class="btn btn-ghost btn-icon nf-bell" id="nfBell" onclick="NF.toggle()" title="การแจ้งเตือน">
               <i data-lucide="bell"></i><span class="nf-badge" id="nfBadge" style="display:none">0</span>
             </button>
@@ -468,6 +492,12 @@
         <!-- TAB: ภาพรวม -->
         <div class="tab-panel active" id="panel-overview">
           <div id="aiBnr" style="display:none"></div>
+
+          <!-- เริ่มต้นโครงการ: โผล่เฉพาะโครงการที่ยังตั้งค่าไม่ครบ · ครบแล้วหายไปเอง -->
+          <div class="card card-body setup-card" id="setupCard" style="display:none">
+            <h3 class="card-title mb-4"><i data-lucide="rocket" style="width:18px;height:18px;vertical-align:-3px"></i> เริ่มต้นโครงการ</h3>
+            <div id="setupList"></div>
+          </div>
 
           <div class="kpi-grid" id="kpiGrid"></div>
 
@@ -488,7 +518,10 @@
           </div>
 
           <div class="card card-body">
-            <h3 class="card-title mb-4"><i data-lucide="calendar-range" style="width:18px;height:18px;vertical-align:-3px"></i> ไทม์ไลน์ / แผนงาน (20 สัปดาห์)</h3>
+            <div class="flex justify-between items-center mb-4" style="flex-wrap:wrap;gap:var(--space-3)">
+              <h3 class="card-title"><i data-lucide="calendar-range" style="width:18px;height:18px;vertical-align:-3px"></i> ไทม์ไลน์ / แผนงาน <span id="tlWeeksLabel" class="text-sm text-muted"></span></h3>
+              <button class="btn btn-secondary btn-sm" onclick="TLP.open()"><i data-lucide="calendar-plus"></i> ตั้งแผนไทม์ไลน์</button>
+            </div>
             <div class="tl-wrap" id="timeline"></div>
           </div>
         </div>
@@ -582,7 +615,7 @@
   if (!Auth.requireAuth()) { /* redirect ไป index.html */ }
   Shell.render({ page: 'dashboard', title: 'แดชบอร์ดโครงการ', scope: 'project' });
 
-  let project = CONFIG.PROJECTS[state.projectId] || {};
+  let project = {};   // เติมจริงโดย refreshProjectMeta() (เดิมอ่านจาก CONFIG.PROJECTS ที่ฝังบ้านคุณโบว์ไว้)
 
   function escapeHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function escapeHtmlAttr(s){return escapeHtml(s);}
@@ -596,7 +629,7 @@
   if(!state.openFFs) state.openFFs=new Set();
   if(!state.recentUncheck) state.recentUncheck={};
 
-  function renderAll(){ renderHeader(); renderKPIs(); renderGauge(); renderInventory(); renderTimeline(); renderFilters(); renderWeightList(); renderNgwdGrid(); renderClientFinance(); renderRisks(); renderEvals(); if(window.lucide) lucide.createIcons(); }
+  function renderAll(){ renderHeader(); renderKPIs(); renderGauge(); renderInventory(); renderTimeline(); renderFilters(); renderWeightList(); renderNgwdGrid(); renderClientFinance(); renderRisks(); renderEvals(); renderSetupCard(); if(window.lucide) lucide.createIcons(); }
 
   function switchTab(name){
     document.querySelectorAll('.tab[data-tab]').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
@@ -608,7 +641,9 @@
       const res=await API.getProjects();
       if(res&&res.ok&&Array.isArray(res.data)){
         const p=res.data.find(x=>x.project_id===state.projectId);
-        if(p) project={name:p.name,client:p.client,quoteNo:p.quote_no,startDate:p.start_date,endDate:p.end_date,totalDays:Number(p.total_days)||0,totalValue:Number(p.total_value)||0,contractor:p.contractor,status:p.status};
+        if(p){ project={name:p.name,client:p.client,quoteNo:p.quote_no,startDate:p.start_date,endDate:p.end_date,totalDays:Number(p.total_days)||0,totalValue:Number(p.total_value)||0,contractor:p.contractor,status:p.status,settings:(p.settings&&typeof p.settings==='object')?p.settings:{}};
+          state.projectSettings=project.settings;   // ค่าตั้งต้นรายโครงการ (งวดจ่าย/งานเพิ่ม) — เดิมฝังใน config.js
+        }
       }
     }catch(e){ console.warn('[dashboard] refreshProjectMeta fail', e); }
     _updateProjectHeaderUI();
@@ -677,9 +712,11 @@
     const a=calcProjectProgress(), p=calcPlanProgress(project), v=calcVariance(a,p);
     let st='ตามแผน', badge='badge-success';
     if(v<-15){ st='ล่าช้ามาก'; badge='badge-error'; } else if(v<-5){ st='ใกล้ล่าช้า'; badge='badge-warning'; }
+    // จำนวนโซนนับจากชิ้นงานจริงของโครงการนี้ (เดิมเขียน "4 Zones" ตายตัวทุกบ้าน)
+    const zoneCount=new Set(state.data.ffs.map(f=>String(f.zone||'').trim()).filter(Boolean)).size;
     document.getElementById('projPills').innerHTML=
       `<span class="badge ${badge}">${st}</span>`+
-      `<span class="badge badge-gray">${state.data.ffs.length} FF · 4 Zones</span>`+
+      `<span class="badge badge-gray">${state.data.ffs.length} FF${zoneCount?' · '+zoneCount+' Zone'+(zoneCount>1?'s':''):''}</span>`+
       `<span class="badge badge-gray">${state.data.tasks.length} tasks</span>`;
   }
 
@@ -687,13 +724,15 @@
     const a=calcProjectProgress(), p=calcPlanProgress(project), v=calcVariance(a,p);
     const ps=calcClientPaymentStats();
     const paid=ps.hasData?ps.totalPaid:state.data.payments.filter(x=>x.status==='Paid').reduce((s,x)=>s+x.amount,0);
-    const paidPct=ps.hasData?ps.pct:Math.round(paid/project.totalValue*100);
+    // โครงการที่ยังไม่ใส่มูลค่า (=0) เดิมหารศูนย์แล้วโชว์ "NaN%" — คืน null แล้วโชว์ขีดแทน
+    const tv=Number(project.totalValue)||0;
+    const paidPct=ps.hasData?ps.pct:(tv>0?Math.round(paid/tv*100):null);
     const ac=v>=-5?'ok':(v>=-15?'warn':'bad');
     document.getElementById('kpiGrid').innerHTML=
       `<div class="kpi ${ac}"><div class="kpi-l">ความคืบหน้า (จริง)</div><div class="kpi-v">${a}%</div><div class="kpi-s"><i data-lucide="scale" style="width:13px;height:13px"></i> ตามน้ำหนักงาน</div></div>`+
       `<div class="kpi"><div class="kpi-l">ตามแผน</div><div class="kpi-v">${p}%</div><div class="kpi-s"><i data-lucide="calendar" style="width:13px;height:13px"></i> ที่ควรเสร็จวันนี้</div></div>`+
       `<div class="kpi ${v<0?'bad':'ok'}"><div class="kpi-l">Variance (ต่าง)</div><div class="kpi-v">${v>0?'+':''}${v}%</div><div class="kpi-s">${v<0?'ล่าช้ากว่าแผน':'เร็วกว่าแผน'}</div></div>`+
-      `<div class="kpi ok"><div class="kpi-l">เบิกแล้ว</div><div class="kpi-v">${fmt(paid)}</div><div class="kpi-s"><i data-lucide="wallet" style="width:13px;height:13px"></i> ${paidPct}% ของโครงการ</div></div>`;
+      `<div class="kpi ok"><div class="kpi-l">เบิกแล้ว</div><div class="kpi-v">${fmt(paid)}</div><div class="kpi-s"><i data-lucide="wallet" style="width:13px;height:13px"></i> ${paidPct===null?'ยังไม่ได้ใส่มูลค่าโครงการ':paidPct+'% ของโครงการ'}</div></div>`;
     if(window.lucide) lucide.createIcons();
   }
 
@@ -768,21 +807,69 @@
 
   function renderTimeline(){
     const container=document.getElementById('timeline');
-    const months=['เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.']; const plan=CONFIG.GANTT_PLAN;
-    const today=new Date(); const dss=daysBetween(new Date(project.startDate),today);
-    const currentWeek=Math.max(1,Math.min(20,Math.floor(dss/7)+1));
-    let stOnTrack=0,stLate=0,stDone=0,stUpcoming=0;
-    const sortedFFs=state.data.ffs.slice().sort((a,b)=>parseInt(a.code.replace("F-",""))-parseInt(b.code.replace("F-","")));
+    const plan=ganttPlan();
+
+    // ── ความยาวไทม์ไลน์: คำนวณจากวันเริ่ม-จบของโครงการ (เดิมตายตัว 20 สัปดาห์ / 5 เดือน) ──
+    const startDate=new Date(project.startDate);
+    const validStart=!isNaN(startDate.getTime());
+    let totalDays=Number(project.totalDays)||0;
+    if(!totalDays&&validStart&&project.endDate){
+      const ed=new Date(project.endDate);
+      if(!isNaN(ed.getTime())) totalDays=Math.max(0,Math.round((ed-startDate)/86400000));
+    }
+    const weeks=Math.max(4,Math.min(52,Math.ceil((totalDays||140)/7)));
+
+    const today=new Date();
+    const dss=validStart?daysBetween(startDate,today):0;
+    const currentWeek=Math.max(1,Math.min(weeks,Math.floor(dss/7)+1));
+
+    const sortedFFs=state.data.ffs.slice().sort((a,b)=>{
+      const na=parseInt(String(a.code).replace(/[^0-9]/g,''),10)||0;
+      const nb=parseInt(String(b.code).replace(/[^0-9]/g,''),10)||0;
+      return na-nb||String(a.code).localeCompare(String(b.code));
+    });
+    const lb0=document.getElementById('tlWeeksLabel'); if(lb0) lb0.textContent='('+weeks+' สัปดาห์)';
     const hasAnyPlan=sortedFFs.some(ff=>(plan[ff.code]||[]).length>0);
-    if(!hasAnyPlan){ container.innerHTML='<div class="inv-empty" style="text-align:center;padding:18px">ยังไม่ได้ตั้งแผน Timeline สำหรับโครงการนี้</div>'; return; }
-    let html='<div class="tl"><div></div>';
-    months.forEach(m=>{ html+=`<div class="tl-h tl-h-m" style="grid-column:span 4">${m}</div>`; });
+    if(!hasAnyPlan){
+      container.innerHTML='<div class="inv-empty" style="text-align:center;padding:18px">ยังไม่ได้ตั้งแผนไทม์ไลน์สำหรับโครงการนี้<br>'+
+        '<button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="TLP.open()"><i data-lucide="calendar-plus"></i> ตั้งแผนไทม์ไลน์</button></div>';
+      if(window.lucide) lucide.createIcons();
+      return;
+    }
+
+    // ── หัวเดือน: จัดกลุ่มสัปดาห์ตามเดือนจริงของปฏิทิน (เดิมสมมติเดือนละ 4 สัปดาห์เป๊ะ) ──
+    const MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    const weekMonth=[];   // index 0 = สัปดาห์ 1
+    for(let w=1;w<=weeks;w++){
+      if(!validStart){ weekMonth.push(-1); continue; }
+      const d=new Date(startDate.getTime()+(w-1)*7*86400000);
+      weekMonth.push(d.getMonth());
+    }
+    const monthGroups=[];   // [{label, span}]
+    weekMonth.forEach((m,i)=>{
+      const last=monthGroups[monthGroups.length-1];
+      if(last&&last.month===m){ last.span++; return; }
+      monthGroups.push({month:m, span:1, label:m>=0?MON[m]:''});
+    });
+    // เลขสัปดาห์ที่โชว์ในหัวคอลัมน์ = ลำดับภายในเดือนนั้น (W1..W5)
+    const weekLabel=[];
+    let acc=0;
+    monthGroups.forEach(g=>{ for(let k=1;k<=g.span;k++) weekLabel[acc+k-1]='W'+k; acc+=g.span; });
+
+    const lb=document.getElementById('tlWeeksLabel'); if(lb) lb.textContent='('+weeks+' สัปดาห์)';
+    const gridCols='150px repeat('+weeks+',minmax(30px,1fr)) 110px';
+    const minW=Math.max(900,150+110+weeks*38);
+    let stOnTrack=0,stLate=0,stDone=0,stUpcoming=0;
+
+    let html='<div class="tl" style="grid-template-columns:'+gridCols+';min-width:'+minW+'px"><div></div>';
+    monthGroups.forEach(g=>{ html+=`<div class="tl-h tl-h-m" style="grid-column:span ${g.span}">${g.label}</div>`; });
     html+='<div class="tl-h tl-h-m">สถานะ</div><div></div>';
-    for(let i=0;i<5;i++){ for(let w=1;w<=4;w++){ const isCur=(i*4+w)===currentWeek; html+=`<div class="tl-h${isCur?' tl-today-line':''}" style="${isCur?'color:#ef4444;font-weight:700':''}">W${w}</div>`; } }
+    for(let w=1;w<=weeks;w++){ const isCur=w===currentWeek; html+=`<div class="tl-h${isCur?' tl-today-line':''}" style="${isCur?'color:#ef4444;font-weight:700':''}">${weekLabel[w-1]||('W'+w)}</div>`; }
     html+='<div class="tl-h">progress</div>';
+
     sortedFFs.forEach(ff=>{
       const ffPlan=plan[ff.code]||[]; const pStatus={1:0,2:0,3:0,4:0}, pTotal={1:0,2:0,3:0,4:0};
-      state.data.tasks.filter(t=>t.ffCode===ff.code).forEach(t=>{ const p=parseInt(t.phase.replace('p','')); if(pTotal[p]!==undefined){ pTotal[p]++; if(t.status==='Done')pStatus[p]++; } });
+      state.data.tasks.filter(t=>t.ffCode===ff.code).forEach(t=>{ const p=parseInt(String(t.phase).replace('p',''),10); if(pTotal[p]!==undefined){ pTotal[p]++; if(t.status==='Done')pStatus[p]++; } });
       const cellMap={}; ffPlan.forEach(([phase,start,end])=>{ const pd=pTotal[phase]>0?(pStatus[phase]/pTotal[phase]):0; for(let w=start;w<=end;w++)cellMap[w]={phase,phaseDone:pd,start,end}; });
       let plannedNow=null; for(let w=1;w<=currentWeek;w++){ if(cellMap[w])plannedNow=cellMap[w].phase; }
       const prog=calcFFProgressWeighted(ff.code); let statusText='',statusClass='';
@@ -792,8 +879,8 @@
         else if(prog.pct>=exp-20){ statusText='⚠ ใกล้ล่าช้า'; statusClass='tl-status-warn'; stLate++; }
         else { statusText='▲ ล่าช้า'; statusClass='tl-status-bad'; stLate++; }
       } else { statusText='○ ยังไม่เริ่ม'; statusClass='tl-status-soon'; stUpcoming++; }
-      html+=`<div class="tl-name"><span class="tl-name-code">${ff.code}</span><span class="tl-name-z">${ff.zone.replace('Zone ','Z')}</span></div>`;
-      for(let w=1;w<=20;w++){ const info=cellMap[w]; if(!info){ html+=`<div class="tl-cell${w===currentWeek?' tl-today-line':''}"></div>`; continue; }
+      html+=`<div class="tl-name"><span class="tl-name-code">${ff.code}</span><span class="tl-name-z">${String(ff.zone||'').replace('Zone ','Z')}</span></div>`;
+      for(let w=1;w<=weeks;w++){ const info=cellMap[w]; if(!info){ html+=`<div class="tl-cell${w===currentWeek?' tl-today-line':''}"></div>`; continue; }
         let cls=`tl-p${info.phase}`; if(info.phaseDone>=1)cls='tl-done'; else if(currentWeek>info.end&&info.phaseDone<1)cls='tl-late';
         const first=w===info.start&&(info.end-info.start)>=1; const cc=first?`<span style="position:absolute;left:4px;font-size:9px">${Math.round(info.phaseDone*100)}%</span>`:'';
         html+=`<div class="tl-cell ${cls}${w===currentWeek?' tl-today-line':''}">${cc}</div>`;
@@ -801,7 +888,7 @@
       html+=`<div class="tl-status ${statusClass}">${statusText}</div>`;
     });
     html+='</div>';
-    const summary=`<div class="tl-summary"><div>รวม: <span class="tl-summary-num">${sortedFFs.length}</span></div><div style="color:var(--color-success-700)">เสร็จ: <span class="tl-summary-num">${stDone}</span></div><div style="color:var(--color-success-700)">ตามแผน: <span class="tl-summary-num">${stOnTrack}</span></div><div style="color:var(--color-error-700)">ล่าช้า: <span class="tl-summary-num">${stLate}</span></div><div style="color:var(--color-blue-700)">ยังไม่เริ่ม: <span class="tl-summary-num">${stUpcoming}</span></div><div style="margin-left:auto;color:var(--color-error-700)">สัปดาห์ที่ ${currentWeek}/20</div></div>`;
+    const summary=`<div class="tl-summary"><div>รวม: <span class="tl-summary-num">${sortedFFs.length}</span></div><div style="color:var(--color-success-700)">เสร็จ: <span class="tl-summary-num">${stDone}</span></div><div style="color:var(--color-success-700)">ตามแผน: <span class="tl-summary-num">${stOnTrack}</span></div><div style="color:var(--color-error-700)">ล่าช้า: <span class="tl-summary-num">${stLate}</span></div><div style="color:var(--color-blue-700)">ยังไม่เริ่ม: <span class="tl-summary-num">${stUpcoming}</span></div><div style="margin-left:auto;color:var(--color-error-700)">สัปดาห์ที่ ${currentWeek}/${weeks}</div></div>`;
     container.innerHTML=summary+html;
   }
 
@@ -1038,12 +1125,15 @@
   // ══════════════════ S2c: PAYMENT GRID (งวดงานผู้รับเหมา) ══════════════════
   function renderNgwdGrid(){
     if(!state.data||!state.data.payments) return;
-    const milestones=[
-      {key:'งวด 1', label:'งวด 1', sub:'มัดจำสั่งผลิต', pct:'50%', color:'#1e293b'},
-      {key:'งวด 2', label:'งวด 2', sub:'วัสดุเข้า+โครง', pct:'22.5%', color:'#3b82f6'},
-      {key:'งวด 3', label:'งวด 3', sub:'ติดตั้งเฟอร์นิเจอร์', pct:'22.5%', color:'#10b981'},
-      {key:'งวด 4', label:'งวด 4', sub:'ส่งมอบงาน', pct:'5%', color:'#b45309'}
-    ];
+    // งวดจ่ายมาจากค่าตั้งต้นของโครงการ (D1) — เดิมเขียน 50/22.5/22.5/5 ตายตัวให้ทุกบ้าน
+    // แก้ได้ที่ปุ่ม "ตั้งค่าโครงการ" · ไม่ได้ตั้ง = ใช้ค่ากลางบริษัท (CONFIG.DEFAULT_PHASES)
+    const NGWD_COLORS=['#1e293b','#3b82f6','#10b981','#b45309'];
+    const milestones=projectPhases().map((ph,i)=>({
+      key:ph.key, label:ph.label||ph.key,
+      sub:ph.sub||'',
+      pct:(ph.pct===''||ph.pct==null)?'':(ph.pct+'%'),
+      color:NGWD_COLORS[i]||'#64748b'
+    }));
     const cardHtml=(m,total,statusClass,statusText,hasReady,onclickKey)=>`<div class="ngwd-c${hasReady?' has-ready':''}" onclick="showPaymentModal('${onclickKey}')">
       <div class="ngwd-t">${m.label}</div>
       <div class="ngwd-a" style="color:${m.color}">${fmt(total)} ฿</div>
@@ -1244,9 +1334,11 @@
           (payPct!==null?'<div class="pp-mini"><div class="pp-mini-pay" style="width:'+Math.min(payPct,100)+'%"></div></div>':'')+
           '</div><div class="pp-row-num"><b class="p">'+p.pct+'%</b>'+(payPct!==null?' · <b class="m">เบิก '+payPct+'%</b>':'')+'</div></div>';
       };
-      const proj=(CONFIG.PROJECTS||{})[state.projectId]||{};
-      rowsHtml+=renderRow('งานหลัก',prog.main,payByNo[proj.quoteNo]);
-      rowsHtml+=renderRow('งานเพิ่ม (ตู้ F-21/F-22)',prog.addon,null);
+      // ชื่อสัญญาหลัก + รายการงานเพิ่ม อ่านจากข้อมูลโครงการจริง (เดิม hardcode ตู้ F-21/F-22)
+      const addonCodes=(prog.addon&&prog.addon.codes)||[];
+      const addonLabel='งานเพิ่ม'+(addonCodes.length?' ('+addonCodes.join('/')+')':'');
+      rowsHtml+=renderRow('งานหลัก',prog.main,payByNo[project.quoteNo]);
+      rowsHtml+=renderRow(addonLabel,prog.addon,null);
       rowsHtml='<div style="margin-top:6px">'+rowsHtml+'<div class="pp-col-s" style="margin-top:6px">หมายเหตุ: "เบิกแล้ว %" ของงานเพิ่มมีงวดมัดจำที่เก็บก่อนเริ่มผลิต — เทียบ % ตรงๆ กับงานเสร็จไม่ได้</div></div>';
     }
     el.innerHTML=topHtml+rowsHtml;
@@ -2185,24 +2277,255 @@
   // backward compat — CTA ใน empty state เรียกชื่อนี้
   function openFFWizardModal(projectId, projectName){ return FFW.open(projectId, projectName); }
 
-  // ── Clone template — copy FF + tasks จาก bow-house (hardcode ต้นแบบ = ตั้งใจ) ──
-  async function confirmCloneFromTemplate(targetProjectId, projectName){
-    const ok=await Modal.confirm({
-      icon:'📋', iconClass:'info', title:'ใช้ template จาก Bow House?',
-      desc:'จะคัดลอก FF ทั้งหมด และงานของแต่ละ FF มาที่ "'+projectName+'"',
-      info:'ทุกรายการจะเริ่มที่สถานะ "ยังไม่เริ่ม" — ลบ/แก้ไขทีหลังได้',
-      confirmText:'คัดลอก', cancelText:'ยกเลิก', confirmClass:'modal-btn-primary'
-    });
-    if(!ok) return;
-    Modal.toast('⏳ กำลังคัดลอก...');
-    try{
-      const res=await API.cloneFromTemplate(targetProjectId, 'bow-house', true);
-      if(!res||!res.ok){ Modal.toast('❌ คัดลอกไม่สำเร็จ: '+((res&&res.error)||'unknown')); return; }
-      const d=res.data||{};
-      Modal.toast('✅ คัดลอก FF '+(d.ff_cloned||0)+' รายการ + งาน '+(d.tasks_cloned||0)+' รายการ');
-      setTimeout(()=>loadData(),600);
-    }catch(e){ Modal.toast('❌ '+e.message); }
+  // ══════════════════ เริ่มต้นโครงการ (setup checklist) ══════════════════
+  // โผล่เฉพาะโครงการที่ยังตั้งค่าไม่ครบ — ครบทุกข้อแล้วการ์ดหายไปเอง
+  // เดิม: เปิดโครงการใหม่แล้วเจอแดชบอร์ดเปล่า ไม่มีอะไรบอกว่าต้องทำอะไรต่อ
+  function renderSetupCard(){
+    const card=document.getElementById('setupCard');
+    if(!card) return;
+    const ffs=(state.data&&state.data.ffs)||[];
+    const plan=ganttPlan();
+    const contracts=((state.clientFinance||{}).contracts)||[];
+    const hasValue=(Number(project.totalValue)||0)>0;
+    const plannedCodes=ffs.filter(f=>(plan[f.code]||[]).length>0).length;
+
+    const steps=[
+      { done: ffs.length>0, t:'เพิ่มงานบิ้วอิน (FF)',
+        s: ffs.length? (ffs.length+' รายการ') : 'ยังไม่มีงานในโครงการนี้ — เพิ่มเองหรือคัดลอกจากโครงการเดิมก็ได้',
+        go:'เพิ่มงาน', fn:'FFW.open()' },
+      { done: hasValue, t:'ใส่มูลค่าโครงการ',
+        s: hasValue? (fmt(project.totalValue)+' บาท') : 'ยังไม่ใส่ — ระบบจะคิด % การเบิกเงินไม่ได้',
+        go:'ไปใส่', fn:"window.location.href='projects.html'" },
+      { done: plannedCodes>0, t:'ตั้งแผนไทม์ไลน์',
+        s: plannedCodes? ('ตั้งแล้ว '+plannedCodes+'/'+ffs.length+' รายการ') : 'ยังไม่ตั้ง — กราฟไทม์ไลน์จะว่างและเทียบแผนไม่ได้',
+        go:'ตั้งแผน', fn:'TLP.open()' },
+      { done: contracts.length>0, t:'สร้างสัญญาเจ้าบ้าน',
+        s: contracts.length? (contracts.length+' ฉบับ') : 'ยังไม่มี — ใช้เก็บไฟล์สัญญา งวดชำระ และหลักฐานการรับเงิน',
+        go:'ไปสร้าง', fn:"switchTab('finance');window.scrollTo({top:0,behavior:'smooth'})" }
+    ];
+
+    if(steps.every(x=>x.done)){ card.style.display='none'; return; }
+    card.style.display='block';
+
+    let html=steps.map(x=>'<div class="su-item">'+
+      '<div class="su-ic '+(x.done?'done':'todo')+'">'+(x.done?'✓':'○')+'</div>'+
+      '<div class="su-body"><div class="su-t '+(x.done?'done':'')+'">'+escapeHtml(x.t)+'</div>'+
+      '<div class="su-s">'+escapeHtml(x.s)+'</div></div>'+
+      (x.done?'':'<button class="su-go" onclick="'+x.fn+'">'+x.go+'</button>')+
+      '</div>').join('');
+
+    if(!ffs.length){
+      html+='<div class="su-item"><div class="su-ic todo">↧</div><div class="su-body">'+
+        '<div class="su-t">หรือคัดลอกงานทั้งชุดจากโครงการเดิม</div>'+
+        '<div class="su-s">เร็วที่สุดถ้าบ้านหลังนี้คล้ายหลังที่เคยทำ — ลบ/แก้ทีหลังได้</div></div>'+
+        '<button class="su-go" onclick="CLONE.open()">เลือกต้นแบบ</button></div>';
+    }
+    document.getElementById('setupList').innerHTML=html;
   }
+
+  // ══════════════════ คัดลอกงานจากโครงการเดิม ══════════════════
+  // เดิมฟังก์ชันนี้เขียนไว้ครบแต่ไม่มีปุ่มไหนกดถึง + ล็อกต้นแบบไว้ที่ bow-house
+  const CLONE={
+    async open(){
+      Modal.show('<div class="modal-title">คัดลอกงานจากโครงการเดิม</div><div class="loading-center"><div class="spinner"></div> กำลังหาโครงการต้นแบบ...</div>');
+      let list=[];
+      try{
+        const [pRes,gRes]=await Promise.all([API.getProjects(), API.getProjectsProgress()]);
+        const prog={}; if(gRes&&gRes.ok&&Array.isArray(gRes.data)) gRes.data.forEach(x=>{prog[x.project_id]=x;});
+        if(pRes&&pRes.ok&&Array.isArray(pRes.data)){
+          list=pRes.data.filter(p=>p.project_id!==state.projectId&&((prog[p.project_id]||{}).ff_count||0)>0)
+                        .map(p=>({id:p.project_id,name:p.name,n:(prog[p.project_id]||{}).ff_count||0}));
+        }
+      }catch(e){ /* ตกลงมาที่ข้อความว่างด้านล่าง */ }
+
+      if(!list.length){
+        Modal.show('<div class="modal-icon info">📋</div><div class="modal-title">ยังไม่มีโครงการต้นแบบ</div>'+
+          '<div class="modal-desc">ต้องมีโครงการอื่นที่ใส่งานไว้แล้วอย่างน้อย 1 โครงการ จึงจะคัดลอกได้</div>'+
+          '<div class="modal-btns"><button class="modal-btn modal-btn-primary" onclick="Modal.close()">เข้าใจแล้ว</button></div>');
+        return;
+      }
+      Modal.show('<div class="modal-head"><div class="modal-title">คัดลอกงานจากโครงการเดิม</div>'+
+        '<button class="modal-close" onclick="Modal.close()"><i data-lucide="x"></i></button></div>'+
+        '<div class="plan-hint">ระบบจะคัดลอก "รายการงาน + งานย่อย" มาทั้งชุด โดยทุกอย่างเริ่มที่สถานะ <b>ยังไม่เริ่ม</b><br>'+
+        'คัดลอกได้เฉพาะตอนโครงการนี้ยังไม่มีงาน — ลบหรือแก้ทีหลังได้ตามปกติ</div>'+
+        '<div class="form-group"><label class="form-label">เลือกโครงการต้นแบบ</label>'+
+        '<select id="clSource" class="form-input">'+
+        list.map(x=>'<option value="'+escapeHtml(x.id)+'">'+escapeHtml(x.name)+' · '+x.n+' งาน</option>').join('')+
+        '</select></div>'+
+        '<div class="modal-btns">'+
+        '<button type="button" class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>'+
+        '<button type="button" class="modal-btn modal-btn-primary" onclick="CLONE.run()">คัดลอก</button></div>', 'modal-lg');
+      if(window.lucide) lucide.createIcons();
+    },
+    async run(){
+      const sel=document.getElementById('clSource'); if(!sel) return;
+      const src=sel.value;
+      Modal.close();
+      Modal.toast('⏳ กำลังคัดลอก...');
+      try{
+        const res=await API.cloneFromTemplate(state.projectId, src, true);
+        if(!res||!res.ok){ Modal.toast('❌ คัดลอกไม่สำเร็จ: '+((res&&res.error)||'unknown')); return; }
+        const d=res.data||{};
+        Modal.toast('✅ คัดลอกงาน '+(d.ff_cloned||0)+' รายการ + งานย่อย '+(d.tasks_cloned||0)+' รายการ');
+        setTimeout(()=>loadData(),700);
+      }catch(e){ Modal.toast('❌ '+e.message); }
+    }
+  };
+
+  // ══════════════════ ตั้งค่าโครงการ (งวดจ่ายผู้รับเหมา) ══════════════════
+  // เดิมสัดส่วนงวด 50/22.5/22.5/5 เขียนตายไว้ในโค้ดให้ทุกบ้านเหมือนกันหมด
+  const PS={
+    open(){
+      const phases=projectPhases();
+      let rows='';
+      phases.forEach((ph,i)=>{
+        rows+='<div class="ps-row">'+
+          '<input class="form-input" id="psL'+i+'" type="text" value="'+escapeHtml(ph.label||ph.key)+'">'+
+          '<input class="form-input" id="psS'+i+'" type="text" value="'+escapeHtml(ph.sub||'')+'" placeholder="เช่น มัดจำสั่งผลิต">'+
+          '<input class="form-input" id="psP'+i+'" type="number" min="0" max="100" step="0.5" value="'+ph.pct+'" oninput="PS.sum()" style="text-align:right">'+
+          '</div>';
+      });
+      Modal.show('<div class="modal-head"><div class="modal-title">ตั้งค่าโครงการ</div>'+
+        '<button class="modal-close" onclick="Modal.close()"><i data-lucide="x"></i></button></div>'+
+        '<div class="plan-hint">งวดจ่ายของ <b>ผู้รับเหมา</b> — ใช้แสดงในแท็บการเงินและดูว่างวดไหนพร้อมเบิก<br>'+
+        'แก้ชื่อกับสัดส่วน % ได้ตามสัญญาของโครงการนี้ (คนละอันกับสัญญาเจ้าบ้าน)</div>'+
+        '<div class="ps-row" style="font-size:11px;color:var(--color-slate-500);font-weight:600">'+
+        '<div>ชื่องวด</div><div>คำอธิบายสั้น</div><div style="text-align:right">สัดส่วน %</div></div>'+
+        '<div id="psRows">'+rows+'</div>'+
+        '<div class="ps-total" id="psTotal"></div>'+
+        '<div id="psErr" class="form-error" style="display:none"></div>'+
+        '<div class="modal-btns">'+
+        '<button type="button" class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>'+
+        '<button type="button" id="psSubmit" class="modal-btn modal-btn-primary" onclick="PS.save()">บันทึก</button></div>', 'modal-lg');
+      if(window.lucide) lucide.createIcons();
+      PS.sum();
+    },
+    sum(){
+      const phases=projectPhases();
+      let t=0;
+      phases.forEach((_,i)=>{ const el=document.getElementById('psP'+i); t+=el?(parseFloat(el.value)||0):0; });
+      const el=document.getElementById('psTotal'); if(!el) return;
+      const ok=Math.abs(t-100)<0.01;
+      el.textContent='รวม '+(Math.round(t*100)/100)+'%'+(ok?' ✓':' — ปกติควรรวมได้ 100%');
+      el.style.color=ok?'var(--color-success-700)':'var(--color-warning-700)';
+    },
+    async save(){
+      const phases=projectPhases();
+      const out=phases.map((ph,i)=>({
+        key: ph.key,   // key ผูกกับคอลัมน์ milestone ในตาราง payments — ห้ามเปลี่ยน
+        label:(document.getElementById('psL'+i).value||'').trim()||ph.key,
+        sub:(document.getElementById('psS'+i).value||'').trim(),
+        pct:parseFloat(document.getElementById('psP'+i).value)||0
+      }));
+      const btn=document.getElementById('psSubmit');
+      btn.disabled=true; btn.textContent='กำลังบันทึก...';
+      const settings=Object.assign({}, (project.settings||{}), { phases: out });
+      try{
+        const res=await API.updateProject({ project_id: state.projectId, settings: JSON.stringify(settings) });
+        if(!res||!res.ok){
+          const err=document.getElementById('psErr');
+          err.textContent='❌ '+((res&&res.error)||'บันทึกไม่สำเร็จ'); err.style.display='block';
+          btn.disabled=false; btn.textContent='บันทึก'; return;
+        }
+        project.settings=settings; state.projectSettings=settings;
+        Modal.close(); Modal.toast('✓ บันทึกค่าตั้งต้นโครงการแล้ว');
+        renderAll();
+      }catch(e){
+        const err=document.getElementById('psErr');
+        err.textContent='❌ '+e.message; err.style.display='block';
+        btn.disabled=false; btn.textContent='บันทึก';
+      }
+    }
+  };
+
+  // ══════════════════ ตั้งแผนไทม์ไลน์ (Gantt) รายชิ้นงาน ══════════════════
+  // เดิมแผนอยู่ใน js/config.js ต้องให้โปรแกรมเมอร์แก้ไฟล์ทุกครั้งที่เปิดบ้านใหม่
+  const TLP={
+    code:null,
+    open(ffCode){
+      const ffs=(state.data&&state.data.ffs)||[];
+      if(!ffs.length){ Modal.toast('ยังไม่มีงานในโครงการนี้ — เพิ่มงานก่อน'); return; }
+      TLP.code=ffCode||ffs[0].code;
+      TLP.render();
+    },
+    weeks(){
+      let td=Number(project.totalDays)||0;
+      if(!td&&project.startDate&&project.endDate){
+        const sd=new Date(project.startDate), ed=new Date(project.endDate);
+        if(!isNaN(sd.getTime())&&!isNaN(ed.getTime())) td=Math.max(0,Math.round((ed-sd)/86400000));
+      }
+      return Math.max(4,Math.min(52,Math.ceil((td||140)/7)));
+    },
+    render(){
+      const ffs=(state.data&&state.data.ffs)||[];
+      const plan=ganttPlan();
+      const cur=plan[TLP.code]||[];
+      const byPhase={}; cur.forEach(function(x){ byPhase[x[0]]={st:x[1],en:x[2]}; });
+      const weeksTotal=TLP.weeks();
+      const planned=ffs.filter(f=>(plan[f.code]||[]).length>0).length;
+
+      let opts='';
+      ffs.forEach(f=>{
+        opts+='<option value="'+escapeHtml(f.code)+'"'+(f.code===TLP.code?' selected':'')+'>'+
+          escapeHtml(f.code)+' · '+escapeHtml(f.name)+((plan[f.code]||[]).length?' ✓':'')+'</option>';
+      });
+      let rows='';
+      [1,2,3,4].forEach(ph=>{
+        rows+='<div class="plan-row"><div class="plan-row-lb">งวด '+ph+'</div>'+
+          '<input class="form-input" id="tlpS'+ph+'" type="number" min="1" max="'+weeksTotal+'" value="'+(byPhase[ph]?byPhase[ph].st:'')+'" placeholder="—">'+
+          '<input class="form-input" id="tlpE'+ph+'" type="number" min="1" max="'+weeksTotal+'" value="'+(byPhase[ph]?byPhase[ph].en:'')+'" placeholder="—">'+
+          '</div>';
+      });
+
+      Modal.show('<div class="modal-head"><div class="modal-title">ตั้งแผนไทม์ไลน์</div>'+
+        '<button class="modal-close" onclick="Modal.close()"><i data-lucide="x"></i></button></div>'+
+        '<div class="plan-hint">ใส่ว่าแต่ละงวดของชิ้นงานนี้ <b>อยู่ช่วงสัปดาห์ที่เท่าไหร่</b> ของโครงการ '+
+        '(สัปดาห์ 1 = สัปดาห์แรกนับจากวันเริ่มโครงการ · โครงการนี้ยาว '+weeksTotal+' สัปดาห์)<br>'+
+        'เว้นว่างทั้งคู่ = งวดนั้นไม่มีในแผน · ตั้งแล้ว '+planned+'/'+ffs.length+' รายการ</div>'+
+        '<div class="form-group"><label class="form-label">ชิ้นงาน</label>'+
+        '<select id="tlpFF" class="form-input" onchange="TLP.switch(this.value)">'+opts+'</select></div>'+
+        '<div class="plan-row" style="font-size:11px;color:var(--color-slate-500);font-weight:600">'+
+        '<div></div><div>สัปดาห์เริ่ม</div><div>สัปดาห์จบ</div></div>'+
+        rows+
+        '<div id="tlpErr" class="form-error" style="display:none"></div>'+
+        '<div class="modal-btns">'+
+        '<button type="button" class="modal-btn modal-btn-cancel" onclick="Modal.close()">ปิด</button>'+
+        '<button type="button" id="tlpSubmit" class="modal-btn modal-btn-primary" onclick="TLP.save()">บันทึกชิ้นนี้</button></div>', 'modal-lg');
+      if(window.lucide) lucide.createIcons();
+    },
+    switch(code){ TLP.code=code; TLP.render(); },
+    async save(){
+      const err=document.getElementById('tlpErr');
+      const weeksTotal=TLP.weeks();
+      const phases=[];
+      const list=[1,2,3,4];
+      for(let k=0;k<list.length;k++){
+        const ph=list[k];
+        const sv=(document.getElementById('tlpS'+ph).value||'').trim();
+        const ev=(document.getElementById('tlpE'+ph).value||'').trim();
+        if(!sv&&!ev) continue;
+        const st=parseInt(sv,10), en=parseInt(ev,10);
+        if(!(st>=1)||!(en>=1)){ err.textContent='งวด '+ph+': ต้องใส่ทั้งสัปดาห์เริ่มและสัปดาห์จบ'; err.style.display='block'; return; }
+        if(en<st){ err.textContent='งวด '+ph+': สัปดาห์จบต้องไม่น้อยกว่าสัปดาห์เริ่ม'; err.style.display='block'; return; }
+        if(st>weeksTotal||en>weeksTotal){ err.textContent='งวด '+ph+': เกินความยาวโครงการ ('+weeksTotal+' สัปดาห์)'; err.style.display='block'; return; }
+        phases.push([ph,st,en]);
+      }
+      const btn=document.getElementById('tlpSubmit');
+      btn.disabled=true; btn.textContent='กำลังบันทึก...';
+      try{
+        const res=await API.saveFFPlan(TLP.code, phases);
+        if(!res||!res.ok){ err.textContent='❌ '+((res&&res.error)||'บันทึกไม่สำเร็จ'); err.style.display='block'; btn.disabled=false; btn.textContent='บันทึกชิ้นนี้'; return; }
+        // อัปเดตในหน่วยความจำทันที ไม่ต้องรอโหลดใหม่ทั้งหน้า
+        if(state.data){
+          state.data.ffPlans=state.data.ffPlans||{};
+          if(phases.length) state.data.ffPlans[TLP.code]=phases; else delete state.data.ffPlans[TLP.code];
+        }
+        Modal.toast('✓ บันทึกแผนของ '+TLP.code+' แล้ว');
+        renderTimeline(); renderSetupCard();
+        TLP.render();   // เปิดค้างไว้ให้ตั้งชิ้นถัดไปต่อได้เลย
+      }catch(e){ err.textContent='❌ '+e.message; err.style.display='block'; btn.disabled=false; btn.textContent='บันทึกชิ้นนี้'; }
+    }
+  };
 
   // Esc = ปิดชั้นบนสุดทีละชั้น (lightbox → overlay)
   document.addEventListener('keydown', e=>{

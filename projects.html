@@ -40,6 +40,25 @@
   .card-new { border-style:dashed; background:var(--color-slate-50); display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:240px; box-shadow:none; cursor:pointer; transition:border-color 0.15s, background 0.15s; }
   .card-new:hover { border-color:var(--color-blue-500); background:var(--color-blue-50); }
   .card-new-icon { width:48px; height:48px; background:white; border-radius:var(--radius-full); display:flex; align-items:center; justify-content:center; margin-bottom:var(--space-3); color:var(--color-blue-600); box-shadow:var(--shadow-sm); }
+
+  /* โครงการที่ปิดงานแล้ว — จางลงแต่ยังอ่านออก */
+  .project-archived { opacity:0.72; }
+  .project-archived:hover { opacity:1; }
+
+  /* ปุ่ม ⋯ จัดการโครงการ (แตะง่ายบนมือถือ: 36px + hit area เผื่อ) */
+  .proj-menu-btn { width:36px; height:36px; margin:-6px -6px -6px 0; border:none; background:transparent; border-radius:var(--radius-md); color:var(--color-slate-400); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .proj-menu-btn:hover { background:var(--color-slate-100); color:var(--color-slate-700); }
+  .proj-menu-btn i { width:18px; height:18px; }
+
+  /* รายการเมนูใน modal (แตะได้เต็มแถว สูง 44px+ ตามกติกามือถือ) */
+  .pm-list { display:flex; flex-direction:column; gap:var(--space-2); text-align:left; }
+  .pm-item { display:flex; align-items:flex-start; gap:var(--space-3); width:100%; min-height:56px; padding:var(--space-3) var(--space-4); background:var(--color-slate-50); border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); cursor:pointer; text-align:left; font-family:inherit; transition:background 0.12s, border-color 0.12s; }
+  .pm-item:hover { background:white; border-color:var(--color-blue-500); }
+  .pm-item i { width:18px; height:18px; flex-shrink:0; margin-top:2px; color:var(--color-slate-500); }
+  .pm-t { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-900); }
+  .pm-s { font-size:var(--text-xs); color:var(--color-slate-500); margin-top:2px; line-height:1.5; }
+  .pm-danger i, .pm-danger .pm-t { color:var(--color-error-700); }
+  .pm-danger:hover { border-color:var(--color-error-500); }
 </style>
 </head>
 <body>
@@ -57,6 +76,15 @@
 
         <div class="grid-3" id="projGrid">
           <div class="card"><div class="loading-center"><div class="spinner"></div> กำลังโหลด...</div></div>
+        </div>
+
+        <!-- โครงการที่ปิดงานแล้ว — ยุบไว้ท้ายหน้า ข้อมูลไม่หาย เปิดกลับได้ -->
+        <div id="archivedBox" style="display:none;margin-top:var(--space-8)">
+          <div class="section-header" style="margin-top:0;">
+            <h2 style="font-size:var(--text-base);color:var(--color-slate-500)">
+              ปิดงานแล้ว (<span id="archivedCount">0</span>)</h2>
+          </div>
+          <div class="grid-3" id="archivedGrid"></div>
         </div>
 
       </div>
@@ -87,47 +115,45 @@
   // ลูกค้า: ซ่อนปุ่มเปิดโปรเจกต์
   if (isClient) { const b = document.getElementById('addBtn'); if (b) b.style.display = 'none'; }
 
-  // ── โหลดโปรเจกต์ (MERGE CONFIG legacy + API overlay — ตรรกะเดิม) ──
+  // ── โหลดโปรเจกต์ ────────────────────────────────────────────
+  // 2026-08-29: เลิกอ่าน CONFIG.PROJECTS (ที่เคยฝังบ้านคุณโบว์ไว้) — ใช้ API อย่างเดียว
+  // และดึง % ความคืบหน้าของ "ทุกโครงการ" มาจากหลังบ้านในคิวรีเดียว
+  // เดิมคำนวณ % ให้ bow-house ตัวเดียว โครงการอื่นขึ้น "รอเพิ่มงาน (FF)" ตลอดกาล
+  let PROJECTS = [];
+  let PROGRESS = {};
+
   async function loadProjects() {
     const grid = document.getElementById('projGrid');
 
-    const byId = {};
-    Object.keys(CONFIG.PROJECTS).forEach(id => {
-      const p = CONFIG.PROJECTS[id];
-      byId[id] = {
-        project_id: id, name: p.name, client: p.client, quote_no: p.quoteNo,
-        start_date: p.startDate, end_date: p.endDate, total_days: p.totalDays,
-        total_value: p.totalValue, contractor: p.contractor, status: p.status || 'active'
-      };
-    });
-
+    let projects = [];
     try {
       const res = await API.getProjects();
-      if (res && res.ok && Array.isArray(res.data)) res.data.forEach(p => { byId[p.project_id] = p; });
-    } catch (e) { console.warn('[projects] getProjects fail — ใช้ CONFIG อย่างเดียว', e); }
+      if (res && res.ok && Array.isArray(res.data)) projects = res.data;
+    } catch (e) {
+      console.warn('[projects] getProjects fail', e);
+      grid.innerHTML = '<div class="card card-body" style="color:var(--color-error-700)">โหลดรายการโครงการไม่สำเร็จ — ลองรีเฟรชหน้าอีกครั้ง</div>';
+      return;
+    }
 
-    const projects = Object.values(byId).sort((a, b) => {
-      if (a.project_id === 'bow-house') return -1;
-      if (b.project_id === 'bow-house') return 1;
-      const sa = (a.status || 'active') === 'active' ? 0 : 1;
-      const sb = (b.status || 'active') === 'active' ? 0 : 1;
-      if (sa !== sb) return sa - sb;
+    PROGRESS = {};
+    try {
+      const pr = await API.getProjectsProgress();
+      if (pr && pr.ok && Array.isArray(pr.data)) pr.data.forEach(x => { PROGRESS[x.project_id] = x; });
+    } catch (e) { console.warn('[projects] getProjectsProgress fail', e); }
+
+    const rank = p => ((p.status || 'active') === 'archived' ? 1 : 0);
+    projects.sort((a, b) => {
+      if (rank(a) !== rank(b)) return rank(a) - rank(b);
       return String(b.created_at || '').localeCompare(String(a.created_at || ''));
     });
+    PROJECTS = projects;
 
-    // FF data (เฉพาะ bow-house ในเฟส A)
-    let ffData = null;
-    try {
-      const data = await API.fetchAll();
-      if (data && data.ffs) { state.data = data; buildWeights(); ffData = data; }
-    } catch (e) { console.warn('[projects] fetchAll fail', e); }
+    renderKPIs(projects);
 
-    renderKPIs(projects, ffData);
+    const live = projects.filter(p => (p.status || 'active') !== 'archived');
+    const done = projects.filter(p => (p.status || 'active') === 'archived');
 
-    let html = '';
-    projects.forEach(proj => {
-      html += (proj.project_id === 'bow-house' && ffData) ? renderActiveCard(proj, ffData) : renderPendingCard(proj);
-    });
+    let html = live.map(renderCard).join('');
     if (!isClient) {
       html += `
         <div class="card card-new" onclick="openCreateProjectModal()">
@@ -137,21 +163,43 @@
         </div>`;
     }
     grid.innerHTML = html;
+
+    const archBox = document.getElementById('archivedBox');
+    if (done.length) {
+      archBox.style.display = 'block';
+      document.getElementById('archivedCount').textContent = done.length;
+      document.getElementById('archivedGrid').innerHTML = done.map(renderCard).join('');
+    } else {
+      archBox.style.display = 'none';
+    }
+
     if (window.lucide) lucide.createIcons();
   }
 
-  // ── KPI: คำนวณจากข้อมูลจริงเท่านั้น (ไม่มีข้อมูล = ซ่อน) ──
-  function renderKPIs(projects, ffData) {
-    const activeCount = projects.filter(p => (p.status || 'active') === 'active').length;
-    const totalValue = projects.reduce((s, p) => s + (parseFloat(p.total_value) || 0), 0);
-    const cards = [];
-    cards.push(kpiCard('โครงการที่ดำเนินการ', activeCount, 'briefcase', 'blue', 'โครงการทั้งหมดในระบบ'));
-    if (ffData && ffData.ffs) {
-      const pct = calcProjectProgress();
-      cards.push(kpiCard('งานทั้งหมด (บ้านคุณโบว์)', ffData.ffs.length + ' รายการ', 'list-todo', 'slate', 'ชิ้นงาน FF'));
-      cards.push(kpiCard('ความคืบหน้าเฉลี่ย', pct + '%', 'trending-up', 'green', 'บ้านคุณโบว์'));
+  // ── KPI รวมทุกโครงการ ──
+  function renderKPIs(projects) {
+    const live = projects.filter(p => (p.status || 'active') !== 'archived');
+    const totalValue = live.reduce((s, p) => s + (parseFloat(p.total_value) || 0), 0);
+    const totalFF = live.reduce((s, p) => s + ((PROGRESS[p.project_id] || {}).ff_count || 0), 0);
+
+    // ความคืบหน้าเฉลี่ยถ่วงด้วยมูลค่าโครงการ (โครงการใหญ่มีน้ำหนักมากกว่า)
+    // ยังไม่ได้ใส่มูลค่าเลย → เฉลี่ยธรรมดา
+    let avg = 0;
+    if (live.length) {
+      const withValue = totalValue > 0;
+      avg = live.reduce((s, p) => {
+        const pct = (PROGRESS[p.project_id] || {}).progress_pct || 0;
+        const w = withValue ? ((parseFloat(p.total_value) || 0) / totalValue) : (1 / live.length);
+        return s + w * pct;
+      }, 0);
     }
-    cards.push(kpiCard('มูลค่ารวมทุกโครงการ', fmt(totalValue) + ' ฿', 'wallet', 'amber', 'ตามสัญญา'));
+
+    const cards = [
+      kpiCard('โครงการที่ดำเนินการ', live.length, 'briefcase', 'blue', projects.length > live.length ? (projects.length - live.length) + ' โครงการปิดงานแล้ว' : 'โครงการทั้งหมดในระบบ'),
+      kpiCard('งานทั้งหมด', totalFF + ' รายการ', 'list-todo', 'slate', 'ชิ้นงาน (FF) ทุกโครงการ'),
+      kpiCard('ความคืบหน้าเฉลี่ย', (Math.round(avg * 10) / 10) + '%', 'trending-up', 'green', totalValue > 0 ? 'ถ่วงตามมูลค่าโครงการ' : 'เฉลี่ยทุกโครงการ'),
+      kpiCard('มูลค่ารวมทุกโครงการ', fmt(totalValue) + ' ฿', 'wallet', 'amber', 'ตามสัญญา')
+    ];
     document.getElementById('kpiGrid').innerHTML = cards.join('');
   }
   function kpiCard(title, value, icon, color, sub) {
@@ -166,74 +214,219 @@
       </div>`;
   }
 
-  // ── การ์ดโครงการที่มี FF (progress จริง — ตรรกะคำนวณเดิม) ──
-  function renderActiveCard(proj, ffData) {
-    const cfg = CONFIG.PROJECTS[proj.project_id] || { endDate: proj.end_date, totalDays: proj.total_days, name: proj.name };
-    const actualPct = calcProjectProgress();
-    const planPct = calcPlanProgress(cfg);
-    const variance = calcVariance(actualPct, planPct);
-    const daysLeft = Math.max(0, daysBetween(new Date(), new Date(cfg.endDate)));
-
-    let badge = 'badge-warning', statusText = 'ใกล้ล่าช้า';
-    if (variance >= -5) { badge = 'badge-success'; statusText = 'ตามแผน'; }
-    else if (variance < -15) { badge = 'badge-error'; statusText = 'ล่าช้า'; }
-    const onPlan = actualPct >= planPct - 5;
-
-    const targetPage = isClient ? 'client.html' : 'dashboard.html';
-    const goUrl = targetPage + '?project=' + encodeURIComponent(proj.project_id);
-
-    return `
-      <div class="card card-body project-card" onclick="window.location.href='${goUrl}'">
-        <div class="project-meta">
-          <span class="badge ${badge}">${statusText}</span>
-          <span class="badge badge-gray" style="font-family:monospace;">${esc(proj.quote_no || cfg.quoteNo || '')}</span>
-        </div>
-        <div class="project-title">${esc(proj.name)}</div>
-        <div class="project-client"><i data-lucide="user"></i> ${esc(proj.client)}</div>
-        <div class="proj-figures">
-          <div><div class="proj-fig-l">มูลค่าโครงการ</div><div class="proj-fig-v">${fmt(proj.total_value || cfg.totalValue)} ฿</div></div>
-          <div style="text-align:right;"><div class="proj-fig-l">วันเหลือ</div><div class="proj-fig-v">${daysLeft} / ${proj.total_days || cfg.totalDays}</div></div>
-        </div>
-        <div class="progress-header">
-          <span>ความคืบหน้า</span>
-          <span style="color:${onPlan ? 'var(--color-success-700)' : 'var(--color-warning-700)'}">${actualPct}%</span>
-        </div>
-        <div class="progress-track"><div class="progress-fill ${onPlan ? 'success' : 'warning'}" style="width:${actualPct}%"></div></div>
-        <div class="project-footer">
-          <div class="flex gap-2">
-            <span class="badge badge-blue">${ffData.ffs.length} FF</span>
-            <span class="badge badge-gray">4 Zone</span>
-          </div>
-          <div class="text-xs text-muted flex items-center gap-1"><i data-lucide="calendar" style="width:14px;height:14px;"></i> ${esc(cfg.endDate || proj.end_date || '')}</div>
-        </div>
-      </div>`;
-  }
-
-  // ── การ์ดโครงการใหม่ (ยังไม่มี FF) ──
-  function renderPendingCard(proj) {
+  // ── การ์ดโครงการ (ใบเดียวใช้ได้ทุกโครงการ) ────────────────────
+  // เดิมมี 2 แบบ: bow-house ได้การ์ดจริง · ที่เหลือได้การ์ด "ยังไม่เริ่ม" เสมอ
+  function renderCard(proj) {
+    const pid = proj.project_id;
+    const st = PROGRESS[pid] || { ff_count: 0, task_count: 0, zone_count: 0, progress_pct: 0 };
+    const archived = (proj.status || 'active') === 'archived';
     const value = parseFloat(proj.total_value) || 0;
     const days = parseInt(proj.total_days, 10) || 0;
-    const targetPage = isClient ? 'client.html' : 'dashboard.html';
-    const goUrl = targetPage + '?project=' + encodeURIComponent(proj.project_id);
+    const actualPct = Number(st.progress_pct) || 0;
+
+    const goUrl = (isClient ? 'client.html' : 'dashboard.html') + '?project=' + encodeURIComponent(pid);
+
+    // ยังไม่มีงาน = ยังตั้งค่าไม่เสร็จ · มีงานแล้ว = เทียบแผนจริง
+    let badge, statusText, onPlan = true, planPct = null;
+    if (archived) {
+      badge = 'badge-gray'; statusText = 'ปิดงานแล้ว';
+    } else if (!st.ff_count) {
+      badge = 'badge-warning'; statusText = 'รอเพิ่มงาน';
+    } else {
+      planPct = calcPlanPct(proj);
+      if (planPct === null) { badge = 'badge-blue'; statusText = 'กำลังทำ'; }
+      else {
+        const v = actualPct - planPct;
+        if (v >= -5) { badge = 'badge-success'; statusText = 'ตามแผน'; }
+        else if (v >= -15) { badge = 'badge-warning'; statusText = 'ใกล้ล่าช้า'; onPlan = false; }
+        else { badge = 'badge-error'; statusText = 'ล่าช้า'; onPlan = false; }
+      }
+    }
+
+    const daysLeft = daysLeftOf(proj);
+    const menuBtn = isClient ? '' :
+      `<button class="proj-menu-btn" title="จัดการโครงการ" onclick="event.stopPropagation();openProjectMenu('${esc(pid)}')"><i data-lucide="more-horizontal"></i></button>`;
+
     return `
-      <div class="card card-body project-card" onclick="window.location.href='${goUrl}'">
+      <div class="card card-body project-card${archived ? ' project-archived' : ''}" onclick="window.location.href='${goUrl}'">
         <div class="project-meta">
-          <span class="badge badge-gray">ยังไม่เริ่ม</span>
-          ${proj.quote_no ? `<span class="badge badge-gray" style="font-family:monospace;">${esc(proj.quote_no)}</span>` : ''}
+          <span class="badge ${badge}">${statusText}</span>
+          <div class="flex items-center gap-2">
+            ${proj.quote_no ? `<span class="badge badge-gray" style="font-family:monospace;">${esc(proj.quote_no)}</span>` : ''}
+            ${menuBtn}
+          </div>
         </div>
         <div class="project-title">${esc(proj.name)}</div>
         <div class="project-client"><i data-lucide="user"></i> ${esc(proj.client || '—')}</div>
         <div class="proj-figures">
-          <div><div class="proj-fig-l">มูลค่าโครงการ</div><div class="proj-fig-v">${fmt(value)} ฿</div></div>
-          <div style="text-align:right;"><div class="proj-fig-l">ระยะเวลา</div><div class="proj-fig-v">${days ? days + ' วัน' : '—'}</div></div>
+          <div><div class="proj-fig-l">มูลค่าโครงการ</div><div class="proj-fig-v">${value ? fmt(value) + ' ฿' : '—'}</div></div>
+          <div style="text-align:right;"><div class="proj-fig-l">${daysLeft === null ? 'ระยะเวลา' : 'วันเหลือ'}</div>
+            <div class="proj-fig-v">${daysLeft === null ? (days ? days + ' วัน' : '—') : (daysLeft + ' / ' + days)}</div></div>
         </div>
-        <div class="project-footer" style="border-top:none;padding-top:0;margin-top:0;">
-          <span class="badge badge-warning">รอเพิ่มงาน (FF)</span>
+        ${st.ff_count ? `
+        <div class="progress-header">
+          <span>ความคืบหน้า${planPct !== null ? ` <span class="text-xs text-muted">(แผน ${planPct}%)</span>` : ''}</span>
+          <span style="color:${onPlan ? 'var(--color-success-700)' : 'var(--color-warning-700)'}">${actualPct}%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill ${onPlan ? 'success' : 'warning'}" style="width:${Math.min(100, actualPct)}%"></div></div>` : ''}
+        <div class="project-footer"${st.ff_count ? '' : ' style="border-top:none;padding-top:0;margin-top:var(--space-2);"'}>
+          <div class="flex gap-2">
+            ${st.ff_count ? `<span class="badge badge-blue">${st.ff_count} FF</span>` : '<span class="badge badge-warning">ยังไม่มีงาน — แตะเพื่อเริ่ม</span>'}
+            ${st.zone_count ? `<span class="badge badge-gray">${st.zone_count} Zone</span>` : ''}
+          </div>
+          <div class="text-xs text-muted flex items-center gap-1">${proj.end_date ? `<i data-lucide="calendar" style="width:14px;height:14px;"></i> ${esc(proj.end_date)}` : ''}</div>
         </div>
       </div>`;
   }
 
-  // ── modal เปิดโปรเจกต์ใหม่ (ตรรกะเดิม, ฟอร์ม design-system) ──
+  // %แผน ณ วันนี้ (เส้นตรงตามเวลา) — ไม่มีวันเริ่ม/ระยะเวลา = คำนวณไม่ได้
+  function calcPlanPct(proj) {
+    const start = new Date(proj.start_date);
+    const days = parseInt(proj.total_days, 10) || 0;
+    if (isNaN(start.getTime()) || days <= 0) return null;
+    const passed = Math.floor((new Date() - start) / 86400000);
+    return Math.round(Math.max(0, Math.min(100, passed / days * 100)) * 10) / 10;
+  }
+  function daysLeftOf(proj) {
+    const end = new Date(proj.end_date);
+    if (isNaN(end.getTime())) return null;
+    return Math.max(0, Math.ceil((end - new Date()) / 86400000));
+  }
+
+  // ── เมนูจัดการโครงการ (แก้ไข / ปิดงาน / ลบ) ────────────────────
+  // เดิมไม่มีเลย: สร้างโครงการแล้วพิมพ์ชื่อผิดก็แก้ไม่ได้ ปิดไม่ได้ ลบไม่ได้
+  function openProjectMenu(pid) {
+    const proj = PROJECTS.find(p => p.project_id === pid);
+    if (!proj) return;
+    const st = PROGRESS[pid] || {};
+    const archived = (proj.status || 'active') === 'archived';
+    const hasData = (st.ff_count || 0) > 0 || (st.task_count || 0) > 0;
+
+    Modal.show(`
+      <div class="modal-head"><div class="modal-title">${esc(proj.name)}</div>
+        <button class="modal-close" onclick="Modal.close()"><i data-lucide="x"></i></button></div>
+      <div class="pm-list">
+        <button class="pm-item" onclick="openEditProjectModal('${esc(pid)}')">
+          <i data-lucide="pencil"></i><div><div class="pm-t">แก้ไขข้อมูลโครงการ</div>
+          <div class="pm-s">ชื่อ ลูกค้า เลขใบเสนอราคา วันที่ มูลค่า</div></div></button>
+        <button class="pm-item" onclick="toggleArchive('${esc(pid)}',${archived})">
+          <i data-lucide="${archived ? 'rotate-ccw' : 'archive'}"></i><div>
+          <div class="pm-t">${archived ? 'เปิดโครงการกลับมาทำต่อ' : 'ปิดโครงการ (จบงานแล้ว)'}</div>
+          <div class="pm-s">${archived ? 'ย้ายกลับขึ้นรายการที่ดำเนินการอยู่' : 'ยุบไปท้ายหน้า ข้อมูลไม่หาย เปิดกลับได้ตลอด'}</div></div></button>
+        <button class="pm-item pm-danger" onclick="confirmDeleteProject('${esc(pid)}')">
+          <i data-lucide="trash-2"></i><div><div class="pm-t">ลบโครงการถาวร</div>
+          <div class="pm-s">${hasData ? 'ลบไม่ได้ — โครงการนี้มีข้อมูลอยู่แล้ว' : 'ลบได้ เพราะยังไม่มีข้อมูลอะไรเลย'}</div></div></button>
+      </div>`, 'modal-lg');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function openEditProjectModal(pid) {
+    const proj = PROJECTS.find(p => p.project_id === pid);
+    if (!proj) return;
+    Modal.close();
+    // Modal.close() เคลียร์กล่องหลัง 200ms — ต้องหน่วงก่อนเปิดใบใหม่ ไม่งั้นจอว่าง
+    setTimeout(() => {
+      Modal.show(`
+        <div class="modal-head"><div class="modal-title">แก้ไขข้อมูลโครงการ</div>
+          <button class="modal-close" onclick="Modal.close()"><i data-lucide="x"></i></button></div>
+        <form id="peForm" onsubmit="submitEditProject(event,'${esc(pid)}')">
+          <div class="form-group"><label class="form-label">ชื่อโครงการ <span class="req">*</span></label>
+            <input id="peName" class="form-input" type="text" value="${esc(proj.name)}" required></div>
+          <div class="form-group"><label class="form-label">ลูกค้า</label>
+            <input id="peClient" class="form-input" type="text" value="${esc(proj.client || '')}"></div>
+          <div class="form-group"><label class="form-label">เลขที่ใบเสนอราคา</label>
+            <input id="peQuote" class="form-input" type="text" value="${esc(proj.quote_no || '')}"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">วันเริ่ม</label>
+              <input id="peStart" class="form-input" type="date" value="${esc(proj.start_date || '')}"></div>
+            <div class="form-group"><label class="form-label">วันสิ้นสุด</label>
+              <input id="peEnd" class="form-input" type="date" value="${esc(proj.end_date || '')}"></div>
+          </div>
+          <div class="form-group"><label class="form-label">มูลค่ารวม (บาท)</label>
+            <input id="peValue" class="form-input" type="number" min="0" value="${parseFloat(proj.total_value) || 0}">
+            <div class="form-hint">ใส่ไว้เพื่อให้ระบบคิด % การเบิกเงินได้</div></div>
+          <div class="form-group"><label class="form-label">ผู้รับเหมา</label>
+            <input id="peContractor" class="form-input" type="text" value="${esc(proj.contractor || '')}"></div>
+          <div id="peErr" class="form-error" style="display:none"></div>
+          <div class="modal-btns">
+            <button type="button" class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>
+            <button type="submit" id="peSubmit" class="modal-btn modal-btn-primary">บันทึก</button>
+          </div>
+        </form>`, 'modal-lg');
+      if (window.lucide) lucide.createIcons();
+    }, 220);
+  }
+
+  async function submitEditProject(event, pid) {
+    event.preventDefault();
+    const err = document.getElementById('peErr');
+    const name = document.getElementById('peName').value.trim();
+    if (!name) { err.textContent = 'ต้องระบุชื่อโครงการ'; err.style.display = 'block'; return; }
+    const start = document.getElementById('peStart').value;
+    const end = document.getElementById('peEnd').value;
+    if (start && end && start >= end) { err.textContent = 'วันสิ้นสุดต้องอยู่หลังวันเริ่ม'; err.style.display = 'block'; return; }
+
+    const btn = document.getElementById('peSubmit');
+    btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+    const data = {
+      project_id: pid, name: name,
+      client: document.getElementById('peClient').value.trim(),
+      quote_no: document.getElementById('peQuote').value.trim(),
+      start_date: start, end_date: end,
+      total_value: parseFloat(document.getElementById('peValue').value) || 0,
+      contractor: document.getElementById('peContractor').value.trim()
+    };
+    if (start && end) data.total_days = Math.max(0, Math.round((new Date(end) - new Date(start)) / 86400000));
+    try {
+      const res = await API.updateProject(data);
+      if (!res || !res.ok) { err.textContent = (res && res.error) || 'บันทึกไม่สำเร็จ'; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'บันทึก'; return; }
+      Modal.close();
+      Modal.toast('บันทึกข้อมูลโครงการแล้ว');
+      await loadProjects();
+    } catch (e) {
+      err.textContent = 'เกิดข้อผิดพลาด: ' + e.message; err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'บันทึก';
+    }
+  }
+
+  async function toggleArchive(pid, isArchived) {
+    Modal.close();
+    try {
+      const res = await API.updateProject({ project_id: pid, status: isArchived ? 'active' : 'archived' });
+      if (!res || !res.ok) { Modal.toast('❌ ' + ((res && res.error) || 'ทำรายการไม่สำเร็จ')); return; }
+      Modal.toast(isArchived ? '✓ เปิดโครงการกลับมาแล้ว' : '✓ ปิดโครงการแล้ว — ยุบไปท้ายหน้า');
+      await loadProjects();
+    } catch (e) { Modal.toast('❌ ' + e.message); }
+  }
+
+  async function confirmDeleteProject(pid) {
+    const proj = PROJECTS.find(p => p.project_id === pid);
+    Modal.close();
+    setTimeout(async () => {
+      const ok = await Modal.confirm({
+        icon: '🗑️', iconClass: 'warn', title: 'ลบโครงการ "' + ((proj && proj.name) || pid) + '"?',
+        desc: 'การลบนี้ย้อนกลับไม่ได้',
+        info: 'ระบบจะลบให้เฉพาะโครงการที่ยังไม่มีข้อมูลอะไรเลย — ถ้ามีงาน วัสดุ รูป หรือสัญญาอยู่ จะไม่ลบให้ และจะบอกว่าติดอะไร',
+        confirmText: 'ลบถาวร', cancelText: 'ยกเลิก', confirmClass: 'modal-btn-warn'
+      });
+      if (!ok) return;
+      try {
+        const res = await API.deleteProject(pid);
+        if (!res || !res.ok) {
+          // หลังบ้านคืนเหตุผลเป็นภาษาไทยพร้อมบอกว่าติดตารางไหนกี่แถว
+          Modal.show(`<div class="modal-icon warn">🚫</div>
+            <div class="modal-title">ลบไม่ได้</div>
+            <div class="modal-desc">${esc((res && res.error) || 'ไม่ทราบสาเหตุ')}</div>
+            <div class="modal-btns"><button class="modal-btn modal-btn-primary" onclick="Modal.close()">เข้าใจแล้ว</button></div>`);
+          return;
+        }
+        Modal.toast('✓ ลบโครงการแล้ว');
+        await loadProjects();
+      } catch (e) { Modal.toast('❌ ' + e.message); }
+    }, 220);
+  }
+
+  // ── modal เปิดโปรเจกต์ใหม่ ──
   function openCreateProjectModal() {
     const today = new Date().toISOString().slice(0, 10);
     const end = new Date(Date.now() + 120 * 86400000).toISOString().slice(0, 10);
@@ -295,13 +488,63 @@
     try {
       const res = await API.createProject(data);
       if (!res || !res.ok) { showPfError((res && res.error) || 'สร้างโปรเจกต์ไม่สำเร็จ'); btn.disabled = false; btn.textContent = 'สร้างโปรเจกต์'; return; }
+      const newId = (res.data && res.data.project_id) || res.project_id;
       Modal.close();
-      Modal.toast('สร้างโปรเจกต์ "' + name + '" สำเร็จ');
       await loadProjects();
+      // ── ทางเดินต่อ: เดิมสร้างเสร็จแล้วจบเลย ผู้ใช้ไม่รู้ว่าต้องทำอะไรต่อ ──
+      setTimeout(() => openNextStepModal(newId, name), 260);
     } catch (err) {
       showPfError('เกิดข้อผิดพลาด: ' + err.message);
       btn.disabled = false; btn.textContent = 'สร้างโปรเจกต์';
     }
+  }
+
+  // ── หลังสร้างโครงการ: จะเริ่มยังไงต่อ ──────────────────────────
+  function openNextStepModal(pid, name) {
+    // โครงการต้นแบบ = โครงการที่มีงานอยู่แล้ว (ไม่ล็อกไว้ที่บ้านคุณโบว์)
+    const sources = PROJECTS.filter(p => p.project_id !== pid && ((PROGRESS[p.project_id] || {}).ff_count || 0) > 0);
+    const dashUrl = 'dashboard.html?project=' + encodeURIComponent(pid);
+
+    Modal.show(`
+      <div class="modal-head"><div class="modal-title">สร้าง "${esc(name)}" แล้ว 🎉</div>
+        <button class="modal-close" onclick="Modal.close()"><i data-lucide="x"></i></button></div>
+      <div class="modal-desc" style="text-align:left;margin-bottom:14px">ขั้นต่อไปคือใส่ "งานบิ้วอิน" เข้าโครงการ เลือกวิธีที่สะดวก</div>
+      <div class="pm-list">
+        ${sources.length ? `
+        <div class="form-group" style="margin-bottom:8px">
+          <label class="form-label">คัดลอกงานจากโครงการเดิม</label>
+          <select id="nsSource" class="form-input">
+            ${sources.map(p => `<option value="${esc(p.project_id)}">${esc(p.name)} · ${(PROGRESS[p.project_id] || {}).ff_count || 0} งาน</option>`).join('')}
+          </select>
+          <div class="form-hint">ได้รายการงานครบชุดทันที แล้วค่อยลบ/แก้ทีหลัง — เร็วที่สุดถ้าบ้านหลังนี้คล้ายหลังเดิม</div>
+        </div>
+        <button class="pm-item" onclick="cloneInto('${esc(pid)}')">
+          <i data-lucide="copy"></i><div><div class="pm-t">คัดลอกงานจากโครงการที่เลือก</div>
+          <div class="pm-s">ทุกงานจะเริ่มที่สถานะ "ยังไม่เริ่ม"</div></div></button>` : ''}
+        <button class="pm-item" onclick="window.location.href='${dashUrl}'">
+          <i data-lucide="plus-circle"></i><div><div class="pm-t">เพิ่มงานเองทีละรายการ</div>
+          <div class="pm-s">ไปที่แดชบอร์ดโครงการ แล้วกด "เพิ่มงาน"</div></div></button>
+        <button class="pm-item" onclick="Modal.close()">
+          <i data-lucide="clock"></i><div><div class="pm-t">ไว้ทีหลัง</div>
+          <div class="pm-s">กลับมาทำต่อได้ทุกเมื่อจากการ์ดโครงการ</div></div></button>
+      </div>`, 'modal-lg');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  async function cloneInto(targetPid) {
+    const sel = document.getElementById('nsSource');
+    const sourcePid = sel ? sel.value : '';
+    if (!sourcePid) { Modal.toast('เลือกโครงการต้นแบบก่อน'); return; }
+    Modal.close();
+    Modal.toast('⏳ กำลังคัดลอกงาน...');
+    try {
+      const res = await API.cloneFromTemplate(targetPid, sourcePid, true);
+      if (!res || !res.ok) { Modal.toast('❌ คัดลอกไม่สำเร็จ: ' + ((res && res.error) || 'unknown')); return; }
+      const d = res.data || {};
+      Modal.toast('✅ คัดลอกงาน ' + (d.ff_cloned || 0) + ' รายการ + งานย่อย ' + (d.tasks_cloned || 0) + ' รายการ');
+      await loadProjects();
+      setTimeout(() => { window.location.href = 'dashboard.html?project=' + encodeURIComponent(targetPid); }, 1200);
+    } catch (e) { Modal.toast('❌ ' + e.message); }
   }
 
   loadProjects();

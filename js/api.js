@@ -459,6 +459,50 @@ const API = {
   },
 
   /**
+   * แก้ไขข้อมูลโครงการ (ชื่อ/ลูกค้า/วันที่/มูลค่า/สถานะ/ค่าตั้งต้น)
+   * status: 'active' = กำลังทำ · 'archived' = ปิดงานแล้ว (ยุบไปท้ายรายการ)
+   * @param {object} data - { project_id (req), name?, client?, quote_no?, start_date?,
+   *                          end_date?, total_value?, contractor?, status?, settings? }
+   */
+  updateProject: function(data) {
+    return this.callRead('update_project', data);
+  },
+
+  /**
+   * ลบโครงการ — หลังบ้านยอมลบเฉพาะโครงการที่ "ว่างเปล่าจริง"
+   * ถ้ายังมีข้อมูลจะคืน error บอกว่าติดอะไรกี่แถว (ไม่ลบให้)
+   * @param {string} projectId
+   */
+  deleteProject: function(projectId) {
+    return this.callRead('delete_project', { project_id: projectId });
+  },
+
+  /**
+   * ความคืบหน้าจริงของทุกโครงการ (คิวรีเดียว) — ใช้วาดการ์ดหน้ารายการโครงการ
+   * Returns: { ok:true, data:[{project_id, ff_count, task_count, zone_count, progress_pct}] }
+   */
+  getProjectsProgress: function() {
+    return this.callRead('get_projects_progress');
+  },
+
+  /**
+   * แผนไทม์ไลน์ (Gantt) ของโครงการ — { 'F-01': [[งวด, สัปดาห์เริ่ม, สัปดาห์จบ], ...] }
+   * ปกติไม่ต้องเรียกเอง เพราะ fetchAll() คืน ffPlans มาให้แล้ว
+   */
+  getFFPlans: function(projectId) {
+    return this.callRead('get_ff_plans', projectId ? { project_id: projectId } : {});
+  },
+
+  /**
+   * บันทึกแผนไทม์ไลน์ของชิ้นงาน 1 ชิ้น (เขียนทับทั้งชิ้น · ส่ง phases ว่าง = ลบแผน)
+   * @param {string} ffCode
+   * @param {Array} phases - [[งวด, สัปดาห์เริ่ม, สัปดาห์จบ], ...]
+   */
+  saveFFPlan: function(ffCode, phases) {
+    return this.callRead('save_ff_plan', { ff_code: ffCode, phases: JSON.stringify(phases) });
+  },
+
+  /**
    * เพิ่ม FF หลายรายการในโปรเจกต์ (Phase C-1 wizard)
    * ใช้ callPost — รับ array ผ่าน body (callRead URL อาจยาวเกิน)
    * project_id ส่งอัตโนมัติจาก state.projectId ผ่าน _injectProjectId

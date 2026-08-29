@@ -8,8 +8,35 @@ const state = {
   openFFs: new Set(),   // FF ที่เปิดอยู่ใน Checklist
   weights: {},          // { ffCode: { ffWeight, phaseWeights } }
   recentUncheck: {},    // Cache วันที่ Done ที่ถูก uncheck (5 นาที)
-  projectId: 'bow-house' // Phase B-3: project scope (อ่านจาก ?project= URL — default = legacy)
+  projectId: 'bow-house', // Phase B-3: project scope (อ่านจาก ?project= URL — default = legacy)
+  projectSettings: null   // ค่าตั้งต้นรายโครงการจาก D1 (projects.settings) — ตั้งโดยหน้าที่โหลด get_projects
 };
+
+// ── ค่าตั้งต้นของโครงการที่เปิดอยู่ (2026-08-29) ────────────────
+// เดิมค่าพวกนี้ฝังตายใน CONFIG.PROJECTS[...] ให้บ้านคุณโบว์หลังเดียว
+// ตอนนี้มาจาก D1 · ยังเผื่อ fallback ไป CONFIG ไว้เผื่อหน้าที่ยังไม่ได้โหลด get_projects
+function projectSettings() {
+  if (state.projectSettings && typeof state.projectSettings === 'object') return state.projectSettings;
+  try {
+    const proj = (typeof CONFIG !== 'undefined' && CONFIG.PROJECTS) ? CONFIG.PROJECTS[state.projectId] : null;
+    if (proj) return { addon_ffs: proj.addonFFs || [] };
+  } catch (e) { /* ไม่มีก็ไม่เป็นไร */ }
+  return {};
+}
+
+// แผนไทม์ไลน์ (Gantt) ของโครงการที่เปิดอยู่ — { 'F-01': [[งวด, สัปดาห์เริ่ม, สัปดาห์จบ], ...] }
+// มาจาก D1 ผ่าน getAll().ffPlans · fallback CONFIG.GANTT_PLAN ไว้เผื่อของเก่าที่ยังไม่ย้าย
+function ganttPlan() {
+  if (state.data && state.data.ffPlans && typeof state.data.ffPlans === 'object') return state.data.ffPlans;
+  return (typeof CONFIG !== 'undefined' && CONFIG.GANTT_PLAN) ? CONFIG.GANTT_PLAN : {};
+}
+
+// งวดจ่ายของโครงการ — [{key,label,sub,pct}] · ไม่ได้ตั้งไว้ = ใช้ค่ากลางของบริษัท
+function projectPhases() {
+  const st = projectSettings();
+  if (Array.isArray(st.phases) && st.phases.length) return st.phases;
+  return (typeof CONFIG !== 'undefined' && CONFIG.DEFAULT_PHASES) ? CONFIG.DEFAULT_PHASES : [];
+}
 
 // ============================================================
 // Phase B-3: Project scoping
@@ -93,13 +120,18 @@ function buildWeights() {
   if (!state.data) return;
   const ffs = state.data.ffs;
   const tasks = state.data.tasks;
-  const totalValue = ffs.reduce((s, f) => s + (f.price || 0), 0) || 1;
+  const priceSum = ffs.reduce((s, f) => s + (f.price || 0), 0);
+  // โครงการใหม่ที่ยังไม่ได้ใส่ราคา (ทุกชิ้น = 0) → ถ่วงน้ำหนักเท่ากันทุกชิ้น
+  // ไม่งั้น ffWeight เป็น 0 หมด แล้ว % ค้างที่ 0 ตลอดกาลแม้ติ๊กงานเสร็จแล้ว
+  // (สูตรนี้ต้องตรงกับ getProjectsProgress ฝั่งหลังบ้านเป๊ะ)
+  const equalWeight = priceSum <= 0;
+  const totalValue = priceSum || 1;
 
   state.weights = {};
 
   ffs.forEach(ff => {
-    // FF Weight = ราคา / ราคารวม
-    const ffWeight = (ff.price || 0) / totalValue;
+    // FF Weight = ราคา / ราคารวม (หรือเท่ากันทุกชิ้นถ้ายังไม่ใส่ราคา)
+    const ffWeight = equalWeight ? (ffs.length ? 1 / ffs.length : 0) : ((ff.price || 0) / totalValue);
 
     // Phase Weight = ผลรวม "weight ความเหนื่อย" รายงาน task ใน phase / weight รวมของ FF
     // (เดิมนับจำนวน task → งานจุกจิกที่มี task เยอะกินน้ำหนักเกินจริง
@@ -211,9 +243,8 @@ function calcProgressByContract() {
 
   let addonCodes = [];
   try {
-    const proj = (typeof CONFIG !== 'undefined' && CONFIG.PROJECTS)
-      ? CONFIG.PROJECTS[state.projectId] : null;
-    addonCodes = (proj && Array.isArray(proj.addonFFs)) ? proj.addonFFs : [];
+    const st = projectSettings();
+    addonCodes = Array.isArray(st.addon_ffs) ? st.addon_ffs : [];
   } catch (e) { addonCodes = []; }
 
   const allCodes = state.data.ffs.map(f => f.code);
@@ -282,7 +313,9 @@ function calcPlanProgress(project) {
 //   overall:     0-100 %แผน รวมราย F ณ วันนี้ (weighted ด้วย phaseWeights)
 //   phases:      4 entries (p1-p4) — { phase, startWeek, endWeek, planPct, weight }
 function calcFFPlanByGantt(ffCode, project) {
-  const plan = (typeof CONFIG !== 'undefined' && CONFIG.GANTT_PLAN) ? CONFIG.GANTT_PLAN : {};
+  // แผนมาจาก D1 รายโครงการ (getAll คืน ffPlans มาด้วย) — เดิมอ่านจาก CONFIG.GANTT_PLAN
+  // ที่ผูกกับ "รหัส F-xx" เฉยๆ ทำให้บ้านคนละหลังยืมแผนกันมั่ว
+  const plan = ganttPlan();
   const ffPlan = plan[ffCode];
 
   // currentWeek convention เดียวกับ renderTimeline เดิม แต่ floating (ละเอียด):
