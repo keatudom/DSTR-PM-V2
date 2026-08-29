@@ -33,7 +33,7 @@ export async function getFFPlans(env: Env, projectId: string): Promise<GanttPlan
 }
 
 // รับ phases ได้ทั้ง array จริง (callPost) และ JSON string (callRead ที่ต่อมาทาง URL)
-function parsePhases(v: unknown): [number, number, number][] {
+export function parsePhases(v: unknown): [number, number, number][] {
   let raw: unknown = v;
   if (typeof raw === 'string') {
     try { raw = JSON.parse(raw); } catch { throw new Error('phases ไม่ใช่ JSON ที่อ่านได้'); }

@@ -52,38 +52,97 @@ function countByText(rows: Record<string, unknown>[]): { task: number; withdraw:
   return c;
 }
 
+// ── project scope ของรายงาน (2026-08-29) ─────────────────────
+// เดิม digest ทั้ง 3 ตัวดึงทั้งตารางโดยไม่กรองโครงการ และไม่ติดป้ายชื่อบ้าน
+//   → วันที่มีบ้าน 2 หลังพร้อมกัน รายงานจะเอางานมากองรวมกัน อ่านไม่ออกว่าอันไหนบ้านไหน
+// ตอนนี้: จัดกลุ่มตามโครงการแล้วติดหัวข้อชื่อบ้าน
+//   ⚠️ ถ้ามีโครงการเดียวที่มีความเคลื่อนไหว → หน้าตาข้อความเหมือนเดิมเป๊ะ (ไม่ให้ทีมงง)
+const PROJECT_HEADER = (name: string): string => '━━ 🏠 ' + name + ' ━━';
+
+// แถว legacy ที่ project_id ว่าง ถือเป็น bow-house (ธรรมเนียมเดียวกับ projectScope ใน lib/db)
+function rowPid(r: Record<string, unknown>): string {
+  return String(r.project_id ?? '').trim() || 'bow-house';
+}
+
+export function groupByProject<T extends Record<string, unknown>>(rows: T[]): Record<string, T[]> {
+  const out: Record<string, T[]> = {};
+  for (const r of rows) (out[rowPid(r)] ||= []).push(r);
+  return out;
+}
+
+async function projectNames(env: Env): Promise<Record<string, string>> {
+  const map: Record<string, string> = {};
+  try {
+    const rows = await queryAll<{ project_id: string; name: string }>(env, 'SELECT project_id, name FROM projects');
+    for (const r of rows) {
+      const id = String(r.project_id || '').trim();
+      if (id) map[id] = String(r.name || '').trim() || id;
+    }
+  } catch { /* ไม่มีชื่อก็ใช้ id แทน */ }
+  return map;
+}
+
+// รายชื่อโครงการที่มีความเคลื่อนไหว เรียงตามจำนวนกิจกรรม (มากก่อน)
+export function activeProjectIds(groups: Record<string, unknown[]>[]): string[] {
+  const score: Record<string, number> = {};
+  for (const g of groups) {
+    for (const pid of Object.keys(g)) score[pid] = (score[pid] || 0) + g[pid].length;
+  }
+  return Object.keys(score).sort((a, b) => score[b] - score[a]);
+}
+
 // ── DAILY DIGEST (line.gs:188) ──
 export async function lineDailyDigest(env: Env, p: Record<string, unknown>): Promise<unknown> {
   const gid = (p.to as string) || env.LINE_GROUP_ID || '';
   if (!gid) return { ok: false, reason: 'no group' };
   const day = p.date ? String(p.date) : todayStr();
-  let rows: Record<string, unknown>[] = [];
-  try { rows = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM activity_logs')).filter((r) => String(r.date || '').slice(0, 10) === day); } catch { /* */ }
-  const c = countByText(rows);
-  let reports: Record<string, unknown>[] = [];
-  try { reports = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM daily_reports')).filter((r) => String(r.date || '').slice(0, 10) === day); } catch { /* */ }
-  let narrative = '';
-  if (reports.length || rows.length) {
-    let material = '';
-    for (const r of reports) material += '- ผู้รายงาน ' + (r.reporter_name || '-') + ' | อากาศ ' + (r.weather || '-') + ' | คนงาน ' + (r.workers_count || 0) + '\n  งานที่ทำ: ' + (r.tasks_done || r.summary_text || '-') + (r.issues ? '\n  ปัญหา: ' + r.issues : '') + '\n';
-    const actLines = rows.slice(0, 20).map((r) => '- ' + String(r.text || '')).join('\n');
-    const prompt = 'คุณคือผู้ช่วยเขียนสรุปงานก่อสร้าง/เฟอร์นิเจอร์บิ้วอินประจำวัน เขียนเป็น "บทความสั้น" 3-5 ประโยค ภาษาไทยกระชับ เป็นกันเอง อ่านลื่น เหมาะส่งในกลุ่ม LINE ทีม สรุปจากข้อมูลจริงด้านล่างเท่านั้น ห้ามแต่งเติม เขียนเฉพาะเนื้อบทความ ห้ามมีหัวข้อ/bullet/อิโมจิเยอะ\n\n[รายงานประจำวันหน้างาน]\n' + (material || '(ไม่มีรายงานวันนี้)') + '\n\n[กิจกรรมในระบบวันนี้]\n' + (actLines || '(ไม่มี)') + '\n\nบทความสรุป:';
-    narrative = await aiNarrative(env, prompt);
-  }
+
+  let allRows: Record<string, unknown>[] = [];
+  try { allRows = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM activity_logs')).filter((r) => String(r.date || '').slice(0, 10) === day); } catch { /* */ }
+  let allReports: Record<string, unknown>[] = [];
+  try { allReports = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM daily_reports')).filter((r) => String(r.date || '').slice(0, 10) === day); } catch { /* */ }
+
+  const rowsBy = groupByProject(allRows);
+  const reportsBy = groupByProject(allReports);
+  const names = await projectNames(env);
+  let pids = activeProjectIds([rowsBy, reportsBy]);
+  if (!pids.length) pids = ['bow-house'];          // ไม่มีอะไรเลย → รายงานว่างแบบเดิม
+  const multi = pids.length > 1;
+
   const lines = ['📊 สรุปประจำวัน ' + thaiDate(day)];
-  if (narrative) { lines.push(''); lines.push(narrative); } else if (rows.length) { lines.push(''); lines.push('⚠️ (AI สรุปไม่พร้อมชั่วคราว — แสดงเฉพาะตัวเลข)'); }
-  const ov: string[] = [];
-  if (c.task) ov.push('✅ ติ๊กงาน ' + c.task);
-  if (c.withdraw || c.receive) ov.push('📦 เบิก ' + c.withdraw + '/รับ ' + c.receive);
-  if (c.contract) ov.push('🧾 สัญญา/งวด ' + c.contract);
-  if (c.daily) ov.push('📝 รายงาน ' + c.daily);
-  if (c.risk) ov.push('⚠️ เสี่ยง ' + c.risk);
-  lines.push('', '— ภาพรวม —', ov.length ? ov.join(' · ') : 'วันนี้ยังไม่มีกิจกรรมบันทึก', 'รวม ' + rows.length + ' รายการ');
-  const withdrawals = rows.filter((r) => String(r.text || '').indexOf('เบิก') >= 0).map((r) => String(r.text || '').replace(/^[📤🔧\s]+/, '').trim());
-  if (withdrawals.length) { lines.push('', '— 📤 เบิกวัสดุวันนี้ (' + withdrawals.length + ') —'); withdrawals.slice(0, 15).forEach((w) => lines.push('• ' + w)); if (withdrawals.length > 15) lines.push('… และอีก ' + (withdrawals.length - 15) + ' รายการ'); }
+  for (const pid of pids.slice(0, 8)) {
+    const rows = rowsBy[pid] || [];
+    const reports = reportsBy[pid] || [];
+    const c = countByText(rows);
+
+    let narrative = '';
+    if (reports.length || rows.length) {
+      let material = '';
+      for (const r of reports) material += '- ผู้รายงาน ' + (r.reporter_name || '-') + ' | อากาศ ' + (r.weather || '-') + ' | คนงาน ' + (r.workers_count || 0) + '\n  งานที่ทำ: ' + (r.tasks_done || r.summary_text || '-') + (r.issues ? '\n  ปัญหา: ' + r.issues : '') + '\n';
+      const actLines = rows.slice(0, 20).map((r) => '- ' + String(r.text || '')).join('\n');
+      const prompt = 'คุณคือผู้ช่วยเขียนสรุปงานเฟอร์นิเจอร์บิ้วอินประจำวัน เขียนเป็น "บทความสั้น" 3-5 ประโยค ภาษาไทยกระชับ เป็นกันเอง อ่านลื่น เหมาะส่งในกลุ่ม LINE ทีม สรุปจากข้อมูลจริงด้านล่างเท่านั้น ห้ามแต่งเติม เขียนเฉพาะเนื้อบทความ ห้ามมีหัวข้อ/bullet/อิโมจิเยอะ\n\n[โครงการ]\n' + (names[pid] || pid) + '\n\n[รายงานประจำวันหน้างาน]\n' + (material || '(ไม่มีรายงานวันนี้)') + '\n\n[กิจกรรมในระบบวันนี้]\n' + (actLines || '(ไม่มี)') + '\n\nบทความสรุป:';
+      narrative = await aiNarrative(env, prompt);
+    }
+
+    if (multi) lines.push('', PROJECT_HEADER(names[pid] || pid));
+    if (narrative) { lines.push(''); lines.push(narrative); } else if (rows.length) { lines.push(''); lines.push('⚠️ (AI สรุปไม่พร้อมชั่วคราว — แสดงเฉพาะตัวเลข)'); }
+
+    const ov: string[] = [];
+    if (c.task) ov.push('✅ ติ๊กงาน ' + c.task);
+    if (c.withdraw || c.receive) ov.push('📦 เบิก ' + c.withdraw + '/รับ ' + c.receive);
+    if (c.contract) ov.push('🧾 สัญญา/งวด ' + c.contract);
+    if (c.daily) ov.push('📝 รายงาน ' + c.daily);
+    if (c.risk) ov.push('⚠️ เสี่ยง ' + c.risk);
+    lines.push('', '— ภาพรวม —', ov.length ? ov.join(' · ') : 'วันนี้ยังไม่มีกิจกรรมบันทึก', 'รวม ' + rows.length + ' รายการ');
+
+    const withdrawals = rows.filter((r) => String(r.text || '').indexOf('เบิก') >= 0).map((r) => String(r.text || '').replace(/^[📤🔧\s]+/, '').trim());
+    if (withdrawals.length) { lines.push('', '— 📤 เบิกวัสดุวันนี้ (' + withdrawals.length + ') —'); withdrawals.slice(0, 15).forEach((w) => lines.push('• ' + w)); if (withdrawals.length > 15) lines.push('… และอีก ' + (withdrawals.length - 15) + ' รายการ'); }
+  }
+  if (pids.length > 8) lines.push('', '… และอีก ' + (pids.length - 8) + ' โครงการ');
+
   lines.push('', '🔗 ดูรายงานเต็ม: ' + LINE_WEB_BASE + '/daily.html');
   linePush(env, gid, lines.join('\n'), p.__ctx as CtxLike | undefined);
-  return { ok: true, total: rows.length, has_narrative: !!narrative, reports: reports.length };
+  return { ok: true, total: allRows.length, projects: pids.length, reports: allReports.length };
 }
 
 // ── WEEKLY DIGEST (line.gs:323) ──
@@ -92,29 +151,49 @@ export async function lineWeeklyDigest(env: Env, p: Record<string, unknown>): Pr
   if (!gid) return { ok: false, reason: 'no group' };
   const sinceMs = Date.now() - 7 * 86400000;
   const sinceStr = new Date(sinceMs).toISOString().slice(0, 10);
-  let rows: Record<string, unknown>[] = [];
-  try { rows = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM activity_logs')).filter((r) => { const t = Date.parse(String(r.timestamp || '')); return t && t >= sinceMs; }); } catch { /* */ }
-  const c = countByText(rows);
-  let reports: Record<string, unknown>[] = [];
-  try { reports = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM daily_reports')).filter((r) => (String(r.date || '').slice(0, 10)) >= sinceStr); } catch { /* */ }
-  let narrative = '';
-  if (reports.length || rows.length) {
-    let material = '';
-    for (const r of reports) material += '- ' + String(r.date || '').slice(0, 10) + ' โดย ' + (r.reporter_name || '-') + ': ' + (r.tasks_done || r.summary_text || '-') + (r.issues ? ' | ปัญหา: ' + r.issues : '') + '\n';
-    const prompt = 'คุณคือผู้ช่วยเขียนสรุป "ภาพรวมรายสัปดาห์" ของงานก่อสร้าง/บิ้วอิน เขียนเป็นบทความ 4-6 ประโยค ภาษาไทยกระชับ เป็นกันเอง สรุปความคืบหน้า งานเด่น และปัญหาของสัปดาห์ จากข้อมูลจริงด้านล่างเท่านั้น ห้ามแต่งเติม ไม่ต้องมีหัวข้อ/bullet\n\n[รายงานประจำวันในสัปดาห์]\n' + (material || '(ไม่มี)') + '\n\n[สรุปกิจกรรม] ติ๊กงานเสร็จ ' + c.task + ' · เบิกของ ' + c.withdraw + ' · รับของ ' + c.receive + ' · สัญญา/งวด ' + c.contract + ' · ความเสี่ยง ' + c.risk + '\n\nบทความสรุปสัปดาห์:';
-    narrative = await aiNarrative(env, prompt);
-  }
+
+  let allRows: Record<string, unknown>[] = [];
+  try { allRows = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM activity_logs')).filter((r) => { const t = Date.parse(String(r.timestamp || '')); return t && t >= sinceMs; }); } catch { /* */ }
+  let allReports: Record<string, unknown>[] = [];
+  try { allReports = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM daily_reports')).filter((r) => (String(r.date || '').slice(0, 10)) >= sinceStr); } catch { /* */ }
+
+  const rowsBy = groupByProject(allRows);
+  const reportsBy = groupByProject(allReports);
+  const names = await projectNames(env);
+  let pids = activeProjectIds([rowsBy, reportsBy]);
+  if (!pids.length) pids = ['bow-house'];
+  const multi = pids.length > 1;
+
   const lines = ['📅 สรุปรายสัปดาห์ (' + thaiDate(sinceStr) + ' – ' + thaiDate(todayStr()) + ')'];
-  if (narrative) { lines.push(''); lines.push(narrative); } else if (rows.length) { lines.push(''); lines.push('⚠️ (AI สรุปไม่พร้อมชั่วคราว — แสดงเฉพาะตัวเลข)'); }
-  const ov: string[] = [];
-  if (c.task) ov.push('✅ ติ๊กงาน ' + c.task);
-  if (c.withdraw || c.receive) ov.push('📦 เบิก ' + c.withdraw + '/รับ ' + c.receive);
-  if (c.contract) ov.push('🧾 สัญญา/งวด ' + c.contract);
-  if (c.daily) ov.push('📝 รายงาน ' + c.daily);
-  if (c.risk) ov.push('⚠️ เสี่ยง ' + c.risk);
-  lines.push('', '— ภาพรวมสัปดาห์ —', ov.length ? ov.join(' · ') : 'สัปดาห์นี้ยังไม่มีกิจกรรมบันทึก', 'รวม ' + rows.length + ' รายการ', '', '🔗 ดูรายละเอียด: ' + LINE_WEB_BASE + '/dashboard.html');
+  for (const pid of pids.slice(0, 8)) {
+    const rows = rowsBy[pid] || [];
+    const reports = reportsBy[pid] || [];
+    const c = countByText(rows);
+
+    let narrative = '';
+    if (reports.length || rows.length) {
+      let material = '';
+      for (const r of reports) material += '- ' + String(r.date || '').slice(0, 10) + ' โดย ' + (r.reporter_name || '-') + ': ' + (r.tasks_done || r.summary_text || '-') + (r.issues ? ' | ปัญหา: ' + r.issues : '') + '\n';
+      const prompt = 'คุณคือผู้ช่วยเขียนสรุป "ภาพรวมรายสัปดาห์" ของงานเฟอร์นิเจอร์บิ้วอิน เขียนเป็นบทความ 4-6 ประโยค ภาษาไทยกระชับ เป็นกันเอง สรุปความคืบหน้า งานเด่น และปัญหาของสัปดาห์ จากข้อมูลจริงด้านล่างเท่านั้น ห้ามแต่งเติม ไม่ต้องมีหัวข้อ/bullet\n\n[โครงการ]\n' + (names[pid] || pid) + '\n\n[รายงานประจำวันในสัปดาห์]\n' + (material || '(ไม่มี)') + '\n\n[สรุปกิจกรรม] ติ๊กงานเสร็จ ' + c.task + ' · เบิกของ ' + c.withdraw + ' · รับของ ' + c.receive + ' · สัญญา/งวด ' + c.contract + ' · ความเสี่ยง ' + c.risk + '\n\nบทความสรุปสัปดาห์:';
+      narrative = await aiNarrative(env, prompt);
+    }
+
+    if (multi) lines.push('', PROJECT_HEADER(names[pid] || pid));
+    if (narrative) { lines.push(''); lines.push(narrative); } else if (rows.length) { lines.push(''); lines.push('⚠️ (AI สรุปไม่พร้อมชั่วคราว — แสดงเฉพาะตัวเลข)'); }
+
+    const ov: string[] = [];
+    if (c.task) ov.push('✅ ติ๊กงาน ' + c.task);
+    if (c.withdraw || c.receive) ov.push('📦 เบิก ' + c.withdraw + '/รับ ' + c.receive);
+    if (c.contract) ov.push('🧾 สัญญา/งวด ' + c.contract);
+    if (c.daily) ov.push('📝 รายงาน ' + c.daily);
+    if (c.risk) ov.push('⚠️ เสี่ยง ' + c.risk);
+    lines.push('', '— ภาพรวมสัปดาห์ —', ov.length ? ov.join(' · ') : 'สัปดาห์นี้ยังไม่มีกิจกรรมบันทึก', 'รวม ' + rows.length + ' รายการ');
+  }
+  if (pids.length > 8) lines.push('', '… และอีก ' + (pids.length - 8) + ' โครงการ');
+
+  lines.push('', '🔗 ดูรายละเอียด: ' + LINE_WEB_BASE + '/dashboard.html');
   linePush(env, gid, lines.join('\n'), p.__ctx as CtxLike | undefined);
-  return { ok: true, total: rows.length, has_narrative: !!narrative, reports: reports.length };
+  return { ok: true, total: allRows.length, projects: pids.length, reports: allReports.length };
 }
 
 // ── OPS DIGEST (line.gs:402) ──
@@ -123,18 +202,32 @@ export async function lineOpsDigest(env: Env, p: Record<string, unknown>): Promi
   if (!gops) return { ok: false, reason: 'no ops group' };
   const hours = Number(p.hours || 3);
   const since = Date.now() - hours * 3600000;
-  let rows: Record<string, unknown>[] = [];
-  try { rows = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM activity_logs')).filter((r) => { const t = Date.parse(String(r.timestamp || '')); return t && t >= since; }); } catch { /* */ }
-  if (!rows.length) {
+  let allRows: Record<string, unknown>[] = [];
+  try { allRows = (await queryAll<Record<string, unknown>>(env, 'SELECT * FROM activity_logs')).filter((r) => { const t = Date.parse(String(r.timestamp || '')); return t && t >= since; }); } catch { /* */ }
+  if (!allRows.length) {
     if (p.to) { linePush(env, gops, '🕒 ช่วง ' + hours + ' ชม.ล่าสุด ยังไม่มีกิจกรรมบันทึก', p.__ctx as CtxLike | undefined); return { ok: true, empty: true }; }
     return { ok: true, skipped: 'no activity in last ' + hours + 'h' };
   }
+
+  const rowsBy = groupByProject(allRows);
+  const names = await projectNames(env);
+  const pids = activeProjectIds([rowsBy]);
+  const multi = pids.length > 1;
+
   const lines = ['🕒 อัปเดตหน้างาน (' + hours + ' ชม.ล่าสุด)'];
-  rows.slice(-25).forEach((r) => lines.push('• ' + String(r.text || '').replace(/^[📤🔧\s]+/, '').trim()));
-  if (rows.length > 25) lines.push('… และอีก ' + (rows.length - 25) + ' รายการ');
+  // โควตา 25 บรรทัดเท่าเดิม แบ่งให้ทุกโครงการอย่างน้อย 5 บรรทัด
+  const perProject = multi ? Math.max(5, Math.floor(25 / pids.length)) : 25;
+  for (const pid of pids.slice(0, 8)) {
+    const rows = rowsBy[pid] || [];
+    if (multi) lines.push('', PROJECT_HEADER(names[pid] || pid));
+    rows.slice(-perProject).forEach((r) => lines.push('• ' + String(r.text || '').replace(/^[📤🔧\s]+/, '').trim()));
+    if (rows.length > perProject) lines.push('… และอีก ' + (rows.length - perProject) + ' รายการ');
+  }
+  if (pids.length > 8) lines.push('', '… และอีก ' + (pids.length - 8) + ' โครงการ');
+
   lines.push('', '🔗 ดูเต็ม: ' + LINE_WEB_BASE + '/dashboard.html');
   linePush(env, gops, lines.join('\n'), p.__ctx as CtxLike | undefined);
-  return { ok: true, total: rows.length };
+  return { ok: true, total: allRows.length, projects: pids.length };
 }
 
 // ── WEBHOOK (line.gs:88) — คำสั่งในกลุ่ม ──
