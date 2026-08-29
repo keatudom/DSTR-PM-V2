@@ -602,9 +602,16 @@ const API = {
     return this.callRead('get_evals', { team_id: teamId || '' });
   },
 
-  /** สรุปคะแนนเฉลี่ย/เกรด/Ranking ต่อทีม (ข้ามโครงการ — สำหรับ team.html) */
-  getEvalSummary: function() {
-    return this.callRead('get_eval_summary', { project_id: '' });
+  /**
+   * สรุปคะแนนเฉลี่ย/เกรด/อันดับ ต่อทีมช่าง
+   * ⚠️ 2026-08-29: default เปลี่ยนเป็น "เฉพาะโครงการปัจจุบัน"
+   *   เดิมส่ง project_id:'' บังคับให้รวมทุกโครงการ แต่การ์ดอันดับอยู่ในหน้าระดับโครงการ
+   *   → คนอ่านนึกว่าเป็นคะแนนช่างในบ้านหลังนี้ ทั้งที่เป็นค่าเฉลี่ยข้ามบ้าน
+   * @param {object} [opts] - { all_projects:true } = คะแนนรวมทั้งบริษัท
+   */
+  getEvalSummary: function(opts) {
+    if (opts && opts.all_projects) return this.callRead('get_eval_summary', { all_projects: 'true' });
+    return this.callRead('get_eval_summary');   // project_id แนบอัตโนมัติจาก state
   },
 
   /**

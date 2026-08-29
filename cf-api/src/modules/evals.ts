@@ -120,8 +120,23 @@ export async function getEvals(env: Env, p: Record<string, unknown>): Promise<un
   return rows.map(evalRowToObj).sort((a, b) => String(b.evalDate).localeCompare(String(a.evalDate)));
 }
 
-export async function getEvalSummary(env: Env): Promise<unknown> {
-  const rows = await queryAll<Record<string, unknown>>(env, 'SELECT * FROM contractor_evaluations');
+// อันดับ/คะแนนเฉลี่ยผู้รับเหมา
+//
+// ⚠️ 2026-08-29: เดิมรวมทุกโครงการเสมอ แต่การ์ดนี้ถูกวางอยู่ในหน้า "ทีม/ผู้รับเหมา"
+//    ซึ่งเป็นหน้าระดับโครงการ → คนอ่านนึกว่าเป็นคะแนนของช่างในบ้านหลังนี้ แต่จริงๆ
+//    เป็นคะแนนเฉลี่ยข้ามบ้าน (เจ้าของงานทักเอง)
+//    ตอนนี้: ส่ง project_id มา = คิดเฉพาะโครงการนั้น · ไม่ส่ง (หรือ all_projects=true)
+//    = คะแนนรวมทั้งบริษัท ไว้ใช้กับหน้าระดับบริษัทในอนาคต
+export async function getEvalSummary(env: Env, p?: Record<string, unknown>): Promise<unknown> {
+  const pid = String((p && p.project_id) || '').trim();
+  const allProjects = !!(p && (p.all_projects === true || p.all_projects === 'true'));
+  let rows: Record<string, unknown>[];
+  if (pid && !allProjects) {
+    const scope = projectScope(pid);
+    rows = await queryAll<Record<string, unknown>>(env, `SELECT * FROM contractor_evaluations WHERE ${scope.sql}`, ...scope.binds);
+  } else {
+    rows = await queryAll<Record<string, unknown>>(env, 'SELECT * FROM contractor_evaluations');
+  }
   const byTeam: Record<string, { teamId: string; teamName: string; sum: number; count: number; lastDate: string }> = {};
   for (const r of rows) {
     const tid = String(r.team_id || '').trim();
@@ -139,7 +154,8 @@ export async function getEvalSummary(env: Env): Promise<unknown> {
     return { teamId: t.teamId, teamName: t.teamName, avg, grade: gradeFromTotal(avg), status: statusFromTotal(avg), count: t.count, lastDate: t.lastDate };
   });
   list.sort((a, b) => b.avg - a.avg);
-  return list.map((item, i) => ({ ...item, rank: i + 1 }));
+  const ranked = list.map((item, i) => ({ ...item, rank: i + 1, scope: (pid && !allProjects) ? 'project' : 'all' }));
+  return ranked;
 }
 
 export async function createEval(env: Env, p: Record<string, unknown>): Promise<unknown> {

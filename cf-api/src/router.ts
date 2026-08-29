@@ -270,7 +270,7 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
     case 'get_evals':
       return evals.getEvals(env, p);
     case 'get_eval_summary':
-      return evals.getEvalSummary(env);
+      return evals.getEvalSummary(env, p);
     case 'create_eval':
       return evals.createEval(env, p);
     case 'update_eval':

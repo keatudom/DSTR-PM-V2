@@ -167,7 +167,9 @@
     if(ranking.length===0) return '';
     let rows='';
     ranking.forEach(r=>{ const isBlack=r.grade==='F'; rows+='<div class="ev-rank-row '+(r.rank<=3?'top':'')+'"><span class="ev-rank-no">'+(r.rank<=3?['🥇','🥈','🥉'][r.rank-1]:r.rank)+'</span><div class="ev-rank-name">'+escapeHtml(r.teamName)+'<small>ประเมิน '+r.count+' ครั้ง'+(r.lastDate?' · ล่าสุด '+escapeHtml(r.lastDate):'')+'</small></div>'+(isBlack?'<span class="ev-rank-blacklist">🚩 Blacklist</span>':'')+'<span class="ev-rank-score">'+(Number(r.avg)||0).toFixed(1)+'</span>'+evGradeBadge(r.grade,true)+'</div>'; });
-    return '<div class="ev-rank-card"><div class="ev-rank-h">🏆 อันดับผู้รับเหมา (คะแนนเฉลี่ยรวมทุกโครงการ)</div><div class="ev-rank-sub">เกรด A ≥90 · B ≥80 · C ≥70 · D ≥60 · F &lt;60 (Blacklist)</div>'+rows+'</div>';
+    // 2026-08-29: หน้านี้เป็นหน้าระดับโครงการ → อันดับต้องเป็นของโครงการนี้เท่านั้น
+    // (เดิมโชว์ค่าเฉลี่ยข้ามทุกบ้าน ทำให้เข้าใจผิดว่าเป็นคะแนนช่างในบ้านหลังนี้)
+    return '<div class="ev-rank-card"><div class="ev-rank-h">🏆 อันดับผู้รับเหมา — เฉพาะโครงการนี้</div><div class="ev-rank-sub">คิดจากการประเมินในโครงการนี้เท่านั้น · เกรด A ≥90 · B ≥80 · C ≥70 · D ≥60 · F &lt;60 (Blacklist)</div>'+rows+'</div>';
   }
   function evGradeBadge(grade,sm){ const g=grade||'–'; return '<span class="grade-badge grade-'+g+(sm?' sm':'')+'">'+g+'</span>'; }
   function renderTeamCard(team){
@@ -179,7 +181,7 @@
     let bodyHtml='';
     if(tmState.isAdmin&&mainContract) bodyHtml=renderContractBody(team,mainContract,contracts);
     else if(tmState.isAdmin&&!mainContract) bodyHtml='<div class="tm-note" style="margin-top:10px">ยังไม่มีสัญญา</div><div class="tm-acts"><button class="tm-btn tm-btn-add" onclick="openAddContract(\''+team.team_id+'\')">+ เพิ่มสัญญา</button></div>';
-    const scorePill=(function(){ const s=tmState.evalSummary[team.team_id]; if(!s||!s.count) return ''; return '<span class="ev-score-pill" title="คะแนนเฉลี่ย '+(Number(s.avg)||0).toFixed(1)+' จาก '+s.count+' ครั้ง">'+(Number(s.avg)||0).toFixed(0)+evGradeBadge(s.grade,true)+'</span>'; })();
+    const scorePill=(function(){ const s=tmState.evalSummary[team.team_id]; if(!s||!s.count) return ''; return '<span class="ev-score-pill" title="คะแนนเฉลี่ยในโครงการนี้ '+(Number(s.avg)||0).toFixed(1)+' จาก '+s.count+' ครั้ง">'+(Number(s.avg)||0).toFixed(0)+evGradeBadge(s.grade,true)+'</span>'; })();
     return '<div class="tm-card '+(collapsed?'tm-collapsed':'')+'"><div class="tm-card-head"><div class="tm-avatar '+avClass+'">'+avIcon+'</div><div class="tm-card-info"><div class="tm-card-name">'+escapeHtml(team.name)+'</div><div class="tm-card-sub">หัวหน้า: '+escapeHtml(team.lead_name||'-')+'</div></div>'+scorePill+'<span class="tm-badge tm-badge-active">ทำงานอยู่</span>'+(tmState.isAdmin?'<span class="tm-chev" onclick="openEditTeam(\''+team.team_id+'\')" title="แก้ไข/ลบช่าง">✏️</span>':'')+(tmState.isAdmin?'<span class="tm-chev" onclick="toggleCollapse(\''+team.team_id+'\')">'+(collapsed?'▸':'▾')+'</span>':'')+'</div>'+bodyHtml+'</div>';
   }
   function renderContractBody(team,contract,allContracts){
