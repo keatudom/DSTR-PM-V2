@@ -664,7 +664,7 @@
       buildWeights();
 
       API.getInventorySummary().then(res=>{ if(res.ok&&res.data){state.inventory=res.data; renderInventory();} }).catch(()=>{});
-      API.getClientFinance().then(res=>{ if(res.ok&&res.data){state.clientFinance=res.data; renderClientFinance(); renderKPIs();} }).catch(()=>{});
+      API.getClientFinance().then(res=>{ if(res.ok&&res.data){state.clientFinance=res.data; renderClientFinance(); renderKPIs(); renderSetupCard();} }).catch(()=>{});
       API.getTeams().then(res=>{ if(res.ok&&Array.isArray(res.data)) state.teams=res.data; }).catch(()=>{});
       API.getEvals().then(res=>{ if(res.ok&&Array.isArray(res.data)){ state.evals=res.data; renderEvals(); } }).catch(()=>{});
       API.getEvalConfig().then(res=>{ if(res.ok&&res.data) state.evalConfig=res.data; }).catch(()=>{});
@@ -712,6 +712,8 @@
     const a=calcProjectProgress(), p=calcPlanProgress(project), v=calcVariance(a,p);
     let st='ตามแผน', badge='badge-success';
     if(v<-15){ st='ล่าช้ามาก'; badge='badge-error'; } else if(v<-5){ st='ใกล้ล่าช้า'; badge='badge-warning'; }
+    // โครงการที่ยังไม่มีงานเลย ไม่ควรขึ้น "ล่าช้ามาก" — ยังไม่มีอะไรให้ล่าช้า
+    if(!state.data.ffs.length){ st='ยังไม่เริ่ม'; badge='badge-gray'; }
     // จำนวนโซนนับจากชิ้นงานจริงของโครงการนี้ (เดิมเขียน "4 Zones" ตายตัวทุกบ้าน)
     const zoneCount=new Set(state.data.ffs.map(f=>String(f.zone||'').trim()).filter(Boolean)).size;
     document.getElementById('projPills').innerHTML=
@@ -805,19 +807,30 @@
     if(window.lucide) lucide.createIcons();
   }
 
+  // ── ความยาวไทม์ไลน์ (สัปดาห์) ──────────────────────────────
+  // ฐาน = ระยะเวลาโครงการจริง · แต่ถ้าแผนที่ตั้งไว้ยาวเกินกำหนดส่ง (งานเลื่อน)
+  // ต้องขยายกริดให้คลุมแผนเสมอ ไม่งั้นงวดท้ายจะถูกตัดหายไปจากตาราง
+  function projectWeeks(){
+    let td=Number(project.totalDays)||0;
+    if(!td&&project.startDate&&project.endDate){
+      const sd=new Date(project.startDate), ed=new Date(project.endDate);
+      if(!isNaN(sd.getTime())&&!isNaN(ed.getTime())) td=Math.max(0,Math.round((ed-sd)/86400000));
+    }
+    let w=Math.max(4,Math.min(52,Math.ceil((td||140)/7)));
+    const plan=ganttPlan();
+    let maxWeek=0;
+    Object.keys(plan).forEach(c=>(plan[c]||[]).forEach(x=>{ if(Number(x[2])>maxWeek) maxWeek=Number(x[2]); }));
+    return Math.max(w, Math.min(52, maxWeek));
+  }
+
   function renderTimeline(){
     const container=document.getElementById('timeline');
     const plan=ganttPlan();
 
-    // ── ความยาวไทม์ไลน์: คำนวณจากวันเริ่ม-จบของโครงการ (เดิมตายตัว 20 สัปดาห์ / 5 เดือน) ──
+    // ความยาว + หัวเดือน คำนวณจากวันเริ่ม-จบจริง (เดิมตายตัว 20 สัปดาห์ / 5 เดือน)
     const startDate=new Date(project.startDate);
     const validStart=!isNaN(startDate.getTime());
-    let totalDays=Number(project.totalDays)||0;
-    if(!totalDays&&validStart&&project.endDate){
-      const ed=new Date(project.endDate);
-      if(!isNaN(ed.getTime())) totalDays=Math.max(0,Math.round((ed-startDate)/86400000));
-    }
-    const weeks=Math.max(4,Math.min(52,Math.ceil((totalDays||140)/7)));
+    const weeks=projectWeeks();
 
     const today=new Date();
     const dss=validStart?daysBetween(startDate,today):0;
@@ -2448,14 +2461,9 @@
       TLP.code=ffCode||ffs[0].code;
       TLP.render();
     },
-    weeks(){
-      let td=Number(project.totalDays)||0;
-      if(!td&&project.startDate&&project.endDate){
-        const sd=new Date(project.startDate), ed=new Date(project.endDate);
-        if(!isNaN(sd.getTime())&&!isNaN(ed.getTime())) td=Math.max(0,Math.round((ed-sd)/86400000));
-      }
-      return Math.max(4,Math.min(52,Math.ceil((td||140)/7)));
-    },
+    weeks(){ return projectWeeks(); },
+    // เพดานที่กรอกได้ — เผื่อไว้เกินกำหนดส่ง เพราะงานเลื่อนเป็นเรื่องปกติหน้างาน
+    maxWeek(){ return Math.min(52, projectWeeks()+8); },
     render(){
       const ffs=(state.data&&state.data.ffs)||[];
       const plan=ganttPlan();
@@ -2472,8 +2480,8 @@
       let rows='';
       [1,2,3,4].forEach(ph=>{
         rows+='<div class="plan-row"><div class="plan-row-lb">งวด '+ph+'</div>'+
-          '<input class="form-input" id="tlpS'+ph+'" type="number" min="1" max="'+weeksTotal+'" value="'+(byPhase[ph]?byPhase[ph].st:'')+'" placeholder="—">'+
-          '<input class="form-input" id="tlpE'+ph+'" type="number" min="1" max="'+weeksTotal+'" value="'+(byPhase[ph]?byPhase[ph].en:'')+'" placeholder="—">'+
+          '<input class="form-input" id="tlpS'+ph+'" type="number" min="1" max="'+TLP.maxWeek()+'" value="'+(byPhase[ph]?byPhase[ph].st:'')+'" placeholder="—">'+
+          '<input class="form-input" id="tlpE'+ph+'" type="number" min="1" max="'+TLP.maxWeek()+'" value="'+(byPhase[ph]?byPhase[ph].en:'')+'" placeholder="—">'+
           '</div>';
       });
 
@@ -2496,7 +2504,7 @@
     switch(code){ TLP.code=code; TLP.render(); },
     async save(){
       const err=document.getElementById('tlpErr');
-      const weeksTotal=TLP.weeks();
+      const weeksTotal=TLP.maxWeek();
       const phases=[];
       const list=[1,2,3,4];
       for(let k=0;k<list.length;k++){
@@ -2507,7 +2515,7 @@
         const st=parseInt(sv,10), en=parseInt(ev,10);
         if(!(st>=1)||!(en>=1)){ err.textContent='งวด '+ph+': ต้องใส่ทั้งสัปดาห์เริ่มและสัปดาห์จบ'; err.style.display='block'; return; }
         if(en<st){ err.textContent='งวด '+ph+': สัปดาห์จบต้องไม่น้อยกว่าสัปดาห์เริ่ม'; err.style.display='block'; return; }
-        if(st>weeksTotal||en>weeksTotal){ err.textContent='งวด '+ph+': เกินความยาวโครงการ ('+weeksTotal+' สัปดาห์)'; err.style.display='block'; return; }
+        if(st>weeksTotal||en>weeksTotal){ err.textContent='งวด '+ph+': ใส่ได้ถึงสัปดาห์ที่ '+weeksTotal+' เท่านั้น'; err.style.display='block'; return; }
         phases.push([ph,st,en]);
       }
       const btn=document.getElementById('tlpSubmit');
