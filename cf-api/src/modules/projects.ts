@@ -216,7 +216,23 @@ export async function getProjectsProgress(env: Env): Promise<unknown> {
   const byProject: Record<string, typeof rows> = {};
   for (const r of rows) (byProject[r.pid] ||= []).push(r);
 
-  const projects = await queryAll<{ project_id: string }>(env, 'SELECT project_id FROM projects');
+  // มูลค่าโครงการ "ของจริง" = ผลรวมสัญญาฝั่งเจ้าบ้าน (party='client')
+  // projects.total_value เป็นเลขพิมพ์มือที่ซ้ำกับสัญญา → ใช้เป็นแค่ค่าประมาณตอนยังไม่มีสัญญา
+  const contractRows = await queryAll<{ pid: string; contract_value: number; paid: number }>(env, `
+    SELECT COALESCE(NULLIF(TRIM(c.project_id), ''), 'bow-house') AS pid,
+           COALESCE(SUM(COALESCE(c.value, 0)), 0) AS contract_value,
+           COALESCE((SELECT SUM(COALESCE(m.paid_amount, 0)) FROM milestones m
+                     WHERE m.contract_id IN (SELECT c2.contract_id FROM contracts c2
+                       WHERE COALESCE(NULLIF(TRIM(c2.project_id), ''), 'bow-house') = COALESCE(NULLIF(TRIM(c.project_id), ''), 'bow-house')
+                         AND LOWER(COALESCE(c2.party, '')) = 'client')), 0) AS paid
+    FROM contracts c
+    WHERE LOWER(COALESCE(c.party, '')) = 'client'
+    GROUP BY pid
+  `);
+  const contractBy: Record<string, { contract_value: number; paid: number }> = {};
+  for (const r of contractRows) contractBy[r.pid] = { contract_value: Number(r.contract_value || 0), paid: Number(r.paid || 0) };
+
+  const projects = await queryAll<{ project_id: string; total_value: number }>(env, 'SELECT project_id, total_value FROM projects');
   const out: Record<string, unknown>[] = [];
 
   for (const p of projects) {
@@ -234,8 +250,17 @@ export async function getProjectsProgress(env: Env): Promise<unknown> {
     }
 
     const zones = new Set(ffs.map((f) => String(f.zone || '').trim()).filter(Boolean));
+    const ct = contractBy[pid] || { contract_value: 0, paid: 0 };
+    const typedValue = Number(p.total_value || 0);
     out.push({
       project_id: pid,
+      // มูลค่าตามสัญญาเจ้าบ้าน (0 = ยังไม่มีสัญญา) · value_source บอกว่าเลขที่ควรโชว์มาจากไหน
+      contract_value: ct.contract_value,
+      contract_paid: ct.paid,
+      typed_value: typedValue,
+      effective_value: ct.contract_value > 0 ? ct.contract_value : typedValue,
+      value_source: ct.contract_value > 0 ? 'contract' : (typedValue > 0 ? 'typed' : 'none'),
+      ff_price_sum: Math.round(totalPrice * 100) / 100,
       ff_count: ffs.length,
       task_count: ffs.reduce((s, f) => s + Number(f.task_count || 0), 0),
       done_task_weight: ffs.reduce((s, f) => s + Number(f.done_w || 0), 0),

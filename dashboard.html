@@ -472,7 +472,7 @@
             <div class="proj-pills" id="projPills"></div>
           </div>
           <div class="flex gap-2 items-center">
-            <button class="btn btn-ghost btn-icon" id="projSettingsBtn" onclick="PS.open()" title="ตั้งค่าโครงการ">
+            <button class="btn btn-ghost btn-icon" id="projSettingsBtn" onclick="PS.menu()" title="ตั้งค่าโครงการ">
               <i data-lucide="settings"></i>
             </button>
             <button class="btn btn-ghost btn-icon nf-bell" id="nfBell" onclick="NF.toggle()" title="การแจ้งเตือน">
@@ -727,14 +727,14 @@
     const ps=calcClientPaymentStats();
     const paid=ps.hasData?ps.totalPaid:state.data.payments.filter(x=>x.status==='Paid').reduce((s,x)=>s+x.amount,0);
     // โครงการที่ยังไม่ใส่มูลค่า (=0) เดิมหารศูนย์แล้วโชว์ "NaN%" — คืน null แล้วโชว์ขีดแทน
-    const tv=Number(project.totalValue)||0;
-    const paidPct=ps.hasData?ps.pct:(tv>0?Math.round(paid/tv*100):null);
+    const pv=projectValue();
+    const paidPct=ps.hasData?ps.pct:(pv.value>0?Math.round(paid/pv.value*100):null);
     const ac=v>=-5?'ok':(v>=-15?'warn':'bad');
     document.getElementById('kpiGrid').innerHTML=
       `<div class="kpi ${ac}"><div class="kpi-l">ความคืบหน้า (จริง)</div><div class="kpi-v">${a}%</div><div class="kpi-s"><i data-lucide="scale" style="width:13px;height:13px"></i> ตามน้ำหนักงาน</div></div>`+
       `<div class="kpi"><div class="kpi-l">ตามแผน</div><div class="kpi-v">${p}%</div><div class="kpi-s"><i data-lucide="calendar" style="width:13px;height:13px"></i> ที่ควรเสร็จวันนี้</div></div>`+
       `<div class="kpi ${v<0?'bad':'ok'}"><div class="kpi-l">Variance (ต่าง)</div><div class="kpi-v">${v>0?'+':''}${v}%</div><div class="kpi-s">${v<0?'ล่าช้ากว่าแผน':'เร็วกว่าแผน'}</div></div>`+
-      `<div class="kpi ok"><div class="kpi-l">เบิกแล้ว</div><div class="kpi-v">${fmt(paid)}</div><div class="kpi-s"><i data-lucide="wallet" style="width:13px;height:13px"></i> ${paidPct===null?'ยังไม่ได้ใส่มูลค่าโครงการ':paidPct+'% ของโครงการ'}</div></div>`;
+      `<div class="kpi ok"><div class="kpi-l">เบิกแล้ว</div><div class="kpi-v">${fmt(paid)}</div><div class="kpi-s"><i data-lucide="wallet" style="width:13px;height:13px"></i> ${paidPct===null?'ยังไม่มีสัญญาเจ้าบ้าน':paidPct+'% ของ '+fmt(pv.value)+(pv.source==='contract'?' (ตามสัญญา)':' (ประมาณการ)')}</div></div>`;
     if(window.lucide) lucide.createIcons();
   }
 
@@ -2290,6 +2290,16 @@
   // backward compat — CTA ใน empty state เรียกชื่อนี้
   function openFFWizardModal(projectId, projectName){ return FFW.open(projectId, projectName); }
 
+  // ── มูลค่าโครงการ: ยึด "สัญญาเจ้าบ้าน" เป็นตัวจริง ────────────
+  // projects.total_value เป็นเลขพิมพ์มือที่ซ้ำกับสัญญา — ถ้าเซ็นสัญญาเพิ่มแล้วลืมแก้จะเพี้ยนเงียบๆ
+  // จึงใช้ยอดรวมสัญญาเมื่อมี · เลขพิมพ์มือเหลือไว้เป็นค่าประมาณตอนยังไม่มีสัญญา
+  function projectValue(){
+    const ps=calcClientPaymentStats();
+    if(ps.hasData&&ps.totalValue>0) return { value: ps.totalValue, source:'contract', count: ps.contracts.length };
+    const typed=Number(project.totalValue)||0;
+    return { value: typed, source: typed>0?'typed':'none', count: 0 };
+  }
+
   // ══════════════════ เริ่มต้นโครงการ (setup checklist) ══════════════════
   // โผล่เฉพาะโครงการที่ยังตั้งค่าไม่ครบ — ครบทุกข้อแล้วการ์ดหายไปเอง
   // เดิม: เปิดโครงการใหม่แล้วเจอแดชบอร์ดเปล่า ไม่มีอะไรบอกว่าต้องทำอะไรต่อ
@@ -2299,22 +2309,25 @@
     const ffs=(state.data&&state.data.ffs)||[];
     const plan=ganttPlan();
     const contracts=((state.clientFinance||{}).contracts)||[];
-    const hasValue=(Number(project.totalValue)||0)>0;
     const plannedCodes=ffs.filter(f=>(plan[f.code]||[]).length>0).length;
 
+    const pv=projectValue();
     const steps=[
       { done: ffs.length>0, t:'เพิ่มงานบิ้วอิน (FF)',
         s: ffs.length? (ffs.length+' รายการ') : 'ยังไม่มีงานในโครงการนี้ — เพิ่มเองหรือคัดลอกจากโครงการเดิมก็ได้',
         go:'เพิ่มงาน', fn:'FFW.open()' },
-      { done: hasValue, t:'ใส่มูลค่าโครงการ',
-        s: hasValue? (fmt(project.totalValue)+' บาท') : 'ยังไม่ใส่ — ระบบจะคิด % การเบิกเงินไม่ได้',
-        go:'ไปใส่', fn:"window.location.href='projects.html'" },
+      { done: contracts.length>0, t:'สร้างสัญญาเจ้าบ้าน',
+        s: contracts.length? (contracts.length+' ฉบับ · รวม '+fmt(pv.value)+' บาท (= มูลค่าโครงการ)')
+                           : 'ยังไม่มี — สัญญาเป็นที่มาของ "มูลค่าโครงการ" และ % การเบิกเงิน',
+        go:'ไปสร้าง', fn:"switchTab('finance');window.scrollTo({top:0,behavior:'smooth'})" },
+      { done: pv.value>0, t:'มูลค่าโครงการ',
+        s: pv.source==='contract' ? (fmt(pv.value)+' บาท — มาจากสัญญาเจ้าบ้าน '+pv.count+' ฉบับ ไม่ต้องกรอกเอง')
+           : pv.source==='typed' ? (fmt(pv.value)+' บาท (ประมาณการ) — พอสร้างสัญญาแล้วระบบจะยึดยอดตามสัญญาแทน')
+           : 'ยังไม่มี — สร้างสัญญาเจ้าบ้านแล้วได้อัตโนมัติ หรือใส่ประมาณการไว้ก่อนก็ได้',
+        go:'ใส่ประมาณการ', fn:'PS.openInfo()' },
       { done: plannedCodes>0, t:'ตั้งแผนไทม์ไลน์',
         s: plannedCodes? ('ตั้งแล้ว '+plannedCodes+'/'+ffs.length+' รายการ') : 'ยังไม่ตั้ง — กราฟไทม์ไลน์จะว่างและเทียบแผนไม่ได้',
-        go:'ตั้งแผน', fn:'TLP.open()' },
-      { done: contracts.length>0, t:'สร้างสัญญาเจ้าบ้าน',
-        s: contracts.length? (contracts.length+' ฉบับ') : 'ยังไม่มี — ใช้เก็บไฟล์สัญญา งวดชำระ และหลักฐานการรับเงิน',
-        go:'ไปสร้าง', fn:"switchTab('finance');window.scrollTo({top:0,behavior:'smooth'})" }
+        go:'ตั้งแผน', fn:'TLP.open()' }
     ];
 
     if(steps.every(x=>x.done)){ card.style.display='none'; return; }
@@ -2388,6 +2401,23 @@
   // ══════════════════ ตั้งค่าโครงการ (งวดจ่ายผู้รับเหมา) ══════════════════
   // เดิมสัดส่วนงวด 50/22.5/22.5/5 เขียนตายไว้ในโค้ดให้ทุกบ้านเหมือนกันหมด
   const PS={
+    // เมนูตั้งค่า — แยก "ข้อมูลโครงการ" กับ "งวดจ่ายผู้รับเหมา" ให้ชัด
+    menu(){
+      Modal.show('<div class="modal-head"><div class="modal-title">ตั้งค่าโครงการ</div>'+
+        '<button class="modal-close" onclick="Modal.close()"><i data-lucide="x"></i></button></div>'+
+        '<div class="pm-list">'+
+        '<button class="pm-item" onclick="Modal.close();setTimeout(()=>PS.openInfo(),220)">'+
+        '<i data-lucide="pencil"></i><div><div class="pm-t">ข้อมูลโครงการ</div>'+
+        '<div class="pm-s">ชื่อ ลูกค้า วันเริ่ม-สิ้นสุด มูลค่าโดยประมาณ</div></div></button>'+
+        '<button class="pm-item" onclick="Modal.close();setTimeout(()=>PS.open(),220)">'+
+        '<i data-lucide="wallet"></i><div><div class="pm-t">งวดจ่ายผู้รับเหมา</div>'+
+        '<div class="pm-s">ชื่องวดและสัดส่วน % ตามสัญญาที่จ้างช่าง (คนละอันกับสัญญาเจ้าบ้าน)</div></div></button>'+
+        '<button class="pm-item" onclick="Modal.close();setTimeout(()=>TLP.open(),220)">'+
+        '<i data-lucide="calendar-plus"></i><div><div class="pm-t">แผนไทม์ไลน์</div>'+
+        '<div class="pm-s">สัปดาห์เริ่ม-จบของแต่ละงวด รายชิ้นงาน</div></div></button>'+
+        '</div>', 'modal-lg');
+      if(window.lucide) lucide.createIcons();
+    },
     open(){
       const phases=projectPhases();
       let rows='';
@@ -2449,6 +2479,59 @@
         btn.disabled=false; btn.textContent='บันทึก';
       }
     }
+  };
+
+  // ── แก้ข้อมูลโครงการจากในแดชบอร์ด (เดิมต้องเด้งไปหน้ารายการโครงการ = บั๊ก) ──
+  PS.openInfo=function(){
+    const pv=projectValue();
+    const note = pv.source==='contract'
+      ? '⚠️ โครงการนี้มีสัญญาเจ้าบ้านแล้ว — ระบบใช้ยอดรวมตามสัญญา <b>'+fmt(pv.value)+' ฿</b> เป็นตัวจริง ช่องมูลค่าด้านล่างไม่ถูกนำไปคิด'
+      : 'ใช้ชั่วคราวก่อนมีสัญญาเจ้าบ้าน — พอสร้างสัญญาแล้วระบบจะยึดยอดตามสัญญาแทนเอง';
+    Modal.show('<div class="modal-head"><div class="modal-title">ข้อมูลโครงการ</div>'+
+      '<button class="modal-close" onclick="Modal.close()"><i data-lucide="x"></i></button></div>'+
+      '<div class="plan-hint">'+note+'</div>'+
+      '<div class="form-group"><label class="form-label">ชื่อโครงการ</label>'+
+      '<input id="piName" class="form-input" type="text" value="'+escapeHtml(project.name||'')+'"></div>'+
+      '<div class="form-group"><label class="form-label">ลูกค้า</label>'+
+      '<input id="piClient" class="form-input" type="text" value="'+escapeHtml(project.client||'')+'"></div>'+
+      '<div class="form-row">'+
+      '<div class="form-group"><label class="form-label">วันเริ่ม</label>'+
+      '<input id="piStart" class="form-input" type="date" value="'+escapeHtml(project.startDate||'')+'"></div>'+
+      '<div class="form-group"><label class="form-label">วันสิ้นสุด</label>'+
+      '<input id="piEnd" class="form-input" type="date" value="'+escapeHtml(project.endDate||'')+'"></div></div>'+
+      '<div class="form-group"><label class="form-label">มูลค่าโครงการโดยประมาณ (บาท)</label>'+
+      '<input id="piValue" class="form-input" type="number" min="0" value="'+(Number(project.totalValue)||0)+'"'+(pv.source==='contract'?' disabled':'')+'></div>'+
+      '<div id="piErr" class="form-error" style="display:none"></div>'+
+      '<div class="modal-btns">'+
+      '<button type="button" class="modal-btn modal-btn-cancel" onclick="Modal.close()">ยกเลิก</button>'+
+      '<button type="button" id="piSubmit" class="modal-btn modal-btn-primary" onclick="PS.saveInfo()">บันทึก</button></div>', 'modal-lg');
+    if(window.lucide) lucide.createIcons();
+  };
+
+  PS.saveInfo=async function(){
+    const err=document.getElementById('piErr');
+    const name=(document.getElementById('piName').value||'').trim();
+    if(!name){ err.textContent='ต้องระบุชื่อโครงการ'; err.style.display='block'; return; }
+    const start=document.getElementById('piStart').value;
+    const end=document.getElementById('piEnd').value;
+    if(start&&end&&start>=end){ err.textContent='วันสิ้นสุดต้องอยู่หลังวันเริ่ม'; err.style.display='block'; return; }
+    const btn=document.getElementById('piSubmit');
+    btn.disabled=true; btn.textContent='กำลังบันทึก...';
+    const vEl=document.getElementById('piValue');
+    const data={ project_id: state.projectId, name: name,
+      client:(document.getElementById('piClient').value||'').trim(),
+      start_date: start, end_date: end };
+    if(!vEl.disabled) data.total_value=parseFloat(vEl.value)||0;
+    if(start&&end) data.total_days=Math.max(0,Math.round((new Date(end)-new Date(start))/86400000));
+    try{
+      const res=await API.updateProject(data);
+      if(!res||!res.ok){ err.textContent='❌ '+((res&&res.error)||'บันทึกไม่สำเร็จ'); err.style.display='block'; btn.disabled=false; btn.textContent='บันทึก'; return; }
+      Object.assign(project,{name:data.name,client:data.client,startDate:start,endDate:end});
+      if(data.total_value!==undefined) project.totalValue=data.total_value;
+      if(data.total_days!==undefined) project.totalDays=data.total_days;
+      Modal.close(); Modal.toast('✓ บันทึกข้อมูลโครงการแล้ว');
+      _updateProjectHeaderUI(); renderAll();
+    }catch(e){ err.textContent='❌ '+e.message; err.style.display='block'; btn.disabled=false; btn.textContent='บันทึก'; }
   };
 
   // ══════════════════ ตั้งแผนไทม์ไลน์ (Gantt) รายชิ้นงาน ══════════════════

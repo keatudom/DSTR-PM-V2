@@ -59,6 +59,10 @@
   .pm-s { font-size:var(--text-xs); color:var(--color-slate-500); margin-top:2px; line-height:1.5; }
   .pm-danger i, .pm-danger .pm-t { color:var(--color-error-700); }
   .pm-danger:hover { border-color:var(--color-error-500); }
+
+  /* ป้ายบอกว่าตัวเลขมูลค่ามาจากไหน — กันเข้าใจผิดว่าเป็นเลขที่พิมพ์เอง */
+  .val-src { font-size:10px; font-weight:600; padding:1px 5px; border-radius:99px; background:var(--color-success-50); color:var(--color-success-700); }
+  .val-src.est { background:var(--color-warning-50); color:var(--color-warning-700); }
 </style>
 </head>
 <body>
@@ -179,7 +183,8 @@
   // ── KPI รวมทุกโครงการ ──
   function renderKPIs(projects) {
     const live = projects.filter(p => (p.status || 'active') !== 'archived');
-    const totalValue = live.reduce((s, p) => s + (parseFloat(p.total_value) || 0), 0);
+    const valOf = p => Number((PROGRESS[p.project_id] || {}).effective_value) || parseFloat(p.total_value) || 0;
+    const totalValue = live.reduce((s, p) => s + valOf(p), 0);
     const totalFF = live.reduce((s, p) => s + ((PROGRESS[p.project_id] || {}).ff_count || 0), 0);
 
     // ความคืบหน้าเฉลี่ยถ่วงด้วยมูลค่าโครงการ (โครงการใหญ่มีน้ำหนักมากกว่า)
@@ -189,7 +194,7 @@
       const withValue = totalValue > 0;
       avg = live.reduce((s, p) => {
         const pct = (PROGRESS[p.project_id] || {}).progress_pct || 0;
-        const w = withValue ? ((parseFloat(p.total_value) || 0) / totalValue) : (1 / live.length);
+        const w = withValue ? (valOf(p) / totalValue) : (1 / live.length);
         return s + w * pct;
       }, 0);
     }
@@ -198,7 +203,7 @@
       kpiCard('โครงการที่ดำเนินการ', live.length, 'briefcase', 'blue', projects.length > live.length ? (projects.length - live.length) + ' โครงการปิดงานแล้ว' : 'โครงการทั้งหมดในระบบ'),
       kpiCard('งานทั้งหมด', totalFF + ' รายการ', 'list-todo', 'slate', 'ชิ้นงาน (FF) ทุกโครงการ'),
       kpiCard('ความคืบหน้าเฉลี่ย', (Math.round(avg * 10) / 10) + '%', 'trending-up', 'green', totalValue > 0 ? 'ถ่วงตามมูลค่าโครงการ' : 'เฉลี่ยทุกโครงการ'),
-      kpiCard('มูลค่ารวมทุกโครงการ', fmt(totalValue) + ' ฿', 'wallet', 'amber', 'ตามสัญญา')
+      kpiCard('มูลค่ารวมทุกโครงการ', fmt(totalValue) + ' ฿', 'wallet', 'amber', 'ยึดสัญญาเจ้าบ้านเป็นหลัก')
     ];
     document.getElementById('kpiGrid').innerHTML = cards.join('');
   }
@@ -220,7 +225,9 @@
     const pid = proj.project_id;
     const st = PROGRESS[pid] || { ff_count: 0, task_count: 0, zone_count: 0, progress_pct: 0 };
     const archived = (proj.status || 'active') === 'archived';
-    const value = parseFloat(proj.total_value) || 0;
+    // มูลค่าโครงการยึด "สัญญาเจ้าบ้าน" เป็นหลัก — เลขที่พิมพ์มือใช้เฉพาะตอนยังไม่มีสัญญา
+    const value = Number(st.effective_value) || parseFloat(proj.total_value) || 0;
+    const valueSrc = st.value_source || (value ? 'typed' : 'none');
     const days = parseInt(proj.total_days, 10) || 0;
     const actualPct = Number(st.progress_pct) || 0;
 
@@ -259,7 +266,8 @@
         <div class="project-title">${esc(proj.name)}</div>
         <div class="project-client"><i data-lucide="user"></i> ${esc(proj.client || '—')}</div>
         <div class="proj-figures">
-          <div><div class="proj-fig-l">มูลค่าโครงการ</div><div class="proj-fig-v">${value ? fmt(value) + ' ฿' : '—'}</div></div>
+          <div><div class="proj-fig-l">มูลค่าโครงการ${valueSrc === 'contract' ? ' <span class="val-src">ตามสัญญา</span>' : (valueSrc === 'typed' ? ' <span class="val-src est">ประมาณการ</span>' : '')}</div>
+            <div class="proj-fig-v">${value ? fmt(value) + ' ฿' : '—'}</div></div>
           <div style="text-align:right;"><div class="proj-fig-l">${daysLeft === null ? 'ระยะเวลา' : 'วันเหลือ'}</div>
             <div class="proj-fig-v">${daysLeft === null ? (days ? days + ' วัน' : '—') : (daysLeft + ' / ' + days)}</div></div>
         </div>
@@ -342,9 +350,11 @@
             <div class="form-group"><label class="form-label">วันสิ้นสุด</label>
               <input id="peEnd" class="form-input" type="date" value="${esc(proj.end_date || '')}"></div>
           </div>
-          <div class="form-group"><label class="form-label">มูลค่ารวม (บาท)</label>
+          <div class="form-group"><label class="form-label">มูลค่าโครงการโดยประมาณ (บาท)</label>
             <input id="peValue" class="form-input" type="number" min="0" value="${parseFloat(proj.total_value) || 0}">
-            <div class="form-hint">ใส่ไว้เพื่อให้ระบบคิด % การเบิกเงินได้</div></div>
+            <div class="form-hint">${(PROGRESS[pid] || {}).value_source === 'contract'
+              ? '⚠️ โครงการนี้มีสัญญาเจ้าบ้านแล้ว — ระบบใช้ยอดรวมตามสัญญา (' + fmt((PROGRESS[pid] || {}).contract_value) + ' ฿) เป็นตัวจริง ช่องนี้ไม่ถูกใช้'
+              : 'ใช้ชั่วคราวก่อนมีสัญญาเจ้าบ้าน — พอสร้างสัญญาแล้วระบบจะยึดยอดตามสัญญาแทนเอง'}</div></div>
           <div class="form-group"><label class="form-label">ผู้รับเหมา</label>
             <input id="peContractor" class="form-input" type="text" value="${esc(proj.contractor || '')}"></div>
           <div id="peErr" class="form-error" style="display:none"></div>
