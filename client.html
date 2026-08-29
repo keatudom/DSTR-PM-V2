@@ -1085,15 +1085,37 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
+<!-- ⚠️ 2026-08-29: ต้องมี state.js ไม่งั้น api.js หา state.projectId ไม่เจอแล้ว fallback
+     เป็น 'bow-house' ตายตัว → เจ้าบ้านของโครงการอื่นจะเห็นข้อมูลบ้านคุณโบว์ -->
+<script src="js/state.js"></script>
 <script src="js/modal.js"></script>
 <script>
 // ============================================================
 // CLIENT VIEW — main script
 // ============================================================
 
-// 1) Auth guard — เฉพาะ role=client
-if (!Auth.requireAuth('client')) {
+// 1) Auth guard
+// เดิม requireAuth('client') = ใครไม่ใช่ลูกค้าโดนเด้งออกพร้อม alert
+// แต่เมนูข้าง "มุมมองลูกค้า" โชว์ให้พนักงานทุกคน → กดแล้วตันทุกครั้ง (เจ้าของงานถามถึง)
+// ตอนนี้: ลูกค้าเห็นเป็นหน้าจริง · ทีมงานเห็นเป็น "พรีวิว" พร้อมแถบบอกให้ชัด
+if (!Auth.requireAuth()) {
   // requireAuth จะ redirect ไป index.html อยู่แล้ว
+}
+const CL_IS_PREVIEW = Auth.getRole() !== 'client';
+
+if (CL_IS_PREVIEW) {
+  document.addEventListener('DOMContentLoaded', function () {
+    const pid = (typeof state !== 'undefined' && state.projectId) ? state.projectId : 'bow-house';
+    const bar = document.createElement('div');
+    bar.setAttribute('style',
+      'position:sticky;top:0;z-index:9999;background:#1e293b;color:#fff;padding:10px 14px;' +
+      'font-size:13px;line-height:1.5;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;');
+    bar.innerHTML = '👁️ <b>พรีวิว — นี่คือสิ่งที่เจ้าบ้านเห็น</b>' +
+      '<span style="opacity:.75">ตัวเลขเงินและงานภายในถูกซ่อนไว้จากเจ้าบ้าน</span>' +
+      '<a href="dashboard.html?project=' + encodeURIComponent(pid) + '" ' +
+      'style="color:#93c5fd;text-decoration:underline;white-space:nowrap">← กลับแดชบอร์ด</a>';
+    document.body.insertBefore(bar, document.body.firstChild);
+  });
 }
 
 // ─────────────────────────────────────────────
