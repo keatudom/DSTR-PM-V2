@@ -496,5 +496,47 @@ export async function getTaskWeightHints(env: Env): Promise<unknown> {
     const a = acc[k];
     hints[k] = { weight: a.best, count: a.total, consistent: a.variants === 1 };
   }
-  return { hints, learned_from: rows.reduce((t, r) => t + (Number(r.n) || 0), 0), names: Object.keys(hints).length };
+  // ── ชุดงานมาตรฐาน: งานที่บริษัทใช้บ่อยที่สุดจริงๆ ในแต่ละงวด ──
+  // เดิมปุ่ม "ใส่ template" ใน wizard ใช้ชื่อที่คิดขึ้นเอง (ออกแบบ + Approve ฯลฯ)
+  // ซึ่งไม่มีในประวัติเลย → ไม่ได้น้ำหนัก และไม่ตรงกับที่ทีมเรียกกันจริง
+  // ตอนนี้ดึงจากของจริง → ยิ่งใช้ระบบไปเรื่อยๆ ชุดนี้ยิ่งตรงกับวิธีทำงานของบริษัท
+  const tplRows = await queryAll<{ name: string; phase: string; w: number; n: number }>(env, `
+    SELECT TRIM(name) AS name, phase, COALESCE(weight, 1) AS w, COUNT(*) AS n
+    FROM tasks
+    WHERE TRIM(COALESCE(name, '')) <> '' AND TRIM(COALESCE(phase, '')) <> ''
+    GROUP BY TRIM(name), phase, COALESCE(weight, 1)
+    ORDER BY n DESC
+  `);
+  // ⚠️ คอลัมน์ phase ในฐานข้อมูลมี 2 รูปแบบปนกัน ('งวด 1' กับ 'งวด 1 - Pre-Production')
+  //    ต้องยุบเป็นเลขงวดก่อนนับ ไม่งั้นงานเดียวกันถูกนับแยกและยอดขาด
+  const tally: Record<string, { name: string; phase: number; count: number }> = {};
+  for (const r of tplRows) {
+    const m = String(r.phase || '').match(/([1-4])/);   // 'งวด 2' / 'p2' / 'งวด 2 - Materials'
+    if (!m) continue;
+    const ph = Number(m[1]);
+    const name = String(r.name || '').replace(/\s+/g, ' ').trim();
+    if (!name) continue;
+    const key = ph + '|' + name;
+    const a = (tally[key] ||= { name, phase: ph, count: 0 });
+    a.count += Number(r.n) || 0;
+  }
+
+  const perPhase: Record<number, { name: string; weight: number; count: number }[]> = { 1: [], 2: [], 3: [], 4: [] };
+  const seen = new Set<string>();
+  for (const t of Object.values(tally).sort((a, b) => b.count - a.count)) {
+    if (seen.has(t.name)) continue;                    // ชื่อเดียวห้ามโผล่ 2 งวด
+    if (perPhase[t.phase].length >= 2) continue;       // งวดละ 2 งานพอ — เพิ่มเองต่อได้
+    seen.add(t.name);
+    // น้ำหนักดึงจากตารางความรู้ (ยุบทุกงวดแล้ว) เพื่อให้ตรงกับที่ wizard เติมให้
+    perPhase[t.phase].push({ name: t.name, weight: (hints[t.name] || { weight: 3 }).weight, count: t.count });
+  }
+  const template: { name: string; phase: number; weight: number; count: number }[] = [];
+  for (const ph of [1, 2, 3, 4]) for (const t of perPhase[ph]) template.push({ ...t, phase: ph });
+
+  return {
+    hints,
+    template,
+    learned_from: rows.reduce((t, r) => t + (Number(r.n) || 0), 0),
+    names: Object.keys(hints).length,
+  };
 }

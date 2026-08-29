@@ -2085,12 +2085,15 @@
     },
     // ตารางความรู้ "ชื่องาน → น้ำหนัก" จากงานที่บริษัททำมาแล้วจริง (โหลดครั้งเดียวต่อการเปิด wizard)
     hints:null,
+    tpl:[],       // ชุดงานมาตรฐานที่เรียนจากงานจริงของบริษัท
     async loadHints(){
       if(FFW.hints) return FFW.hints;
       try{
         const res=await API.callRead('get_task_weight_hints');
-        FFW.hints=(res&&res.ok&&res.data&&res.data.hints)?res.data.hints:{};
-      }catch(e){ FFW.hints={}; }
+        const d=(res&&res.ok&&res.data)?res.data:{};
+        FFW.hints=d.hints||{};
+        FFW.tpl=Array.isArray(d.template)?d.template:[];
+      }catch(e){ FFW.hints={}; FFW.tpl=[]; }
       return FFW.hints;
     },
     _normName(n){ return String(n||'').replace(/\s+/g,' ').trim(); },
@@ -2136,7 +2139,7 @@
             </div>`).join('')}
             <div class="ffw-task-actions">
               <button class="ffw-btn-sm" onclick="FFW.addTask(${ff.uid})"><i data-lucide="plus"></i> เพิ่มงานย่อย</button>
-              <button class="ffw-btn-sm" onclick="FFW.applyTemplate(${ff.uid})" title="ใส่ template 4 งาน (งวด 1-4)"><i data-lucide="clipboard-list"></i> ใส่ template</button>
+              <button class="ffw-btn-sm" onclick="FFW.applyTemplate(${ff.uid})" title="ใส่ชุดงานที่บริษัทใช้บ่อยที่สุด พร้อมน้ำหนักจากประวัติจริง"><i data-lucide="clipboard-list"></i> ใส่ชุดงานมาตรฐาน</button>
             </div>
           </div>
         </div>`;
@@ -2211,12 +2214,12 @@
         const h=FFW._lookup(name);
         return {uid:FFW._nextUid(),name:name,phase:phase,weight:h?h.weight:3,wSrc:h?'learned':'guess'};
       };
-      ff.tasks=[
-        mk('ออกแบบ + Approve',1),
-        mk('สั่งวัสดุ + ขึ้นโครง',2),
-        mk('ติดตั้งหน้างาน',3),
-        mk('ตรวจรับ + ส่งมอบ',4),
-      ];
+      // ชุดงานมาจากของจริงที่บริษัทใช้บ่อยที่สุด (โหลดพร้อมตารางความรู้)
+      // ยังไม่มีประวัติ (ระบบใหม่เอี่ยม) → ใช้ชุดกลาง 4 งวดไปก่อน
+      const src=(FFW.tpl&&FFW.tpl.length)?FFW.tpl
+        : [{name:'ออกแบบ + Approve',phase:1},{name:'สั่งวัสดุ + ขึ้นโครง',phase:2},
+           {name:'ติดตั้งหน้างาน',phase:3},{name:'ตรวจรับ + ส่งมอบ',phase:4}];
+      ff.tasks=src.map(x=>mk(x.name,x.phase));
       FFW.renderBody();
     },
     validate(){
