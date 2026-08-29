@@ -253,7 +253,12 @@
   .ffw-card-title { font-size:var(--text-sm); font-weight:600; color:var(--color-blue-700); }
   .ffw-row { display:grid; grid-template-columns:1fr 1fr; gap:var(--space-2); margin-bottom:var(--space-2); }
   .ffw-task-list { margin-top:var(--space-3); padding-top:var(--space-3); border-top:1px dashed var(--color-slate-300); }
-  .ffw-task-row { display:grid; grid-template-columns:1fr 90px 32px; gap:6px; margin-bottom:6px; align-items:center; }
+  .ffw-task-row { display:grid; grid-template-columns:1fr 90px 104px 32px; gap:6px; margin-bottom:2px; align-items:center; }
+  .ffw-task-hint { grid-column:1 / -1; font-size:10px; color:var(--color-slate-500); margin:0 0 6px 2px; line-height:1.5; }
+  .ffw-task-hint.learned { color:var(--color-success-700); }
+  .ffw-task-hint.guess { color:var(--color-warning-700); }
+  .ffw-w-head { display:grid; grid-template-columns:1fr 90px 104px 32px; gap:6px; margin-bottom:4px; }
+  .ffw-w-head span { font-size:10px; color:var(--color-slate-400); font-weight:600; }
   .ffw-task-actions { display:flex; gap:6px; margin-top:var(--space-2); flex-wrap:wrap; }
   .ffw-btn-sm { display:inline-flex; align-items:center; gap:4px; padding:7px 12px; font-size:var(--text-xs); font-family:inherit; font-weight:500; border:1px solid var(--color-slate-300); background:#fff; color:var(--color-slate-700); border-radius:var(--radius-md); cursor:pointer; }
   .ffw-btn-sm:hover { background:var(--color-slate-100); }
@@ -266,7 +271,7 @@
   .ffw-add-ff i { width:15px; height:15px; }
   .ffw-err { background:var(--color-error-50); color:var(--color-error-700); border:1px solid #fecaca; border-radius:var(--radius-md); padding:var(--space-3); font-size:var(--text-xs); line-height:1.7; margin-top:var(--space-3); text-align:left; }
   .ffw-code-tag { background:var(--color-blue-50); color:var(--color-blue-700); padding:2px 8px; border-radius:var(--radius-full); font-size:11px; font-weight:700; }
-  @media(max-width:768px){ .ffd-meta{ gap:var(--space-3); } .ffw-task-row{ grid-template-columns:1fr 80px 32px; } }
+  @media(max-width:768px){ .ffd-meta{ gap:var(--space-3); } .ffw-task-row,.ffw-w-head{ grid-template-columns:1fr 72px 92px 32px; } }
 
   /* ════ S2c: Payment grid ════ */
   .ngwd-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-3); }
@@ -2070,6 +2075,31 @@
       for(let i=1;i<=4;i++) opts+=`<option value="${i}" ${i===current?'selected':''}>งวด ${i}</option>`;
       return opts;
     },
+    // ── น้ำหนักความเหนื่อยของงานย่อย (1 เบา ... 5 หนัก) ──
+    // ใช้ถ่วง % ความคืบหน้าภายในชิ้นงาน: กรุโครง/ลามิเนต/พ่นสี หนักกว่าเก็บงาน/ส่งมอบ
+    _WLABEL:{1:'1 · เบามาก',2:'2 · เบา',3:'3 · ปานกลาง',4:'4 · หนัก',5:'5 · หนักมาก'},
+    _weightOptions(current){
+      let opts='';
+      for(let i=1;i<=5;i++) opts+=`<option value="${i}" ${i===current?'selected':''}>${FFW._WLABEL[i]}</option>`;
+      return opts;
+    },
+    // ตารางความรู้ "ชื่องาน → น้ำหนัก" จากงานที่บริษัททำมาแล้วจริง (โหลดครั้งเดียวต่อการเปิด wizard)
+    hints:null,
+    async loadHints(){
+      if(FFW.hints) return FFW.hints;
+      try{
+        const res=await API.callRead('get_task_weight_hints');
+        FFW.hints=(res&&res.ok&&res.data&&res.data.hints)?res.data.hints:{};
+      }catch(e){ FFW.hints={}; }
+      return FFW.hints;
+    },
+    _normName(n){ return String(n||'').replace(/\s+/g,' ').trim(); },
+    // คืน {weight, count, consistent} ถ้าเคยทำงานชื่อนี้มาก่อน · ไม่เคย = null
+    _lookup(name){
+      const key=FFW._normName(name);
+      if(!key||!FFW.hints) return null;
+      return FFW.hints[key]||null;
+    },
     renderBody(){
       const totalTasks=FFW.state.ffs.reduce((s,f)=>s+f.tasks.length,0);
       let html='';
@@ -2096,10 +2126,13 @@
           </div>
           <div class="ffw-task-list">
             <label class="ffw-lb" style="margin-bottom:8px">งานย่อย ${ff.tasks.length?'('+ff.tasks.length+')':''}</label>
+            ${ff.tasks.length?`<div class="ffw-w-head"><span>ชื่องาน</span><span>งวด</span><span>น้ำหนักงาน</span><span></span></div>`:''}
             ${ff.tasks.map(t=>`<div class="ffw-task-row">
-              <input class="ffw-input" type="text" placeholder="ชื่องาน" value="${FFW._esc(t.name)}" oninput="FFW.updateTask(${ff.uid},${t.uid},'name',this.value)">
+              <input class="ffw-input" type="text" placeholder="ชื่องาน" value="${FFW._esc(t.name)}" oninput="FFW.updateTask(${ff.uid},${t.uid},'name',this.value)" onchange="FFW.autoWeight(${ff.uid},${t.uid},this.value)" onblur="FFW.autoWeight(${ff.uid},${t.uid},this.value)">
               <select class="ffw-input" onchange="FFW.updateTask(${ff.uid},${t.uid},'phase',parseInt(this.value,10))">${FFW._phaseOptions(t.phase)}</select>
+              <select class="ffw-input" title="งานนี้เหนื่อยแค่ไหนเทียบกับงานอื่นในชิ้นเดียวกัน" onchange="FFW.setWeight(${ff.uid},${t.uid},parseInt(this.value,10))">${FFW._weightOptions(t.weight||3)}</select>
               <button class="ffw-btn-x" title="ลบงาน" onclick="FFW.removeTask(${ff.uid},${t.uid})"><i data-lucide="x"></i></button>
+              <div class="ffw-task-hint ${t.wSrc==='learned'?'learned':(t.wSrc==='manual'?'':'guess')}" id="wh-${t.uid}">${FFW._hintText(t)}</div>
             </div>`).join('')}
             <div class="ffw-task-actions">
               <button class="ffw-btn-sm" onclick="FFW.addTask(${ff.uid})"><i data-lucide="plus"></i> เพิ่มงานย่อย</button>
@@ -2126,10 +2159,40 @@
       ff[field]=value;
       if(field==='code') FFW.renderBody();   // code เปลี่ยน → dropdown ตัวอื่นต้องอัปเดตตัวเลือก
     },
+    _hintText(t){
+      if(!t.name||!String(t.name).trim()) return '';
+      if(t.wSrc==='manual') return '✎ ตั้งน้ำหนักเอง';
+      const h=FFW._lookup(t.name);
+      if(h) return '✨ เคยใช้น้ำหนัก '+h.weight+' มาแล้ว '+h.count+' ครั้ง'+(h.consistent?'':' (เคยใช้ค่าอื่นด้วย — ตรวจหน่อย)');
+      return '⚠️ ยังไม่เคยทำงานชื่อนี้ — ตั้งน้ำหนักเองให้ตรงความจริง';
+    },
+    // ชื่องานเปลี่ยน → เติมน้ำหนักจากประวัติ (ยกเว้นคนตั้งเองไปแล้ว = ไม่ทับ)
+    autoWeight(ffUid,taskUid,name){
+      const ff=FFW.state.ffs.find(f=>f.uid===ffUid); if(!ff) return;
+      const t=ff.tasks.find(x=>x.uid===taskUid); if(!t) return;
+      t.name=name;
+      if(t.wSrc==='manual'){ FFW._refreshHint(t); return; }
+      const h=FFW._lookup(name);
+      const next=h?h.weight:3;
+      const changed=(t.weight!==next)||(t.wSrc!==(h?'learned':'guess'));
+      t.weight=next; t.wSrc=h?'learned':'guess';
+      if(changed) FFW.renderBody(); else FFW._refreshHint(t);
+    },
+    setWeight(ffUid,taskUid,w){
+      const ff=FFW.state.ffs.find(f=>f.uid===ffUid); if(!ff) return;
+      const t=ff.tasks.find(x=>x.uid===taskUid); if(!t) return;
+      t.weight=w; t.wSrc='manual';       // คนตัดสินใจเอง = ระบบห้ามทับอีก
+      FFW._refreshHint(t);
+    },
+    _refreshHint(t){
+      const el=document.getElementById('wh-'+t.uid); if(!el) return;
+      el.textContent=FFW._hintText(t);
+      el.className='ffw-task-hint '+(t.wSrc==='learned'?'learned':(t.wSrc==='manual'?'':'guess'));
+    },
     addTask(ffUid){
       const ff=FFW.state.ffs.find(f=>f.uid===ffUid); if(!ff) return;
       const lastPhase=ff.tasks.length?ff.tasks[ff.tasks.length-1].phase:0;
-      ff.tasks.push({uid:FFW._nextUid(),name:'',phase:Math.min(4,lastPhase+1)||1});
+      ff.tasks.push({uid:FFW._nextUid(),name:'',phase:Math.min(4,lastPhase+1)||1,weight:3,wSrc:'guess'});
       FFW.renderBody();
     },
     removeTask(ffUid,taskUid){
@@ -2144,11 +2207,15 @@
     },
     applyTemplate(ffUid){
       const ff=FFW.state.ffs.find(f=>f.uid===ffUid); if(!ff) return;
+      const mk=(name,phase)=>{
+        const h=FFW._lookup(name);
+        return {uid:FFW._nextUid(),name:name,phase:phase,weight:h?h.weight:3,wSrc:h?'learned':'guess'};
+      };
       ff.tasks=[
-        {uid:FFW._nextUid(),name:'ออกแบบ + Approve',phase:1},
-        {uid:FFW._nextUid(),name:'สั่งวัสดุ + ขึ้นโครง',phase:2},
-        {uid:FFW._nextUid(),name:'ติดตั้งหน้างาน',phase:3},
-        {uid:FFW._nextUid(),name:'ตรวจรับ + ส่งมอบ',phase:4},
+        mk('ออกแบบ + Approve',1),
+        mk('สั่งวัสดุ + ขึ้นโครง',2),
+        mk('ติดตั้งหน้างาน',3),
+        mk('ตรวจรับ + ส่งมอบ',4),
       ];
       FFW.renderBody();
     },
@@ -2173,6 +2240,8 @@
       const pname=projectName||(project&&project.name)||pid;
       FFW.state={projectId:pid, projectName:pname,
         ffs:[{uid:FFW._nextUid(),code:'',zone:'Zone 1',name:'',price:0,tasks:[]}]};
+      // โหลด "ตารางความรู้" ชื่องาน→น้ำหนัก แล้ววาดใหม่ (ไม่บล็อกการเปิดฟอร์ม)
+      FFW.loadHints().then(()=>{ if(document.getElementById('ffwBody')) FFW.renderBody(); });
       Modal.show(`<div class="modal-title" style="text-align:left;font-size:17px;margin-bottom:4px">เพิ่ม FF เข้าโครงการ</div>
         <div style="text-align:left;color:var(--color-slate-500);font-size:13px;margin-bottom:16px">${FFW._esc(pname)}</div>
         <div id="ffwBody"></div>
@@ -2193,7 +2262,7 @@
       const items=FFW.state.ffs.map(ff=>({
         code:ff.code, name:ff.name.trim(), zone:ff.zone||'',
         price:parseFloat(ff.price)||0,
-        tasks:ff.tasks.map(t=>({name:t.name.trim(), phase:t.phase}))
+        tasks:ff.tasks.map(t=>({name:t.name.trim(), phase:t.phase, weight:Number(t.weight)||3}))
       }));
       try{
         const savedPid=state.projectId;

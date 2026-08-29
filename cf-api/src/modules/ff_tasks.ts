@@ -461,3 +461,40 @@ export async function cloneProject(env: Env, p: Record<string, unknown>): Promis
   }
   return { source, target, ff_cloned: ffCloned, tasks_cloned: tasksCloned };
 }
+
+// ── get_task_weight_hints (2026-08-29) ─────────────────────────
+// "ตารางความรู้" ชื่องาน → น้ำหนักความเหนื่อย เรียนจากงานที่บริษัททำมาแล้วจริง
+//
+// ทำไมถึงเชื่อถือได้: ตรวจข้อมูลจริง 369 งาน / 87 ชื่องาน พบว่า 86 ชื่อ
+// ใช้น้ำหนักเดิมเป๊ะทุกครั้ง (กรุโครงไม้=5 · ปิดลามิเนต=5 · สั่งซื้อวัสดุ=2 · ส่งมอบงาน=1)
+// → เติมให้อัตโนมัติได้โดยไม่ต้องเดา และคนแก้ทับได้เสมอ
+//
+// เรียนข้ามทุกโครงการโดยตั้งใจ — ความรู้ว่า "งานชนิดนี้หนักแค่ไหน" เป็นของบริษัท ไม่ใช่ของบ้านหลังใดหลังหนึ่ง
+export async function getTaskWeightHints(env: Env): Promise<unknown> {
+  const rows = await queryAll<{ name: string; w: number; n: number }>(env, `
+    SELECT TRIM(name) AS name, COALESCE(weight, 1) AS w, COUNT(*) AS n
+    FROM tasks
+    WHERE TRIM(COALESCE(name, '')) <> ''
+    GROUP BY TRIM(name), COALESCE(weight, 1)
+  `);
+
+  // รวมรายชื่อ: เลือกน้ำหนักที่ "ใช้บ่อยที่สุด" · เสมอกันเลือกค่าสูงกว่า (ประเมินงานต่ำไว้เสี่ยงกว่า)
+  const acc: Record<string, { best: number; bestN: number; total: number; variants: number }> = {};
+  for (const r of rows) {
+    const key = String(r.name || '').replace(/\s+/g, ' ').trim();
+    if (!key) continue;
+    const w = Number(r.w) || 1;
+    const n = Number(r.n) || 0;
+    const a = (acc[key] ||= { best: w, bestN: 0, total: 0, variants: 0 });
+    a.total += n;
+    a.variants += 1;
+    if (n > a.bestN || (n === a.bestN && w > a.best)) { a.best = w; a.bestN = n; }
+  }
+
+  const hints: Record<string, { weight: number; count: number; consistent: boolean }> = {};
+  for (const k in acc) {
+    const a = acc[k];
+    hints[k] = { weight: a.best, count: a.total, consistent: a.variants === 1 };
+  }
+  return { hints, learned_from: rows.reduce((t, r) => t + (Number(r.n) || 0), 0), names: Object.keys(hints).length };
+}

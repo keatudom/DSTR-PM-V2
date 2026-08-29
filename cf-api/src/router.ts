@@ -375,6 +375,8 @@ export async function route(env: Env, action: string, p: Record<string, unknown>
       return ffTasks.deleteFF(env, p);
     case 'clone_project':
       return ffTasks.cloneProject(env, p);
+    case 'get_task_weight_hints':
+      return ffTasks.getTaskWeightHints(env);
 
     // ⏰ CHECK-IN / TIMESHEET (checkin.gs) — Session 2 โมดูล 1
     case 'create_checkin':
