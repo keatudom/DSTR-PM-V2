@@ -652,3 +652,17 @@ img { max-width: 100%; }
 @media (max-width: 768px) {
   body.has-bottom-nav { padding-bottom: calc(var(--bottomnav-h) + var(--space-4)); }
 }
+
+/* ── รายการตัวเลือกใน modal (แตะได้เต็มแถว สูง 56px ตามกติกามือถือ) ──
+   ใช้ร่วมหลายหน้า: projects.html (เมนูจัดการโครงการ) · tour.html (เลือกวิธีเก็บภาพ 360) */
+.pm-list { display:flex; flex-direction:column; gap:var(--space-2); text-align:left; }
+.pm-item { display:flex; align-items:flex-start; gap:var(--space-3); width:100%; min-height:56px;
+  padding:var(--space-3) var(--space-4); background:var(--color-slate-50);
+  border:1px solid var(--color-slate-200); border-radius:var(--radius-lg); cursor:pointer;
+  text-align:left; font-family:inherit; transition:background 0.12s, border-color 0.12s; }
+.pm-item:hover { background:#fff; border-color:var(--color-blue-500); }
+.pm-item i { width:18px; height:18px; flex-shrink:0; margin-top:2px; color:var(--color-slate-500); }
+.pm-t { font-size:var(--text-sm); font-weight:600; color:var(--color-slate-900); }
+.pm-s { font-size:var(--text-xs); color:var(--color-slate-500); margin-top:2px; line-height:1.5; }
+.pm-danger i, .pm-danger .pm-t { color:var(--color-error-700); }
+.pm-danger:hover { border-color:var(--color-error-500); }

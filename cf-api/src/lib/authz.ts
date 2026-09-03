@@ -72,6 +72,13 @@ addCap('OPS', [
   // 🧭 เดินดูหน้างาน 360 — ถ่าย/อัป/ปักหมุด = งานหน้าไซต์ (โฟร์แมนขึ้นไป)
   'tour_upload_shot', 'tour_update_shot', 'tour_delete_shot',
   'tour_save_pin', 'tour_delete_pin', 'tour_resolve_pin',
+  // ⚠️ 2026-09-03: ย้ายมาจาก SITECFG — คนที่ถือมือถือเดินสแกนจริงคือโฟร์แมน
+  //    เดิม "สร้างจุดสแกน / วางผัง / ลากลูกศร" ถูกจัดเป็นงานตั้งค่าไซต์ (SITECFG)
+  //    โฟร์แมนจึงอัปภาพเข้าจุดที่มีอยู่ได้ แต่ "สร้างจุดใหม่ไม่ได้"
+  //    → พอเปิดโครงการใหม่ที่ยังไม่มีจุดเลย โฟร์แมนเริ่มงานไม่ได้เลยสักขั้น
+  //    (เจ้าของงานเจอจริงที่บ้านคุณนัชชา — มีแต่เจ้าของงานที่สแกนได้)
+  //    ลบ/กู้/คุมเวอร์ชัน ยังอยู่ SITECFG เหมือนเดิม
+  'tour_save_plan', 'tour_save_point', 'tour_save_link', 'tour_delete_point',
 ]);
 addCap('PROCURE', [
   'create_material', 'update_material', 'deactivate_material',
@@ -97,8 +104,8 @@ addCap('PRICING', ['create_project']);
 addCap('SITECFG', [
   'set_site_location',
   // 🧭 เดินดูหน้างาน 360 — วางแผนที่จุด/ลูกศร + คุมเวอร์ชัน = งานตั้งค่าไซต์ (วิศวกรไซต์/PM ขึ้นไป)
-  'tour_save_plan', 'tour_delete_plan', 'tour_save_point', 'tour_delete_point', 'tour_restore_point',
-  'tour_save_link', 'tour_delete_link',
+  // (save_plan / save_point / save_link / delete_point ย้ายไป OPS แล้ว — ดูหมายเหตุด้านบน)
+  'tour_delete_plan', 'tour_restore_point', 'tour_delete_link',
   'tour_create_version', 'tour_update_version', 'tour_publish_version',
   'tour_delete_version', 'tour_restore_version',
   'tour_purge',   // ลบถาวร กู้ไม่ได้ — ระดับวิศวกรไซต์/PM ขึ้นไปเท่านั้น

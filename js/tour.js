@@ -368,7 +368,7 @@ const Tour = {
       icon: '📍', iconClass: 'info',
       confirmText: 'สแกนเลย', cancelText: 'ปักหมุดต่อ',
     });
-    if (go) this.scanFor(d.point_id);
+    if (go) this.chooseCapture(d.point_id);
   },
 
   // ทิศของลูกศรคำนวณจากตำแหน่งบนแปลนให้อัตโนมัติ (ปรับละเอียดทีหลังได้ที่ "ปรับภาพ")
@@ -1396,7 +1396,26 @@ const Tour = {
     this._busy(false);
     this.renderCaptureList();
     const d = res.data || res;
-    this.scanFor(d.point_id);
+    this.chooseCapture(d.point_id);
+  },
+
+  // ── เลือกวิธีเก็บภาพ 360 ของจุดนี้ ──────────────────────────
+  // เดิมกดจุดแล้วเด้งเข้าตัวสแกนมือถือทันที ทั้งที่ "อัปภาพจากกล้อง 360"
+  // ให้ผลดีกว่ามากและเร็วกว่ามาก แต่ซ่อนอยู่หลังปุ่มไอคอนเล็กๆ ไม่มีใครเห็น
+  chooseCapture(pointId) {
+    Modal.show('<div class="modal-head"><div class="modal-title">เก็บภาพ 360 ของจุดนี้</div>' +
+      '<button class="modal-close" onclick="Modal.close()"><i data-lucide="x"></i></button></div>' +
+      '<div class="pm-list">' +
+      '<button class="pm-item" onclick="Modal.close();setTimeout(()=>Tour.pickPhotoFor(\'' + pointId + '\'),220)">' +
+      '<i data-lucide="upload"></i><div><div class="pm-t">อัปภาพจากกล้อง 360 (แนะนำ)</div>' +
+      '<div class="pm-s">กด 1 ครั้งได้ทั้งลูก ไม่มีรอยต่อ ใช้เวลาไม่กี่วินาที<br>' +
+      'รองรับไฟล์จาก Insta360 / Ricoh Theta หรือโหมดพาโนของมือถือ</div></div></button>' +
+      '<button class="pm-item" onclick="Modal.close();setTimeout(()=>Tour.scanFor(\'' + pointId + '\'),220)">' +
+      '<i data-lucide="camera"></i><div><div class="pm-t">สแกนด้วยมือถือ</div>' +
+      '<div class="pm-s">ไม่ต้องมีกล้องเพิ่ม แต่ต้องเล็งทีละจุด ~53 ใบ ใช้เวลา 3-5 นาที<br>' +
+      'ของใกล้ตัวอาจมีรอยเหลื่อมตรงตะเข็บ (ข้อจำกัดของการหมุนมือถือ)</div></div></button>' +
+      '</div>', 'modal-lg');
+    if (window.lucide) lucide.createIcons();
   },
 
   // สแกน 360 ในแอปเลย (ไม่ต้องพึ่งแอปนอก) — ดู js/pano-capture.js
@@ -1453,7 +1472,14 @@ const Tour = {
     if (!vid) return;
     this._busy(true, 'กำลังย่อรูปและอัปโหลด…');
     try {
-      const img = await this._compress(file, 4096, 0.82);
+      // ⚠️ 2026-09-03: ภาพจากกล้อง 360 จริง (Insta360 / Theta) ออกมา 5376-11968px
+      //    ถ้าย่อเหลือ 4096 เท่ากับทิ้งข้อดีของกล้องไปครึ่งหนึ่ง
+      //    → ภาพทรงกลม (อัตราส่วน 2:1) ให้ถึง 8192px คุณภาพ 86%
+      //      ภาพอื่น (พาโนมือถือ / รูปธรรมดา) คงเดิม 4096 / 82%
+      const sph = await this._isSphere(file);
+      const img = sph
+        ? await this._compress(file, 8192, 0.86)
+        : await this._compress(file, 4096, 0.82);
       const res = await API.tourUploadShot({
         version_id: vid, point_id: pointId,
         image_base64: img.dataUrl, width: img.w, height: img.h,
@@ -1472,7 +1498,23 @@ const Tour = {
     this._busy(false);
   },
 
-  // ย่อด้านยาวเหลือ 4096px คุณภาพ 82% → ~0.8-1.5 MB ยังคมพอส่องดูงานไม้
+  // ภาพนี้เป็น "ทรงกลม 360 เต็มใบ" ไหม — ดูจากอัตราส่วน 2:1 (นิยาม equirectangular)
+  // ใช้ตัดสินว่าจะย่อแค่ไหน · หลังบ้าน guessKind() ใช้เกณฑ์เดียวกัน (±0.02)
+  _isSphere(file) {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const r = img.naturalWidth / img.naturalHeight;
+        URL.revokeObjectURL(url);
+        resolve(Math.abs(r - 2) <= 0.02);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
+      img.src = url;
+    });
+  },
+
+  // ย่อด้านยาวตาม maxDim → ยังคมพอส่องดูงานไม้
   _compress(file, maxDim, quality) {
     return new Promise((resolve, reject) => {
       const rd = new FileReader();
