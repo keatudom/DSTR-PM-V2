@@ -59,17 +59,21 @@ export const CLIENT_ALLOWED_ACTIONS = new Set<string>([
 // capability tiers × roles (auth.gs:191 _ROLE_CAPS_)
 type Caps = Record<string, 1>;
 const ROLE_CAPS: Record<string, Caps> = {
-  creator: { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1, SITECFG: 1, ATTEND: 1 },
-  owner: { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1, SITECFG: 1, ATTEND: 1 },
-  director: { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1, ATTEND: 1 },
-  pm: { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1, ATTEND: 1 },
+  // ── TOUR = "เก็บภาพทัวร์ 360 ได้" (เจ้าของงานเคาะ 2026-09-03) ──
+  //   แยกออกจาก OPS เพราะ "ใครก็ตามที่ไปหน้างานควรถ่ายทัวร์ได้" (รวม HR/จัดซื้อ/ผู้รับเหมา)
+  //   แต่ไม่ควรได้สิทธิ์ OPS เต็ม (ติ๊กงาน/เบิกวัสดุ/เขียนรายงานประจำวัน) ไปด้วย
+  //   การ "ลบ" ของในทัวร์ใช้ TOUR + ตรวจความเป็นเจ้าของอีกชั้น (ดู assertTourOwner ใน tour.ts)
+  creator: { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1, SITECFG: 1, ATTEND: 1, TOUR: 1 },
+  owner: { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1, SITECFG: 1, ATTEND: 1, TOUR: 1 },
+  director: { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1, ATTEND: 1, TOUR: 1 },
+  pm: { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1, ATTEND: 1, TOUR: 1 },
   // ⚠️ 2026-09-03: เดิม hr มีแค่ ATTEND → อ่าน get_projects/get_all_staff ไม่ได้เลย
   //    หน้าใบลงเวลาจึงโหลดรายชื่อโครงการ/พนักงานไม่ขึ้น (ชลธิชาใช้งานไม่ได้)
-  hr: { READ: 1, ATTEND: 1 },
-  site_engineer: { READ: 1, OPS: 1, PROCURE: 1, SITECFG: 1 },
-  foreman: { READ: 1, OPS: 1, PROCURE: 1 },
-  purchaser: { READ: 1, PROCURE: 1 },
-  contractor: { READ: 1 },
+  hr: { READ: 1, ATTEND: 1, TOUR: 1 },
+  site_engineer: { READ: 1, OPS: 1, PROCURE: 1, SITECFG: 1, TOUR: 1 },
+  foreman: { READ: 1, OPS: 1, PROCURE: 1, TOUR: 1 },
+  purchaser: { READ: 1, PROCURE: 1, TOUR: 1 },
+  contractor: { READ: 1, TOUR: 1 },
   client: {},
 };
 
@@ -106,20 +110,27 @@ addCap('OPS', [
   'delete_activity_log',
   // เคาะ/แก้/รีคอนเทนต์ = งานประจำสัปดาห์ของคนเข้าเวร
   'update_content', 'reroll_content',
-  // 🧭 เดินดูหน้างาน 360 — ถ่าย/อัป/ปักหมุด = งานหน้าไซต์ (โฟร์แมนขึ้นไป)
+]);
+
+// ── 🧭 เดินดูหน้างาน 360 ────────────────────────────────────
+// เจ้าของงานเคาะ 2026-09-03: "ใครไปหน้างานก็ถ่ายได้ · ลบได้เฉพาะของตัวเองที่สแกนมา
+//   ไม่ใช่ไปลบของคนอื่น" → ใช้สิทธิ์ TOUR (กว้าง) + ตรวจความเป็นเจ้าของในตัวโมดูล (แคบ)
+//
+// ⚠️ action กลุ่ม "ลบ/กู้คืน" อยู่ตรงนี้ได้ เพราะ tour.ts จะเช็คต่ออีกชั้นว่า
+//    ผู้เรียกเป็นเจ้าของชิ้นนั้นจริงไหม (assertTourOwner) — หัวหน้า (SITECFG) ข้ามการเช็คนี้
+addCap('TOUR', [
+  // ถ่าย/อัป/ปักหมุด
   'tour_upload_shot', 'tour_update_shot', 'tour_delete_shot',
   'tour_save_pin', 'tour_delete_pin', 'tour_resolve_pin',
-  // ⚠️ 2026-09-03: ย้ายมาจาก SITECFG — คนที่ถือมือถือเดินสแกนจริงคือโฟร์แมน
-  //    เดิม "สร้างจุดสแกน / วางผัง / ลากลูกศร" ถูกจัดเป็นงานตั้งค่าไซต์ (SITECFG)
-  //    โฟร์แมนจึงอัปภาพเข้าจุดที่มีอยู่ได้ แต่ "สร้างจุดใหม่ไม่ได้"
-  //    → พอเปิดโครงการใหม่ที่ยังไม่มีจุดเลย โฟร์แมนเริ่มงานไม่ได้เลยสักขั้น
-  //    (เจ้าของงานเจอจริงที่บ้านคุณนัชชา — มีแต่เจ้าของงานที่สแกนได้)
-  //    ลบ/กู้/คุมเวอร์ชัน ยังอยู่ SITECFG เหมือนเดิม
-  'tour_save_plan', 'tour_save_point', 'tour_save_link', 'tour_delete_point',
-  // ⚠️ รอบแรกลืมตัวนี้ — หน้าเว็บเรียก tour_create_version ก่อนอัปภาพใบแรกเสมอ
-  //    (สร้าง "ฉบับร่าง" ของรอบสแกน) ถ้าเรียกไม่ได้ = กดสแกนแล้วตายตั้งแต่ก้าวแรก
-  //    สร้างฉบับร่าง = เริ่มงาน · ส่วน "ประกาศใช้" (publish) ยังเป็นสิทธิ์หัวหน้าเหมือนเดิม
+  // วางผัง/จุด/ลูกศร — คนที่ถือมือถือเดินสแกนจริงคือคนหน้างาน
+  'tour_save_plan', 'tour_save_point', 'tour_save_link',
+  // เริ่มรอบสแกน (หน้าเว็บเรียกก่อนอัปภาพใบแรกเสมอ)
   'tour_create_version', 'tour_update_version',
+  // ลบ/กู้คืน — ผ่านด่านนี้แล้วยังต้องเป็นเจ้าของชิ้นนั้นด้วย
+  'tour_delete_point', 'tour_restore_point',
+  'tour_delete_plan', 'tour_delete_link',
+  'tour_delete_version', 'tour_restore_version',
+  'tour_purge',
 ]);
 addCap('PROCURE', [
   'create_material', 'update_material', 'deactivate_material',
@@ -144,12 +155,10 @@ addCap('FINANCE', [
 addCap('PRICING', ['create_project']);
 addCap('SITECFG', [
   'set_site_location',
-  // 🧭 เดินดูหน้างาน 360 — วางแผนที่จุด/ลูกศร + คุมเวอร์ชัน = งานตั้งค่าไซต์ (วิศวกรไซต์/PM ขึ้นไป)
-  // (save_plan / save_point / save_link / delete_point ย้ายไป OPS แล้ว — ดูหมายเหตุด้านบน)
-  'tour_delete_plan', 'tour_restore_point', 'tour_delete_link',
-  'tour_publish_version',                        // ประกาศใช้ = ตัดสินว่าเวอร์ชันไหนเป็นตัวจริง
-  'tour_delete_version', 'tour_restore_version',
-  'tour_purge',   // ลบถาวร กู้ไม่ได้ — ระดับวิศวกรไซต์/PM ขึ้นไปเท่านั้น
+  // 🧭 ทัวร์ 360: เหลือแค่ "ประกาศใช้เวอร์ชัน" ที่ยังเป็นสิทธิ์หัวหน้า
+  //    เพราะเป็นการตัดสินว่าเวอร์ชันไหนคือตัวจริงที่คนอื่น (และเจ้าบ้าน) จะเห็น
+  //    ที่เหลือย้ายไป TOUR + ตรวจความเป็นเจ้าของแทน
+  'tour_publish_version',
 ]);
 addCap('ATTEND', ['get_attendance_all', 'update_checkin', 'set_id_card',
   'delete_checkin',        // ลบบันทึกเวลา = แตะหลักฐานการจ่ายค่าแรง ต้องระดับ HR/แอดมิน
@@ -290,6 +299,13 @@ export async function authorize(
   }
 
   return { actor: payload };
+}
+
+// tour.ts ใช้ถามว่า "คนนี้เป็นหัวหน้าไหม" เพื่อข้ามการตรวจความเป็นเจ้าของ
+export function roleHasCap(role: string | undefined, cap: string): boolean {
+  if (!role) return false;
+  if (role === 'creator' || role === 'owner') return true;
+  return !!(ROLE_CAPS[role] || {})[cap];
 }
 
 export const VALID_AUTH_ROLES = new Set<string>([

@@ -15,6 +15,7 @@
 // ============================================================
 import type { Env } from '../lib/env.ts';
 import { queryAll, queryFirst, exec, pidOf, projectScope, blankNulls } from '../lib/db.ts';
+import { roleHasCap } from '../lib/authz.ts';
 import { nextId } from '../lib/ids.ts';
 import { nowStr, todayStr } from '../lib/time.ts';
 import { putMedia } from '../lib/r2.ts';
@@ -30,6 +31,45 @@ function actorOf(p: Record<string, unknown>): string {
   const a = p.__actor as { name?: string; staff_id?: string } | undefined;
   return String(a?.name || a?.staff_id || p.uploaded_by || p.created_by || 'system');
 }
+// ── ความเป็นเจ้าของ (เจ้าของงานเคาะ 2026-09-03) ─────────────
+// "ลบได้เฉพาะของตัวเองที่สแกนมา ไม่ใช่ไปลบของคนอื่น"
+//
+// เก็บเป็น staff_id ไม่ใช่ชื่อ — ชื่อซ้ำกันได้และเปลี่ยนได้ ความเป็นเจ้าของจะหลุด
+// (คอลัมน์ created_by เดิมเก็บชื่อ ยังคงไว้เพื่อแสดงผล ไม่ใช้ตัดสินสิทธิ์)
+function actorSid(p: Record<string, unknown>): string {
+  const a = p.__actor as { sid?: string } | undefined;
+  return String(a?.sid || '');
+}
+function actorRole(p: Record<string, unknown>): string {
+  const a = p.__actor as { role?: string } | undefined;
+  return String(a?.role || '');
+}
+
+// หัวหน้า (มีสิทธิ์ตั้งค่าไซต์) ลบของใครก็ได้ · คนอื่นลบได้เฉพาะของตัวเอง
+//
+// ⚠️ แถวเก่าที่ owner_sid ว่าง = "ไม่รู้ว่าใครสร้าง" → ให้เฉพาะหัวหน้าลบ
+//    ถ้าปล่อยผ่านจะกลายเป็น "ของเก่าทั้งหมดใครก็ลบได้" ซึ่งอันตรายกว่าเดิม
+// ⚠️ ไม่มี token (ยังไม่ได้ล็อกอิน) = ไม่มี sid → ลบไม่ได้เลย ซึ่งถูกต้องแล้ว
+async function assertTourOwner(
+  env: Env, p: Record<string, unknown>, table: string, idCol: string, id: string, what: string,
+): Promise<void> {
+  if (roleHasCap(actorRole(p), 'SITECFG')) return;          // หัวหน้า — ข้ามได้
+
+  const row = await queryFirst<{ owner_sid: string | null; created_by: string | null }>(
+    env, `SELECT owner_sid, created_by FROM ${table} WHERE ${idCol} = ?`, id);
+  if (!row) throw new Error('ไม่พบ' + what + 'นี้');
+
+  const owner = String(row.owner_sid || '').trim();
+  const me = actorSid(p);
+  if (!owner) {
+    throw new Error(what + 'นี้ไม่ได้บันทึกว่าใครเป็นคนสร้าง — ให้หัวหน้างานเป็นคนลบ');
+  }
+  if (!me || owner !== me) {
+    const who = String(row.created_by || '').trim();
+    throw new Error('ลบได้เฉพาะ' + what + 'ที่ตัวเองสร้าง' + (who ? ' — อันนี้เป็นของ ' + who : ''));
+  }
+}
+
 function num(v: unknown, dflt = 0): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : dflt;
@@ -142,6 +182,12 @@ export async function purgeItem(env: Env, p: Record<string, unknown>): Promise<u
       if (r.media_key) { try { await env.MEDIA.delete(String(r.media_key)); } catch { /* ไฟล์หายไปแล้วก็ข้าม */ } }
     }
   };
+
+  // ล้างถาวร = กู้ไม่ได้อีกเลย → ต้องเป็นเจ้าของ (หรือหัวหน้า) เท่านั้น
+  await assertTourOwner(env, p,
+    kind === 'version' ? 'tour_versions' : 'tour_points',
+    kind === 'version' ? 'version_id' : 'point_id',
+    id, kind === 'version' ? 'รอบสแกน' : 'จุดสแกน');
 
   if (kind === 'point') {
     const shots = await queryAll<{ media_key: string }>(env,
@@ -299,10 +345,10 @@ export async function savePlan(env: Env, p: Record<string, unknown>): Promise<un
         : [str(p.floor_label), num(p.sort_order), num(p.width), num(p.height), planId]));
   } else {
     await exec(env,
-      `INSERT INTO tour_plans (plan_id, project_id, floor_label, media_key, url, width, height, sort_order, created_at, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO tour_plans (plan_id, project_id, floor_label, media_key, url, width, height, sort_order, created_at, created_by, owner_sid)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       planId, pid, str(p.floor_label) || 'ชั้น 1', mediaKey, url,
-      num(p.width), num(p.height), num(p.sort_order), nowStr(), actorOf(p));
+      num(p.width), num(p.height), num(p.sort_order), nowStr(), actorOf(p), actorSid(p));
   }
   return { ok: true, plan_id: planId, url };
 }
@@ -310,6 +356,7 @@ export async function savePlan(env: Env, p: Record<string, unknown>): Promise<un
 export async function deletePlan(env: Env, p: Record<string, unknown>): Promise<unknown> {
   const planId = str(p.plan_id);
   if (!planId) throw new Error('plan_id required');
+  await assertTourOwner(env, p, 'tour_plans', 'plan_id', planId, 'ผัง');
   await exec(env, 'DELETE FROM tour_plans WHERE plan_id = ?', planId);
   await exec(env, `UPDATE tour_points SET plan_id = '' WHERE plan_id = ?`, planId);
   return { ok: true };
@@ -327,10 +374,10 @@ export async function savePoint(env: Env, p: Record<string, unknown>): Promise<u
       str(p.name), str(p.plan_id), num(p.plan_x), num(p.plan_y), num(p.sort_order), pointId);
   } else {
     await exec(env,
-      `INSERT INTO tour_points (point_id, project_id, plan_id, name, plan_x, plan_y, sort_order, active, created_at, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+      `INSERT INTO tour_points (point_id, project_id, plan_id, name, plan_x, plan_y, sort_order, active, created_at, created_by, owner_sid)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
       pointId, pid, str(p.plan_id), str(p.name) || 'จุดใหม่',
-      num(p.plan_x), num(p.plan_y), num(p.sort_order), nowStr(), actorOf(p));
+      num(p.plan_x), num(p.plan_y), num(p.sort_order), nowStr(), actorOf(p), actorSid(p));
   }
   return { ok: true, point_id: pointId };
 }
@@ -341,6 +388,7 @@ export async function savePoint(env: Env, p: Record<string, unknown>): Promise<u
 export async function deletePoint(env: Env, p: Record<string, unknown>): Promise<unknown> {
   const pointId = str(p.point_id);
   if (!pointId) throw new Error('point_id required');
+  await assertTourOwner(env, p, 'tour_points', 'point_id', pointId, 'จุดสแกน');
   const ts = nowStr();
   await exec(env, 'UPDATE tour_points SET active = 0, trashed_at = ? WHERE point_id = ?', ts, pointId);
   await exec(env,
@@ -355,6 +403,7 @@ export async function restorePoint(env: Env, p: Record<string, unknown>): Promis
   if (!pointId) throw new Error('point_id required');
   const cur = await queryFirst(env, 'SELECT point_id FROM tour_points WHERE point_id = ?', pointId);
   if (!cur) throw new Error('กู้คืนไม่ได้ — จุดนี้ถูกลบถาวรไปแล้ว (เกิน ' + TRASH_DAYS + ' วัน)');
+  await assertTourOwner(env, p, 'tour_points', 'point_id', pointId, 'จุดสแกน');
   await exec(env, 'UPDATE tour_points SET active = 1, trashed_at = NULL WHERE point_id = ?', pointId);
   await exec(env,
     `UPDATE tour_links SET trashed_at = NULL
@@ -380,9 +429,9 @@ export async function saveLink(env: Env, p: Record<string, unknown>): Promise<un
       from, to, num(p.yaw), num(p.pitch, -10), str(p.label), linkId);
   } else {
     await exec(env,
-      `INSERT INTO tour_links (link_id, project_id, from_point, to_point, yaw, pitch, label, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      linkId, pid, from, to, num(p.yaw), num(p.pitch, -10), str(p.label), nowStr());
+      `INSERT INTO tour_links (link_id, project_id, from_point, to_point, yaw, pitch, label, created_at, owner_sid)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      linkId, pid, from, to, num(p.yaw), num(p.pitch, -10), str(p.label), nowStr(), actorSid(p));
   }
   return { ok: true, link_id: linkId };
 }
@@ -390,6 +439,7 @@ export async function saveLink(env: Env, p: Record<string, unknown>): Promise<un
 export async function deleteLink(env: Env, p: Record<string, unknown>): Promise<unknown> {
   const linkId = str(p.link_id);
   if (!linkId) throw new Error('link_id required');
+  await assertTourOwner(env, p, 'tour_links', 'link_id', linkId, 'ลูกศร');
   await exec(env, 'DELETE FROM tour_links WHERE link_id = ?', linkId);
   return { ok: true };
 }
@@ -400,9 +450,9 @@ export async function createVersion(env: Env, p: Record<string, unknown>): Promi
   const versionId = await nextId(env, 'TV', 3);
   const captured = str(p.captured_at).slice(0, 10) || todayStr();
   await exec(env,
-    `INSERT INTO tour_versions (version_id, project_id, name, note, status, captured_at, visibility, created_at, created_by)
-     VALUES (?, ?, ?, ?, 'draft', ?, 'internal', ?, ?)`,
-    versionId, pid, str(p.name) || ('เวอร์ชัน ' + captured), str(p.note), captured, nowStr(), actorOf(p));
+    `INSERT INTO tour_versions (version_id, project_id, name, note, status, captured_at, visibility, created_at, created_by, owner_sid)
+     VALUES (?, ?, ?, ?, 'draft', ?, 'internal', ?, ?, ?)`,
+    versionId, pid, str(p.name) || ('เวอร์ชัน ' + captured), str(p.note), captured, nowStr(), actorOf(p), actorSid(p));
   return { ok: true, version_id: versionId, status: 'draft' };
 }
 
@@ -435,6 +485,7 @@ export async function publishVersion(env: Env, p: Record<string, unknown>): Prom
 export async function deleteVersion(env: Env, p: Record<string, unknown>): Promise<unknown> {
   const versionId = str(p.version_id);
   if (!versionId) throw new Error('version_id required');
+  await assertTourOwner(env, p, 'tour_versions', 'version_id', versionId, 'รอบสแกน');
   await exec(env, `UPDATE tour_versions SET status = 'trashed', trashed_at = ? WHERE version_id = ?`, nowStr(), versionId);
   await exec(env, 'UPDATE tour_shots SET trashed_at = ? WHERE version_id = ?', nowStr(), versionId);
   return { ok: true };
@@ -443,6 +494,7 @@ export async function deleteVersion(env: Env, p: Record<string, unknown>): Promi
 export async function restoreVersion(env: Env, p: Record<string, unknown>): Promise<unknown> {
   const versionId = str(p.version_id);
   if (!versionId) throw new Error('version_id required');
+  await assertTourOwner(env, p, 'tour_versions', 'version_id', str(p.version_id), 'รอบสแกน');
   await exec(env, `UPDATE tour_versions SET status = 'draft', trashed_at = NULL WHERE version_id = ?`, versionId);
   await exec(env, 'UPDATE tour_shots SET trashed_at = NULL WHERE version_id = ?', versionId);
   return { ok: true };
@@ -473,10 +525,10 @@ export async function uploadShot(env: Env, p: Record<string, unknown>): Promise<
     nowStr(), versionId, pointId);
 
   await exec(env,
-    `INSERT INTO tour_shots (shot_id, project_id, version_id, point_id, media_key, url, kind, width, height, haov, vaov, yaw_offset, taken_at, uploaded_at, uploaded_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO tour_shots (shot_id, project_id, version_id, point_id, media_key, url, kind, width, height, haov, vaov, yaw_offset, taken_at, uploaded_at, uploaded_by, owner_sid)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     shotId, pid, versionId, pointId, put.key, put.url, kind, w, h, haov, vaov,
-    num(p.yaw_offset), str(p.taken_at), nowStr(), actorOf(p));
+    num(p.yaw_offset), str(p.taken_at), nowStr(), actorOf(p), actorSid(p));
 
   return { ok: true, shot_id: shotId, url: put.url, kind, haov, vaov };
 }
@@ -499,6 +551,7 @@ export async function updateShot(env: Env, p: Record<string, unknown>): Promise<
 export async function deleteShot(env: Env, p: Record<string, unknown>): Promise<unknown> {
   const shotId = str(p.shot_id);
   if (!shotId) throw new Error('shot_id required');
+  await assertTourOwner(env, p, 'tour_shots', 'shot_id', shotId, 'ภาพ 360');
   await exec(env, 'UPDATE tour_shots SET trashed_at = ? WHERE shot_id = ?', nowStr(), shotId);
   return { ok: true };
 }
