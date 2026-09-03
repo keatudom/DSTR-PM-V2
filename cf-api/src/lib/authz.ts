@@ -11,6 +11,41 @@ import { verifyToken, type TokenPayload } from './auth.ts';
 // action ที่เปิดตลอด (health-check / login) แม้ปิด anonymous read แล้ว
 export const ALWAYS_OPEN = new Set<string>(['ping', 'login', 'login_google', 'get_me']);
 
+// ── 🔒 action ที่ "ต้องมีบัตรผ่านเสมอ" แม้ ALLOW_ANON_READ จะยังเปิดอยู่ ──
+//
+// ⚠️ ที่มา (ตรวจเจอ 2026-09-03): ตอนนี้ ALLOW_ANON_READ='true' ทำให้ "ไม่มี token = ผ่านทุก action"
+//    ไม่ใช่แค่ action อ่าน — ใครก็ตามที่รู้ URL ของ Worker เรียกได้หมดโดยไม่ต้องล็อกอิน
+//    (ทดสอบจริงแล้ว: get_users คืนรายชื่อพนักงานพร้อมอีเมลครบ · get_attendance_all คืนเวลาเข้างาน)
+//    → แปลว่าตาราง "บทบาท × สิทธิ์" ด้านล่างมีผลเฉพาะคนที่ล็อกอินด้วย Google (มี token) เท่านั้น
+//
+//    ปิด ALLOW_ANON_READ ทั้งหมดเลยยังทำไม่ได้ทันที เพราะการล็อกอินด้วย "รหัสผ่านรวม" (Auth.login)
+//    ไม่ได้ออก token ให้ → ปิดปุ๊บคนกลุ่มนั้นเขียนอะไรไม่ได้เลยกลางคัน
+//
+//    ระหว่างรอเจ้าของงานเคาะวันตัดยอดให้ทุกคนใช้ Google login: ปิดเฉพาะ action ที่
+//    "อันตราย + งานประจำวันไม่ได้ใช้" ก่อน — กันความเสียหายหนักโดยไม่ล็อกใครออกจากงาน
+export const TOKEN_REQUIRED = new Set<string>([
+  // ข้อมูลส่วนบุคคล / บัญชีผู้ใช้
+  'get_users', 'upsert_user', 'set_user_role',
+  'create_staff', 'update_staff', 'get_all_staff', 'set_id_card',
+  'assign_project_staff', 'unassign_project_staff',
+  'get_attendance_all', 'update_checkin', 'delete_checkin',
+  // ลบถาวร / ย้อนกลับไม่ได้
+  'delete_project', 'tour_purge', 'migrate_drive_photos',
+  'delete_ff', 'delete_team', 'delete_daily', 'delete_material',
+  // เรื่องเงิน
+  'create_contract', 'update_contract', 'create_milestone', 'update_milestone',
+  'updatePayment', 'create_payment', 'update_payment_info',
+  'upload_payment_slip', 'delete_payment_slip',
+  'upload_contract_file', 'delete_contract_file',
+  //   ⚠️ ไม่ใส่ get_client_finance ตรงนี้ — แดชบอร์ดเรียกทุกครั้งที่เปิดหน้า
+  //      ถ้าปิดตอนนี้ แท็บการเงินจะว่างเงียบๆ สำหรับคนที่ล็อกอินด้วยรหัสผ่านรวม
+  //      → ปิดพร้อมกันตอนตัดยอดให้ทุกคนใช้ Google login
+  // ยิงข้อความเข้ากลุ่ม LINE ของบริษัท
+  '_run_line_digest', '_run_ops_digest', '_run_weekly_digest',
+  // เสียเงินค่า AI ทุกครั้งที่กด
+  'generate_content',
+]);
+
 // client เรียกได้เฉพาะ whitelist (Code.js:242)
 export const CLIENT_ALLOWED_ACTIONS = new Set<string>([
   'client_get_overview',
@@ -28,7 +63,9 @@ const ROLE_CAPS: Record<string, Caps> = {
   owner: { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, PRICING: 1, ADMIN: 1, SITECFG: 1, ATTEND: 1 },
   director: { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1, ATTEND: 1 },
   pm: { READ: 1, OPS: 1, PROCURE: 1, MANAGE: 1, FINANCE: 1, SITECFG: 1, ATTEND: 1 },
-  hr: { ATTEND: 1 },
+  // ⚠️ 2026-09-03: เดิม hr มีแค่ ATTEND → อ่าน get_projects/get_all_staff ไม่ได้เลย
+  //    หน้าใบลงเวลาจึงโหลดรายชื่อโครงการ/พนักงานไม่ขึ้น (ชลธิชาใช้งานไม่ได้)
+  hr: { READ: 1, ATTEND: 1 },
   site_engineer: { READ: 1, OPS: 1, PROCURE: 1, SITECFG: 1 },
   foreman: { READ: 1, OPS: 1, PROCURE: 1 },
   purchaser: { READ: 1, PROCURE: 1 },
@@ -79,6 +116,10 @@ addCap('OPS', [
   //    (เจ้าของงานเจอจริงที่บ้านคุณนัชชา — มีแต่เจ้าของงานที่สแกนได้)
   //    ลบ/กู้/คุมเวอร์ชัน ยังอยู่ SITECFG เหมือนเดิม
   'tour_save_plan', 'tour_save_point', 'tour_save_link', 'tour_delete_point',
+  // ⚠️ รอบแรกลืมตัวนี้ — หน้าเว็บเรียก tour_create_version ก่อนอัปภาพใบแรกเสมอ
+  //    (สร้าง "ฉบับร่าง" ของรอบสแกน) ถ้าเรียกไม่ได้ = กดสแกนแล้วตายตั้งแต่ก้าวแรก
+  //    สร้างฉบับร่าง = เริ่มงาน · ส่วน "ประกาศใช้" (publish) ยังเป็นสิทธิ์หัวหน้าเหมือนเดิม
+  'tour_create_version', 'tour_update_version',
 ]);
 addCap('PROCURE', [
   'create_material', 'update_material', 'deactivate_material',
@@ -106,11 +147,41 @@ addCap('SITECFG', [
   // 🧭 เดินดูหน้างาน 360 — วางแผนที่จุด/ลูกศร + คุมเวอร์ชัน = งานตั้งค่าไซต์ (วิศวกรไซต์/PM ขึ้นไป)
   // (save_plan / save_point / save_link / delete_point ย้ายไป OPS แล้ว — ดูหมายเหตุด้านบน)
   'tour_delete_plan', 'tour_restore_point', 'tour_delete_link',
-  'tour_create_version', 'tour_update_version', 'tour_publish_version',
+  'tour_publish_version',                        // ประกาศใช้ = ตัดสินว่าเวอร์ชันไหนเป็นตัวจริง
   'tour_delete_version', 'tour_restore_version',
   'tour_purge',   // ลบถาวร กู้ไม่ได้ — ระดับวิศวกรไซต์/PM ขึ้นไปเท่านั้น
 ]);
-addCap('ATTEND', ['get_attendance_all', 'update_checkin', 'set_id_card']);
+addCap('ATTEND', ['get_attendance_all', 'update_checkin', 'set_id_card',
+  'delete_checkin',        // ลบบันทึกเวลา = แตะหลักฐานการจ่ายค่าแรง ต้องระดับ HR/แอดมิน
+]);
+
+// ── 🔒 2026-09-03: เก็บกวาด action ที่ยังไม่เคยกำหนดสิทธิ์ (31 ตัว) ──
+// ก่อนหน้านี้ action ที่ไม่อยู่ในตารางจะ "ผ่านหมด" (ดูโค้ด authorize: ไม่มี cap = อนุญาต+เตือน)
+// ตั้งใจไว้เป็นทางผ่านช่วงย้ายระบบ แต่ลืมเก็บกวาด → โมดูล QC / เช็คอิน / งวดเงิน
+// และ action ใหม่ที่เพิ่งเพิ่ม (update_project, delete_project, save_ff_plan)
+// เปิดโล่งให้ทุกบทบาทเรียกได้หมด รวมถึงบทบาทที่ควรอ่านได้อย่างเดียว
+addCap('READ', [
+  'get_projects_progress', 'get_ff_plans', 'get_task_weight_hints',
+  'get_checkins', 'get_timesheet', 'get_site_location',
+  'get_qc_criteria', 'get_qc_inspections', 'get_qc_inspection', 'get_qc_trash', 'qc_summary',
+  // มุมมองเจ้าบ้าน — บทบาท client ผ่านทาง CLIENT_ALLOWED_ACTIONS อยู่แล้ว (เช็คก่อนถึงตารางนี้)
+  'client_get_overview', 'client_get_photos', 'client_get_milestones', 'client_get_payments',
+]);
+addCap('OPS', [
+  'create_checkin',                              // ลงเวลาตัวเอง = งานหน้าไซต์
+  'create_qc_inspection', 'update_qc_result', 'close_qc_inspection',
+]);
+addCap('MANAGE', [
+  'update_project',                              // แก้ชื่อ/วันที่/มูลค่า/ปิดโครงการ
+  'save_ff_plan', 'delete_ff_plan',              // แผนไทม์ไลน์รายชิ้น = งานวางแผน
+  'delete_qc_inspection', 'restore_qc_inspection',
+]);
+addCap('FINANCE', ['create_payment', 'update_payment_info']);
+addCap('ADMIN', [
+  'delete_project',                              // ลบโครงการถาวร
+  // สั่งยิงรายงานเข้ากลุ่ม LINE ของบริษัทด้วยมือ — ไม่ใช่ของที่ใครก็กดได้
+  '_run_line_digest', '_run_ops_digest', '_run_weekly_digest',
+]);
 addCap('ADMIN', [
   'create_staff', 'update_staff', 'assign_project_staff',
   'unassign_project_staff', 'get_users', 'upsert_user', 'set_user_role',
@@ -171,6 +242,10 @@ export async function authorize(
     const anon = String(env.ALLOW_ANON_READ) === 'true';
     if (!anon && !ALWAYS_OPEN.has(action)) {
       throw new Error('authentication required');
+    }
+    // ปิดเฉพาะกลุ่มอันตรายก่อน แม้ยังเปิด anonymous อยู่ (ดูหมายเหตุที่ TOKEN_REQUIRED)
+    if (TOKEN_REQUIRED.has(action)) {
+      throw new Error('ต้องเข้าสู่ระบบด้วยบัญชี Google ก่อนจึงจะทำรายการนี้ได้');
     }
     requireRole(action, p.role as string | undefined);
     return { actor: null };
