@@ -20,9 +20,26 @@
 
 const PanoCapture = {
   // ── ค่าตั้งต้น ────────────────────────────────────────────
-  OUT_W: 4096,          // ผืนผ้า 360 (2:1 เป๊ะ ตามนิยาม equirectangular)
+  OUT_W: 4096,          // ผืนผ้า 360 ขั้นต่ำ (2:1 เป๊ะ ตามนิยาม equirectangular)
   OUT_H: 2048,
-  FRAME_MAX: 1000,      // ความละเอียดภาพที่เก็บแต่ละใบ (ด้านยาว)
+  OUT_MAX_W: 6144,      // เพดานผืนผ้า — ระบบเลือกเองตามหน่วยความจำที่เหลือ (ดู _outSize)
+  TOTAL_MB: 155,        // งบหน่วยความจำรวมทั้งงาน (ภาพดิบ + ผืนผลลัพธ์ + ตารางช่วยคำนวณ)
+  //   วัดจากของเดิมที่ใช้งานได้จริงมาตลอด: ภาพดิบ 98MB + ผืนผ้า/ตาราง 58MB = 156MB
+  //   พอเปลี่ยนไปเลนส์ไวด์ ภาพดิบเหลือ ~64MB → เอาส่วนต่างไปเพิ่มความคมของผลลัพธ์แทน
+  // ⭐ 2026-09-03 — เปลี่ยนแกนหลัก: ใช้ "เลนส์อัลตร้าไวด์" แทนเลนส์หลัก
+  //   สืบมาจาก Teleport (แอปที่เจ้าของงานชี้ว่าทำได้ดี): เวอร์ชันแรกของเขาใช้ 51 ใบ
+  //   (พอๆ กับ 53 ใบของเรา) แล้วเปลี่ยนมาใช้เลนส์ไวด์ → เหลือ 16 ใบ
+  //   เลนส์หลักมือถือ ~63° · อัลตร้าไวด์ ~106° = คลุมพื้นที่ต่อใบมากกว่า 3 เท่า
+  //   ผลที่คำนวณได้: 53 ใบ → ~15 ใบ · เวลาลดลง 3 เท่า · ตะเข็บน้อยลง 3 เท่า
+  //   และเพราะใบน้อยลง จึงเพิ่มความละเอียดต่อใบได้โดยใช้หน่วยความจำ "น้อยกว่าเดิม"
+  TARGET_PXPD: 17,      // ความละเอียดที่ต้องการ (จุดต่อองศา) — ใช้คำนวณ FRAME_MAX เอง
+  //   ผลลัพธ์ 4096px/360° = 11.4 จุด/องศา → ต้นทาง 17 = 1.5 เท่า เหลือให้เกลี่ยพอดี
+  //   เดิมล็อก FRAME_MAX=1000 ตายตัว พอเปลี่ยนไปเลนส์ไวด์จะเหลือ 9.4 จุด/องศา = เบลอกว่าเดิม
+  MEM_BUDGET_MB: 110,   // เพดานหน่วยความจำรวมของภาพดิบทั้งชุด (กัน Safari ปิดแท็บ)
+  CROP_WIDE: 0.88,      // เลนส์ไวด์ใช้แค่ 88% กลางเฟรม — ขอบสุดเลนส์บิดจนแบบจำลองรูเข็มเอาไม่อยู่
+  WIDE_DEG: 80,         // เกิน 80° ถือว่าเป็นเลนส์ไวด์ ต้องตัดขอบ
+  LENS_KEY: 'dstr_pano_lens',   // เลนส์ที่เลือกไว้ (จำต่อเครื่อง)
+  FRAME_MAX: 1000,      // ความละเอียดภาพต่อใบ — ค่าเริ่มต้น ระบบคำนวณใหม่ตอนรู้มุมกล้องจริง
   //   ⚠️ เดิมตั้งไว้ 800 = ทิ้งรายละเอียดกล้องไปกว่าครึ่งตั้งแต่ตอนถ่าย
   //      ภาพ 1 ใบคลุมราว 63° ถ้ากว้าง 800px = 12.7 จุด/องศา ส่วนผลลัพธ์ 4096px/360° = 11.4 จุด/องศา
   //      ต้นทางแทบไม่เหลือรายละเอียดให้เกลี่ย → ภาพออกมานุ่มๆ ไม่คม (เจ้าของงานสังเกตออก 2026-08-19)
@@ -44,9 +61,21 @@ const PanoCapture = {
 
   _state: null,
 
+  // ⚠️ 2026-09-03: เพดานเดิม 90° ปัดค่าของเลนส์อัลตร้าไวด์ (~106°) ทิ้งแล้วกลับไปใช้ 63
+  //    = เปลี่ยนไปใช้เลนส์ไวด์แล้วแต่คำนวณด้วยมุมของเลนส์หลัก → จุดเป้าผิดหมด ภาพพัง
+  //    ขยายเป็น 40-140° และ "แยกค่าตามเลนส์" เพราะเลนส์หลักกับไวด์คนละมุมกัน
+  FOV_MIN: 40,
+  FOV_MAX: 140,
+  _fovKey() {
+    const lens = localStorage.getItem(this.LENS_KEY) || 'default';
+    return this.FOV_KEY + '_' + lens.slice(0, 16);
+  },
   fovLong() {
-    const v = Number(localStorage.getItem(this.FOV_KEY));
-    return v >= 40 && v <= 90 ? v : 63;
+    let v = Number(localStorage.getItem(this._fovKey()));
+    if (!(v >= this.FOV_MIN && v <= this.FOV_MAX)) {
+      v = Number(localStorage.getItem(this.FOV_KEY));      // ค่าเก่าก่อนแยกตามเลนส์
+    }
+    return v >= this.FOV_MIN && v <= this.FOV_MAX ? v : 63;
   },
 
   // ── จุดเป้าที่ต้องไล่เล็ง (วงแนวนอน 3 วง + ยอดเพดาน) ──────
@@ -163,7 +192,11 @@ const PanoCapture = {
       return this._cameraFailed(e && e.message);
     }
 
+    // ต้องฟังเซ็นเซอร์ก่อน เพราะการวัดมุมกล้องใช้ "หมุนไปเท่าไหร่" เทียบกับ "ภาพเลื่อนไปกี่จุด"
     this._listenOrientation();
+    try { await this._measureFov(); } catch (e) { /* วัดไม่ได้ก็ใช้ค่าที่จำไว้ */ }
+    if (!this._state) return;               // ผู้ใช้กดปิดระหว่างวัด
+    this._setupGeometry();
     this._loop();
   },
 
@@ -209,25 +242,184 @@ const PanoCapture = {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('เบราว์เซอร์นี้เปิดกล้องไม่ได้ — ลองเปิดใน Safari');
     }
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1440 } },
-      audio: false,
-    }).catch(() => { throw new Error('เปิดกล้องไม่สำเร็จ — เช็คว่าอนุญาตกล้องให้เว็บนี้แล้วหรือยัง'); });
+    const VID = { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1440 } };
+
+    // ① เปิดกล้องหลังธรรมดาก่อน — ต้องได้สิทธิ์ก่อน ชื่อเลนส์ถึงจะโผล่ใน enumerateDevices
+    //    (iOS: ก่อนได้สิทธิ์ label จะเป็นค่าว่างทั้งหมด)
+    let stream = await navigator.mediaDevices.getUserMedia({ video: VID, audio: false })
+      .catch(() => { throw new Error('เปิดกล้องไม่สำเร็จ — เช็คว่าอนุญาตกล้องให้เว็บนี้แล้วหรือยัง'); });
+
+    // ② สลับไปเลนส์อัลตร้าไวด์ถ้ามี (iOS 16.3+ และ Android เปิดให้เห็นเลนส์หลังทุกตัวแล้ว)
+    try { stream = await this._pickWideLens(stream, VID); } catch (e) { /* ใช้ตัวเดิมต่อ */ }
+
     this._state.stream = stream;
     video.srcObject = stream;
     await video.play().catch(() => { /* iOS บางรุ่นเล่นเองอยู่แล้ว */ });
     // รอให้รู้ขนาดภาพจริงก่อน ค่อยคำนวณมุมกล้อง/จุดเป้า
     for (let i = 0; i < 40 && !video.videoWidth; i++) await new Promise((r) => setTimeout(r, 50));
     if (!video.videoWidth) throw new Error('กล้องเปิดแล้วแต่ไม่มีภาพ — ลองปิดแอปอื่นที่ใช้กล้องอยู่');
-    this._setupGeometry();
+  },
+
+  // ── หาเลนส์ที่ "กว้างที่สุด" ของกล้องหลัง ────────────────────
+  // 3 ทาง เรียงตามความน่าเชื่อถือ:
+  //   1. เคยเลือกไว้แล้ว → ใช้ตัวเดิม (จำต่อเครื่อง)
+  //   2. ชื่อเลนส์มีคำว่า ultra/0.5 → เลนส์อัลตร้าไวด์แยกตัว (iOS 16.3+ / Android)
+  //   3. กล้องรวมที่ซูมต่ำกว่า 1 ได้ → สั่งซูมต่ำสุด = สลับไปอัลตร้าไวด์เอง
+  async _pickWideLens(stream, VID) {
+    const devs = (await navigator.mediaDevices.enumerateDevices())
+      .filter((d) => d.kind === 'videoinput');
+    const cur = stream.getVideoTracks()[0];
+
+    const saved = localStorage.getItem(this.LENS_KEY);
+    const isFront = (l) => /front|หน้า|selfie/i.test(l || '');
+    const isUltra = (l) => /ultra|0\.5|超広角|อัลตร้า/i.test(l || '') && !isFront(l);
+
+    let pick = null;
+    if (saved) pick = devs.find((d) => d.deviceId === saved) || null;
+    if (!pick) pick = devs.find((d) => isUltra(d.label)) || null;
+
+    if (pick && pick.deviceId !== (cur.getSettings ? cur.getSettings().deviceId : '')) {
+      const alt = await navigator.mediaDevices.getUserMedia({
+        video: Object.assign({}, VID, { deviceId: { exact: pick.deviceId } }), audio: false,
+      }).catch(() => null);
+      if (alt) {
+        stream.getTracks().forEach((t) => t.stop());
+        this._state.lensLabel = pick.label || 'เลนส์กว้าง';
+        localStorage.setItem(this.LENS_KEY, pick.deviceId);
+        return alt;
+      }
+    }
+
+    // ไม่มีเลนส์แยก → ลองสั่งซูมต่ำสุดกับกล้องรวม
+    try {
+      const caps = cur.getCapabilities ? cur.getCapabilities() : {};
+      if (caps.zoom && caps.zoom.min < 1) {
+        await cur.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
+        this._state.lensLabel = 'ซูม ' + caps.zoom.min + 'x';
+      }
+    } catch (e) { /* ซูมไม่ได้ก็ใช้ตามเดิม */ }
+    return stream;
+  },
+
+  // ── วัดมุมกล้องจริงอัตโนมัติ (auto FOV) ────────────────────
+  // ทำไมต้องวัด: พอสลับไปเลนส์อัลตร้าไวด์ มุมกล้องเปลี่ยนจาก ~63° เป็น ~106°
+  //   และแต่ละรุ่นไม่เท่ากันเลย ถ้าเดาผิดจุดเป้าจะวางผิด → ภาพเป็นรูหรือซ้อนกันมั่ว
+  // วัดยังไง: หมุนเครื่องไปนิดนึง เซ็นเซอร์บอก "หมุนไปกี่องศา"
+  //   เทียบกับภาพที่เลื่อนไป "กี่จุด" → ได้ระยะโฟกัสเป็นจุดต่อเรเดียน → แปลงเป็นมุมกล้อง
+  //   ใช้เฉพาะแถบกลางเฟรม 50% เพราะขอบเลนส์ไวด์บิด ความสัมพันธ์ไม่เป็นเส้นตรง
+  async _measureFov() {
+    const st = this._state;
+    const v = st.ui.video;
+    const PW = 256;                                   // ความกว้างของ "ลายเส้น" ที่ใช้เทียบ
+    const srcW = v.videoWidth * 0.5;                  // ใช้แค่ครึ่งกลางของภาพ
+    const pxPerProf = srcW / PW;
+    const D2R = Math.PI / 180;
+
+    const tip = document.createElement('div');
+    tip.setAttribute('style',
+      'position:absolute;left:0;right:0;bottom:18%;z-index:40;text-align:center;color:#fff;' +
+      'font-size:15px;line-height:1.7;text-shadow:0 1px 4px #000;padding:0 24px;pointer-events:none');
+    tip.innerHTML = '📐 <b>กำลังวัดมุมกล้อง</b><br>ค่อยๆ หมุนตัวไปทางขวาช้าๆ<br>' +
+      '<span style="font-size:12px;opacity:.8">ทำครั้งเดียวต่อเครื่อง แล้วระบบจะจำไว้</span>';
+    st.ui.root.appendChild(tip);
+
+    const samples = [];
+    const t0 = Date.now();
+    let ref = null;
+    while (this._state && Date.now() - t0 < 14000 && samples.length < 5) {
+      await new Promise((r) => setTimeout(r, 90));
+      if (!st.hasOri || !v.videoWidth) continue;
+      const prof = this._profile(v, PW);
+      const dir = this._axes(st.q).fwd;
+      if (!ref) { ref = { prof: prof, dir: dir }; continue; }
+
+      const dot = Math.max(-1, Math.min(1, this._dot(ref.dir, dir)));
+      const ang = Math.acos(dot);                     // หมุนไปกี่เรเดียน
+      const vert = Math.abs(ref.dir[1] - dir[1]);     // ก้ม-เงยไปเท่าไหร่
+      if (ang < 6 * D2R) continue;                    // ยังหมุนไม่พอ รอต่อ
+      if (ang > 22 * D2R || vert > 0.12) { ref = { prof: prof, dir: dir }; continue; }  // เร็วไป/ก้มเงย → ตั้งต้นใหม่
+
+      const m = this._bestShift(ref.prof, prof, 110);
+      // margin < 0.75 = จุดที่แมตช์ดีที่สุดชนะที่สองชัดเจน (ไม่ใช่ฉากเรียบๆ ที่จับอะไรไม่ได้)
+      if (Math.abs(m.shift) >= 6 && m.margin < 0.75) {
+        const f = (Math.abs(m.shift) * pxPerProf) / ang;          // จุดต่อเรเดียน
+        const hFov = 2 * Math.atan((v.videoWidth / 2) / f) / D2R;
+        if (hFov > 40 && hFov < 145) samples.push(hFov);
+      }
+      ref = { prof: prof, dir: dir };
+    }
+    tip.remove();
+    if (!this._state || samples.length < 2) return;   // วัดไม่ได้ → ใช้ค่าที่จำไว้เดิม
+
+    samples.sort((a, b) => a - b);
+    const hFov = samples[Math.floor(samples.length / 2)];          // ค่ากลาง กัน outlier
+    const W = v.videoWidth, H = v.videoHeight;
+    // แปลงมุมด้านกว้าง → มุม "ด้านยาว" ซึ่งเป็นหน่วยที่ fovLong() เก็บ
+    const longDeg = W >= H ? hFov
+      : 2 * Math.atan(Math.tan(hFov / 2 * D2R) * H / W) / D2R;
+    const clamped = Math.max(this.FOV_MIN, Math.min(this.FOV_MAX, Math.round(longDeg)));
+    localStorage.setItem(this._fovKey(), String(clamped));
+    st.fovMeasured = clamped;
+  },
+
+  // ลายเส้นแนวนอนของภาพ (1 มิติ) — ใช้หาว่าภาพเลื่อนไปกี่จุด
+  // ทำเป็น "ความต่างระหว่างจุดข้างกัน" (ขอบ) → ทนต่อแสงเปลี่ยนระหว่างสองเฟรม
+  _profile(video, PW) {
+    const c = this._mfC || (this._mfC = document.createElement('canvas'));
+    const PH = 64;
+    c.width = PW; c.height = PH;
+    const cc = c.getContext('2d', { willReadFrequently: true });
+    const vw = video.videoWidth, vh = video.videoHeight;
+    cc.drawImage(video, vw * 0.25, vh * 0.30, vw * 0.5, vh * 0.4, 0, 0, PW, PH);
+    const d = cc.getImageData(0, 0, PW, PH).data;
+    const col = new Float32Array(PW);
+    for (let x = 0; x < PW; x++) {
+      let sum = 0;
+      for (let y = 0; y < PH; y++) {
+        const i = (y * PW + x) * 4;
+        sum += d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+      }
+      col[x] = sum / PH;
+    }
+    const g = new Float32Array(PW);
+    for (let x = 1; x < PW; x++) g[x] = col[x] - col[x - 1];
+    return g;
+  },
+
+  // หาว่า b คือ a ที่เลื่อนไปกี่จุด (หาค่าต่างรวมน้อยสุด)
+  // margin = คะแนนที่ดีที่สุด ÷ ที่ดีรองลงมา — ใกล้ 1 แปลว่าจับไม่ได้จริง ให้ทิ้งตัวอย่างนั้น
+  _bestShift(a, b, maxShift) {
+    const N = a.length;
+    let best = 0, s1 = Infinity, s2 = Infinity;
+    for (let s = -maxShift; s <= maxShift; s++) {
+      const from = Math.max(0, -s), to = Math.min(N, N - s);
+      if (to - from < N * 0.5) continue;
+      let sum = 0;
+      for (let x = from; x < to; x++) sum += Math.abs(a[x] - b[x + s]);
+      const sc = sum / (to - from);
+      if (sc < s1) { s2 = s1; s1 = sc; best = s; }
+      else if (sc < s2) s2 = sc;
+    }
+    return { shift: best, score: s1, margin: s2 > 0 ? s1 / s2 : 1 };
   },
 
   _setupGeometry() {
     const st = this._state;
     const v = st.ui.video;
     const W = v.videoWidth, H = v.videoHeight;
-    const long = this.fovLong() * Math.PI / 180;
-    // มุมกล้องด้านยาว = ค่าที่ตั้งไว้ · ด้านสั้นคำนวณจากสัดส่วนภาพ
+    const rawDeg = this.fovLong();
+
+    // เลนส์ไวด์: ใช้แค่กลางเฟรม — ขอบสุดของเลนส์อัลตร้าไวด์บิดจนแบบจำลอง "รูเข็ม"
+    // ที่ตัวต่อภาพใช้อยู่เอาไม่อยู่ (เส้นตรงกลายเป็นโค้ง ตะเข็บจะเบี้ยว)
+    // ตัด 12% รอบนอกทิ้ง = เสียมุมไปนิดเดียว แต่ได้ตะเข็บที่ตรง
+    st.crop = rawDeg > this.WIDE_DEG ? this.CROP_WIDE : 1;
+    const long = 2 * Math.atan(Math.tan(rawDeg * Math.PI / 360) * st.crop);
+
+    // กรอบที่ตัดจริงบนภาพต้นทาง (ใช้ตอนเก็บภาพแต่ละใบ)
+    const cw = W * st.crop, ch = H * st.crop;
+    st.cropRect = { sx: (W - cw) / 2, sy: (H - ch) / 2, sw: cw, sh: ch };
+
+    // มุมกล้องด้านยาว = ค่าที่วัดได้ · ด้านสั้นคำนวณจากสัดส่วนภาพ
     if (W >= H) {
       st.hFov = long;
       st.vFov = 2 * Math.atan(Math.tan(long / 2) * H / W);
@@ -235,7 +427,10 @@ const PanoCapture = {
       st.vFov = long;
       st.hFov = 2 * Math.atan(Math.tan(long / 2) * W / H);
     }
-    st.frameW = W; st.frameH = H;
+    st.frameW = cw; st.frameH = ch;
+    // มุมกล้อง "หลังตัดขอบ" หน่วยองศา — ตัวต่อภาพต้องใช้ค่านี้ ไม่ใช่ค่าดิบจาก fovLong()
+    // (ภาพที่เก็บไว้ถูกตัดขอบไปแล้ว ถ้าเอาค่าดิบไปคำนวณจะเหลื่อมทั้งชุด)
+    st.fovLongEff = long * 180 / Math.PI;
 
     // กรอบภาพกลางจอ — เว้นที่รอบๆ ให้จุดเป้าที่ยังไม่ถึงลอยอยู่นอกกรอบได้
     const rw = st.ui.root.clientWidth, rh = st.ui.root.clientHeight;
@@ -245,6 +440,20 @@ const PanoCapture = {
     v.style.height = Math.round(bh) + 'px';
     st.box = { x: rw / 2, y: rh / 2, w: bw, h: bh };
     st.targets = this._targets(st.hFov * 180 / Math.PI, st.vFov * 180 / Math.PI);
+
+    // ── ความละเอียดต่อใบ: คำนวณจากมุมกล้องจริง ไม่ใช่ล็อกตายตัว ──
+    // เดิมล็อก 1000px ซึ่งพอดีกับเลนส์หลัก 63° (15.9 จุด/องศา)
+    // ถ้าใช้ค่าเดิมกับเลนส์ไวด์ 92° จะเหลือ 10.9 จุด/องศา = เบลอกว่าผลลัพธ์ 4096px เสียอีก
+    const longDeg = Math.max(st.hFov, st.vFov) * 180 / Math.PI;
+    let fm = Math.round(longDeg * this.TARGET_PXPD);
+    const shortRatio = Math.min(cw, ch) / Math.max(cw, ch);
+    const cap = this.MEM_BUDGET_MB * 1048576;
+    const bytesAt = (n) => n * n * shortRatio * 3 * st.targets.length;
+    fm = Math.max(800, Math.min(2000, fm));
+    if (bytesAt(fm) > cap) fm = Math.max(700, Math.floor(fm * Math.sqrt(cap / bytesAt(fm))));
+    st.frameMax = fm;
+    st.memMB = Math.round(bytesAt(fm) / 1048576);
+
     this._mosInit();
     this._updateHud();
   },
@@ -397,13 +606,16 @@ const PanoCapture = {
     st.grabbing = true;
     try {
       const v = st.ui.video;
-      const scale = Math.min(1, this.FRAME_MAX / Math.max(v.videoWidth, v.videoHeight));
-      const w = Math.max(1, Math.round(v.videoWidth * scale));
-      const h = Math.max(1, Math.round(v.videoHeight * scale));
+      const cr = st.cropRect || { sx: 0, sy: 0, sw: v.videoWidth, sh: v.videoHeight };
+      const fmax = st.frameMax || this.FRAME_MAX;
+      const scale = Math.min(1, fmax / Math.max(cr.sw, cr.sh));
+      const w = Math.max(1, Math.round(cr.sw * scale));
+      const h = Math.max(1, Math.round(cr.sh * scale));
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
       const cc = c.getContext('2d');
-      cc.drawImage(v, 0, 0, w, h);
+      // เก็บเฉพาะกรอบกลาง (ตัดขอบเลนส์ที่บิดทิ้ง) — st.hFov/vFov คิดบนกรอบนี้แล้ว
+      cc.drawImage(v, cr.sx, cr.sy, cr.sw, cr.sh, 0, 0, w, h);
       const id = cc.getImageData(0, 0, w, h).data;
       const rgb = new Uint8Array(w * h * 3);         // ตัดช่องโปร่งใสทิ้ง ประหยัดหน่วยความจำ 25%
       for (let i = 0, j = 0; j < rgb.length; i += 4, j += 3) { rgb[j] = id[i]; rgb[j + 1] = id[i + 1]; rgb[j + 2] = id[i + 2]; }
@@ -438,7 +650,10 @@ const PanoCapture = {
     const mid = st.targets.filter((t) => t.ring === 'mid');
     const midDone = mid.filter((t) => t.done).length;
 
-    st.ui.hud.textContent = 'เก็บแล้ว ' + done + '/' + total + ' จุด';
+    // โชว์เลนส์ที่ใช้ + มุมกล้องที่วัดได้ → ถ้าผลออกมาไม่ดีจะไล่หาสาเหตุได้ว่าเป็นเพราะอะไร
+    const lens = st.lensLabel ? (' · ' + st.lensLabel) : '';
+    const fov = st.fovMeasured ? (' ' + st.fovMeasured + '°') : '';
+    st.ui.hud.textContent = 'เก็บแล้ว ' + done + '/' + total + ' จุด' + lens + fov;
     st.ui.bar.style.width = Math.round(done / total * 100) + '%';
     st.ui.undo.style.visibility = done ? 'visible' : 'hidden';
 
@@ -664,11 +879,16 @@ const PanoCapture = {
     };
 
     // ── ขั้น 1: ลองมุมกล้องหลายค่ากับ 6 ใบแรก เลือกค่าที่ต่อกันเนียนสุด ──
-    const baseLong = this.fovLong();
+    // ⚠️ ต้องใช้ "มุมหลังตัดขอบ" — ค่าดิบจาก fovLong() คือมุมของเฟรมเต็ม
+    //    แต่ภาพที่เก็บไว้ถูกตัดขอบไปแล้ว (เลนส์ไวด์ตัด 12%) ถ้าใช้ค่าดิบจะเหลื่อมทั้งชุด
+    const baseLong = st.fovLongEff || this.fovLong();
     let bestFov = baseLong, bestErr = Infinity;
     const probe = Math.min(6, st.frames.length);
-    for (const cand of [baseLong - 8, baseLong - 4, baseLong, baseLong + 4, baseLong + 8]) {
-      if (cand < 40 || cand > 90) continue;
+    // ช่วงค้นหาเป็นสัดส่วนของมุมกล้อง — เดิมล็อกเพดานไว้ 90° ซึ่งเลนส์ไวด์ทะลุเพดาน
+    // ทำให้ข้ามทุกตัวเลือกและไม่ได้จูนมุมเลย
+    const span = Math.max(4, Math.round(baseLong * 0.12));
+    for (const cand of [baseLong - span, baseLong - span / 2, baseLong, baseLong + span / 2, baseLong + span]) {
+      if (cand < 30 || cand > 130) continue;
       gray.fill(0); seen.fill(0);
       const long = cand * Math.PI / 180;
       const W = st.frameW, H = st.frameH;
@@ -797,11 +1017,25 @@ const PanoCapture = {
     }
   },
 
+  // ── ขนาดผืนผลลัพธ์: เลือกเองจากหน่วยความจำที่เหลือ ──────────
+  // ผืนผลลัพธ์ + ตารางช่วยคำนวณกินราว 7 ไบต์ต่อพิกเซล (out RGBA 4 + label/edge/filled อีก 3)
+  // ภาพดิบใช้ไปเท่าไหร่ ที่เหลือยกให้ผืนผลลัพธ์ → เลนส์ไวด์ที่ใช้ภาพดิบน้อยจะได้ผลลัพธ์คมขึ้นเอง
+  _outSize() {
+    const st = this._state;
+    const usedMB = (st && st.memMB) || 98;
+    const freeMB = Math.max(50, this.TOTAL_MB - usedMB);
+    let w = Math.floor(Math.sqrt(freeMB * 1048576 * 2 / 7));
+    w = Math.round(w / 256) * 256;                        // ให้ลงตัวกับบล็อกที่ใช้คำนวณ
+    w = Math.max(this.OUT_W, Math.min(this.OUT_MAX_W, w));
+    return { w: w, h: w / 2 };
+  },
+
   async _stitch() {
     const st = this._state;
     await this._align();
 
-    const W = this.OUT_W, H = this.OUT_H;
+    const sz = this._outSize();
+    const W = sz.w, H = sz.h;
     const out = new Uint8ClampedArray(W * H * 4);
     const tanH = Math.tan(st.hFov / 2), tanV = Math.tan(st.vFov / 2);
 
@@ -1333,12 +1567,18 @@ const PanoCapture = {
   // ── ปรับมุมกล้อง (จำต่อเครื่อง) — ใช้เมื่อภาพต่อแล้วเหลื่อมหรือมีช่องว่าง ──
   async calibrate() {
     const cur = this.fovLong();
-    const v = prompt('มุมมองกล้องด้านยาว (องศา)\n' +
-      'ค่ามาตรฐาน 63 · ถ้าภาพต่อแล้วซ้อนกันให้ลดลง · ถ้ามีช่องว่างให้เพิ่มขึ้น', String(cur));
+    const st = this._state;
+    const lens = (st && st.lensLabel) ? ('\nเลนส์ที่ใช้: ' + st.lensLabel) : '';
+    const auto = (st && st.fovMeasured) ? ('\nระบบวัดได้เอง: ' + st.fovMeasured + '°') : '';
+    const v = prompt('มุมมองกล้องด้านยาว (องศา)' + lens + auto +
+      '\nเลนส์หลักปกติ ~63 · เลนส์อัลตร้าไวด์ ~100-110' +
+      '\nถ้าภาพต่อแล้วซ้อนกันให้ลดลง · ถ้ามีช่องว่างให้เพิ่มขึ้น', String(cur));
     if (!v) return;
     const n = Number(v);
-    if (!(n >= 40 && n <= 90)) return this._toast(this._state.ui, 'ใส่ได้ระหว่าง 40-90', true);
-    localStorage.setItem(this.FOV_KEY, String(n));
+    if (!(n >= this.FOV_MIN && n <= this.FOV_MAX)) {
+      return this._toast(this._state.ui, 'ใส่ได้ระหว่าง ' + this.FOV_MIN + '-' + this.FOV_MAX, true);
+    }
+    localStorage.setItem(this._fovKey(), String(n));
     if (this._state) { this._setupGeometry(); this._state.frames = []; }
   },
 
